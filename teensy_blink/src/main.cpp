@@ -1,9 +1,13 @@
 #include <Arduino.h>
 
 void setup() {
-  Serial.begin(9600);
-  pinMode(13, OUTPUT);
-}
+    Serial.begin(9600);
+    while (!Serial) {
+      ; // wait for serial port to connect. Needed for native USB
+    }
+  
+    pinMode(LED_BUILTIN, OUTPUT);
+  }
 
 void loop() {
   Serial.println("Hello from Teensy!");
