@@ -1,0 +1,151 @@
+import cv2
+import depthai as dai
+from flask import Flask, render_template_string, Response, redirect, url_for
+from pupil_apriltags import Detector
+
+app = Flask(__name__)
+
+# Global focus position tracker
+focus_position = 135  # Start at mid-range for safety
+
+# Initialize AprilTag detector
+at_detector = Detector(
+    families='tag36h11',
+    nthreads=4,
+    quad_decimate=1.0,
+    quad_sigma=0.0,
+    refine_edges=1,
+    decode_sharpening=0.25,
+    debug=0
+)
+
+# Set your actual tag size in meters (measure the black border, not the paper size)
+tag_size = 0.178  # Example: 7 inches ~ 0.178 meters
+
+# Pipeline setup
+def create_pipeline():
+    pipeline = dai.Pipeline()
+
+    cam_rgb = pipeline.createColorCamera()
+    cam_rgb.setPreviewSize(640, 480)
+    cam_rgb.setInterleaved(False)
+
+    xout_video = pipeline.createXLinkOut()
+    xout_video.setStreamName("video")
+    cam_rgb.preview.link(xout_video.input)
+
+    control_in = pipeline.createXLinkIn()
+    control_in.setStreamName('control')
+    control_in.out.link(cam_rgb.inputControl)
+
+    return pipeline
+
+# Start the pipeline
+pipeline = create_pipeline()
+device = dai.Device(pipeline)
+control_queue = device.getInputQueue('control')
+video_queue = device.getOutputQueue(name="video", maxSize=4, blocking=False)
+
+# Get camera intrinsics (for pose estimation)
+calib = device.readCalibration()
+intrinsics = calib.getCameraIntrinsics(dai.CameraBoardSocket.CAM_A, 640, 480)
+fx, fy = intrinsics[0][0], intrinsics[1][1]
+cx, cy = intrinsics[0][2], intrinsics[1][2]
+
+# Video feed generator
+def generate_frames():
+    while True:
+        frame = video_queue.get().getCvFrame()
+
+        # Convert to grayscale for detection
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+        # Detect AprilTags with pose estimation
+        tags = at_detector.detect(
+            gray,
+            estimate_tag_pose=True,
+            camera_params=[fx, fy, cx, cy],
+            tag_size=tag_size
+        )
+
+        # Draw detection results
+        for tag in tags:
+            corners = tag.corners.astype(int)
+            center = tuple(tag.center.astype(int))
+
+            # Draw bounding box
+            for i in range(4):
+                pt1 = tuple(corners[i])
+                pt2 = tuple(corners[(i + 1) % 4])
+                cv2.line(frame, pt1, pt2, (0, 255, 0), 2)
+
+            # Draw tag ID
+            cv2.putText(frame, f"ID: {tag.tag_id}", center,
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+
+            # Draw pose translation (x, y, z)
+            if tag.pose_t is not None:
+                translation = tag.pose_t.flatten()
+                pos_text = f"X: {translation[0]:.2f}m Y: {translation[1]:.2f}m Z: {translation[2]:.2f}m"
+                cv2.putText(frame, pos_text, (center[0], center[1] + 30),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+
+        # Encode frame as JPEG
+        ret, buffer = cv2.imencode('.jpg', frame)
+        frame = buffer.tobytes()
+
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
+# Camera control functions
+def set_focus(position):
+    global focus_position
+    ctrl = dai.CameraControl()
+    ctrl.setManualFocus(position)
+    control_queue.send(ctrl)
+    focus_position = position
+
+def set_auto_focus():
+    ctrl = dai.CameraControl()
+    ctrl.setAutoFocusMode(dai.CameraControl.AutoFocusMode.CONTINUOUS_VIDEO)
+    control_queue.send(ctrl)
+
+# Routes
+@app.route('/')
+def index():
+    return render_template_string('''
+        <h1>OAK Camera Control Panel + AprilTag Detection</h1>
+        <img src="{{ url_for('video_feed') }}" width="640" height="480">
+        <br><br>
+        <b>Focus Control:</b><br>
+        <a href="{{ url_for('focus_decrease') }}">🔍 Focus -</a>
+        <a href="{{ url_for('focus_increase') }}">🔍 Focus +</a>
+        <a href="{{ url_for('focus_auto') }}">🎯 Auto-Focus</a>
+        <p>Current manual focus position: {{ focus_position }}</p>
+    ''', focus_position=focus_position)
+
+@app.route('/video_feed')
+def video_feed():
+    return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@app.route('/focus/increase')
+def focus_increase():
+    global focus_position
+    focus_position = min(focus_position + 10, 255)
+    set_focus(focus_position)
+    return redirect(url_for('index'))
+
+@app.route('/focus/decrease')
+def focus_decrease():
+    global focus_position
+    focus_position = max(focus_position - 10, 0)
+    set_focus(focus_position)
+    return redirect(url_for('index'))
+
+@app.route('/focus/auto')
+def focus_auto():
+    set_auto_focus()
+    return redirect(url_for('index'))
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
