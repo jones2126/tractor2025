@@ -1,5 +1,6 @@
 import serial
 import time
+import sys
 
 # Serial port settings
 port_com1 = "/dev/ttyUSB_com1"  # Adjust to your COM1 port
@@ -35,7 +36,7 @@ def send_command(command):
 
         print("Response:")
         print(response)
-        print(f"OK! Command accepted! Port: COM1.")
+        print(f"OK! Command accepted! Port: COM1.")  # Print only once
 
     except serial.SerialException as e:
         print(f"Serial error on COM1: {e}")
@@ -88,18 +89,22 @@ def read_com2_messages():
                         message_id = ((message_data[0] << 4) | (message_data[1] >> 4)) & 0xFFF
                         print(f"Received RTCM {message_id} message")
 
-                        # Debug RTCM 1005/1006
-                        if message_id in [1005, 1006]:
-                            print(f"RTCM {message_id} - Raw Data (hex): {' '.join(f'{byte:02x}' for byte in message_data)}")
-                            if message_id == 1005:
-                                if len(message_data) >= 19:
-                                    station_id = (message_data[2] << 4) | (message_data[3] >> 4)
-                                    ecef_x = int.from_bytes(message_data[6:10], byteorder='big', signed=True) * 0.0001
-                                    ecef_y = int.from_bytes(message_data[10:14], byteorder='big', signed=True) * 0.0001
-                                    ecef_z = int.from_bytes(message_data[14:18], byteorder='big', signed=True) * 0.0001
-                                    print(f"RTCM 1005 - Station ID: {station_id}, ECEF X: {ecef_x:.4f} m, Y: {ecef_y:.4f} m, Z: {ecef_z:.4f} m")
+                        # Decode RTCM 1006 (Station coordinates with antenna height, malformed)
+                        if message_id == 1006:
+                            print(f"RTCM 1006 - Raw Data (hex): {' '.join(f'{byte:02x}' for byte in message_data)}")
+                            if len(message_data) >= 18:  # At least enough for ECEF X, Y, Z
+                                station_id = (message_data[2] << 4) | (message_data[3] >> 4)
+                                ecef_x = int.from_bytes(message_data[6:10], byteorder='big', signed=True) * 0.0001
+                                ecef_y = int.from_bytes(message_data[10:14], byteorder='big', signed=True) * 0.0001
+                                ecef_z = int.from_bytes(message_data[14:18], byteorder='big', signed=True) * 0.0001
+                                print(f"RTCM 1006 - Station ID: {station_id}, ECEF X: {ecef_x:.4f} m, Y: {ecef_y:.4f} m, Z: {ecef_z:.4f} m")
+                                if len(message_data) >= 23:  # Check for antenna height field
+                                    ant_height = int.from_bytes(message_data[19:23], byteorder='big', signed=True) * 0.0001
+                                    print(f"RTCM 1006 - Antenna Height: {ant_height:.4f} m")
                                 else:
-                                    print(f"RTCM 1005 - Message too short: {len(message_data)} bytes")
+                                    print("RTCM 1006 - Antenna height field incomplete")
+                            else:
+                                print(f"RTCM 1006 - Message too short: {len(message_data)} bytes")
 
                         # Decode RTCM 1008 (Station ID and antenna serial number)
                         elif message_id == 1008:
@@ -203,7 +208,9 @@ def print_menu():
 def main():
     while True:
         print_menu()
-        choice = input("\nEnter your choice (1-7): ")
+        # Clear any leftover input buffer
+        sys.stdin.flush()
+        choice = input("\nEnter your choice (1-7): ").strip()
 
         if choice == "1":
             send_command("LOG VERSION ONCE")
@@ -216,7 +223,7 @@ def main():
         elif choice == "5":
             send_command("FIX POSITION 40.34536010088 -80.12878619119 326.5974")
         elif choice == "6":
-            custom_command = input("Enter custom command: ")
+            custom_command = input("Enter custom command: ").strip()
             send_command(custom_command)
         elif choice == "7":
             print("Exiting...")
