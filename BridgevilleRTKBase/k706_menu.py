@@ -6,10 +6,10 @@ port = "/dev/ttyUSB_com1"  # COM1 (fixed symbolic link)
 baudrate = 115200
 timeout = 1  # Timeout for reading (in seconds)
 
-# RTCM configuration commands (same as configure_k706_base.py)
+# RTCM configuration commands
 rtcm_config_commands = [
     "UNLOGALL",
-    "FIX POSITION 28.9823853 -84.2492042 43.89",
+    "FIX POSITION 40.34536010088 -80.12878619119 326.5974",
     "LOG COM2 RTCM1004B ONTIME 1",  # GPS L1/L2 observations
     "LOG COM2 RTCM1012B ONTIME 1",  # GLONASS L1/L2 observations
     "LOG COM2 RTCM1094B ONTIME 1",  # Galileo E1/E5b observations
@@ -68,10 +68,10 @@ try:
     while True:
         # Display the menu
         print("1. Send LOG VERSION")
-        print("2. Send UNLOGALL")
+        print("2. Reconfigure as RTK Base Station (restore RTCM output)")
         print("3. Send LOG COMCONFIG (show port configurations)")
-        print("4. Send LOG COM2 (show messages programmed for COM2)")
-        print("5. Reconfigure as RTK Base Station (restore RTCM output)")
+        print("4. Send LOG BESTPOSA ONCE (show current position and fix status)")
+        print("5. Send FIX POSITION (set fixed position for RTK base)")
         print("6. Send Custom Command")
         print("7. Exit")
         choice = input("\nEnter your choice (1-7): ")
@@ -80,19 +80,20 @@ try:
             send_command(ser, "LOG VERSION")
 
         elif choice == "2":
-            send_command(ser, "UNLOGALL")
+            print("\nReconfiguring K706 as RTK Base Station...")
+            for command in rtcm_config_commands:
+                send_command(ser, command)
+                time.sleep(0.5)  # Small delay between commands
 
         elif choice == "3":
             send_command(ser, "LOG COMCONFIG")
 
         elif choice == "4":
-            send_command(ser, "LOG COM2")
+            send_command(ser, "LOG BESTPOSA ONCE")
 
         elif choice == "5":
-            print("\nReconfiguring K706 as RTK Base Station...")
-            for command in rtcm_config_commands:
-                send_command(ser, command)
-                time.sleep(0.5)  # Small delay between commands to avoid overwhelming the receiver
+            print("\nSetting fixed position for RTK base...")
+            send_command(ser, "FIX POSITION 40.34536010088 -80.12878619119 326.5974")
 
         elif choice == "6":
             custom_command = input("Enter custom command: ")
