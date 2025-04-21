@@ -1,12 +1,24 @@
 import serial
 import time
 import sys
+import termios
+import tty
 
 # Serial port settings
 port_com1 = "/dev/ttyUSB_com1"  # Adjust to your COM1 port
 port_com2 = "/dev/ttyUSB_com2"  # Adjust to your COM2 port
 baudrate = 115200
 timeout = 1
+
+def clear_input_buffer():
+    """Clear the input buffer to prevent leftover characters from affecting the next input."""
+    # On Linux (Raspberry Pi), use termios to flush the input buffer
+    try:
+        termios.tcflush(sys.stdin, termios.TCIFLUSH)
+    except:
+        # Fallback: Consume remaining input manually
+        while sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
+            sys.stdin.readline()
 
 def send_command(command):
     """Send a command to COM1 and return the response."""
@@ -140,7 +152,12 @@ def read_com2_messages():
                                 # Firmware version (hardcode length)
                                 rcv_fw_len = 10  # "3.5.72.056"
                                 if pos + 1 + rcv_fw_len <= len(message_data):
-                                    rcv_fw = message_data[pos + 1:pos + 1 + rcv_fw_len].decode('ascii', errors='ignore')
+                                    # Replace null bytes with spaces to avoid truncation
+                                    fw_data = bytearray(message_data[pos + 1:pos + 1 + rcv_fw_len])
+                                    for i in range(len(fw_data)):
+                                        if fw_data[i] == 0:
+                                            fw_data[i] = ord(' ')
+                                    rcv_fw = fw_data.decode('ascii', errors='ignore')
                                     pos += 1 + rcv_fw_len
                                 else:
                                     rcv_fw = ""
@@ -163,6 +180,7 @@ def read_com2_messages():
                                 ant_sn_len = 0
                                 ant_sn = ""
                                 pos += 1
+                                # Fixed print statement to include station ID
                                 print(f"RTCM 1033 - Station ID: {station_id}, Receiver Descriptor: {rcv_desc}, Firmware: {rcv_fw}, Receiver Serial: {rcv_sn}, Antenna Descriptor: {ant_desc}, Antenna Serial Number: {ant_sn}")
                             else:
                                 print(f"RTCM 1033 - Message too short: {len(message_data)} bytes")
@@ -208,8 +226,8 @@ def print_menu():
 def main():
     while True:
         print_menu()
-        # Clear any leftover input buffer
-        sys.stdin.flush()
+        # Clear the input buffer before prompting for the menu choice
+        clear_input_buffer()
         choice = input("\nEnter your choice (1-7): ").strip()
 
         if choice == "1":
@@ -225,6 +243,8 @@ def main():
         elif choice == "6":
             custom_command = input("Enter custom command: ").strip()
             send_command(custom_command)
+            # Clear the input buffer after entering the custom command
+            clear_input_buffer()
         elif choice == "7":
             print("Exiting...")
             break
