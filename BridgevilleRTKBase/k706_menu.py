@@ -8,7 +8,7 @@ port_com2 = "/dev/ttyUSB_com2"  # COM2 (fixed symbolic link)
 baudrate = 115200
 timeout = 1  # Timeout for reading (in seconds)
 
-# RTCM configuration commands (removed unsupported QZSS messages)
+# RTCM configuration commands
 rtcm_config_commands = [
     "UNLOGALL",
     "FIX POSITION 40.34536010088 -80.12878619119 326.5974",
@@ -49,7 +49,7 @@ def send_command(ser, command):
         print("No response received")
 
 def read_com2_messages():
-    """Read and print messages from COM2 for 5 seconds."""
+    """Read and identify RTCM messages from COM2 for 5 seconds, printing message types in ASCII."""
     try:
         ser_com2 = serial.Serial(
             port=port_com2,
@@ -66,12 +66,44 @@ def read_com2_messages():
         print(f"\nConnected to {port_com2} at {baudrate} baud")
         print("Reading messages from COM2 for 5 seconds...")
 
+        buffer = bytearray()
         start_time = time.time()
         while (time.time() - start_time) < 5:
             if ser_com2.in_waiting > 0:
+                # Read available data and append to buffer
                 data = ser_com2.read(ser_com2.in_waiting)
-                hex_data = data.hex()
-                print(f"Raw RTCM (hex): {hex_data}")
+                buffer.extend(data)
+
+                # Process the buffer for complete RTCM messages
+                while len(buffer) >= 6:  # Minimum length for preamble, length field, and some data
+                    # Check for RTCM preamble (0xD3)
+                    if buffer[0] != 0xD3:
+                        # Skip bytes until we find the preamble
+                        buffer = buffer[1:]
+                        continue
+
+                    # Extract the message length (10 bits, after 6 reserved bits)
+                    length_bytes = buffer[1:3]  # Bytes 1 and 2 (after preamble)
+                    length = ((length_bytes[0] & 0x03) << 8) | length_bytes[1]  # Last 2 bits of byte 1 + byte 2
+
+                    # Total message length: preamble (1 byte) + length field (2 bytes) + data (length bytes) + CRC (3 bytes)
+                    total_length = 1 + 2 + length + 3
+
+                    # Check if we have the full message
+                    if len(buffer) < total_length:
+                        break  # Wait for more data
+
+                    # Extract the message data
+                    message_data = buffer[3:3 + length]
+
+                    # Extract the message ID (first 12 bits of the message data)
+                    if len(message_data) >= 2:
+                        message_id = ((message_data[0] << 4) | (message_data[1] >> 4)) & 0xFFF  # 12-bit message ID
+                        print(f"Received RTCM {message_id} message")
+
+                    # Remove the processed message from the buffer
+                    buffer = buffer[total_length:]
+
             time.sleep(0.1)
 
     except serial.SerialException as e:
