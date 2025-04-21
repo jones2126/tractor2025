@@ -1,8 +1,6 @@
 import serial
 import time
 import sys
-import termios
-import tty
 
 # Serial port settings
 port_com1 = "/dev/ttyUSB_com1"  # Adjust to your COM1 port
@@ -11,14 +9,11 @@ baudrate = 115200
 timeout = 1
 
 def clear_input_buffer():
-    """Clear the input buffer to prevent leftover characters from affecting the next input."""
-    # On Linux (Raspberry Pi), use termios to flush the input buffer
-    try:
-        termios.tcflush(sys.stdin, termios.TCIFLUSH)
-    except:
-        # Fallback: Consume remaining input manually
-        while sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
-            sys.stdin.readline()
+    """Clear the input buffer by consuming any remaining characters."""
+    # Set the terminal to non-blocking mode and read any remaining input
+    import select
+    while sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
+        sys.stdin.readline()
 
 def send_command(command):
     """Send a command to COM1 and return the response."""
@@ -48,7 +43,7 @@ def send_command(command):
 
         print("Response:")
         print(response)
-        print(f"OK! Command accepted! Port: COM1.")  # Print only once
+        print(f"OK! Command accepted! Port: COM1.")
 
     except serial.SerialException as e:
         print(f"Serial error on COM1: {e}")
@@ -101,22 +96,17 @@ def read_com2_messages():
                         message_id = ((message_data[0] << 4) | (message_data[1] >> 4)) & 0xFFF
                         print(f"Received RTCM {message_id} message")
 
-                        # Decode RTCM 1006 (Station coordinates with antenna height, malformed)
-                        if message_id == 1006:
-                            print(f"RTCM 1006 - Raw Data (hex): {' '.join(f'{byte:02x}' for byte in message_data)}")
-                            if len(message_data) >= 18:  # At least enough for ECEF X, Y, Z
+                        # Decode RTCM 1005 (Station coordinates without antenna height)
+                        if message_id == 1005:
+                            print(f"RTCM 1005 - Raw Data (hex): {' '.join(f'{byte:02x}' for byte in message_data)}")
+                            if len(message_data) >= 19:  # Enough for ECEF X, Y, Z
                                 station_id = (message_data[2] << 4) | (message_data[3] >> 4)
                                 ecef_x = int.from_bytes(message_data[6:10], byteorder='big', signed=True) * 0.0001
                                 ecef_y = int.from_bytes(message_data[10:14], byteorder='big', signed=True) * 0.0001
                                 ecef_z = int.from_bytes(message_data[14:18], byteorder='big', signed=True) * 0.0001
-                                print(f"RTCM 1006 - Station ID: {station_id}, ECEF X: {ecef_x:.4f} m, Y: {ecef_y:.4f} m, Z: {ecef_z:.4f} m")
-                                if len(message_data) >= 23:  # Check for antenna height field
-                                    ant_height = int.from_bytes(message_data[19:23], byteorder='big', signed=True) * 0.0001
-                                    print(f"RTCM 1006 - Antenna Height: {ant_height:.4f} m")
-                                else:
-                                    print("RTCM 1006 - Antenna height field incomplete")
+                                print(f"RTCM 1005 - Station ID: {station_id}, ECEF X: {ecef_x:.4f} m, Y: {ecef_y:.4f} m, Z: {ecef_z:.4f} m")
                             else:
-                                print(f"RTCM 1006 - Message too short: {len(message_data)} bytes")
+                                print(f"RTCM 1005 - Message too short: {len(message_data)} bytes")
 
                         # Decode RTCM 1008 (Station ID and antenna serial number)
                         elif message_id == 1008:
@@ -180,7 +170,6 @@ def read_com2_messages():
                                 ant_sn_len = 0
                                 ant_sn = ""
                                 pos += 1
-                                # Fixed print statement to include station ID
                                 print(f"RTCM 1033 - Station ID: {station_id}, Receiver Descriptor: {rcv_desc}, Firmware: {rcv_fw}, Receiver Serial: {rcv_sn}, Antenna Descriptor: {ant_desc}, Antenna Serial Number: {ant_sn}")
                             else:
                                 print(f"RTCM 1033 - Message too short: {len(message_data)} bytes")
@@ -201,7 +190,7 @@ def reconfigure_rtk_base():
     commands = [
         "UNLOGALL COM2",  # Stop all logs on COM2
         "FIX POSITION 40.34536010088 -80.12878619119 326.5974",  # Set fixed position
-        "LOG COM2 RTCM1006B ONTIME 10",  # Station coordinates
+        "LOG COM2 RTCM1005B ONTIME 10",  # Station coordinates (switched to 1005)
         "LOG COM2 RTCM1008B ONTIME 5",   # Station ID and antenna info
         "LOG COM2 RTCM1033B ONTIME 10",  # Receiver/antenna descriptors
         "LOG COM2 RTCM1004B ONTIME 1",   # GPS observations
