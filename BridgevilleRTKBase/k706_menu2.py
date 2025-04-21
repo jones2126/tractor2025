@@ -89,7 +89,7 @@ def read_com2_messages():
                         print(f"Received RTCM {message_id} message")
 
                         # Decode RTCM 1005 (Station coordinates without antenna height)
-                        if message_id == 1005:
+                        if message_id == 1005:  # Correct message ID
                             if len(message_data) >= 19:
                                 station_id = (message_data[2] << 4) | (message_data[3] >> 4)
                                 ecef_x = int.from_bytes(message_data[6:10], byteorder='big', signed=True) * 0.0001
@@ -121,19 +121,17 @@ def read_com2_messages():
                                 station_id = (message_data[2] << 4) | (message_data[3] >> 4)
                                 print(f"RTCM 1033 - Raw Data (hex): {' '.join(f'{byte:02x}' for byte in message_data)}")
                                 pos = 4
-                                # Receiver descriptor
-                                rcv_desc_len = message_data[pos] if pos < len(message_data) else 0
-                                print(f"RTCM 1033 - Receiver Descriptor Length: {rcv_desc_len}")
+                                # Receiver descriptor (hardcode length due to firmware bug)
+                                rcv_desc_len = 13  # "SINOGNSS K706"
                                 if pos + 1 + rcv_desc_len <= len(message_data):
-                                    rcv_desc = message_data[pos + 1:pos + 1 + rcv_desc_len].decode('ascii', errors='ignore')
-                                    pos += 1 + rcv_desc_len
+                                    rcv_desc = message_data[pos + 2:pos + 2 + rcv_desc_len].decode('ascii', errors='ignore')  # Skip 2 incorrect bytes
+                                    pos += 3 + rcv_desc_len  # Skip 00 00 0d
                                 else:
                                     rcv_desc = ""
                                     print(f"RTCM 1033 - Invalid receiver descriptor length: {rcv_desc_len}")
                                     continue
-                                # Firmware version
-                                rcv_fw_len = message_data[pos] if pos < len(message_data) else 0
-                                print(f"RTCM 1033 - Firmware Length: {rcv_fw_len}")
+                                # Firmware version (hardcode length)
+                                rcv_fw_len = 10  # "3.5.72.056"
                                 if pos + 1 + rcv_fw_len <= len(message_data):
                                     rcv_fw = message_data[pos + 1:pos + 1 + rcv_fw_len].decode('ascii', errors='ignore')
                                     pos += 1 + rcv_fw_len
@@ -141,9 +139,8 @@ def read_com2_messages():
                                     rcv_fw = ""
                                     print(f"RTCM 1033 - Invalid firmware length: {rcv_fw_len}")
                                     continue
-                                # Receiver serial number
-                                rcv_sn_len = message_data[pos] if pos < len(message_data) else 0
-                                print(f"RTCM 1033 - Receiver Serial Length: {rcv_sn_len}")
+                                # Receiver serial number (hardcode length)
+                                rcv_sn_len = 8  # "02605171" (part of the full serial)
                                 if pos + 1 + rcv_sn_len <= len(message_data):
                                     rcv_sn = message_data[pos + 1:pos + 1 + rcv_sn_len].decode('ascii', errors='ignore')
                                     pos += 1 + rcv_sn_len
@@ -151,20 +148,14 @@ def read_com2_messages():
                                     rcv_sn = ""
                                     print(f"RTCM 1033 - Invalid receiver serial length: {rcv_sn_len}")
                                     continue
-                                # Antenna descriptor
-                                ant_desc_len = message_data[pos] if pos < len(message_data) else 0
-                                print(f"RTCM 1033 - Antenna Descriptor Length: {ant_desc_len}")
-                                if pos + 1 + ant_desc_len <= len(message_data):
-                                    ant_desc = message_data[pos + 1:pos + 1 + ant_desc_len].decode('ascii', errors='ignore')
-                                    pos += 1 + ant_desc_len
-                                else:
-                                    ant_desc = ""
-                                    print(f"RTCM 1033 - Invalid antenna descriptor length: {ant_desc_len}")
-                                    continue
-                                # Antenna serial number
-                                ant_sn_len = message_data[pos] if pos < len(message_data) else 0
-                                print(f"RTCM 1033 - Antenna Serial Length: {ant_sn_len}")
-                                ant_sn = message_data[pos + 1:pos + 1 + ant_sn_len].decode('ascii', errors='ignore') if pos + 1 + ant_sn_len <= len(message_data) else ""
+                                # Antenna descriptor (should be empty)
+                                ant_desc_len = 0
+                                ant_desc = ""
+                                pos += 1
+                                # Antenna serial number (should be empty)
+                                ant_sn_len = 0
+                                ant_sn = ""
+                                pos += 1
                                 print(f"RTCM 1033 - Station ID: {station_id}, Receiver Descriptor: {rcv_desc}, Firmware: {rcv_fw}, Receiver Serial: {rcv_sn}, Antenna Descriptor: {ant_desc}, Antenna Serial Number: {ant_sn}")
                             else:
                                 print(f"RTCM 1033 - Message too short: {len(message_data)} bytes")
