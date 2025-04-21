@@ -2,52 +2,63 @@ import serial
 import time
 
 # Serial port settings
-port = "/dev/ttyUSB0"  # COM1 on your Raspberry Pi
 baudrate = 115200
 timeout = 1  # Timeout for reading (in seconds)
+ports = ["/dev/ttyUSB0", "/dev/ttyUSB1"]  # Test both ports
 
-try:
-    # Open the serial port
-    ser = serial.Serial(
-        port=port,
-        baudrate=baudrate,
-        bytesize=serial.EIGHTBITS,
-        parity=serial.PARITY_NONE,
-        stopbits=serial.STOPBITS_ONE,
-        timeout=timeout,
-        xonxoff=False,  # Disable software flow control
-        rtscts=False,   # Disable hardware flow control (RTS/CTS)
-        dsrdtr=False    # Disable hardware flow control (DSR/DTR)
-    )
+for port in ports:
+    print(f"\nTesting port: {port}")
+    try:
+        # Open the serial port
+        ser = serial.Serial(
+            port=port,
+            baudrate=baudrate,
+            bytesize=serial.EIGHTBITS,
+            parity=serial.PARITY_NONE,
+            stopbits=serial.STOPBITS_ONE,
+            timeout=timeout,
+            xonxoff=False,
+            rtscts=False,
+            dsrdtr=False
+        )
 
-    print(f"Connected to {port} at {baudrate} baud")
+        print(f"Connected to {port} at {baudrate} baud")
 
-    # Ensure the serial port is open
-    if ser.is_open:
-        # Send the LOG VERSION command (with CR+LF line ending)
-        command = "LOG VERSION\r\n"
-        ser.write(command.encode('ascii'))
-        print(f"Sent command: {command.strip()}")
+        # Ensure the serial port is open
+        if ser.is_open:
+            # Send the LOG VERSION command
+            command = "LOG VERSION\r\n"
+            ser.write(command.encode('ascii'))
+            print(f"Sent command: {command.strip()}")
 
-        # Wait briefly for the response
-        time.sleep(0.1)
+            # Wait for the response (increase wait time to 1 second)
+            time.sleep(1)
 
-        # Read the response
-        response = ser.readline().decode('ascii', errors='ignore').strip()
-        if response:
-            print(f"Response: {response}")
+            # Read the response (read multiple lines if necessary)
+            response_lines = []
+            start_time = time.time()
+            while (time.time() - start_time) < 2:  # Wait up to 2 seconds
+                if ser.in_waiting > 0:
+                    response = ser.readline().decode('ascii', errors='ignore').strip()
+                    if response:
+                        response_lines.append(response)
+                time.sleep(0.1)
+
+            if response_lines:
+                print("Response:")
+                for line in response_lines:
+                    print(line)
+            else:
+                print("No response received")
+
         else:
-            print("No response received")
+            print("Failed to open serial port")
 
-    else:
-        print("Failed to open serial port")
-
-except serial.SerialException as e:
-    print(f"Serial error: {e}")
-except Exception as e:
-    print(f"Error: {e}")
-finally:
-    # Close the serial port
-    if 'ser' in locals() and ser.is_open:
-        ser.close()
-        print("Serial port closed")
+    except serial.SerialException as e:
+        print(f"Serial error: {e}")
+    except Exception as e:
+        print(f"Error: {e}")
+    finally:
+        if 'ser' in locals() and ser.is_open:
+            ser.close()
+            print("Serial port closed")
