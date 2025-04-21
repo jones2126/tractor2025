@@ -88,16 +88,18 @@ def read_com2_messages():
                         message_id = ((message_data[0] << 4) | (message_data[1] >> 4)) & 0xFFF
                         print(f"Received RTCM {message_id} message")
 
-                        # Decode RTCM 1005 (Station coordinates without antenna height)
-                        if message_id == 1005:  # Correct message ID
-                            if len(message_data) >= 19:
-                                station_id = (message_data[2] << 4) | (message_data[3] >> 4)
-                                ecef_x = int.from_bytes(message_data[6:10], byteorder='big', signed=True) * 0.0001
-                                ecef_y = int.from_bytes(message_data[10:14], byteorder='big', signed=True) * 0.0001
-                                ecef_z = int.from_bytes(message_data[14:18], byteorder='big', signed=True) * 0.0001
-                                print(f"RTCM 1005 - Station ID: {station_id}, ECEF X: {ecef_x:.4f} m, Y: {ecef_y:.4f} m, Z: {ecef_z:.4f} m")
-                            else:
-                                print(f"RTCM 1005 - Message too short: {len(message_data)} bytes")
+                        # Debug RTCM 1005/1006
+                        if message_id in [1005, 1006]:
+                            print(f"RTCM {message_id} - Raw Data (hex): {' '.join(f'{byte:02x}' for byte in message_data)}")
+                            if message_id == 1005:
+                                if len(message_data) >= 19:
+                                    station_id = (message_data[2] << 4) | (message_data[3] >> 4)
+                                    ecef_x = int.from_bytes(message_data[6:10], byteorder='big', signed=True) * 0.0001
+                                    ecef_y = int.from_bytes(message_data[10:14], byteorder='big', signed=True) * 0.0001
+                                    ecef_z = int.from_bytes(message_data[14:18], byteorder='big', signed=True) * 0.0001
+                                    print(f"RTCM 1005 - Station ID: {station_id}, ECEF X: {ecef_x:.4f} m, Y: {ecef_y:.4f} m, Z: {ecef_z:.4f} m")
+                                else:
+                                    print(f"RTCM 1005 - Message too short: {len(message_data)} bytes")
 
                         # Decode RTCM 1008 (Station ID and antenna serial number)
                         elif message_id == 1008:
@@ -140,7 +142,7 @@ def read_com2_messages():
                                     print(f"RTCM 1033 - Invalid firmware length: {rcv_fw_len}")
                                     continue
                                 # Receiver serial number (hardcode length)
-                                rcv_sn_len = 8  # "02605171" (part of the full serial)
+                                rcv_sn_len = 8  # "02605171"
                                 if pos + 1 + rcv_sn_len <= len(message_data):
                                     rcv_sn = message_data[pos + 1:pos + 1 + rcv_sn_len].decode('ascii', errors='ignore')
                                     pos += 1 + rcv_sn_len
