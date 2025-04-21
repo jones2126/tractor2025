@@ -4,7 +4,7 @@ import time
 # Serial port settings
 baudrate = 115200
 timeout = 1  # Timeout for reading (in seconds)
-ports = ["/dev/ttyUSB0", "/dev/ttyUSB1"]  # Test both ports
+ports = ["/dev/ttyUSB_com1", "/dev/ttyUSB_com2"]  # Test both ports
 
 for port in ports:
     print(f"\nTesting port: {port}")
