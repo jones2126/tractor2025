@@ -2,15 +2,14 @@ import serial
 import time
 import sys
 
-# Serial port settings
-port_com1 = "/dev/ttyUSB_com1"  # Adjust to your COM1 port
-port_com2 = "/dev/ttyUSB_com2"  # Adjust to your COM2 port
+# Serial port settings for K706
+port_com1 = "/dev/ttyUSB_com1"  # K706 COM1
+port_com2 = "/dev/ttyUSB_com2"  # K706 COM2
 baudrate = 115200
 timeout = 1
 
 def clear_input_buffer():
     """Clear the input buffer by consuming any remaining characters."""
-    # Set the terminal to non-blocking mode and read any remaining input
     import select
     while sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
         sys.stdin.readline()
@@ -24,7 +23,7 @@ def send_command(command):
             bytesize=serial.EIGHTBITS,
             parity=serial.PARITY_NONE,
             stopbits=serial.STOPBITS_ONE,
-            timeout=5,  # 5-second timeout
+            timeout=5,
             xonxoff=False,
             rtscts=False,
             dsrdtr=False
@@ -36,11 +35,11 @@ def send_command(command):
 
         response = ""
         start_time = time.time()
-        while (time.time() - start_time) < 5:  # Wait up to 5 seconds
+        while (time.time() - start_time) < 5:
             if ser_com1.in_waiting > 0:
                 data = ser_com1.read(ser_com1.in_waiting).decode('ascii', errors='ignore')
                 response += data
-            time.sleep(0.1)  # Short sleep to prevent busy-waiting
+            time.sleep(0.1)
 
         print("Response:")
         print(response)
@@ -100,7 +99,7 @@ def read_com2_messages():
                         # Decode RTCM 1005 (Station coordinates without antenna height)
                         if message_id == 1005:
                             print(f"RTCM 1005 - Raw Data (hex): {' '.join(f'{byte:02x}' for byte in message_data)}")
-                            if len(message_data) >= 19:  # Enough for ECEF X, Y, Z
+                            if len(message_data) >= 19:
                                 station_id = (message_data[2] << 4) | (message_data[3] >> 4)
                                 ecef_x = int.from_bytes(message_data[6:10], byteorder='big', signed=True) * 0.0001
                                 ecef_y = int.from_bytes(message_data[10:14], byteorder='big', signed=True) * 0.0001
@@ -131,19 +130,16 @@ def read_com2_messages():
                                 station_id = (message_data[2] << 4) | (message_data[3] >> 4)
                                 print(f"RTCM 1033 - Raw Data (hex): {' '.join(f'{byte:02x}' for byte in message_data)}")
                                 pos = 4
-                                # Receiver descriptor (hardcode length due to firmware bug)
-                                rcv_desc_len = 13  # "SINOGNSS K706"
+                                rcv_desc_len = 13
                                 if pos + 1 + rcv_desc_len <= len(message_data):
-                                    rcv_desc = message_data[pos + 2:pos + 2 + rcv_desc_len].decode('ascii', errors='ignore')  # Skip 2 incorrect bytes
-                                    pos += 3 + rcv_desc_len  # Skip 00 00 0d
+                                    rcv_desc = message_data[pos + 2:pos + 2 + rcv_desc_len].decode('ascii', errors='ignore')
+                                    pos += 3 + rcv_desc_len
                                 else:
                                     rcv_desc = ""
                                     print(f"RTCM 1033 - Invalid receiver descriptor length: {rcv_desc_len}")
                                     continue
-                                # Firmware version (hardcode length)
-                                rcv_fw_len = 10  # "3.5.72.056"
+                                rcv_fw_len = 10
                                 if pos + 1 + rcv_fw_len <= len(message_data):
-                                    # Replace null bytes with spaces to avoid truncation
                                     fw_data = bytearray(message_data[pos + 1:pos + 1 + rcv_fw_len])
                                     for i in range(len(fw_data)):
                                         if fw_data[i] == 0:
@@ -154,8 +150,7 @@ def read_com2_messages():
                                     rcv_fw = ""
                                     print(f"RTCM 1033 - Invalid firmware length: {rcv_fw_len}")
                                     continue
-                                # Receiver serial number (hardcode length)
-                                rcv_sn_len = 8  # "02605171"
+                                rcv_sn_len = 8
                                 if pos + 1 + rcv_sn_len <= len(message_data):
                                     rcv_sn = message_data[pos + 1:pos + 1 + rcv_sn_len].decode('ascii', errors='ignore')
                                     pos += 1 + rcv_sn_len
@@ -163,11 +158,9 @@ def read_com2_messages():
                                     rcv_sn = ""
                                     print(f"RTCM 1033 - Invalid receiver serial length: {rcv_sn_len}")
                                     continue
-                                # Antenna descriptor (should be empty)
                                 ant_desc_len = 0
                                 ant_desc = ""
                                 pos += 1
-                                # Antenna serial number (should be empty)
                                 ant_sn_len = 0
                                 ant_sn = ""
                                 pos += 1
@@ -186,42 +179,54 @@ def read_com2_messages():
             ser_com2.close()
             print("COM2 serial port closed")
 
+"""
+RTCM Messages Used in K706 Configuration:
+- RTCM1005B: Stationary RTK Reference Station ARP coordinates (ECEF X, Y, Z).
+- RTCM1074B: GPS MSM4 - GPS L1/L2 observations (pseudorange, carrier phase).
+- RTCM1084B: GLONASS MSM4 - GLONASS L1/L2 observations (pseudorange, carrier phase).
+- RTCM1094B: Galileo MSM4 - Galileo E1/E5b observations (pseudorange, carrier phase).
+- RTCM1124B: BeiDou MSM4 - BeiDou B1I/B2I observations (pseudorange, carrier phase).
+- RTCM1230B: GLONASS Code-Phase Biases - GLONASS bias corrections for RTK.
+- RTCM1008B: Antenna Descriptor - Base station antenna type and serial number.
+- RTCM1033B: Receiver/Antenna Descriptors - Receiver and antenna metadata.
+"""
+
 def reconfigure_rtk_base():
-    """Reconfigure the K706 as an RTK base station with RTCM output."""
+    """Reconfigure the K706 as an RTK base station with RTCM output for PX1172RD."""
     commands = [
-        "UNLOGALL COM2",  # Stop all logs on COM2
-        "FIX POSITION 40.34536010088 -80.12878619119 326.5974",  # Set fixed position
-        "LOG COM2 RTCM1006B ONTIME 5",  # Station coordinates 
-        "LOG COM2 RTCM1008B ONTIME 5",   # Station ID and antenna info
-        "LOG COM2 RTCM1033B ONTIME 5",  # Receiver/antenna descriptors
-        "LOG COM2 RTCM1004B ONTIME 1",   # GPS observations
-        "LOG COM2 RTCM1012B ONTIME 1",   # GLONASS observations
-        "LOG COM2 RTCM1094B ONTIME 1",   # Galileo observations (if supported)
-        "LOG COM2 RTCM1124B ONTIME 1",   # BeiDou observations
-        "SAVECONFIG"  # Save configuration
+        "UNLOGALL COM2",
+        "FIX POSITION 40.34538488389 -80.12880797750 326.1906",
+        "LOG COM2 RTCM1005B ONTIME 10",
+        "LOG COM2 RTCM1074B ONTIME 1",
+        "LOG COM2 RTCM1084B ONTIME 1",
+        "LOG COM2 RTCM1094B ONTIME 1",
+        "LOG COM2 RTCM1124B ONTIME 1",
+        "LOG COM2 RTCM1230B ONTIME 10",
+        "LOG COM2 RTCM1008B ONTIME 10",
+        "LOG COM2 RTCM1033B ONTIME 10",
+        "SAVECONFIG"
     ]
     for cmd in commands:
         send_command(cmd)
 
 def log_bestposa():
-    """Log BESTPOSA on COM1 to get the best available position solution."""
+    """Log BESTPOSA on K706 COM1 to get the best available position solution."""
     send_command("LOG COM1 BESTPOSA ONCE")
 
 def print_menu():
     """Print the menu options."""
-    print("\n1. Send LOG VERSION")
-    print("2. Reconfigure as RTK Base Station (restore RTCM output)")
-    print("3. Send LOG COMCONFIG (show port configurations)")
-    print("4. Print 15 seconds of messages from COM2")
-    print("5. Send FIX POSITION (set fixed position for RTK base)")
-    print("6. Send Custom Command")
-    print("7. Log BESTPOSA on COM1 (best available position)")
+    print("\n1. Send LOG VERSION (K706)")
+    print("2. Reconfigure K706 as RTK Base Station (optimized for PX1172RD rover)")
+    print("3. Send LOG COMCONFIG (show K706 port configurations)")
+    print("4. Print 15 seconds of messages from K706 COM2")
+    print("5. Send FIX POSITION (set fixed position for K706 RTK base)")
+    print("6. Send Custom Command (K706)")
+    print("7. Log BESTPOSA on K706 COM1 (best available position)")
     print("8. Exit")
 
 def main():
     while True:
         print_menu()
-        # Clear the input buffer before prompting for the menu choice
         clear_input_buffer()
         choice = input("\nEnter your choice (1-8): ").strip()
 
@@ -234,12 +239,10 @@ def main():
         elif choice == "4":
             read_com2_messages()
         elif choice == "5":
-            send_command("FIX POSITION 40.34536010088 -80.12878619119 326.5974")
+            send_command("FIX POSITION 40.34538488389 -80.12880797750 326.1906")
         elif choice == "6":
             custom_command = input("Enter custom command: ").strip()
             send_command(custom_command)
-            # Clear the input buffer after entering the custom command
-            clear_input_buffer()
         elif choice == "7":
             log_bestposa()
         elif choice == "8":
