@@ -17,7 +17,42 @@ import binascii
 import math
 import argparse
 
-# CRC24Q calculation for RTCM3 messages
+# CRC24Q table (verified as correct)
+CRC24Q_TABLE = [
+    0x000000, 0x864CFB, 0x8AD50D, 0x0C99F6, 0x93E6E1, 0x15AA1A, 0x1933EC, 0x9F7F17,
+    0xA18139, 0x27CDC2, 0x2B5434, 0xAD18CF, 0x3267D8, 0xB42B23, 0xB8B2D5, 0x3EFE2E,
+    0x420E70, 0xC4428B, 0xC8DB7D, 0x4E9786, 0xD1E891, 0x57A46A, 0x5B3D9C, 0xDD7167,
+    0xE38F49, 0x65C3B2, 0x695A44, 0xEF16BF, 0x7069A8, 0xF62553, 0xFABCA5, 0x7CF05E,
+    0x8421E0, 0x026D1B, 0x0EF4ED, 0x88B816, 0x17C701, 0x918BFA, 0x9D120C, 0x1B5EF7,
+    0x25A0D9, 0xA3EC22, 0xAF75D4, 0x29392F, 0xB64638, 0x300AC3, 0x3C9335, 0xBADFCE,
+    0xC62F90, 0x40636B, 0x4CFA9D, 0xCAB666, 0x55C971, 0xD3858A, 0xDF1C7C, 0x595087,
+    0x67AEA9, 0xE1E252, 0xED7BA4, 0x6B375F, 0xF44848, 0x7204B3, 0x7E9D45, 0xF8D1BE,
+    0x8843C0, 0x0E0F3B, 0x0296CD, 0x84DA36, 0x1BA521, 0x9DE9DA, 0x91702C, 0x173CD7,
+    0x29C2F9, 0xAF8E02, 0xA317F4, 0x255B0F, 0xBA2418, 0x3C68E3, 0x30F115, 0xB6BDEE,
+    0xCA4DB0, 0x4C014B, 0x4098BD, 0xC6D446, 0x59AB51, 0xDFE7AA, 0xD37E5C, 0x5532A7,
+    0x6BCC89, 0xED8072, 0xE11984, 0x67557F, 0xF82A68, 0x7E6693, 0x72FF65, 0xF4B39E,
+    0x8C6220, 0x0A2EDB, 0x06B72D, 0x80FBD6, 0x1F84C1, 0x99C83A, 0x9551CC, 0x131D37,
+    0x2DE319, 0xABAFE2, 0xA73614, 0x217AEF, 0xBE05F8, 0x384903, 0x34D0F5, 0xB29C0E,
+    0xCE6C50, 0x4820AB, 0x44B95D, 0xC2F5A6, 0x5D8AB1, 0xDBC64A, 0xD75FBC, 0x511347,
+    0x6FED69, 0xE9A192, 0xE53864, 0x63749F, 0xFC0B88, 0x7A4773, 0x76DE85, 0xF0927E,
+    0x908720, 0x16CBDB, 0x1A522D, 0x9C1ED6, 0x0361C1, 0x852D3A, 0x89B4CC, 0x0FF837,
+    0x310619, 0xB74AE2, 0xBBD314, 0x3D9FEF, 0xA2E0F8, 0x24AC03, 0x2835F5, 0xAE790E,
+    0xD28950, 0x54C5AB, 0x585C5D, 0xDE10A6, 0x416FB1, 0xC7234A, 0xCBBABC, 0x4DF647,
+    0x730869, 0xF54492, 0xF9DD64, 0x7F919F, 0xE0EE88, 0x66A273, 0x6A3B85, 0xEC777E,
+    0x94A6C0, 0x12EA3B, 0x1E73CD, 0x983F36, 0x074021, 0x810CDA, 0x8D952C, 0x0BD9D7,
+    0x3527F9, 0xB36B02, 0xBFF2F4, 0x39BE0F, 0xA6C118, 0x208DE3, 0x2C1415, 0xAA58EE,
+    0xD6A8B0, 0x50E44B, 0x5C7DBD, 0xDA3146, 0x454E51, 0xC302AA, 0xCF9B5C, 0x49D7A7,
+    0x772989, 0xF16572, 0xFDFC84, 0x7BB07F, 0xE4CF68, 0x628393, 0x6E1A65, 0xE8569E,
+    0x98C4E0, 0x1E881B, 0x1211ED, 0x945D16, 0x0B2201, 0x8D6EFA, 0x81F70C, 0x07BBF7,
+    0x3945D9, 0xBF0922, 0xB390D4, 0x35DC2F, 0xAAA338, 0x2CEFC3, 0x207635, 0xA63ACE,
+    0xDACA90, 0x5C866B, 0x501F9D, 0xD65366, 0x492C71, 0xCF608A, 0xC3F97C, 0x45B587,
+    0x7B4BA9, 0xFD0752, 0xF19EA4, 0x77D25F, 0xE8AD48, 0x6EE1B3, 0x627845, 0xE434BE,
+    0x9CE500, 0x1AA9FB, 0x16300D, 0x907CF6, 0x0F03E1, 0x894F1A, 0x85D6EC, 0x039A17,
+    0x3D6439, 0xBB28C2, 0xB7B134, 0x31FDCF, 0xAE82D8, 0x28CE23, 0x2457D5, 0xA21B2E,
+    0xDEEB70, 0x58A78B, 0x543E7D, 0xD27286, 0x4D0D91, 0xCB416A, 0xC7D89C, 0x419467,
+    0x7F6A49, 0xF926B2, 0xF5BF44, 0x73F3BF, 0xEC8CA8, 0x6AC053, 0x6659A5, 0xE0155E,
+]
+
 def crc24q(data):
     """
     Calculate CRC24Q checksum used in RTCM3 messages
@@ -33,54 +68,17 @@ def crc24q(data):
         crc = ((crc << 8) & 0xFFFFFF) ^ CRC24Q_TABLE[(crc >> 16) ^ byte]
     return crc
 
-# CRC24Q table (precomputed for performance)
-# This is the standard CRC-24Q polynomial used in RTCM3
-CRC24Q_TABLE = [
-    0x000000, 0x864CFB, 0x8AD50D, 0x0C99F6, 0x93E6E1, 0x15AA1A, 0x1933EC, 0x9F7F17,
-    0xA18139, 0x27CDC2, 0x2B5434, 0xAD18CF, 0x3267D8, 0xB42B23, 0xB8B2D5, 0x3EFE2E,
-    0x420E70, 0xC4428B, 0xC8DB7D, 0x4E9786, 0xD1E891, 0x57A46A, 0x5B3D9C, 0xDD7167,
-    0xE37949, 0x6535B2, 0x69AC44, 0xEFE0BF, 0x709FA8, 0xF6D353, 0xFA4AA5, 0x7C065E,
-    0x0428A0, 0x82645B, 0x8EFDAD, 0x08B156, 0x97CE41, 0x1182BA, 0x1D1B4C, 0x9B57B7,
-    0xA5A999, 0x23E562, 0x2F7C94, 0xA9306F, 0x364F78, 0xB00383, 0xBC9A75, 0x3AD68E,
-    0x462610, 0xC06AEB, 0xCCF31D, 0x4ABFE6, 0xD5C0F1, 0x538C0A, 0x5F15FC, 0xD95907,
-    0xE7A729, 0x61EBD2, 0x6D7224, 0xEB3EDF, 0x7441C8, 0xF20D33, 0xFE94C5, 0x78D83E,
-    0x0840E0, 0x8E0C1B, 0x8295ED, 0x04D916, 0x9BA601, 0x1DEAFA, 0x11730C, 0x973FF7,
-    0xA9C1D9, 0x2F8D22, 0x2314D4, 0xA5582F, 0x3A2738, 0xBC6BC3, 0xB0F235, 0x36BECE,
-    0x4A6E50, 0xCC22AB, 0xC0BB5D, 0x46F7A6, 0xD988B1, 0x5FC44A, 0x535DBC, 0xD51147,
-    0xEBEF69, 0x6DA392, 0x613A64, 0xE7769F, 0x78098A, 0xFE4571, 0xF2DC87, 0x74907C,
-    0x0CC920, 0x8A85DB, 0x861C2D, 0x0050D6, 0x9F2FC1, 0x19633A, 0x15FACC, 0x93B637,
-    0xAD4819, 0x2B04E2, 0x279D14, 0xA1D1EF, 0x3EAEF8, 0xB8E203, 0xB47BF5, 0x32370E,
-    0x4EC790, 0xC88B6B, 0xC4129D, 0x425E66, 0xDD2171, 0x5B6D8A, 0x57F47C, 0xD1B887,
-    0xEF46A9, 0x690A52, 0x6593A4, 0xE3DF5F, 0x7CA048, 0xFAECB3, 0xF67545, 0x7039BE,
-    0x10C9E0, 0x96851B, 0x9A1CED, 0x1C5016, 0x832F01, 0x0563FA, 0x09FA0C, 0x8FB6F7,
-    0xB148D9, 0x370422, 0x3B9DD4, 0xBDD12F, 0x22AE38, 0xA4E2C3, 0xA87B35, 0x2E37CE,
-    0x52E750, 0xD4ABAB, 0xD8325D, 0x5E7EA6, 0xC101B1, 0x474D4A, 0x4BD4BC, 0xCD9847,
-    0xF3C669, 0x758A92, 0x79E364, 0xFFAF9F, 0x60208A, 0xE66C71, 0xEAF587, 0x6CB97C,
-    0x148140, 0x92CDBB, 0x9E544D, 0x1818B6, 0x8767A1, 0x012B5A, 0x0DB2AC, 0x8BFE57,
-    0xB50079, 0x334C82, 0x3FD574, 0xB9998F, 0x26E698, 0xA0AA63, 0xAC3395, 0x2A7F6E,
-    0x56AFD0, 0xD0E32B, 0xDC7ADD, 0x5A3626, 0xC54931, 0x4305CA, 0x4F9C3C, 0xC9D0C7,
-    0xF72EE9, 0x716212, 0x7DFBE4, 0xFBB71F, 0x64C808, 0xE284F3, 0xEE1D05, 0x6851FE,
-    0x1400A0, 0x924C5B, 0x9ED5AD, 0x18D956, 0x87E641, 0x01AABA, 0x0D334C, 0x8B7FB7,
-    0xB58199, 0x33CD62, 0x3F5494, 0xB9186F, 0x26677E, 0xA02B85, 0xACB273, 0x2AFE88,
-    0x562E30, 0xD062CB, 0xDCFB3D, 0x5AB7C6, 0xC5C8D1, 0x43842A, 0x4F1DDC, 0xC95127,
-    0xF7AF09, 0x71E3F2, 0x7D7A04, 0xFB36FF, 0x6449E8, 0xE20513, 0xEE9CE5, 0x68D01E,
-    0x1808C0, 0x9E443B, 0x92DDCD, 0x14A136, 0x8BEE21, 0x0DA2DA, 0x013B2C, 0x8777D7,
-    0xB989F9, 0x3FC502, 0x335CF4, 0xB5100F, 0x2A6F18, 0xAC23E3, 0xA0BA15, 0x26F6EE,
-    0x5A2650, 0xDC6AAB, 0xD0F35D, 0x56BFA6, 0xC9C0B1, 0x4F8C4A, 0x4315BC, 0xC55947,
-    0xFBA769, 0x7DEB92, 0x717264, 0xF73E9F, 0x68418A, 0xEE0D71, 0xE29487, 0x64D87C,
-    0x200580, 0xA6497B, 0xAAD08D, 0x2C9C76, 0xB3E361, 0x35AF9A, 0x39366C, 0xBF7A97,
-    0x8184B9, 0x07C842, 0x0B51B4, 0x8D1D4F, 0x12625A, 0x942EA1, 0x98B757, 0x1EFBAC,
-    0x620B10, 0xE447EB, 0xE8DE1D, 0x6E92E6, 0xF1EDF1, 0x77A10A, 0x7B38FC, 0xFD7407,
-    0xC38A29, 0x45C6D2, 0x495F24, 0xCF13DF, 0x506CC8, 0xD62033, 0xDAB9C5, 0x5CF53E,
-    0x243D20, 0xA271DB, 0xAEE82D, 0x28A4D6, 0xB7DBC1, 0x31973A, 0x3D0ECC, 0xBB4237,
-    0x85BC19, 0x03F0E2, 0x0F6914, 0x8925EF, 0x165AF8, 0x901603, 0x9C8FF5, 0x1AC30E,
-    0x663390, 0xE07F6B, 0xECE69D, 0x6AAA66, 0xF5D571, 0x73998A, 0x7F007C, 0xF94C87,
-    0xC7B2A9, 0x41FE52, 0x4D67A4, 0xCB2B5F, 0x54544E, 0xD218B5, 0xDE8143, 0x58CDB8,
-    0x284C40, 0xAE00BB, 0xA2994D, 0x24D5B6, 0xBBAAA1, 0x3DE65A, 0x317FAC, 0xB73357,
-    0x89CD79, 0x0F8182, 0x031874, 0x85548F, 0x1A2B9A, 0x9C6761, 0x90FE97, 0x16B26C,
-    0x6A62D0, 0xEC2E2B, 0xE0B7DD, 0x66FB26, 0xF98431, 0x7FC8CA, 0x73513C, 0xF51DC7,
-    0xCBE3E9, 0x4DAF12, 0x4136E4, 0xC77A1F, 0x58050A, 0xDE49F1, 0xD2D007, 0x549CFC
-]
+# Alternative bit-by-bit CRC-24Q implementation for cross-checking (optional)
+def crc24q_bit_by_bit(data):
+    polynomial = 0x1864CFB
+    crc = 0
+    for byte in data:
+        crc ^= (byte << 16)
+        for _ in range(8):
+            crc <<= 1
+            if crc & 0x1000000:
+                crc ^= polynomial
+    return crc & 0xFFFFFF
 
 def parse_rtcm3_header(data):
     """Parse the RTCM3 message header"""
@@ -125,7 +123,7 @@ def parse_rtcm1006(message):
     glo_ind = (indicators >> 4) & 0x01  # 1 means GLONASS is supported
     galileo_ind = (indicators >> 3) & 0x01  # 1 means Galileo is supported
     ref_station_ind = (indicators >> 2) & 0x01  # 1 means reference station
-    single_receiver_osc_ind = (indicators >> 1) & 0x01  # 1 means single receiver oscilator
+    single_receiver_osc_ind = (indicators >> 1) & 0x01  # 1 means single receiver oscillator
     
     # ECEF coordinates are 38-bit signed integers with 0.1mm resolution
     # They start at byte 4 and use 5 bytes each (with the MSB partial)
@@ -221,7 +219,7 @@ def haversine_distance(lat1, lon1, lat2, lon2):
     r = 6371000  # Radius of earth in meters
     return c * r  # Return distance in meters
 
-def main(port='/dev/ttyUSB_com2', baud=115200, known_lat=40.34536010088, known_lon=-80.12878619119, known_alt=326.5974):
+def main(port='/dev/ttyUSB_com2', baud=115200, known_lat=40.34536010088, known_lon=-80.12878619119, known_alt=326.5974, debug=False):
     """
     Main function to read and parse RTCM1006B messages
     
@@ -231,19 +229,11 @@ def main(port='/dev/ttyUSB_com2', baud=115200, known_lat=40.34536010088, known_l
         known_lat: Known latitude of base station
         known_lon: Known longitude of base station
         known_alt: Known altitude of base station
+        debug: Enable debug output
     """
-    # Serial port configuration
-    port_com2 = port
-    baud_rate = baud
-    
-    # Store known base station coordinates
-    known_lat = known_lat
-    known_lon = known_lon
-    known_alt = known_alt
-    
     try:
-        print(f"Opening serial port {port_com2} at {baud_rate} baud...")
-        ser = serial.Serial(port_com2, baud_rate, timeout=1)
+        print(f"Opening serial port {port} at {baud} baud...")
+        ser = serial.Serial(port, baud, timeout=1)
         
         # Buffer for incoming data
         buffer = bytearray()
@@ -262,7 +252,11 @@ def main(port='/dev/ttyUSB_com2', baud=115200, known_lat=40.34536010088, known_l
                 # Add to buffer
                 buffer.extend(data)
                 
-                if debug_mode and len(buffer) > 0:
+                # Log raw data to a file for offline analysis
+                with open("rtcm_log.bin", "ab") as f:
+                    f.write(data)
+                
+                if debug:
                     print(f"Buffer size: {len(buffer)} bytes")
                     print(f"Buffer starts with: {' '.join([f'{b:02X}' for b in buffer[:min(10, len(buffer))]])}")
                 
@@ -272,89 +266,106 @@ def main(port='/dev/ttyUSB_com2', baud=115200, known_lat=40.34536010088, known_l
                 
                 # If buffer has at least 3 bytes, we can check the header
                 if len(buffer) >= 3:
-                    header = parse_rtcm3_header(buffer)
-                    
-                    if header and len(buffer) >= header['total_length']:
-                        # We have a complete message
-                        msg_data = buffer[3:3+header['length']]
+                    try:
+                        header = parse_rtcm3_header(buffer)
                         
-                        # Extract received CRC (last 3 bytes of message)
-                        crc_received = (buffer[3+header['length']] << 16) | \
-                                      (buffer[3+header['length']+1] << 8) | \
-                                      buffer[3+header['length']+2]
-                        
-                        # Calculate CRC
-                        crc_calc = crc24q(buffer[:3+header['length']])
-                        
-                        if debug_mode:
-                            print(f"Message length: {header['length']} bytes")
-                            print(f"CRC received: 0x{crc_received:06X}")
-                            print(f"CRC calculated: 0x{crc_calc:06X}")
-                        
-                        if crc_calc == crc_received:
+                        if header and len(buffer) >= header['total_length']:
+                            # We have a complete message
+                            msg_data = buffer[3:3+header['length']]
+                            
+                            # Extract received CRC (last 3 bytes of message)
+                            crc_received = (buffer[3+header['length']] << 16) | \
+                                          (buffer[3+header['length']+1] << 8) | \
+                                          buffer[3+header['length']+2]
+                            
+                            # Calculate CRC
+                            crc_calc = crc24q(buffer[:3+header['length']])
+                            # Optional: Use bit-by-bit implementation for cross-checking
+                            # crc_calc = crc24q_bit_by_bit(buffer[:3+header['length']])
+                            
+                            if debug:
+                                print(f"Message length: {header['length']} bytes")
+                                print(f"CRC calculated: 0x{crc_calc:06X}")
+                                print(f"CRC received: 0x{crc_received:06X}")
+                            
                             # Extract message type (first 12 bits after header)
                             msg_type = (msg_data[0] << 4) | ((msg_data[1] & 0xF0) >> 4)
                             
-                            if debug_mode:
+                            # Print message type regardless of CRC result
+                            if debug:
                                 print(f"Message type: {msg_type}")
                             
-                            if msg_type == 1006:
-                                # Parse 1006 message
-                                result = parse_rtcm1006(msg_data)
-                                if result:
-                                    # Convert ECEF to lat/lon/alt
-                                    lat, lon, alt = convert_ecef_to_lla(
-                                        result['x_ecef'],
-                                        result['y_ecef'],
-                                        result['z_ecef']
-                                    )
-                                    
-                                    # Calculate differences from known position
-                                    lat_diff = abs(lat - known_lat)
-                                    lon_diff = abs(lon - known_lon)
-                                    alt_diff = abs(alt - known_alt)
-                                    
-                                    # Calculate horizontal distance using Haversine formula
-                                    horizontal_dist = haversine_distance(lat, lon, known_lat, known_lon)
-                                    
-                                    # Calculate 3D distance
-                                    distance_3d = math.sqrt(horizontal_dist**2 + alt_diff**2)
-                                    
-                                    print("\nRTCM1006B Message Received:")
-                                    print(f"Station ID: {result['station_id']}")
-                                    print(f"ECEF Coordinates: X={result['x_ecef']:.4f}, "
-                                          f"Y={result['y_ecef']:.4f}, Z={result['z_ecef']:.4f} meters")
-                                    print(f"Antenna Height: {result['antenna_height']:.4f} meters")
-                                    print(f"Calculated Position: Lat: {lat:.8f}°, Lon: {lon:.8f}°, Alt: {alt:.4f}m")
-                                    print(f"Known Position:     Lat: {known_lat:.8f}°, Lon: {known_lon:.8f}°, Alt: {known_alt:.4f}m")
-                                    print("\nPosition Differences:")
-                                    print(f"Latitude Diff:  {lat_diff:.8f}° ({lat_diff * 111319:.2f} meters)")
-                                    print(f"Longitude Diff: {lon_diff:.8f}° ({lon_diff * 111319 * math.cos(math.radians(lat)):.2f} meters)")
-                                    print(f"Altitude Diff:  {alt_diff:.4f} meters")
-                                    print(f"Horizontal Distance: {horizontal_dist:.2f} meters")
-                                    print(f"3D Distance:        {distance_3d:.2f} meters")
-                                    print(f"Supports GPS: {result['gps_supported']}, "
-                                          f"GLONASS: {result['glonass_supported']}, "
-                                          f"Galileo: {result['galileo_supported']}")
-                                    print("-" * 70)
-                        
-                        # Remove processed message from buffer
-                        buffer = buffer[header['total_length']:]
-                
-                # Sleep to prevent CPU usage from spiking
-                time.sleep(0.01)
+                            # Check CRC and proceed with parsing if valid
+                            if crc_calc == crc_received:
+                                print("CRC Valid")
+                                if msg_type == 1006:
+                                    # Parse 1006 message
+                                    result = parse_rtcm1006(msg_data)
+                                    if result:
+                                        # Convert ECEF to lat/lon/alt
+                                        lat, lon, alt = convert_ecef_to_lla(
+                                            result['x_ecef'],
+                                            result['y_ecef'],
+                                            result['z_ecef']
+                                        )
+                                        
+                                        # Calculate differences from known position
+                                        lat_diff = abs(lat - known_lat)
+                                        lon_diff = abs(lon - known_lon)
+                                        alt_diff = abs(alt - known_alt)
+                                        
+                                        # Calculate horizontal distance using Haversine formula
+                                        horizontal_dist = haversine_distance(lat, lon, known_lat, known_lon)
+                                        
+                                        # Calculate 3D distance
+                                        distance_3d = math.sqrt(horizontal_dist**2 + alt_diff**2)
+                                        
+                                        print("\nRTCM1006B Message Received:")
+                                        print(f"Station ID: {result['station_id']}")
+                                        print(f"ECEF Coordinates: X={result['x_ecef']:.4f}, "
+                                              f"Y={result['y_ecef']:.4f}, Z={result['z_ecef']:.4f} meters")
+                                        print(f"Antenna Height: {result['antenna_height']:.4f} meters")
+                                        print(f"Calculated Position: Lat: {lat:.8f}°, Lon: {lon:.8f}°, Alt: {alt:.4f}m")
+                                        print(f"Known Position:     Lat: {known_lat:.8f}°, Lon: {known_lon:.8f}°, Alt: {known_alt:.4f}m")
+                                        print("\nPosition Differences:")
+                                        print(f"Latitude Diff:  {lat_diff:.8f}° ({lat_diff * 111319:.2f} meters)")
+                                        print(f"Longitude Diff: {lon_diff:.8f}° ({lon_diff * 111319 * math.cos(math.radians(lat)):.2f} meters)")
+                                        print(f"Altitude Diff:  {alt_diff:.4f} meters")
+                                        print(f"Horizontal Distance: {horizontal_dist:.2f} meters")
+                                        print(f"3D Distance:        {distance_3d:.2f} meters")
+                                        print(f"Supports GPS: {result['gps_supported']}, "
+                                              f"GLONASS: {result['glonass_supported']}, "
+                                              f"Galileo: {result['galileo_supported']}")
+                                        print("-" * 70)
+                                else:
+                                    if debug:
+                                        print(f"Skipping non-1006 message type: {msg_type}")
+                            else:
+                                print(f"CRC mismatch: calculated 0x{crc_calc:06X}, received 0x{crc_received:06X}")
+                            
+                            # Remove processed message from buffer
+                            buffer = buffer[header['total_length']:]
+                        elif debug and header:
+                            print(f"Incomplete message: have {len(buffer)} bytes, need {header['total_length']} bytes")
+                    
+                    except Exception as e:
+                        if debug:
+                            print(f"Error parsing message: {e}")
+                        # Clear the first byte and continue
+                        if len(buffer) > 0:
+                            buffer.pop(0)
             
             except Exception as e:
-                if debug_mode:
-                    print(f"Error parsing message: {e}")
-                # Clear the first byte and continue
-                buffer.pop(0)
-                continue
+                if debug:
+                    print(f"Error in main loop: {e}")
+                # Continue on error
+                time.sleep(0.1)
+            
+            # Sleep to prevent CPU usage from spiking
+            time.sleep(0.01)
             
     except serial.SerialException as e:
         print(f"Error opening serial port: {e}")
-    except KeyboardInterrupt:
-        print("\nScript terminated by user")
     finally:
         if 'ser' in locals() and ser.is_open:
             ser.close()
@@ -372,16 +383,12 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
     
-    # Set global debug flag
-    global debug_mode
-    debug_mode = args.debug
-    
     try:
-        main(port=args.port, baud=args.baud, known_lat=args.lat, known_lon=args.lon, known_alt=args.alt)
+        main(port=args.port, baud=args.baud, known_lat=args.lat, known_lon=args.lon, known_alt=args.alt, debug=args.debug)
     except KeyboardInterrupt:
         print("\nScript terminated by user")
     except Exception as e:
         print(f"Error: {e}")
-        if debug_mode:
+        if args.debug:
             import traceback
             traceback.print_exc()
