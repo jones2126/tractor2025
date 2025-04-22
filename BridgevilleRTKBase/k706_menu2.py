@@ -16,7 +16,7 @@ def clear_input_buffer():
         sys.stdin.readline()
 
 def send_command(command):
-    """Send a command to COM1 and return the response."""
+    """Send a command to COM1 and return the response with a 5-second delay."""
     try:
         ser_com1 = serial.Serial(
             port=port_com1,
@@ -24,7 +24,7 @@ def send_command(command):
             bytesize=serial.EIGHTBITS,
             parity=serial.PARITY_NONE,
             stopbits=serial.STOPBITS_ONE,
-            timeout=timeout,
+            timeout=5,  # Increase timeout to 5 seconds
             xonxoff=False,
             rtscts=False,
             dsrdtr=False
@@ -36,13 +36,15 @@ def send_command(command):
 
         response = ""
         start_time = time.time()
-        while (time.time() - start_time) < timeout:
-            if ser_com1.in_waiting > 0:
-                response += ser_com1.read(ser_com1.in_waiting).decode('ascii', errors='ignore')
-            time.sleep(0.01)
-
         print("Response:")
-        print(response)
+        while (time.time() - start_time) < 5:  # Wait up to 5 seconds
+            if ser_com1.in_waiting > 0:
+                data = ser_com1.read(ser_com1.in_waiting).decode('ascii', errors='ignore')
+                response += data
+                print(data, end='')  # Print data as it arrives
+            else:
+                time.sleep(0.1)  # Short sleep to prevent busy-waiting
+        print("\n")
         print(f"OK! Command accepted! Port: COM1.")
 
     except serial.SerialException as e:
