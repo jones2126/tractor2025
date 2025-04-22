@@ -252,9 +252,6 @@ def main(port='/dev/ttyUSB_com2', baud=115200, known_lat=40.34536010088, known_l
         print(f"Will compare with known position: Lat: {known_lat}°, Lon: {known_lon}°, Alt: {known_alt}m")
         print("Press Ctrl+C to exit")
         
-        # Debugging flag - set to True to see raw buffer data
-        # This will be set by command line args
-        
         while True:
             try:
                 # Read available data
@@ -272,10 +269,9 @@ def main(port='/dev/ttyUSB_com2', baud=115200, known_lat=40.34536010088, known_l
                 # Look for RTCM3 preamble (0xD3)
                 while len(buffer) > 6 and buffer[0] != 0xD3:
                     buffer.pop(0)
-            
-            # If buffer has at least 3 bytes, we can check the header
-            if len(buffer) >= 3:
-                try:
+                
+                # If buffer has at least 3 bytes, we can check the header
+                if len(buffer) >= 3:
                     header = parse_rtcm3_header(buffer)
                     
                     if header and len(buffer) >= header['total_length']:
@@ -301,59 +297,59 @@ def main(port='/dev/ttyUSB_com2', baud=115200, known_lat=40.34536010088, known_l
                             
                             if debug_mode:
                                 print(f"Message type: {msg_type}")
-                                
-                except Exception as e:
-                    if debug_mode:
-                        print(f"Error parsing message: {e}")
-                    # Clear the first byte and continue
-                    buffer.pop(0)
-                    continue
+                            
+                            if msg_type == 1006:
+                                # Parse 1006 message
+                                result = parse_rtcm1006(msg_data)
+                                if result:
+                                    # Convert ECEF to lat/lon/alt
+                                    lat, lon, alt = convert_ecef_to_lla(
+                                        result['x_ecef'],
+                                        result['y_ecef'],
+                                        result['z_ecef']
+                                    )
+                                    
+                                    # Calculate differences from known position
+                                    lat_diff = abs(lat - known_lat)
+                                    lon_diff = abs(lon - known_lon)
+                                    alt_diff = abs(alt - known_alt)
+                                    
+                                    # Calculate horizontal distance using Haversine formula
+                                    horizontal_dist = haversine_distance(lat, lon, known_lat, known_lon)
+                                    
+                                    # Calculate 3D distance
+                                    distance_3d = math.sqrt(horizontal_dist**2 + alt_diff**2)
+                                    
+                                    print("\nRTCM1006B Message Received:")
+                                    print(f"Station ID: {result['station_id']}")
+                                    print(f"ECEF Coordinates: X={result['x_ecef']:.4f}, "
+                                          f"Y={result['y_ecef']:.4f}, Z={result['z_ecef']:.4f} meters")
+                                    print(f"Antenna Height: {result['antenna_height']:.4f} meters")
+                                    print(f"Calculated Position: Lat: {lat:.8f}°, Lon: {lon:.8f}°, Alt: {alt:.4f}m")
+                                    print(f"Known Position:     Lat: {known_lat:.8f}°, Lon: {known_lon:.8f}°, Alt: {known_alt:.4f}m")
+                                    print("\nPosition Differences:")
+                                    print(f"Latitude Diff:  {lat_diff:.8f}° ({lat_diff * 111319:.2f} meters)")
+                                    print(f"Longitude Diff: {lon_diff:.8f}° ({lon_diff * 111319 * math.cos(math.radians(lat)):.2f} meters)")
+                                    print(f"Altitude Diff:  {alt_diff:.4f} meters")
+                                    print(f"Horizontal Distance: {horizontal_dist:.2f} meters")
+                                    print(f"3D Distance:        {distance_3d:.2f} meters")
+                                    print(f"Supports GPS: {result['gps_supported']}, "
+                                          f"GLONASS: {result['glonass_supported']}, "
+                                          f"Galileo: {result['galileo_supported']}")
+                                    print("-" * 70)
                         
-                        if msg_type == 1006:
-                            # Parse 1006 message
-                            result = parse_rtcm1006(msg_data)
-                            if result:
-                                # Convert ECEF to lat/lon/alt
-                                lat, lon, alt = convert_ecef_to_lla(
-                                    result['x_ecef'],
-                                    result['y_ecef'],
-                                    result['z_ecef']
-                                )
-                                
-                                # Calculate differences from known position
-                                lat_diff = abs(lat - known_lat)
-                                lon_diff = abs(lon - known_lon)
-                                alt_diff = abs(alt - known_alt)
-                                
-                                # Calculate horizontal distance using Haversine formula
-                                horizontal_dist = haversine_distance(lat, lon, known_lat, known_lon)
-                                
-                                # Calculate 3D distance
-                                distance_3d = math.sqrt(horizontal_dist**2 + alt_diff**2)
-                                
-                                print("\nRTCM1006B Message Received:")
-                                print(f"Station ID: {result['station_id']}")
-                                print(f"ECEF Coordinates: X={result['x_ecef']:.4f}, "
-                                      f"Y={result['y_ecef']:.4f}, Z={result['z_ecef']:.4f} meters")
-                                print(f"Antenna Height: {result['antenna_height']:.4f} meters")
-                                print(f"Calculated Position: Lat: {lat:.8f}°, Lon: {lon:.8f}°, Alt: {alt:.4f}m")
-                                print(f"Known Position:     Lat: {known_lat:.8f}°, Lon: {known_lon:.8f}°, Alt: {known_alt:.4f}m")
-                                print("\nPosition Differences:")
-                                print(f"Latitude Diff:  {lat_diff:.8f}° ({lat_diff * 111319:.2f} meters)")
-                                print(f"Longitude Diff: {lon_diff:.8f}° ({lon_diff * 111319 * math.cos(math.radians(lat)):.2f} meters)")
-                                print(f"Altitude Diff:  {alt_diff:.4f} meters")
-                                print(f"Horizontal Distance: {horizontal_dist:.2f} meters")
-                                print(f"3D Distance:        {distance_3d:.2f} meters")
-                                print(f"Supports GPS: {result['gps_supported']}, "
-                                      f"GLONASS: {result['glonass_supported']}, "
-                                      f"Galileo: {result['galileo_supported']}")
-                                print("-" * 70)
-                    
-                    # Remove processed message from buffer
-                    buffer = buffer[header['total_length']:]
+                        # Remove processed message from buffer
+                        buffer = buffer[header['total_length']:]
+                
+                # Sleep to prevent CPU usage from spiking
+                time.sleep(0.01)
             
-            # Sleep to prevent CPU usage from spiking
-            time.sleep(0.01)
+            except Exception as e:
+                if debug_mode:
+                    print(f"Error parsing message: {e}")
+                # Clear the first byte and continue
+                buffer.pop(0)
+                continue
             
     except serial.SerialException as e:
         print(f"Error opening serial port: {e}")
