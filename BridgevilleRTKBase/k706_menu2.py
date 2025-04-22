@@ -190,9 +190,9 @@ def reconfigure_rtk_base():
     commands = [
         "UNLOGALL COM2",  # Stop all logs on COM2
         "FIX POSITION 40.34536010088 -80.12878619119 326.5974",  # Set fixed position
-        "LOG COM2 RTCM1005B ONTIME 10",  # Station coordinates (switched to 1005)
+        "LOG COM2 RTCM1006B ONTIME 5",  # Station coordinates 
         "LOG COM2 RTCM1008B ONTIME 5",   # Station ID and antenna info
-        "LOG COM2 RTCM1033B ONTIME 10",  # Receiver/antenna descriptors
+        "LOG COM2 RTCM1033B ONTIME 5",  # Receiver/antenna descriptors
         "LOG COM2 RTCM1004B ONTIME 1",   # GPS observations
         "LOG COM2 RTCM1012B ONTIME 1",   # GLONASS observations
         "LOG COM2 RTCM1094B ONTIME 1",   # Galileo observations (if supported)
