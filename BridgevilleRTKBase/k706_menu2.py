@@ -24,7 +24,7 @@ def send_command(command):
             bytesize=serial.EIGHTBITS,
             parity=serial.PARITY_NONE,
             stopbits=serial.STOPBITS_ONE,
-            timeout=5,  # Increase timeout to 5 seconds
+            timeout=5,  # 5-second timeout
             xonxoff=False,
             rtscts=False,
             dsrdtr=False
@@ -36,15 +36,14 @@ def send_command(command):
 
         response = ""
         start_time = time.time()
-        print("Response:")
         while (time.time() - start_time) < 5:  # Wait up to 5 seconds
             if ser_com1.in_waiting > 0:
                 data = ser_com1.read(ser_com1.in_waiting).decode('ascii', errors='ignore')
                 response += data
-                print(data, end='')  # Print data as it arrives
-            else:
-                time.sleep(0.1)  # Short sleep to prevent busy-waiting
-        print("\n")
+            time.sleep(0.1)  # Short sleep to prevent busy-waiting
+
+        print("Response:")
+        print(response)
         print(f"OK! Command accepted! Port: COM1.")
 
     except serial.SerialException as e:
@@ -204,6 +203,10 @@ def reconfigure_rtk_base():
     for cmd in commands:
         send_command(cmd)
 
+def log_bestposa():
+    """Log BESTPOSA on COM1 to get the best available position solution."""
+    send_command("LOG COM1 BESTPOSA ONCE")
+
 def print_menu():
     """Print the menu options."""
     print("\n1. Send LOG VERSION")
@@ -212,14 +215,15 @@ def print_menu():
     print("4. Print 15 seconds of messages from COM2")
     print("5. Send FIX POSITION (set fixed position for RTK base)")
     print("6. Send Custom Command")
-    print("7. Exit")
+    print("7. Log BESTPOSA on COM1 (best available position)")
+    print("8. Exit")
 
 def main():
     while True:
         print_menu()
         # Clear the input buffer before prompting for the menu choice
         clear_input_buffer()
-        choice = input("\nEnter your choice (1-7): ").strip()
+        choice = input("\nEnter your choice (1-8): ").strip()
 
         if choice == "1":
             send_command("LOG VERSION ONCE")
@@ -237,10 +241,12 @@ def main():
             # Clear the input buffer after entering the custom command
             clear_input_buffer()
         elif choice == "7":
+            log_bestposa()
+        elif choice == "8":
             print("Exiting...")
             break
         else:
-            print("Invalid choice, please select 1-7")
+            print("Invalid choice, please select 1-8")
 
 if __name__ == "__main__":
     main()
