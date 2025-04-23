@@ -17,9 +17,10 @@ from datetime import datetime
 import os
 
 # Configuration
-TCP_HOST = "192.168.1.233"  # Raspberry Pi local IP
-TCP_PORT = 5000
-ROVER_PORT = "COM36"  # PX1172RDP (Rover)
+TCP_HOST = "192.168.1.233"  # 'tractor' Raspberry Pi 5 local IP
+TCP_PORT = 6001
+# ROVER_PORT = "COM36"  # PX1172RDP (Rover) - when testing on Windows 10 laptop
+ROVER_PORT = "/dev/ttyUSB0"  # PX1172RDP (Rover); confirmed by dmesg
 BAUD_RATE = 115200
 STATUS_INTERVAL = 5  # Print RTK status every 5 seconds
 LOG_DIR = "logs"
