@@ -376,6 +376,7 @@ def list_serial_ports():
 
 if __name__ == "__main__":
     try:
+        DEBUG = 0
         # Completely disable standard input to avoid PuTTY echo issues
         sys.stdin = open(os.devnull, 'r')
         
@@ -399,7 +400,6 @@ if __name__ == "__main__":
                 fetch_rtcm()
             elif sys.argv[1] == "--debug":
                 # Enable debug output
-                global DEBUG
                 DEBUG = 1
                 print("Debug mode enabled")
                 fetch_rtcm()
