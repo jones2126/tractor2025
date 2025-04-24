@@ -27,23 +27,51 @@ latest_gps_data = {
 }
 
 def read_nmea(gps_serial):
-    """Read NMEA sentences from the GPS and parse them."""
+    """Read NMEA sentences from the GPS, parse RTK status, and print periodically."""
+    last_print_time = 0
+    current_fix_type = 0
+    
     while True:
         try:
             line = gps_serial.readline().decode('ascii', errors='ignore').strip()
             if line.startswith("$GPGGA"):
-                # Just log the received GPGGA message
-                print(f"Received NMEA: {line}")
+                # Parse the GPGGA sentence to extract RTK status
+                parts = line.split(',')
+                if len(parts) >= 7:
+                    try:
+                        fix_type = int(parts[6]) if parts[6] else 0
+                        current_fix_type = fix_type
+                        
+                        # Only print GPGGA once every 5 seconds
+                        current_time = time.time()
+                        if current_time - last_print_time >= 5:
+                            last_print_time = current_time
+                            
+                            # Determine RTK status based on fix type
+                            rtk_status = "Unknown"
+                            if fix_type == 0:
+                                rtk_status = "No Fix"
+                            elif fix_type == 1:
+                                rtk_status = "GPS Fix (Standard)"
+                            elif fix_type == 2:
+                                rtk_status = "DGPS Fix"
+                            elif fix_type == 4:
+                                rtk_status = "RTK Fixed"
+                            elif fix_type == 5:
+                                rtk_status = "RTK Float"
+                            
+                            # Print GPGGA with RTK status interpretation
+                            print(f"GPGGA: {rtk_status} - Satellites: {parts[7]} - Position: {parts[2]},{parts[3]} {parts[4]},{parts[5]}")
+                    except (ValueError, IndexError) as e:
+                        print(f"Error parsing fix type: {e}")
         except Exception as e:
             print(f"Error reading NMEA: {e}")
             time.sleep(1)
 
 def report_rtk_status():
     """Report RTK status every 5 seconds."""
-    while True:
-        time.sleep(5)
-        # Just report that we're receiving RTCM data
-        print("RTK status: Receiving RTCM corrections data")
+    # This function is no longer needed, as read_nmea handles reporting
+    pass
 
 def check_source_table():
     """Get the NTRIP source table to verify mountpoint."""
@@ -186,8 +214,9 @@ def fetch_rtcm():
             
             print("NTRIP server connected successfully")
 
-            # Sample GPGGA message - replace with your actual location
-            gpgga = "$GPGGA,092750.000,5321.6802,N,00630.3372,W,1,8,1.03,61.7,M,55.2,M,,*76\r\n"
+            # Sample GPGGA message - you can update with your actual location
+            # Format: $GPGGA,time,latitude,N/S,longitude,E/W,fix,satellites,hdop,altitude,M,geoid,M,,*checksum
+            gpgga = "$GPGGA,092750.000,4020.7226300,N,08007.7267270,W,1,8,1.03,328.681,M,-33.184,M,,*76\r\n"
             
             # Open serial port
             try:
@@ -197,14 +226,11 @@ def fetch_rtcm():
                 # Start NMEA reading in a separate thread
                 nmea_thread = threading.Thread(target=read_nmea, args=(gps_serial,), daemon=True)
                 nmea_thread.start()
-
-                # Start status reporting in a separate thread
-                report_thread = threading.Thread(target=report_rtk_status, daemon=True)
-                report_thread.start()
                 
                 # Send initial data if any
                 if initial_data:
                     gps_serial.write(initial_data)
+                    # Don't print binary data, just the count
                     print(f"Sent {len(initial_data)} bytes of RTCM data to GPS")
             except Exception as e:
                 print(f"Error opening serial port: {e}")
@@ -237,7 +263,7 @@ def fetch_rtcm():
                         print("Connection closed by server")
                         break
                     
-                    # Send to GPS and count bytes
+                    # Send to GPS and count bytes without printing binary data
                     gps_serial.write(data)
                     data_received += len(data)
                     print(f"Sent {len(data)} bytes of RTCM data to GPS (Total: {data_received} bytes)")
@@ -245,6 +271,9 @@ def fetch_rtcm():
                 except socket.timeout:
                     # Timeout is normal, just continue
                     continue
+                except KeyboardInterrupt:
+                    print("\nProgram terminated by user")
+                    break
                 except Exception as e:
                     print(f"Error receiving data: {e}")
                     break
@@ -308,6 +337,11 @@ def list_serial_ports():
 
 if __name__ == "__main__":
     try:
+        # Handle Ctrl+C gracefully
+        signal_handler = lambda sig, frame: sys.exit(0)
+        if hasattr(signal, 'SIGINT'):
+            signal.signal(signal.SIGINT, signal_handler)
+            
         if len(sys.argv) > 1:
             if sys.argv[1] == "--ports":
                 list_serial_ports()
