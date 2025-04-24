@@ -5,6 +5,7 @@ import time
 import threading
 import traceback
 import sys
+import signal
 
 # NTRIP server details - use the hostname instead of IP
 NTRIP_SERVER = "rtk2go.com"
