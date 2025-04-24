@@ -6,6 +6,7 @@ import threading
 import traceback
 import sys
 import signal
+import os
 
 # NTRIP server details - use the hostname instead of IP
 NTRIP_SERVER = "rtk2go.com"
@@ -17,6 +18,9 @@ PASSWORD = "none"
 # Serial port details for Raspberry Pi
 SERIAL_PORT = "/dev/ttyUSB0"  # Common for USB-to-Serial adapters on Linux
 BAUDRATE = 115200
+
+# Debug flag - set to 0 to reduce output verbosity
+DEBUG = 0
 
 # Global variables for RTK status
 latest_gps_data = {
@@ -64,15 +68,12 @@ def read_nmea(gps_serial):
                             # Print GPGGA with RTK status interpretation
                             print(f"GPGGA: {rtk_status} - Satellites: {parts[7]} - Position: {parts[2]},{parts[3]} {parts[4]},{parts[5]}")
                     except (ValueError, IndexError) as e:
-                        print(f"Error parsing fix type: {e}")
+                        if DEBUG:
+                            print(f"Error parsing fix type: {e}")
         except Exception as e:
-            print(f"Error reading NMEA: {e}")
+            if DEBUG:
+                print(f"Error reading NMEA: {e}")
             time.sleep(1)
-
-def report_rtk_status():
-    """Report RTK status every 5 seconds."""
-    # This function is no longer needed, as read_nmea handles reporting
-    pass
 
 def check_source_table():
     """Get the NTRIP source table to verify mountpoint."""
@@ -110,16 +111,33 @@ def check_source_table():
                 break
         
         # Check if our mountpoint exists (without printing the whole table)
-        response_text = response.decode('utf-8', errors='ignore')
-        
-        if MOUNTPOINT in response_text:
-            print(f"✓ Mountpoint '{MOUNTPOINT}' found in source table!")
-            print("Source table request successful.")
-            return True
-        else:
-            print(f"❌ Mountpoint '{MOUNTPOINT}' not found in the source table.")
-            print("Please check if you're using the correct mountpoint name.")
-            return False
+        try:
+            # Only decode text portions to avoid binary garbage
+            response_text = ""
+            for chunk in response.split(b'\r\n\r\n', 1):
+                try:
+                    response_text += chunk.decode('ascii', errors='ignore')
+                except:
+                    pass
+            
+            if MOUNTPOINT in response_text:
+                print(f"✓ Mountpoint '{MOUNTPOINT}' found in source table!")
+                print("Source table request successful.")
+                return True
+            else:
+                print(f"❌ Mountpoint '{MOUNTPOINT}' not found in the source table.")
+                print("Please check if you're using the correct mountpoint name.")
+                return False
+        except:
+            # Fallback - just check for mountpoint without decoding
+            if MOUNTPOINT.encode() in response:
+                print(f"✓ Mountpoint '{MOUNTPOINT}' found in source table!")
+                print("Source table request successful.")
+                return True
+            else:
+                print(f"❌ Mountpoint '{MOUNTPOINT}' not found in the source table.")
+                print("Please check if you're using the correct mountpoint name.")
+                return False
         
     except Exception as e:
         print(f"Error checking source table: {e}")
@@ -185,24 +203,32 @@ def fetch_rtcm():
             if header_end >= 0:
                 header = response_buffer[:header_end+4]
                 initial_data = response_buffer[header_end+4:]
-                header_text = header.decode('utf-8', errors='ignore')
-                print("Server response:", header_text)
+                # Only extract status code and message, not the binary content
+                try:
+                    first_line = header.split(b'\r\n')[0].decode('ascii', errors='ignore')
+                    print("Server response:", first_line)
+                except:
+                    print("Server response received")
             else:
-                header_text = response_buffer.decode('utf-8', errors='ignore')
-                print("Server response:", header_text)
+                # Attempt to extract just first line from response
+                try:
+                    first_line = response_buffer.split(b'\r\n')[0].decode('ascii', errors='ignore')
+                    print("Server response:", first_line)
+                except:
+                    print("Server response received")
                 initial_data = b""
             
-            # Check for successful response
-            if "200 OK" not in header_text:
+            # Check for successful response - using our extracted first line
+            if "200 OK" not in response_buffer.decode('ascii', errors='ignore'):
                 print("Failed to connect to NTRIP server")
-                print(f"Response: {header_text}")
                 
                 # Provide specific error feedback
-                if "401" in header_text:
+                response_text = response_buffer.decode('ascii', errors='ignore')
+                if "401" in response_text:
                     print("Error: Authentication failed. Check username and password.")
-                elif "403" in header_text:
+                elif "403" in response_text:
                     print("Error: Access forbidden. No permission for this mountpoint.")
-                elif "404" in header_text:
+                elif "404" in response_text:
                     print("Error: Mountpoint not found. Check mountpoint name.")
                 else:
                     print("Error: Unknown error. Check connection settings.")
@@ -231,8 +257,8 @@ def fetch_rtcm():
                 # Send initial data if any
                 if initial_data:
                     gps_serial.write(initial_data)
-                    # Don't print binary data, just the count
-                    print(f"Sent {len(initial_data)} bytes of RTCM data to GPS")
+                    if DEBUG:
+                        print(f"Sent {len(initial_data)} bytes of RTCM data to GPS")
             except Exception as e:
                 print(f"Error opening serial port: {e}")
                 print("Please check your GPS connection and port settings.")
@@ -248,35 +274,44 @@ def fetch_rtcm():
             data_received = 0
             
             # Main data receiving loop
-            while True:
-                # Send GPGGA update every 10 seconds
-                current_time = time.time()
-                if current_time - last_gpgga_time >= 10:
-                    client.send(gpgga.encode())
-                    print(f"Sent position update to NTRIP server")
-                    last_gpgga_time = current_time
-                
-                # Receive RTCM data with a short timeout
-                client.settimeout(1.0)
+            running = True
+            while running:
                 try:
-                    data = client.recv(1024)
-                    if not data:
-                        print("Connection closed by server")
+                    # Send GPGGA update every 10 seconds
+                    current_time = time.time()
+                    if current_time - last_gpgga_time >= 10:
+                        client.send(gpgga.encode())
+                        if DEBUG:
+                            print(f"Sent position update to NTRIP server")
+                        last_gpgga_time = current_time
+                    
+                    # Receive RTCM data with a short timeout
+                    client.settimeout(1.0)
+                    try:
+                        data = client.recv(1024)
+                        if not data:
+                            print("Connection closed by server")
+                            break
+                        
+                        # Send to GPS and count bytes without printing binary data
+                        gps_serial.write(data)
+                        data_received += len(data)
+                        if DEBUG:
+                            print(f"Sent {len(data)} bytes of RTCM data to GPS (Total: {data_received} bytes)")
+                        
+                    except socket.timeout:
+                        # Timeout is normal, just continue
+                        continue
+                    except Exception as e:
+                        if DEBUG:
+                            print(f"Error receiving data: {e}")
                         break
-                    
-                    # Send to GPS and count bytes without printing binary data
-                    gps_serial.write(data)
-                    data_received += len(data)
-                    print(f"Sent {len(data)} bytes of RTCM data to GPS (Total: {data_received} bytes)")
-                    
-                except socket.timeout:
-                    # Timeout is normal, just continue
-                    continue
                 except KeyboardInterrupt:
                     print("\nProgram terminated by user")
-                    break
+                    running = False
                 except Exception as e:
-                    print(f"Error receiving data: {e}")
+                    if DEBUG:
+                        print(f"Error in main loop: {e}")
                     break
             
             # Close serial port and socket properly
@@ -288,6 +323,9 @@ def fetch_rtcm():
             
             break  # Exit retry loop if successful
 
+        except KeyboardInterrupt:
+            print("\nProgram terminated by user")
+            break
         except Exception as e:
             print(f"Error: {e}")
             retry_count += 1
@@ -338,11 +376,20 @@ def list_serial_ports():
 
 if __name__ == "__main__":
     try:
-        # Handle Ctrl+C gracefully
-        signal_handler = lambda sig, frame: sys.exit(0)
+        # Completely disable standard input to avoid PuTTY echo issues
+        sys.stdin = open(os.devnull, 'r')
+        
+        # Install better signal handlers
+        def signal_handler(sig, frame):
+            print("\nProgram terminated by user")
+            # Force exit without displaying any more output
+            os._exit(0)
+            
+        # Register signal handler for SIGINT (Ctrl+C)
         if hasattr(signal, 'SIGINT'):
             signal.signal(signal.SIGINT, signal_handler)
             
+        # Process command line arguments
         if len(sys.argv) > 1:
             if sys.argv[1] == "--ports":
                 list_serial_ports()
@@ -350,14 +397,23 @@ if __name__ == "__main__":
                 SERIAL_PORT = sys.argv[1]
                 print(f"Using specified serial port: {SERIAL_PORT}")
                 fetch_rtcm()
+            elif sys.argv[1] == "--debug":
+                # Enable debug output
+                global DEBUG
+                DEBUG = 1
+                print("Debug mode enabled")
+                fetch_rtcm()
             else:
                 print("Unknown command. Available commands:")
                 print("  --ports  : List available serial ports")
+                print("  --debug  : Enable verbose debug output")
                 print("  /dev/X   : Use specific serial port (e.g., /dev/ttyUSB0)")
         else:
             fetch_rtcm()
     except KeyboardInterrupt:
         print("\nProgram terminated by user")
+        # Force exit to prevent any further output
+        os._exit(0)
     except Exception as e:
         print(f"Unhandled exception: {e}")
         traceback.print_exc()
