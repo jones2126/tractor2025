@@ -376,7 +376,6 @@ def list_serial_ports():
 
 if __name__ == "__main__":
     try:
-        DEBUG = 0
         # Completely disable standard input to avoid PuTTY echo issues
         sys.stdin = open(os.devnull, 'r')
         
@@ -397,19 +396,52 @@ if __name__ == "__main__":
             elif sys.argv[1].startswith("/dev/"):
                 SERIAL_PORT = sys.argv[1]
                 print(f"Using specified serial port: {SERIAL_PORT}")
-                fetch_rtcm()
+                # Run fetch_rtcm in a continuous reconnection loop
+                while True:
+                    try:
+                        fetch_rtcm()
+                        print("Connection closed. Reconnecting in 5 seconds...")
+                        time.sleep(5)
+                    except KeyboardInterrupt:
+                        raise
+                    except Exception as e:
+                        print(f"Error: {e}")
+                        print("Reconnecting in 10 seconds...")
+                        time.sleep(10)
             elif sys.argv[1] == "--debug":
                 # Enable debug output
                 DEBUG = 1
                 print("Debug mode enabled")
-                fetch_rtcm()
+                # Run fetch_rtcm in a continuous reconnection loop
+                while True:
+                    try:
+                        fetch_rtcm()
+                        print("Connection closed. Reconnecting in 5 seconds...")
+                        time.sleep(5)
+                    except KeyboardInterrupt:
+                        raise
+                    except Exception as e:
+                        print(f"Error: {e}")
+                        print("Reconnecting in 10 seconds...")
+                        time.sleep(10)
             else:
                 print("Unknown command. Available commands:")
                 print("  --ports  : List available serial ports")
                 print("  --debug  : Enable verbose debug output")
                 print("  /dev/X   : Use specific serial port (e.g., /dev/ttyUSB0)")
         else:
-            fetch_rtcm()
+            # Run fetch_rtcm in a continuous reconnection loop
+            while True:
+                try:
+                    fetch_rtcm()
+                    print("Connection closed. Reconnecting in 5 seconds...")
+                    time.sleep(5)
+                except KeyboardInterrupt:
+                    raise
+                except Exception as e:
+                    print(f"Error: {e}")
+                    print("Reconnecting in 10 seconds...")
+                    time.sleep(10)
     except KeyboardInterrupt:
         print("\nProgram terminated by user")
         # Force exit to prevent any further output
