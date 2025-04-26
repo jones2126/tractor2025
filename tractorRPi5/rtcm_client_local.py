@@ -3,7 +3,7 @@ rtcm_tcp_client_local.py
 =======================
 This script runs on a Raspberry Pi 5 to connect to a TCP server on a Raspberry Pi 3 (192.168.1.233:6001),
 receive RTCM data, and forward it to a rover (PX1172RD-EVB on /dev/ttyUSB0). It monitors the rover's NMEA
-output to check RTK status and logs both RTCM and NMEA data to files.
+output to check RTK status and logs both RTCM and NMEA data to files. It also tracks the rate of each RTCM message type.
 
 Usage:
     python rtcm_tcp_client_local.py
@@ -26,6 +26,7 @@ TCP_PORT = 6001
 ROVER_PORT = "/dev/ttyUSB0"  # PX1172RD-EVB (Rover)
 BAUD_RATE = 115200
 STATUS_INTERVAL = 5  # Print RTK status every 5 seconds
+RATE_REPORT_INTERVAL = 10  # Report RTCM message rates every 10 seconds
 LOG_DIR = "logs"
 RECONNECT_DELAY = 5  # Seconds to wait before reconnecting
 
@@ -33,13 +34,25 @@ def is_rtcm_data(data):
     """Check if data starts with RTCM 3.x preamble (0xD3)."""
     return data.startswith(b'\xD3')
 
-def count_rtcm_messages(data, message_count):
-    """Count RTCM messages in the data by looking for 0xD3 preambles."""
-    count = 0
-    for i in range(len(data)):
-        if data[i] == 0xD3:  # RTCM 3.x preamble
-            count += 1
-    return message_count + count
+def parse_rtcm_message(data, pos):
+    """
+    Parse an RTCM message starting at pos.
+    Returns (message_type, message_length, new_pos).
+    """
+    if len(data) < pos + 3:
+        return None, None, pos  # Not enough data for header
+    if data[pos] != 0xD3:
+        return None, None, pos  # Not an RTCM message
+
+    # Extract message length (10 bits) from bytes 1-2
+    length = ((data[pos + 1] & 0x03) << 8) | data[pos + 2]
+    if len(data) < pos + 3 + length:
+        return None, None, pos  # Not enough data for full message
+
+    # Extract message type (12 bits) from bytes 3-4
+    message_type = ((data[pos + 3] & 0x0F) << 8) | data[pos + 4]
+    new_pos = pos + 3 + length  # Move to end of message
+    return message_type, length, new_pos
 
 def connect_to_server():
     """Connect to the TCP server with retry logic."""
@@ -72,9 +85,9 @@ def handle_gnss():
         return
 
     # Variables for RTCM rate monitoring
-    rtcm_message_count = 0
-    last_rate_check = time.time()
     rtcm_buffer = b''  # Buffer to handle jitter
+    message_counts = {}  # Dictionary to track counts of each message type
+    last_rate_check = time.time()
 
     # Variables for NMEA monitoring
     last_status_time = time.time()
@@ -94,25 +107,43 @@ def handle_gnss():
                     logging.warning("TCP connection closed by server. Reconnecting...")
                     break
 
-                # Validate and buffer RTCM data
-                if is_rtcm_data(data):
-                    rtcm_buffer += data
-                    rtcm_message_count = count_rtcm_messages(data, rtcm_message_count)
+                rtcm_buffer += data
 
-                    # Send RTCM data every 0.5s to mitigate jitter
-                    if time.time() - last_rate_check >= 0.5:
+                # Parse RTCM messages from the buffer
+                pos = 0
+                while pos < len(rtcm_buffer):
+                    message_type, length, new_pos = parse_rtcm_message(rtcm_buffer, pos)
+                    if message_type is None:
+                        break  # Incomplete message, wait for more data
+                    message_counts[message_type] = message_counts.get(message_type, 0) + 1
+                    pos = new_pos
+
+                # Remove processed messages from buffer
+                rtcm_buffer = rtcm_buffer[pos:]
+
+                # Send RTCM data every 0.5s to mitigate jitter
+                current_time = time.time()
+                if current_time - last_rate_check >= 0.5:
+                    if rtcm_buffer:
                         rover.write(rtcm_buffer)
                         rover.flush()
                         rtcm_log.write(rtcm_buffer)
                         rtcm_log.flush()
-                        rtcm_buffer = b''
 
-                        # Calculate and log RTCM message rate
-                        elapsed = time.time() - last_rate_check
-                        rate = rtcm_message_count / elapsed if elapsed > 0 else 0
-                        logging.info(f"RTCM Message Rate: {rate:.2f} Hz ({rtcm_message_count} messages in {elapsed:.2f}s)")
-                        rtcm_message_count = 0
-                        last_rate_check = time.time()
+                    # Report message rates every 10 seconds
+                    if current_time - last_rate_check >= RATE_REPORT_INTERVAL:
+                        elapsed = current_time - last_rate_check
+                        if elapsed > 0:
+                            logging.info("RTCM Message Rates (messages/sec):")
+                            total_count = 0
+                            for msg_type, count in sorted(message_counts.items()):
+                                rate = count / elapsed
+                                total_count += count
+                                logging.info(f"  Type {msg_type}: {rate:.2f} Hz ({count} messages)")
+                            total_rate = total_count / elapsed
+                            logging.info(f"  Total: {total_rate:.2f} Hz ({total_count} messages in {elapsed:.2f}s)")
+                        message_counts.clear()  # Reset counts
+                        last_rate_check = current_time
 
                 # Read NMEA data
                 line = rover.readline().decode(errors='ignore').strip()
