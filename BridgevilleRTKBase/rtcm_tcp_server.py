@@ -18,7 +18,7 @@ import os
 BASE_PORT = "/dev/ttyUSB0"  # Confirmed by your output
 BAUD_RATE = 115200
 TCP_HOST = "0.0.0.0"  # Listen on all interfaces
-TCP_PORT = 5000  # Port for TCP server
+TCP_PORT = 6001  # Port for TCP server
 LOG_DIR = "logs"
 
 # Shared variables
