@@ -11,6 +11,7 @@ Usage:
 import socket
 import serial
 import threading
+import time  # Added missing import
 from datetime import datetime
 import os
 import logging
