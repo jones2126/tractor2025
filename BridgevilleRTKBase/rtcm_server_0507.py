@@ -12,31 +12,30 @@ import time
 from datetime import datetime
 import os
 import logging
-import logging.handlers  # Explicit import to ensure availability
+import logging.handlers
 import struct
 import glob
 import gzip
 
-# Debug: Print logging module source to confirm it's the standard library
+# Debug: Print logging module source
 logger_temp = logging.getLogger('Debug')
 logger_temp.info(f"Logging module source: {logging.__file__}")
 
 # Configure application logging
 logger = logging.getLogger('RTCMServer')
 logger.setLevel(logging.INFO)
+# logger.setLevel(logging.DEBUG)  # Uncomment for debug-level CRC warnings
 formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 
-# Ensure log directory exists
 log_dir = "logs"
 if not os.path.exists(log_dir):
     os.makedirs(log_dir)
 
-# Use TimedRotatingFileHandler for application logs
 app_log_handler = logging.handlers.TimedRotatingFileHandler(
     filename=os.path.join(log_dir, 'rtcm_server.log'),
-    when='midnight',  # Rotate at midnight daily
+    when='midnight',
     interval=1,
-    backupCount=7  # Keep 7 days of logs
+    backupCount=7
 )
 app_log_handler.setFormatter(formatter)
 logger.addHandler(app_log_handler)
@@ -50,10 +49,10 @@ BAUD_RATE = 115200
 TCP_HOST = "0.0.0.0"
 TCP_PORT = 6001
 RTCM_LOG_DIR = os.path.join(log_dir, "rtcm")
-RTCM_LOG_INTERVAL = 3600  # Rotate RTCM logs every hour (3600 seconds)
-RTCM_LOG_RETENTION = 24  # Keep 24 hours of RTCM logs (24 files)
+RTCM_LOG_INTERVAL = 3600
+RTCM_LOG_RETENTION = 24
 RTCM_LOG_PREFIX = "rtcm"
-RATE_REPORT_INTERVAL = 10  # Report RTCM message rates every 10 seconds
+RATE_REPORT_INTERVAL = 10
 
 # Shared variables
 base = None
@@ -67,7 +66,7 @@ def calculate_rtcm_crc(data):
         for j in range(8):
             crc <<= 1
             if crc & 0x1000000:
-                crc ^= 0x1864CFB  # CRC-24Q polynomial
+                crc ^= 0x1864CFB
         crc &= 0xFFFFFF
     return crc
 
@@ -81,10 +80,10 @@ def open_serial():
         logger.error(f"Error opening {BASE_PORT}: {e}")
         return None
 
-def parse_rtcm_message(data, pos):
+def parse_rtcm_message(data, pos, crc_errors):
     """
     Parse an RTCM message starting at pos.
-    Returns (message_type, message_length, new_pos) or (None, None, pos) if invalid/incomplete.
+    Returns (message_type, message_length, new_pos) or (None, None, pos).
     """
     if len(data) < pos + 3:
         return None, None, pos
@@ -101,7 +100,8 @@ def parse_rtcm_message(data, pos):
     crc_bytes = message[-3:]
     received_crc = struct.unpack('>I', b'\x00' + crc_bytes)[0]
     if calculated_crc != received_crc:
-        logger.warning(f"CRC mismatch at buffer pos {pos}, skipping.")
+        # logger.debug(f"CRC mismatch at buffer pos {pos}, skipping. Total CRC errors: {crc_errors}")  # Debug level
+        logger.warning(f"CRC mismatch at buffer pos {pos}, skipping. Total CRC errors: {crc_errors}")
         return None, None, pos + 1
 
     if len(message) < 5:
@@ -153,7 +153,6 @@ def broadcast_rtcm():
     """Reads RTCM data from the base station and broadcasts it to all clients."""
     global base
 
-    # Initialize RTCM log
     if not os.path.exists(RTCM_LOG_DIR):
         os.makedirs(RTCM_LOG_DIR)
     rtcm_log_filename = os.path.join(RTCM_LOG_DIR, f"{RTCM_LOG_PREFIX}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
@@ -170,17 +169,17 @@ def broadcast_rtcm():
 
     rtcm_buffer = b''
     message_counts = {}
+    crc_errors = 0  # Track CRC errors
     last_rate_check = time.time()
 
     try:
         while True:
-            data = base.read(1024)
+            data = base.read(2048)  # Increased buffer size
             if data:
                 rtcm_buffer += data
                 rtcm_log.write(data)
                 rtcm_log.flush()
 
-                # Rotate RTCM log if interval has passed
                 current_time = time.time()
                 if current_time - last_rotation >= RTCM_LOG_INTERVAL:
                     rtcm_log.close()
@@ -191,12 +190,13 @@ def broadcast_rtcm():
                     last_rotation = current_time
                     logger.info(f"Rotated RTCM log to: {rtcm_log_filename}")
 
-                # Parse RTCM messages
                 pos = 0
                 while pos < len(rtcm_buffer):
-                    message_type, length, new_pos = parse_rtcm_message(rtcm_buffer, pos)
+                    message_type, length, new_pos = parse_rtcm_message(rtcm_buffer, pos, crc_errors)
                     if message_type is None:
-                        pos += 1
+                        if new_pos > pos:
+                            crc_errors += 1  # Increment on CRC failure
+                        pos = new_pos if new_pos > pos else pos + 1
                         continue
                     message_counts[message_type] = message_counts.get(message_type, 0) + 1
                     pos = new_pos
@@ -223,6 +223,8 @@ def broadcast_rtcm():
                             logger.info(f"  Type {msg_type}: {rate:.2f} Hz ({count} messages)")
                         total_rate = total_count / elapsed
                         logger.info(f"  Total: {total_rate:.2f} Hz ({total_count} messages in {elapsed:.2f}s)")
+                        logger.info(f"  CRC Errors: {crc_errors / elapsed:.2f} Hz ({crc_errors} errors)")
+                        crc_errors = 0  # Reset after reporting
                     message_counts.clear()
                     last_rate_check = current_time
 
@@ -259,7 +261,6 @@ rtcm_thread = threading.Thread(target=broadcast_rtcm, daemon=True)
 tcp_thread.start()
 rtcm_thread.start()
 
-# Keep script running
 try:
     while True:
         threading.Event().wait(1)
