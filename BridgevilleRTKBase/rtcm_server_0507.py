@@ -1,8 +1,8 @@
 """
 rtcm_tcp_server.py
 =======================
-This script runs on a Raspberry Pi 3 Model B to read RTCM data from a base station (PX1125R on /dev/ttyUSB0)
-and stream it over TCP to connected clients. It logs RTCM data and application logs with time-based rotation.
+This script runs on a Raspberry Pi 3 to read RTCM data from a base station (PX1125R on /dev/ttyUSB0)
+and stream it over TCP to connected clients. It logs RTCM data with time-based rotation and reports message rates.
 """
 
 import socket
@@ -17,14 +17,9 @@ import struct
 import glob
 import gzip
 
-# Debug: Print logging module source
-logger_temp = logging.getLogger('Debug')
-logger_temp.info(f"Logging module source: {logging.__file__}")
-
 # Configure application logging
 logger = logging.getLogger('RTCMServer')
 logger.setLevel(logging.INFO)
-# logger.setLevel(logging.DEBUG)  # Uncomment for debug-level CRC warnings
 formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 
 log_dir = "logs"
@@ -52,7 +47,7 @@ RTCM_LOG_DIR = os.path.join(log_dir, "rtcm")
 RTCM_LOG_INTERVAL = 3600
 RTCM_LOG_RETENTION = 24
 RTCM_LOG_PREFIX = "rtcm"
-RATE_REPORT_INTERVAL = 60   # every X seconds
+RATE_REPORT_INTERVAL = 15
 
 # Shared variables
 base = None
@@ -70,6 +65,26 @@ def calculate_rtcm_crc(data):
         crc &= 0xFFFFFF
     return crc
 
+def decode_1005(data):
+    """Decode RTCM 1005 message to extract base station coordinates."""
+    try:
+        if len(data) < 19:
+            return None
+        payload = data[3:-3]
+        ref_station_id = (struct.unpack('>H', payload[0:2])[0] & 0xFFF)
+        ecef_x = struct.unpack('>i', payload[2:6])[0] / 100.0
+        ecef_y = struct.unpack('>i', payload[6:10])[0] / 100.0
+        ecef_z = struct.unpack('>i', payload[10:14])[0] / 100.0
+        return {
+            "ref_station_id": ref_station_id,
+            "ecef_x": ecef_x,
+            "ecef_y": ecef_y,
+            "ecef_z": ecef_z
+        }
+    except Exception as e:
+        logger.error(f"Error decoding 1005: {e}")
+        return None
+
 def open_serial():
     """Attempts to open the serial port."""
     try:
@@ -83,32 +98,41 @@ def open_serial():
 def parse_rtcm_message(data, pos, crc_errors):
     """
     Parse an RTCM message starting at pos.
-    Returns (message_type, message_length, new_pos) or (None, None, pos).
+    Returns (message_type, message_length, new_pos, decoded_data) or (None, None, pos, None).
     """
     if len(data) < pos + 3:
-        return None, None, pos
+        return None, None, pos, None
     if data[pos] != 0xD3:
-        return None, None, pos
+        return None, None, pos, None
 
     length = ((data[pos + 1] & 0x03) << 8) | data[pos + 2]
     total_length = 3 + length + 3
     if len(data) < pos + total_length:
-        return None, None, pos
+        return None, None, pos, None
 
     message = data[pos:pos + total_length]
     calculated_crc = calculate_rtcm_crc(message[:-3])
     crc_bytes = message[-3:]
     received_crc = struct.unpack('>I', b'\x00' + crc_bytes)[0]
     if calculated_crc != received_crc:
-        # logger.debug(f"CRC mismatch at buffer pos {pos}, skipping. Total CRC errors: {crc_errors}")  # Debug level
         logger.warning(f"CRC mismatch at buffer pos {pos}, skipping. Total CRC errors: {crc_errors}")
-        return None, None, pos + 1
+        return None, None, pos + 1, None
 
     if len(message) < 5:
-        return None, None, pos + 1
+        return None, None, pos + 1, None
     msg_type = struct.unpack('>H', message[3:5])[0] >> 4
     new_pos = pos + total_length
-    return msg_type, length, new_pos
+
+    decoded_data = None
+    if msg_type == 1005:
+        decoded_data = decode_1005(message)
+        if decoded_data:
+            logger.info(f"1005 Decoded: RefStationID={decoded_data['ref_station_id']}, "
+                       f"ECEF_X={decoded_data['ecef_x']:.3f}m, "
+                       f"ECEF_Y={decoded_data['ecef_y']:.3f}m, "
+                       f"ECEF_Z={decoded_data['ecef_z']:.3f}m")
+
+    return msg_type, length, new_pos, decoded_data
 
 def handle_client(client_socket, address):
     """Handles a single TCP client connection."""
@@ -169,12 +193,12 @@ def broadcast_rtcm():
 
     rtcm_buffer = b''
     message_counts = {}
-    crc_errors = 0  # Track CRC errors
+    crc_errors = 0
     last_rate_check = time.time()
 
     try:
         while True:
-            data = base.read(2048)  # Increased buffer size
+            data = base.read(2048)
             if data:
                 rtcm_buffer += data
                 rtcm_log.write(data)
@@ -192,10 +216,10 @@ def broadcast_rtcm():
 
                 pos = 0
                 while pos < len(rtcm_buffer):
-                    message_type, length, new_pos = parse_rtcm_message(rtcm_buffer, pos, crc_errors)
+                    message_type, length, new_pos, decoded_data = parse_rtcm_message(rtcm_buffer, pos, crc_errors)
                     if message_type is None:
                         if new_pos > pos:
-                            crc_errors += 1  # Increment on CRC failure
+                            crc_errors += 1
                         pos = new_pos if new_pos > pos else pos + 1
                         continue
                     message_counts[message_type] = message_counts.get(message_type, 0) + 1
@@ -224,7 +248,7 @@ def broadcast_rtcm():
                         total_rate = total_count / elapsed
                         logger.info(f"  Total: {total_rate:.2f} Hz ({total_count} messages in {elapsed:.2f}s)")
                         logger.info(f"  CRC Errors: {crc_errors / elapsed:.2f} Hz ({crc_errors} errors)")
-                        crc_errors = 0  # Reset after reporting
+                        crc_errors = 0
                     message_counts.clear()
                     last_rate_check = current_time
 
