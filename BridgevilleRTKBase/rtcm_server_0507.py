@@ -2,8 +2,7 @@
 rtcm_tcp_server.py
 =======================
 This script runs on a Raspberry Pi 3 Model B to read RTCM data from a base station (PX1125R on /dev/ttyUSB0)
-and stream it over TCP to connected clients. It logs RTCM data to a file with time-based rotation and reports 
-RTCM message type rates.
+and stream it over TCP to connected clients. It logs RTCM data and application logs with time-based rotation.
 """
 
 import socket
@@ -13,19 +12,26 @@ import time
 from datetime import datetime
 import os
 import logging
+import logging.handlers  # Explicit import to ensure availability
 import struct
 import glob
 import gzip
+
+# Debug: Print logging module source to confirm it's the standard library
+logger_temp = logging.getLogger('Debug')
+logger_temp.info(f"Logging module source: {logging.__file__}")
 
 # Configure application logging
 logger = logging.getLogger('RTCMServer')
 logger.setLevel(logging.INFO)
 formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 
-# Use TimedRotatingFileHandler for application logs
+# Ensure log directory exists
 log_dir = "logs"
 if not os.path.exists(log_dir):
     os.makedirs(log_dir)
+
+# Use TimedRotatingFileHandler for application logs
 app_log_handler = logging.handlers.TimedRotatingFileHandler(
     filename=os.path.join(log_dir, 'rtcm_server.log'),
     when='midnight',  # Rotate at midnight daily
@@ -136,7 +142,7 @@ def compress_rtcm_log(filename):
         with open(filename, 'rb') as f_in:
             with gzip.open(compressed_file, 'wb') as f_out:
                 f_out.writelines(f_in)
-        os.remove(filename)  # Remove uncompressed file
+        os.remove(filename)
         logger.info(f"Compressed RTCM log: {compressed_file}")
         return compressed_file
     except Exception as e:
@@ -178,11 +184,8 @@ def broadcast_rtcm():
                 current_time = time.time()
                 if current_time - last_rotation >= RTCM_LOG_INTERVAL:
                     rtcm_log.close()
-                    # Compress the old log
                     compress_rtcm_log(rtcm_log_filename)
-                    # Enforce retention
                     manage_rtcm_logs()
-                    # Open new log file
                     rtcm_log_filename = os.path.join(RTCM_LOG_DIR, f"{RTCM_LOG_PREFIX}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
                     rtcm_log = open(rtcm_log_filename, "wb")
                     last_rotation = current_time
