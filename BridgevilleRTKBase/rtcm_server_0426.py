@@ -61,7 +61,8 @@ def parse_rtcm_message(data, pos):
         return None, None, pos  # Not enough data for full message
 
     # Extract message type (12 bits) from bytes 3-4
-    message_type = ((data[pos + 3] & 0x0F) << 8) | data[pos + 4]
+    # message_type = ((data[pos + 3] & 0x0F) << 8) | data[pos + 4]   # did not parse correctly
+    message_type = (data[pos + 3] << 4) | ((data[pos + 4] & 0xF0) >> 4)
     new_pos = pos + 3 + length  # Move to end of message
     return message_type, length, new_pos
 
