@@ -52,7 +52,7 @@ RTCM_LOG_DIR = os.path.join(log_dir, "rtcm")
 RTCM_LOG_INTERVAL = 3600
 RTCM_LOG_RETENTION = 24
 RTCM_LOG_PREFIX = "rtcm"
-RATE_REPORT_INTERVAL = 15
+RATE_REPORT_INTERVAL = 60   # every X seconds
 
 # Shared variables
 base = None
