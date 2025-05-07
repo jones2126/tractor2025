@@ -1,8 +1,8 @@
 """
 rtcm_tcp_server.py
 =======================
-This script runs on a Raspberry Pi 3 to read RTCM data from a base station (PX1125R on /dev/ttyUSB0)
-and stream it over TCP to connected clients. It logs RTCM data with time-based rotation and reports message rates.
+This script runs on a Raspberry Pi 3 to configure a PX1125R base station (/dev/ttyUSB0),
+read RTCM data, and stream it over TCP to clients. It logs RTCM data and reports message rates.
 """
 
 import socket
@@ -48,10 +48,102 @@ RTCM_LOG_INTERVAL = 3600
 RTCM_LOG_RETENTION = 24
 RTCM_LOG_PREFIX = "rtcm"
 RATE_REPORT_INTERVAL = 15
+CONFIGURE_BASE = True  # Set to False after successful configuration
 
 # Shared variables
 base = None
 clients = []
+
+def compute_checksum(payload):
+    """Computes the checksum for a SkyTraq command payload."""
+    checksum = 0
+    for byte in payload:
+        checksum ^= byte
+    return checksum
+
+def configure_base_station(ser, latitude=40.7249028, longitude=-80.7283178, altitude=325.553, ephemeris_interval=80):
+    """
+    Configures the PX1125R as an RTK base station and queries the current position.
+    """
+    try:
+        # Command 1: Configure RTK mode (base station)
+        cmd1 = bytes.fromhex("a0 a1 00 02 6a 07 6d 0d 0a")
+        ser.write(cmd1)
+        ser.flush()
+        time.sleep(1)
+        logger.info("Sent RTK mode configuration command")
+
+        # Command 2: Set surveyed position
+        lat_bytes = struct.pack('<d', latitude)
+        lon_bytes = struct.pack('<d', longitude)
+        alt_bytes = struct.pack('<f', altitude)
+
+        payload = bytearray([
+            0x01, 0x01, 0x00, 0x00, 0x00, 0x3c, 0x00, 0x00, 0x00, 0x1e
+        ])
+        payload.extend(lat_bytes)
+        payload.extend(lon_bytes)
+        payload.extend(alt_bytes)
+        payload.extend([0x00, 0x00, 0x00, 0x00, 0x01])
+
+        cmd2 = bytearray([0xa0, 0xa1])
+        length = len(payload) + 2
+        cmd2.extend([0x00, length])
+        cmd2.extend([0x6a, 0x06])
+        cmd2.extend(payload)
+        checksum = compute_checksum(cmd2[4:])
+        cmd2.extend([checksum, 0x0d, 0x0a])
+
+        ser.write(cmd2)
+        ser.flush()
+        time.sleep(1)
+        logger.info(f"Sent RTK base station position command: {cmd2.hex()}")
+
+        # Command 3: Configure RTCM messages (MSM4)
+        payload = bytearray([
+            0x03, 0x01, 0x02, 0x00, 0x01, 0x01, 0x01, 0x01, 0x00, 0x00, 0x01,
+            0x00, ephemeris_interval & 0xFF, ephemeris_interval & 0xFF, ephemeris_interval & 0xFF,
+            0x00, 0x00, ephemeris_interval & 0xFF, 0x00, 0x01
+        ])
+
+        cmd3 = bytearray([0xa0, 0xa1])
+        length = len(payload) + 2
+        cmd3.extend([0x00, length])
+        cmd3.extend([0x69, 0x05])
+        cmd3.extend(payload)
+        checksum = compute_checksum(cmd3[4:])
+        cmd3.extend([checksum, 0x0d, 0x0a])
+
+        ser.write(cmd3)
+        ser.flush()
+        time.sleep(1)
+        logger.info(f"Sent RTCM message configuration command: {cmd3.hex()}")
+
+        # Command 4: Query current position
+        cmd4 = bytes.fromhex("a0 a1 00 02 6a 83 69 0d 0a")
+        ser.write(cmd4)
+        ser.flush()
+        time.sleep(1)
+        response = ser.read(1024)
+        if response:
+            logger.info(f"Position query response: {response.hex()}")
+            try:
+                if len(response) >= 29 and response.startswith(b'\xa0\xa1'):
+                    payload = response[4:-3]
+                    lat = struct.unpack('<d', payload[10:18])[0]
+                    lon = struct.unpack('<d', payload[18:26])[0]
+                    alt = struct.unpack('<f', payload[26:30])[0]
+                    logger.info(f"Current Position: Latitude={lat:.7f}°N, Longitude={lon:.7f}°W, Altitude={alt:.3f}m")
+            except Exception as e:
+                logger.error(f"Error decoding position response: {e}")
+
+        # Read configuration response
+        response = ser.read(1024)
+        if response:
+            logger.info(f"Configuration response: {response.hex()}")
+
+    except Exception as e:
+        logger.error(f"Error configuring base station: {e}")
 
 def calculate_rtcm_crc(data):
     """Calculate the 24-bit CRC for an RTCM message."""
@@ -90,6 +182,9 @@ def open_serial():
     try:
         ser = serial.Serial(BASE_PORT, BAUD_RATE, timeout=1)
         logger.info(f"Successfully opened {BASE_PORT}")
+        if CONFIGURE_BASE:
+            logger.info("Configuring PX1125R base station...")
+            configure_base_station(ser)
         return ser
     except serial.SerialException as e:
         logger.error(f"Error opening {BASE_PORT}: {e}")
