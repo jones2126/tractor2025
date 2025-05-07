@@ -3,7 +3,8 @@ rtcm_tcp_client_0507.py
 =======================
 This script runs on a Raspberry Pi 5 to connect to a TCP server on a Raspberry Pi 3 (192.168.1.233:6001),
 receive RTCM data, and forward it to a rover (PX1172RD-EVB on /dev/ttyUSB0). It monitors the rover's NMEA
-output to check RTK status and logs both RTCM and NMEA data with time-based rotation. It also tracks RTCM message rates.
+output to check RTK status and logs both RTCM and NMEA data with time-based rotation. It also tracks RTCM message rates
+and decodes critical messages (e.g., 1005) for debugging.
 """
 
 import socket
@@ -23,17 +24,15 @@ logger = logging.getLogger('RTCMClient')
 logger.setLevel(logging.INFO)
 formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 
-# Ensure log directory exists
 log_dir = "logs"
 if not os.path.exists(log_dir):
     os.makedirs(log_dir)
 
-# Application logs with TimedRotatingFileHandler
 app_log_handler = logging.handlers.TimedRotatingFileHandler(
     filename=os.path.join(log_dir, 'rtcm_client.log'),
-    when='midnight',  # Rotate daily at midnight
+    when='midnight',
     interval=1,
-    backupCount=7  # Keep 7 days
+    backupCount=7
 )
 app_log_handler.setFormatter(formatter)
 logger.addHandler(app_log_handler)
@@ -47,13 +46,15 @@ TCP_PORT = 6001
 ROVER_PORT = "/dev/ttyUSB0"
 BAUD_RATE = 115200
 STATUS_INTERVAL = 5
-RATE_REPORT_INTERVAL = 15  # Updated to 15 seconds
-LOG_INTERVAL = 3600  # Rotate logs hourly
-LOG_RETENTION = 24  # Keep 24 hours of RTCM/NMEA logs
+RATE_REPORT_INTERVAL = 15
+LOG_INTERVAL = 3600
+LOG_RETENTION = 24
 RTCM_LOG_DIR = os.path.join(log_dir, "rtcm")
 NMEA_LOG_DIR = os.path.join(log_dir, "nmea")
+RAW_LOG_DIR = os.path.join(log_dir, "raw")
 RTCM_LOG_PREFIX = "rtcm"
 NMEA_LOG_PREFIX = "nmea"
+RAW_LOG_PREFIX = "raw"
 RECONNECT_DELAY = 5
 COMPRESS_LOGS = True
 
@@ -69,20 +70,41 @@ def calculate_rtcm_crc(data):
         crc &= 0xFFFFFF
     return crc
 
+def decode_1005(data):
+    """Decode RTCM 1005 message to extract base station coordinates."""
+    try:
+        if len(data) < 19:  # Minimum length for 1005
+            return None
+        # Extract fields (Reference Station ID: 12 bits, ECEF X, Y, Z: 38 bits each, etc.)
+        payload = data[3:-3]  # Exclude header and CRC
+        ref_station_id = (struct.unpack('>H', payload[0:2])[0] & 0xFFF)  # First 12 bits
+        ecef_x = struct.unpack('>i', payload[2:6])[0] / 100.0  # mm to meters
+        ecef_y = struct.unpack('>i', payload[6:10])[0] / 100.0
+        ecef_z = struct.unpack('>i', payload[10:14])[0] / 100.0
+        return {
+            "ref_station_id": ref_station_id,
+            "ecef_x": ecef_x,
+            "ecef_y": ecef_y,
+            "ecef_z": ecef_z
+        }
+    except Exception as e:
+        logger.error(f"Error decoding 1005: {e}")
+        return None
+
 def parse_rtcm_message(data, pos, crc_errors):
     """
     Parse an RTCM message starting at pos.
-    Returns (message_type, message_length, new_pos) or (None, None, pos).
+    Returns (message_type, message_length, new_pos, decoded_data) or (None, None, pos, None).
     """
     if len(data) < pos + 3:
-        return None, None, pos
+        return None, None, pos, None
     if data[pos] != 0xD3:
-        return None, None, pos
+        return None, None, pos, None
 
     length = ((data[pos + 1] & 0x03) << 8) | data[pos + 2]
     total_length = 3 + length + 3
     if len(data) < pos + total_length:
-        return None, None, pos
+        return None, None, pos, None
 
     message = data[pos:pos + total_length]
     calculated_crc = calculate_rtcm_crc(message[:-3])
@@ -90,13 +112,24 @@ def parse_rtcm_message(data, pos, crc_errors):
     received_crc = struct.unpack('>I', b'\x00' + crc_bytes)[0]
     if calculated_crc != received_crc:
         logger.warning(f"CRC mismatch at buffer pos {pos}, skipping. Total CRC errors: {crc_errors}")
-        return None, None, pos + 1
+        return None, None, pos + 1, None
 
     if len(message) < 5:
-        return None, None, pos + 1
+        return None, None, pos + 1, None
     msg_type = struct.unpack('>H', message[3:5])[0] >> 4
     new_pos = pos + total_length
-    return msg_type, length, new_pos
+
+    # Decode specific messages
+    decoded_data = None
+    if msg_type == 1005:
+        decoded_data = decode_1005(message)
+        if decoded_data:
+            logger.info(f"1005 Decoded: RefStationID={decoded_data['ref_station_id']}, "
+                       f"ECEF_X={decoded_data['ecef_x']:.3f}m, "
+                       f"ECEF_Y={decoded_data['ecef_y']:.3f}m, "
+                       f"ECEF_Z={decoded_data['ecef_z']:.3f}m")
+
+    return msg_type, length, new_pos, decoded_data
 
 def connect_to_server():
     """Connect to the TCP server with retry logic."""
@@ -144,10 +177,14 @@ def handle_gnss():
         os.makedirs(RTCM_LOG_DIR)
     if not os.path.exists(NMEA_LOG_DIR):
         os.makedirs(NMEA_LOG_DIR)
+    if not os.path.exists(RAW_LOG_DIR):
+        os.makedirs(RAW_LOG_DIR)
     rtcm_log_filename = os.path.join(RTCM_LOG_DIR, f"{RTCM_LOG_PREFIX}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
     nmea_log_filename = os.path.join(NMEA_LOG_DIR, f"{NMEA_LOG_PREFIX}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
+    raw_log_filename = os.path.join(RAW_LOG_DIR, f"{RAW_LOG_PREFIX}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
     rtcm_log = open(rtcm_log_filename, "wb")
     nmea_log = open(nmea_log_filename, "w")
+    raw_log = open(raw_log_filename, "wb")
     last_rotation = time.time()
 
     # Initialize serial port
@@ -158,6 +195,7 @@ def handle_gnss():
         logger.error(f"Failed to open {ROVER_PORT}: {e}")
         rtcm_log.close()
         nmea_log.close()
+        raw_log.close()
         return
 
     # Variables for RTCM rate monitoring
@@ -183,12 +221,16 @@ def handle_gnss():
                     logger.warning("TCP connection closed by server. Reconnecting...")
                     break
 
+                # Log raw data
+                raw_log.write(data)
+                raw_log.flush()
+
                 rtcm_buffer += data
 
                 # Parse RTCM messages
                 pos = 0
                 while pos < len(rtcm_buffer):
-                    message_type, length, new_pos = parse_rtcm_message(rtcm_buffer, pos, crc_errors)
+                    message_type, length, new_pos, decoded_data = parse_rtcm_message(rtcm_buffer, pos, crc_errors)
                     if message_type is None:
                         if new_pos > pos:
                             crc_errors += 1
@@ -223,6 +265,13 @@ def handle_gnss():
                     nmea_log_filename = os.path.join(NMEA_LOG_DIR, f"{NMEA_LOG_PREFIX}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
                     nmea_log = open(nmea_log_filename, "w")
                     logger.info(f"Rotated NMEA log to: {nmea_log_filename}")
+
+                    raw_log.close()
+                    compress_log(raw_log_filename)
+                    manage_logs(RAW_LOG_DIR, RAW_LOG_PREFIX, LOG_RETENTION)
+                    raw_log_filename = os.path.join(RAW_LOG_DIR, f"{RAW_LOG_PREFIX}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
+                    raw_log = open(raw_log_filename, "wb")
+                    logger.info(f"Rotated raw log to: {raw_log_filename}")
 
                     last_rotation = current_time
 
@@ -277,6 +326,8 @@ def handle_gnss():
                             first_rtk_fix_time = current_time
                             elapsed = first_rtk_fix_time - start_time
                             logger.info(f"First RTK Fix achieved after {elapsed:.1f} seconds!")
+                        elif fix_type == "4" and first_rtk_fix_time is not None:
+                            logger.info(f"RTK Fixed achieved after {current_time - start_time:.1f} seconds!")
 
                         last_status_time = current_time
 
@@ -292,10 +343,13 @@ def handle_gnss():
     rover.close()
     rtcm_log.close()
     nmea_log.close()
+    raw_log.close()
     compress_log(rtcm_log_filename)
     compress_log(nmea_log_filename)
+    compress_log(raw_log_filename)
     manage_logs(RTCM_LOG_DIR, RTCM_LOG_PREFIX, LOG_RETENTION)
     manage_logs(NMEA_LOG_DIR, NMEA_LOG_PREFIX, LOG_RETENTION)
+    manage_logs(RAW_LOG_DIR, RAW_LOG_PREFIX, LOG_RETENTION)
 
 if __name__ == "__main__":
     try:
