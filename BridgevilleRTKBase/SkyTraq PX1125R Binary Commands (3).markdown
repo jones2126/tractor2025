@@ -39,7 +39,31 @@ a0a1<length>83<messageid><status/data><checksum>0d0a
 
 ## Supported Binary Commands
 
-Below are the known commands, their purposes, formats, expected responses, and Python code to send each command, verified against logs, script execution, and GNSS Viewer interactions. Hex values are presented in lowercase without spaces between bytes, matching the format seen in Sublime Text.
+Below are the known commands, their purposes, formats, and expected responses, verified against logs, script execution, and GNSS Viewer interactions. Hex values are presented in lowercase without spaces between bytes, matching the format seen in Sublime Text.
+
+### Generic Python Code for Sending Commands
+The following Python code can be used to send any of the commands listed below and read the response from the PX1125R. Replace the `command` variable with the specific command bytes for each message.
+
+```python
+import serial
+
+# Open serial port (e.g., COM6 at 115200 baud)
+ser = serial.Serial("COM6", 115200, timeout=1)
+
+# Define the command (replace with specific command bytes)
+command = bytes.fromhex("a0a100026401650d0a")  # Example for Firmware Query
+
+# Send the command
+ser.write(command)
+ser.flush()
+
+# Read and print the response
+response = ser.read(1024)  # Adjust buffer size as needed
+print(f"Response: {response.hex()}")
+
+# Close the serial port
+ser.close()
+```
 
 ### 1. Firmware Query (`6401`)
 - **Purpose**: Queries the receiver’s firmware version.
@@ -60,15 +84,9 @@ Below are the known commands, their purposes, formats, expected responses, and P
   534b59545241511b30332e30362e30302c30312e30372e33332c65343263633537633407756e6b6e6f776e
   ```
   Decodes to: `SKYTRAQ,03.06.00,01.07.33,e42cc57c4,unknown`.
-- **Python Code to Send Command**:
+- **Command to Send**:
   ```python
-  import serial
-
-  # Assuming serial port is already opened as 'ser' (e.g., COM6 at 115200 baud)
-  ser = serial.Serial("COM6", 115200, timeout=1)
   command = bytes.fromhex("a0a100026401650d0a")
-  ser.write(command)
-  ser.flush()
   ```
 
 ### 2. Query Software CRC (`641a`)
@@ -90,15 +108,9 @@ Below are the known commands, their purposes, formats, expected responses, and P
   a0a1000383641afd0d0a
   ```
   Confirms the command structure. Additional data (CRC value) not logged in this instance.
-- **Python Code to Send Command**:
+- **Command to Send**:
   ```python
-  import serial
-
-  # Assuming serial port is already opened as 'ser' (e.g., COM6 at 115200 baud)
-  ser = serial.Serial("COM6", 115200, timeout=1)
   command = bytes.fromhex("a0a10002641a7e0d0a")
-  ser.write(command)
-  ser.flush()
   ```
 
 ### 3. Cold Start (`6501`)
@@ -114,15 +126,9 @@ Below are the known commands, their purposes, formats, expected responses, and P
   - Response: `836501` (ACK, success).
   - Checksum: `83 XOR 65 XOR 01` = `e3`.
 - **Notes**: Not used in `forward_rtcm_windows.py`, suggesting prior settings were retained.
-- **Python Code to Send Command**:
+- **Command to Send**:
   ```python
-  import serial
-
-  # Assuming serial port is already opened as 'ser' (e.g., COM6 at 115200 baud)
-  ser = serial.Serial("COM6", 115200, timeout=1)
   command = bytes.fromhex("a0a100026501640d0a")
-  ser.write(command)
-  ser.flush()
   ```
 
 ### 4. Factory Reset (`6504`)
@@ -138,15 +144,9 @@ Below are the known commands, their purposes, formats, expected responses, and P
   - Response: `836504` (ACK, success).
   - Checksum: `83 XOR 65 XOR 04` = `e0`.
 - **Notes**: Not used in the script, likely unnecessary if MSM4 settings are intact.
-- **Python Code to Send Command**:
+- **Command to Send**:
   ```python
-  import serial
-
-  # Assuming serial port is already opened as 'ser' (e.g., COM6 at 115200 baud)
-  ser = serial.Serial("COM6", 115200, timeout=1)
   command = bytes.fromhex("a0a100026504610d0a")
-  ser.write(command)
-  ser.flush()
   ```
 
 ### 5. Software Reboot (`6502`)
@@ -162,15 +162,9 @@ Below are the known commands, their purposes, formats, expected responses, and P
   - Response: `836502` (ACK, success).
   - Checksum: `83 XOR 65 XOR 02` = `e2`.
 - **Notes**: Not used in the script, indicating reboot may not be required.
-- **Python Code to Send Command**:
+- **Command to Send**:
   ```python
-  import serial
-
-  # Assuming serial port is already opened as 'ser' (e.g., COM6 at 115200 baud)
-  ser = serial.Serial("COM6", 115200, timeout=1)
   command = bytes.fromhex("a0a100026502630d0a")
-  ser.write(command)
-  ser.flush()
   ```
 
 ### 6. Configure RTK Mode (`6a07`)
@@ -190,15 +184,9 @@ Below are the known commands, their purposes, formats, expected responses, and P
   a0a10003836a07ee0d0a
   ```
   Confirms successful RTK mode configuration.
-- **Python Code to Send Command**:
+- **Command to Send**:
   ```python
-  import serial
-
-  # Assuming serial port is already opened as 'ser' (e.g., COM6 at 115200 baud)
-  ser = serial.Serial("COM6", 115200, timeout=1)
   command = bytes.fromhex("a0a100026a076d0d0a")
-  ser.write(command)
-  ser.flush()
   ```
 
 ### 7. Set Surveyed Position (`6a06`)
@@ -230,15 +218,9 @@ Below are the known commands, their purposes, formats, expected responses, and P
   a0a10003836a06ef0d0a
   ```
   Confirms successful position setting. However, RTCM 1005 messages show inconsistent ECEF coordinates (e.g., `1315.690m, 19125971.720m, -7165551.450m`), suggesting the position may not be applied correctly.
-- **Python Code to Send Command**:
+- **Command to Send**:
   ```python
-  import serial
-
-  # Assuming serial port is already opened as 'ser' (e.g., COM6 at 115200 baud)
-  ser = serial.Serial("COM6", 115200, timeout=1)
   command = bytes.fromhex("a0a100256a0601010000003c0000001e40442c369ea297f0c054083ea190dee04391283f0000000001620d0a")
-  ser.write(command)
-  ser.flush()
   ```
 
 ### 8. Configure RTCM Measurement Data Out V2 (`6905`)
@@ -273,15 +255,9 @@ Below are the known commands, their purposes, formats, expected responses, and P
   - Checksum: `6e`.
   - Response: `a0a10003836905ef0d0a`.
 - **Notes**: Used in GNSS Viewer to set MSM4 messages (e.g., GPS, GLONASS, Galileo, BeiDou) with 10-second intervals for ephemeris messages (1005, 1019, etc.). MSM4 messages (e.g., `d300504320`) in the log indicate this command was applied.
-- **Python Code to Send Command**:
+- **Command to Send**:
   ```python
-  import serial
-
-  # Assuming serial port is already opened as 'ser' (e.g., COM6 at 115200 baud)
-  ser = serial.Serial("COM6", 115200, timeout=1)
   command = bytes.fromhex("a0a10016690503010200010101010000010050505000005000016c0d0a")
-  ser.write(command)
-  ser.flush()
   ```
 
 ### 9. Configure RTCM Measurement Data Out V2 with Additional Options (`6906`)
@@ -294,17 +270,11 @@ Below are the known commands, their purposes, formats, expected responses, and P
   - Response: `836906` (ACK, success).
   - Checksum: `83 XOR 69 XOR 06` = `ec`.
 - **Notes**: Likely used by GNSS Viewer for advanced RTCM configuration. The exact command format is similar to `6905` but with additional parameters (not logged). Further investigation or logging may be needed to capture the full command.
-- **Python Code to Send Command**:
+- **Command to Send**:
   ```python
-  import serial
-
-  # Assuming serial port is already opened as 'ser' (e.g., COM6 at 115200 baud)
-  ser = serial.Serial("COM6", 115200, timeout=1)
   # Command format is inferred; replace with actual command if logged
   # Example placeholder (based on 6905 structure with additional parameters)
   command = bytes.fromhex("a0a1001669060301010001010101010001000a0a0a00000a00016f0d0a")
-  ser.write(command)
-  ser.flush()
   ```
 
 ### 10. Query RTCM Measurement Data Out V2 (`6982`)
@@ -331,15 +301,9 @@ Below are the known commands, their purposes, formats, expected responses, and P
   a0a1001569820301010001010101010001000a0a0a00000a00e80d0a
   ```
   Confirms the current RTCM configuration matches the `6905` command sent by GNSS Viewer.
-- **Python Code to Send Command**:
+- **Command to Send**:
   ```python
-  import serial
-
-  # Assuming serial port is already opened as 'ser' (e.g., COM6 at 115200 baud)
-  ser = serial.Serial("COM6", 115200, timeout=1)
   command = bytes.fromhex("a0a100026982eb0d0a")
-  ser.write(command)
-  ser.flush()
   ```
 
 ### 11. Unknown Command (`648c`)
@@ -350,15 +314,9 @@ Below are the known commands, their purposes, formats, expected responses, and P
   - Checksum: `64 XOR 8c XOR 00 XOR 0f` = `e7`.
 - **Expected Response**: Not logged in GNSS Viewer output.
 - **Notes**: Observed in GNSS Viewer response log but not documented in SkyTraq manuals. May be a Phoenix-specific command. Further investigation required.
-- **Python Code to Send Command**:
+- **Command to Send**:
   ```python
-  import serial
-
-  # Assuming serial port is already opened as 'ser' (e.g., COM6 at 115200 baud)
-  ser = serial.Serial("COM6", 115200, timeout=1)
   command = bytes.fromhex("a0a10004648c000fe70d0a")
-  ser.write(command)
-  ser.flush()
   ```
 
 ### 12. Query Current Position (`6a83`)
@@ -387,15 +345,9 @@ Below are the known commands, their purposes, formats, expected responses, and P
   a0a100296a8301010000003c0000001e40442c366cb0e0b3c054083e10062125438f99810200000000000000003c0d0a
   ```
   Confirms the position matches the configured coordinates. Recent logs show inconsistent ECEF coordinates, indicating a potential issue.
-- **Python Code to Send Command**:
+- **Command to Send**:
   ```python
-  import serial
-
-  # Assuming serial port is already opened as 'ser' (e.g., COM6 at 115200 baud)
-  ser = serial.Serial("COM6", 115200, timeout=1)
   command = bytes.fromhex("a0a100026a83690d0a")
-  ser.write(command)
-  ser.flush()
   ```
 
 ## RTCM Output
@@ -425,7 +377,9 @@ The PX1125R outputs RTCM3 messages when configured as a base station. The primar
   - Ref Station ID: `0002` (2).
   - ECEF X: `01f17193` = `1,423,700.00m`.
   - ECEF Y: `47b4d54a` = `-4,750,000.00m`.
-  - ECEF Z: `7dcf0990` = `4,150,000.00m`.
+  - ECEF Z: `());
+
+//  `7dcf0990` = `4,150,000.00m`.
   - CRC: `9851` (valid).
   - Matches surveyed position (`40.7249028°N, -80.7283178°W, 325.553m`).
 - **Example from Recent Run**:
@@ -444,82 +398,98 @@ The PX1125R outputs RTCM3 messages when configured as a base station. The primar
 This section details the conversion of the surveyed position (`40.7249028°N, -80.7283178°W, 325.553m`) to ECEF coordinates using the WGS84 ellipsoid model, for reference in verifying RTCM 1005 messages.
 
 #### WGS84 Parameters
-- Semi-major axis: \( a = 6378137.0 \, \text{m} \)
-- Flattening: \( f = 1/298.257223563 \)
-- Eccentricity: \( e^2 = 2f - f^2 \approx 0.00669437999014 \)
+- Semi-major axis: $ a = 6378137.0 \, \text{m} $
+- Flattening: $ f = 1/298.257223563 $
+- Eccentricity: $ e^2 = 2f - f^2 \approx 0.00669437999014 $
 
 #### Conversion Formulas
-The ECEF coordinates (\(X, Y, Z\)) are calculated from geodetic coordinates (latitude \( \phi \), longitude \( \lambda \), height \( h \)) as follows:
-\[
+The ECEF coordinates ($ X $, $ Y $, $ Z $) are calculated from geodetic coordinates (latitude $ \phi $, longitude $ \lambda $, height $ h $) as follows:
+
+$$
 N = \frac{a}{\sqrt{1 - e^2 \sin^2(\phi)}}
-\]
-\[
+$$
+
+$$
 X = (N + h) \cos(\phi) \cos(\lambda)
-\]
-\[
+$$
+
+$$
 Y = (N + h) \cos(\phi) \sin(\lambda)
-\]
-\[
+$$
+
+$$
 Z = \left( N (1 - e^2) + h \right) \sin(\phi)
-\]
+$$
+
 Where:
-- \( N \): Radius of curvature in the prime vertical.
-- \( \phi \): Latitude in radians.
-- \( \lambda \): Longitude in radians.
-- \( h \): Height above the ellipsoid.
+- $ N $: Radius of curvature in the prime vertical.
+- $ \phi $: Latitude in radians.
+- $ \lambda $: Longitude in radians.
+- $ h $: Height above the ellipsoid.
 
 #### Step-by-Step Calculation
 1. **Convert Coordinates to Radians**:
-   - Latitude: \( \phi = 40.7249028^\circ \times \frac{\pi}{180} \approx 0.711058 \, \text{radians} \)
-   - Longitude: \( \lambda = -80.7283178^\circ \times \frac{\pi}{180} \approx -1.409573 \, \text{radians} \)
-   - Height: \( h = 325.553 \, \text{m} \)
+   - Latitude: $ \phi = 40.7249028^\circ \times \frac{\pi}{180} \approx 0.711058 \, \text{radians} $
+   - Longitude: $ \lambda = -80.7283178^\circ \times \frac{\pi}{180} \approx -1.409573 \, \text{radians} $
+   - Height: $ h = 325.553 \, \text{m} $
 
 2. **Compute Trigonometric Values**:
-   - \( \sin(\phi) \approx \sin(0.711058) \approx 0.651372 \)
-   - \( \cos(\phi) \approx \cos(0.711058) \approx 0.758711 \)
-   - \( \cos(\lambda) \approx \cos(-1.409573) \approx 0.163175 \)
-   - \( \sin(\lambda) \approx \sin(-1.409573) \approx -0.986627 \)
+   - $ \sin(\phi) \approx \sin(0.711058) \approx 0.651372 $
+   - $ \cos(\phi) \approx \cos(0.711058) \approx 0.758711 $
+   - $ \cos(\lambda) \approx \cos(-1.409573) \approx 0.163175 $
+   - $ \sin(\lambda) \approx \sin(-1.409573) \approx -0.986627 $
 
-3. **Compute Radius of Curvature \( N \)**:
-   \[
-   e^2 \sin^2(\phi) \approx 0.00669437999014 \times (0.651372)^2 \approx 0.002842
-   \]
-   \[
-   N = \frac{6378137.0}{\sqrt{1 - 0.002842}} \approx \frac{6378137.0}{\sqrt{0.997158}} \approx 6386385.7 \, \text{m}
-   \]
+3. **Compute Radius of Curvature $ N $**:
 
-4. **Compute ECEF X**:
-   \[
-   X = (N + h) \cos(\phi) \cos(\lambda)
-   \]
-   \[
-   X \approx (6386385.7 + 325.553) \times 0.758711 \times 0.163175
-   \]
-   \[
-   X \approx 6386711.253 \times 0.758711 \times 0.163175 \approx 1423699.5 \, \text{m}
-   \]
+$$
+e^2 \sin^2(\phi) \approx 0.00669437999014 \times (0.651372)^2 \approx 0.002842
+$$
 
-5. **Compute ECEF Y**:
-   \[
-   Y = (N + h) \cos(\phi) \sin(\lambda)
-   \]
-   \[
-   Y \approx (6386385.7 + 325.553) \times 0.758711 \times (-0.986627)
-   \]
-   \[
-   Y \approx 6386711.253 \times 0.758711 \times (-0.986627) \approx -4776425.3 \, \text{m}
-   \]
+$$
+N = \frac{6378137.0}{\sqrt{1 - 0.002842}} \approx \frac{6378137.0}{\sqrt{0.997158}} \approx 6386385.7 \, \text{m}
+$$
 
-6. **Compute ECEF Z**:
-   \[
-   Z = \left( N (1 - e^2) + h \right) \sin(\phi)
-   \]
-   \[
-   N (1 - e^2) \approx 6386385.7 \times (1 - 0.00669437999014) \approx 6343629.5
-   \]
-   \[
-   Z \approx (6343629.5 + 325.553) \times 0.651372 \approx 4136278.6 \, \text{m}
-   \]
+4. **Compute ECEF $ X $**:
+
+$$
+X = (N + h) \cos(\phi) \cos(\lambda)
+$$
+
+$$
+X \approx (6386385.7 + 325.553) \times 0.758711 \times 0.163175
+$$
+
+$$
+X \approx 6386711.253 \times 0.758711 \times 0.163175 \approx 1423699.5 \, \text{m}
+$$
+
+5. **Compute ECEF $ Y $**:
+
+$$
+Y = (N + h) \cos(\phi) \sin(\lambda)
+$$
+
+$$
+Y \approx (6386385.7 + 325.553) \times 0.758711 \times (-0.986627)
+$$
+
+$$
+Y \approx 6386711.253 \times 0.758711 \times (-0.986627) \approx -4776425.3 \, \text{m}
+$$
+
+6. **Compute ECEF $ Z $**:
+
+$$
+Z = \left( N (1 - e^2) + h \right) \sin(\phi)
+$$
+
+$$
+N (1 - e^2) \approx 6386385.7 \times (1 - 0.00669437999014) \approx 6343629.5
+$$
+
+$$
+Z \approx (6343629.5 + 325.553) \times 0.651372 \approx 4136278.6 \, \text{m}
+$$
 
 #### Expected ECEF Coordinates
 - **ECEF X**: `~1,423,699.5m`
