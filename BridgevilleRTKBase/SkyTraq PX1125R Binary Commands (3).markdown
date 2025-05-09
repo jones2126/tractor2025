@@ -220,7 +220,9 @@ ser.close()
   Confirms successful position setting. However, RTCM 1005 messages show inconsistent ECEF coordinates (e.g., `1315.690m, 19125971.720m, -7165551.450m`), suggesting the position may not be applied correctly.
 - **Command to Send**:
   ```python
-  command = bytes.fromhex("a0a100256a0601010000003c0000001e40442c369ea297f0c054083ea190dee04391283f0000000001620d0a")
+
+  command = bytes.fromhex("a0a100256a0601020000003c0000001e40442c3571d1d474c054083d8c52893a43a1f0a400000000002a0d0a")
+  
   ```
 
 ### 8. Configure RTCM Measurement Data Out V2 (`6905`)
@@ -428,11 +430,10 @@ Where:
 - λ: Longitude in radians  
 - h: Height above the ellipsoid
 
-#### Step-by-Step Calculation
-1. **Convert Coordinates to Radians**:
-   - Latitude: $ \phi = 40.7249028^\circ \times \frac{\pi}{180} \approx 0.711058 \, \text{radians} $
-   - Longitude: $ \lambda = -80.7283178^\circ \times \frac{\pi}{180} \approx -1.409573 \, \text{radians} $
-   - Height: $ h = 325.553 \, \text{m} $
+1. Convert Coordinates to Radians:
+   - Latitude: φ = 40.7249028° × (π / 180) ≈ 0.711058 radians  
+   - Longitude: λ = –80.7283178° × (π / 180) ≈ –1.409573 radians  
+   - Height: h = 325.553 m
 
 2. Compute Trigonometric Values:
    - sin(φ) ≈ sin(0.711058) ≈ 0.651372  
