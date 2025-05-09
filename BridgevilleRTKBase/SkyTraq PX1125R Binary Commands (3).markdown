@@ -421,11 +421,14 @@ $$
 Z = \left( N (1 - e^2) + h \right) \sin(\phi)
 $$
 
+
 Where:
-- $ N $: Radius of curvature in the prime vertical.
-- $ \phi $: Latitude in radians.
-- $ \lambda $: Longitude in radians.
-- $ h $: Height above the ellipsoid.
+- **N**: Radius of curvature in the prime vertical.
+- **φ**: Latitude in radians.
+- **λ**: Longitude in radians.  
+- **h**: Height above the ellipsoid.
+
+
 
 #### Step-by-Step Calculation
 1. **Convert Coordinates to Radians**:
