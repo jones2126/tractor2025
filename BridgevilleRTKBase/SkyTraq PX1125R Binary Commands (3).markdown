@@ -428,6 +428,12 @@ Where:
 - λ: Longitude in radians  
 - h: Height above the ellipsoid
 
+#### Step-by-Step Calculation
+1. **Convert Coordinates to Radians**:
+   - Latitude: $ \phi = 40.7249028^\circ \times \frac{\pi}{180} \approx 0.711058 \, \text{radians} $
+   - Longitude: $ \lambda = -80.7283178^\circ \times \frac{\pi}{180} \approx -1.409573 \, \text{radians} $
+   - Height: $ h = 325.553 \, \text{m} $
+
 2. Compute Trigonometric Values:
    - sin(φ) ≈ sin(0.711058) ≈ 0.651372  
    - cos(φ) ≈ cos(0.711058) ≈ 0.758711  
