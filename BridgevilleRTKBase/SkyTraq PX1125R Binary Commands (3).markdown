@@ -423,34 +423,25 @@ $$
 
 
 Where:
-- **N**: Radius of curvature in the prime vertical.
-- **φ**: Latitude in radians.
-- **λ**: Longitude in radians.  
-- **h**: Height above the ellipsoid.
+- N: Radius of curvature in the prime vertical  
+- φ: Latitude in radians  
+- λ: Longitude in radians  
+- h: Height above the ellipsoid
 
+2. Compute Trigonometric Values:
+   - sin(φ) ≈ sin(0.711058) ≈ 0.651372  
+   - cos(φ) ≈ cos(0.711058) ≈ 0.758711  
+   - cos(λ) ≈ cos(–1.409573) ≈ 0.163175  
+   - sin(λ) ≈ sin(–1.409573) ≈ –0.986627
 
+3. Compute Radius of Curvature N:
 
-#### Step-by-Step Calculation
-1. **Convert Coordinates to Radians**:
-   - Latitude: $ \phi = 40.7249028^\circ \times \frac{\pi}{180} \approx 0.711058 \, \text{radians} $
-   - Longitude: $ \lambda = -80.7283178^\circ \times \frac{\pi}{180} \approx -1.409573 \, \text{radians} $
-   - Height: $ h = 325.553 \, \text{m} $
+   e² · sin²(φ) ≈ 0.00669437999014 × (0.651372)² ≈ 0.002842
 
-2. **Compute Trigonometric Values**:
-   - $ \sin(\phi) \approx \sin(0.711058) \approx 0.651372 $
-   - $ \cos(\phi) \approx \cos(0.711058) \approx 0.758711 $
-   - $ \cos(\lambda) \approx \cos(-1.409573) \approx 0.163175 $
-   - $ \sin(\lambda) \approx \sin(-1.409573) \approx -0.986627 $
+   N = 6378137.0 / √(1 – 0.002842)  
+     ≈ 6378137.0 / √0.997158  
+     ≈ 6386385.7 m
 
-3. **Compute Radius of Curvature $ N $**:
-
-$$
-e^2 \sin^2(\phi) \approx 0.00669437999014 \times (0.651372)^2 \approx 0.002842
-$$
-
-$$
-N = \frac{6378137.0}{\sqrt{1 - 0.002842}} \approx \frac{6378137.0}{\sqrt{0.997158}} \approx 6386385.7 \, \text{m}
-$$
 
 4. **Compute ECEF $ X $**:
 
