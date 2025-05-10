@@ -21,7 +21,6 @@ import os
 import logging
 import signal
 import sys
-from collections import deque
 
 # Configure logging
 LOG_DIR = "logs"
@@ -47,7 +46,6 @@ PASSWORD = "none"
 # Serial port details
 SERIAL_PORT = "/dev/ttyUSB1"  # PX1172RDP Rover
 BAUDRATE = 115200
-RTCM_BUFFER_SIZE = 8192  # Buffer up to 8KB of RTCM data
 
 # Shared variables
 start_time = 0
@@ -66,7 +64,6 @@ fix_stats = {
     "first_float_time": None,
     "first_fixed_time": None
 }
-rtcm_buffer = deque(maxlen=RTCM_BUFFER_SIZE)
 
 def signal_handler(sig, frame):
     """Handle Ctrl+C and log fix statistics."""
@@ -157,6 +154,7 @@ def parse_gpgga(line):
     try:
         fields = line.split(',')
         if len(fields) < 10:
+            logging.warning(f"Invalid GPGGA: {line}")
             return
         fix_type = fields[6]
         current_time = time.time()
@@ -190,8 +188,10 @@ def parse_gpgga(line):
             # Log first Float and Fixed times
             if fix_type == "5" and fix_stats["first_float_time"] is None:
                 fix_stats["first_float_time"] = current_time - start_time
+                logging.info(f"First RTK Float achieved after {fix_stats['first_float_time']:.1f}s")
             if fix_type == "4" and fix_stats["first_fixed_time"] is None:
                 fix_stats["first_fixed_time"] = current_time - start_time
+                logging.info(f"First RTK Fixed achieved after {fix_stats['first_fixed_time']:.1f}s")
 
         # Store satellites and HDOP for Fixed periods
         if fix_type == "4":
@@ -209,17 +209,13 @@ def read_nmea():
     last_print_time = 0
 
     try:
-        gps_serial = serial.Serial(SERIAL_PORT, BAUDRATE, timeout=2)
-        logging.info(f"Opened serial port {SERIAL_PORT} at {BAUDRATE} baud")
-    except Exception as e:
-        logging.error(f"Error opening serial port: {e}")
-        logging.error("Check GPS connection and port settings (/dev/ttyUSB1 expected).")
-        return
-
-    try:
         while True:
             line = gps_serial.readline().decode('ascii', errors='ignore').strip()
+            if not line:
+                logging.debug("No NMEA data received")
+                continue
             if line.startswith("$GPGGA"):
+                logging.debug(f"Raw GPGGA: {line}")
                 parse_gpgga(line)
                 parts = line.split(',')
                 if len(parts) >= 7:
@@ -258,6 +254,7 @@ def fetch_rtcm():
 
     while retry_count < max_retries:
         client = None
+        global gps_serial
         try:
             logging.info("Waiting 2 seconds before connecting...")
             time.sleep(2)
@@ -313,13 +310,21 @@ def fetch_rtcm():
 
             logging.info("NTRIP server connected successfully")
 
-            # GPGGA with rover coordinates (~40.345366°N, -80.128781°W, 389.4m)
-            gpgga = "$GPGGA,092750.000,4020.7219600,N,08007.7268600,W,1,8,1.03,389.4,M,-33.184,M,,*58\r\n"
+            # GPGGA matching Windows (40.345354°N, -80.128727°W, 362.0m)
+            gpgga = "$GPGGA,092750.000,4020.7212606,N,08007.7235976,W,1,8,1.03,362.0,M,-33.184,M,,*52\r\n"
 
-            if initial_data:
-                rtcm_buffer.append(initial_data)
-                gps_serial.write(initial_data)
-                logging.info(f"Sent {len(initial_data)} bytes of RTCM data to GPS")
+            try:
+                gps_serial = serial.Serial(SERIAL_PORT, BAUDRATE, timeout=3)
+                logging.info(f"Opened serial port {SERIAL_PORT} at {BAUDRATE} baud")
+                nmea_thread = threading.Thread(target=read_nmea, args=(), daemon=True)
+                nmea_thread.start()
+                if initial_data:
+                    gps_serial.write(initial_data)
+                    logging.info(f"Sent {len(initial_data)} bytes of RTCM data to GPS")
+            except Exception as e:
+                logging.error(f"Error opening serial port: {e}")
+                logging.error("Check GPS connection and port settings (/dev/ttyUSB1 expected).")
+                break
 
             client.send(gpgga.encode())
             logging.info(f"Sent initial GPGGA position: {gpgga.strip()}")
@@ -341,16 +346,12 @@ def fetch_rtcm():
                     if not data:
                         logging.error("Connection closed by server")
                         break
-                    rtcm_buffer.append(data)
                     gps_serial.write(data)
                     data_received += len(data)
                     if current_time - last_rtcm_time >= 5:
                         logging.info(f"RTCM data received: {len(data)} bytes (Total: {data_received} bytes)")
                         last_rtcm_time = current_time
                 except socket.timeout:
-                    if len(rtcm_buffer) > 0:
-                        gps_serial.write(rtcm_buffer[-1])
-                        logging.info("Sent buffered RTCM data to GPS")
                     continue
                 except Exception as e:
                     logging.error(f"Error receiving data: {e}")
@@ -368,6 +369,8 @@ def fetch_rtcm():
         finally:
             if client:
                 client.close()
+            if gps_serial:
+                gps_serial.close()
             logging.info("NTRIP connection closed")
 
     if retry_count >= max_retries:
@@ -377,8 +380,6 @@ if __name__ == "__main__":
     try:
         start_time = time.time()
         signal.signal(signal.SIGINT, signal_handler)
-        nmea_thread = threading.Thread(target=read_nmea, daemon=True)
-        nmea_thread.start()
         while True:
             try:
                 fetch_rtcm()
