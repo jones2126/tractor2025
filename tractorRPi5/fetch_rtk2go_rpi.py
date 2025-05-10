@@ -44,7 +44,7 @@ USERNAME = "aej2126l@protonmail.com"
 PASSWORD = "none"
 
 # Serial port details
-SERIAL_PORT = "/dev/ttyUSB1"  # PX1172RDP Rover
+SERIAL_PORT = "/dev/ttyUSB0"  # PX1172RDP Rover
 BAUDRATE = 115200
 
 # Shared variables
