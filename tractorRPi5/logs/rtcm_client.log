@@ -1,0 +1,953 @@
+2025-05-07 15:02:07,168 - INFO - Successfully opened /dev/ttyUSB0
+2025-05-07 15:02:07,509 - INFO - Connected to TCP server at 192.168.1.233:6001
+2025-05-07 15:02:12,303 - WARNING - CRC mismatch at buffer pos 4, skipping. Total CRC errors: 0
+2025-05-07 15:02:12,401 - INFO - RTK Status: GPS Fix | Satellites: 28 | Altitude: 329.766m
+2025-05-07 15:02:12,401 - INFO - Last GGA Message: $GPGGA,120454.240,4020.7222011,N,08007.7279763,W,1,28,0.5,329.766,M,-33.184,M,,0000*6B
+2025-05-07 15:02:18,389 - INFO - RTK Status: GPS Fix | Satellites: 28 | Altitude: 329.767m
+2025-05-07 15:02:18,389 - INFO - Last GGA Message: $GPGGA,190207.080,4020.7222009,N,08007.7279765,W,1,28,0.5,329.767,M,-33.184,M,,0000*60
+2025-05-07 15:02:22,362 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:02:22,362 - INFO -   Type 1005: 0.99 Hz (15 messages)
+2025-05-07 15:02:22,363 - INFO -   Type 1019: 1.58 Hz (24 messages)
+2025-05-07 15:02:22,363 - INFO -   Type 1020: 0.53 Hz (8 messages)
+2025-05-07 15:02:22,363 - INFO -   Type 1033: 0.13 Hz (2 messages)
+2025-05-07 15:02:22,363 - INFO -   Type 1042: 0.79 Hz (12 messages)
+2025-05-07 15:02:22,363 - INFO -   Type 1046: 1.18 Hz (18 messages)
+2025-05-07 15:02:22,363 - INFO -   Type 1074: 0.99 Hz (15 messages)
+2025-05-07 15:02:22,363 - INFO -   Type 1084: 0.99 Hz (15 messages)
+2025-05-07 15:02:22,363 - INFO -   Type 1094: 0.99 Hz (15 messages)
+2025-05-07 15:02:22,363 - INFO -   Type 1124: 0.99 Hz (15 messages)
+2025-05-07 15:02:22,363 - INFO -   Type 1230: 0.13 Hz (2 messages)
+2025-05-07 15:02:22,363 - INFO -   Total: 9.28 Hz (141 messages in 15.19s)
+2025-05-07 15:02:22,363 - INFO -   CRC Errors: 0.07 Hz (1 errors)
+2025-05-07 15:02:26,342 - INFO - RTK Status: GPS Fix | Satellites: 28 | Altitude: 329.770m
+2025-05-07 15:02:26,342 - INFO - Last GGA Message: $GPGGA,190207.200,4020.7222006,N,08007.7279768,W,1,28,0.5,329.770,M,-33.184,M,,0000*6E
+2025-05-07 15:02:31,723 - INFO - RTK Status: GPS Fix | Satellites: 28 | Altitude: 329.771m
+2025-05-07 15:02:31,723 - INFO - Last GGA Message: $GPGGA,190207.280,4020.7222003,N,08007.7279770,W,1,28,0.5,329.771,M,-33.184,M,,0000*6B
+2025-05-07 15:02:37,370 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:02:37,370 - INFO -   Type 1005: 1.00 Hz (15 messages)
+2025-05-07 15:02:37,370 - INFO -   Type 1019: 0.80 Hz (12 messages)
+2025-05-07 15:02:37,371 - INFO -   Type 1020: 0.27 Hz (4 messages)
+2025-05-07 15:02:37,371 - INFO -   Type 1033: 0.07 Hz (1 messages)
+2025-05-07 15:02:37,371 - INFO -   Type 1042: 0.40 Hz (6 messages)
+2025-05-07 15:02:37,371 - INFO -   Type 1046: 0.60 Hz (9 messages)
+2025-05-07 15:02:37,371 - INFO -   Type 1074: 1.00 Hz (15 messages)
+2025-05-07 15:02:37,371 - INFO -   Type 1084: 1.00 Hz (15 messages)
+2025-05-07 15:02:37,371 - INFO -   Type 1094: 1.00 Hz (15 messages)
+2025-05-07 15:02:37,371 - INFO -   Type 1124: 1.00 Hz (15 messages)
+2025-05-07 15:02:37,371 - INFO -   Type 1230: 0.07 Hz (1 messages)
+2025-05-07 15:02:37,371 - INFO -   Total: 7.20 Hz (108 messages in 15.01s)
+2025-05-07 15:02:37,371 - INFO -   CRC Errors: 0.00 Hz (0 errors)
+2025-05-07 15:02:37,372 - INFO - RTK Status: GPS Fix | Satellites: 28 | Altitude: 329.773m
+2025-05-07 15:02:37,372 - INFO - Last GGA Message: $GPGGA,190207.360,4020.7222001,N,08007.7279772,W,1,28,0.5,329.773,M,-33.184,M,,0000*66
+2025-05-07 15:02:42,385 - INFO - RTK Status: GPS Fix | Satellites: 28 | Altitude: 329.775m
+2025-05-07 15:02:42,385 - INFO - Last GGA Message: $GPGGA,190207.440,4020.7221999,N,08007.7279774,W,1,28,0.5,329.775,M,-33.184,M,,0000*68
+2025-05-07 15:02:48,359 - INFO - RTK Status: GPS Fix | Satellites: 28 | Altitude: 329.776m
+2025-05-07 15:02:48,359 - INFO - Last GGA Message: $GPGGA,190207.520,4020.7221997,N,08007.7279776,W,1,28,0.5,329.776,M,-33.184,M,,0000*60
+2025-05-07 15:02:53,308 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:02:53,308 - INFO -   Type 1005: 1.00 Hz (16 messages)
+2025-05-07 15:02:53,308 - INFO -   Type 1019: 1.51 Hz (24 messages)
+2025-05-07 15:02:53,308 - INFO -   Type 1020: 0.50 Hz (8 messages)
+2025-05-07 15:02:53,309 - INFO -   Type 1033: 0.13 Hz (2 messages)
+2025-05-07 15:02:53,309 - INFO -   Type 1042: 0.75 Hz (12 messages)
+2025-05-07 15:02:53,309 - INFO -   Type 1046: 1.13 Hz (18 messages)
+2025-05-07 15:02:53,309 - INFO -   Type 1074: 1.00 Hz (16 messages)
+2025-05-07 15:02:53,309 - INFO -   Type 1084: 1.00 Hz (16 messages)
+2025-05-07 15:02:53,309 - INFO -   Type 1094: 1.00 Hz (16 messages)
+2025-05-07 15:02:53,309 - INFO -   Type 1124: 1.00 Hz (16 messages)
+2025-05-07 15:02:53,309 - INFO -   Type 1230: 0.13 Hz (2 messages)
+2025-05-07 15:02:53,309 - INFO -   Total: 9.16 Hz (146 messages in 15.94s)
+2025-05-07 15:02:53,309 - INFO -   CRC Errors: 0.00 Hz (0 errors)
+2025-05-07 15:02:56,328 - INFO - RTK Status: GPS Fix | Satellites: 28 | Altitude: 329.779m
+2025-05-07 15:02:56,329 - INFO - Last GGA Message: $GPGGA,190207.640,4020.7221993,N,08007.7279780,W,1,28,0.5,329.779,M,-33.184,M,,0000*67
+2025-05-07 15:03:01,619 - INFO - RTK Status: GPS Fix | Satellites: 28 | Altitude: 329.780m
+2025-05-07 15:03:01,619 - INFO - Last GGA Message: $GPGGA,190207.720,4020.7221991,N,08007.7279782,W,1,28,0.5,329.780,M,-33.184,M,,0000*66
+2025-05-07 15:03:07,356 - INFO - RTK Status: GPS Fix | Satellites: 28 | Altitude: 329.782m
+2025-05-07 15:03:07,356 - INFO - Last GGA Message: $GPGGA,190207.800,4020.7221989,N,08007.7279784,W,1,28,0.5,329.782,M,-33.184,M,,0000*66
+2025-05-07 15:03:08,365 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:03:08,365 - INFO -   Type 1005: 1.00 Hz (15 messages)
+2025-05-07 15:03:08,365 - INFO -   Type 1019: 0.80 Hz (12 messages)
+2025-05-07 15:03:08,365 - INFO -   Type 1020: 0.27 Hz (4 messages)
+2025-05-07 15:03:08,365 - INFO -   Type 1033: 0.07 Hz (1 messages)
+2025-05-07 15:03:08,365 - INFO -   Type 1042: 0.33 Hz (5 messages)
+2025-05-07 15:03:08,366 - INFO -   Type 1046: 0.60 Hz (9 messages)
+2025-05-07 15:03:08,366 - INFO -   Type 1074: 1.00 Hz (15 messages)
+2025-05-07 15:03:08,366 - INFO -   Type 1084: 1.00 Hz (15 messages)
+2025-05-07 15:03:08,366 - INFO -   Type 1094: 1.00 Hz (15 messages)
+2025-05-07 15:03:08,366 - INFO -   Type 1124: 1.00 Hz (15 messages)
+2025-05-07 15:03:08,366 - INFO -   Type 1230: 0.07 Hz (1 messages)
+2025-05-07 15:03:08,366 - INFO -   Total: 7.11 Hz (107 messages in 15.06s)
+2025-05-07 15:03:08,366 - INFO -   CRC Errors: 0.00 Hz (0 errors)
+2025-05-07 15:03:12,375 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 327.662m
+2025-05-07 15:03:12,376 - INFO - Last GGA Message: $GPGGA,190259.320,4020.7224873,N,08007.7285618,W,5,26,0.5,327.662,M,-33.184,M,,0000*69
+2025-05-07 15:03:12,376 - INFO - First RTK Fix achieved after 65.2 seconds!
+2025-05-07 15:03:18,373 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 327.663m
+2025-05-07 15:03:18,373 - INFO - Last GGA Message: $GPGGA,190259.400,4020.7224873,N,08007.7285618,W,5,26,0.5,327.663,M,-33.184,M,,0000*6D
+2025-05-07 15:03:24,335 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:03:24,335 - INFO -   Type 1005: 1.00 Hz (16 messages)
+2025-05-07 15:03:24,335 - INFO -   Type 1019: 1.50 Hz (24 messages)
+2025-05-07 15:03:24,335 - INFO -   Type 1020: 0.50 Hz (8 messages)
+2025-05-07 15:03:24,335 - INFO -   Type 1033: 0.13 Hz (2 messages)
+2025-05-07 15:03:24,336 - INFO -   Type 1042: 0.63 Hz (10 messages)
+2025-05-07 15:03:24,336 - INFO -   Type 1046: 1.13 Hz (18 messages)
+2025-05-07 15:03:24,336 - INFO -   Type 1074: 1.00 Hz (16 messages)
+2025-05-07 15:03:24,336 - INFO -   Type 1084: 1.00 Hz (16 messages)
+2025-05-07 15:03:24,336 - INFO -   Type 1094: 1.00 Hz (16 messages)
+2025-05-07 15:03:24,336 - INFO -   Type 1124: 1.00 Hz (16 messages)
+2025-05-07 15:03:24,336 - INFO -   Type 1230: 0.13 Hz (2 messages)
+2025-05-07 15:03:24,336 - INFO -   Total: 9.02 Hz (144 messages in 15.97s)
+2025-05-07 15:03:24,336 - INFO -   CRC Errors: 0.00 Hz (0 errors)
+2025-05-07 15:03:26,352 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 327.664m
+2025-05-07 15:03:26,352 - INFO - Last GGA Message: $GPGGA,190259.520,4020.7224874,N,08007.7285619,W,5,26,0.5,327.664,M,-33.184,M,,0000*6F
+2025-05-07 15:03:31,575 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 327.665m
+2025-05-07 15:03:31,575 - INFO - Last GGA Message: $GPGGA,190259.600,4020.7224874,N,08007.7285619,W,5,26,0.5,327.665,M,-33.184,M,,0000*6F
+2025-05-07 15:03:37,366 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 327.666m
+2025-05-07 15:03:37,366 - INFO - Last GGA Message: $GPGGA,190259.680,4020.7224874,N,08007.7285619,W,5,26,0.5,327.666,M,-33.184,M,,0000*64
+2025-05-07 15:03:39,376 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:03:39,376 - INFO -   Type 1005: 1.00 Hz (15 messages)
+2025-05-07 15:03:39,376 - INFO -   Type 1019: 0.80 Hz (12 messages)
+2025-05-07 15:03:39,376 - INFO -   Type 1020: 0.27 Hz (4 messages)
+2025-05-07 15:03:39,376 - INFO -   Type 1033: 0.07 Hz (1 messages)
+2025-05-07 15:03:39,376 - INFO -   Type 1042: 0.33 Hz (5 messages)
+2025-05-07 15:03:39,376 - INFO -   Type 1046: 0.60 Hz (9 messages)
+2025-05-07 15:03:39,377 - INFO -   Type 1074: 1.00 Hz (15 messages)
+2025-05-07 15:03:39,377 - INFO -   Type 1084: 1.00 Hz (15 messages)
+2025-05-07 15:03:39,377 - INFO -   Type 1094: 1.00 Hz (15 messages)
+2025-05-07 15:03:39,377 - INFO -   Type 1124: 1.00 Hz (15 messages)
+2025-05-07 15:03:39,377 - INFO -   Type 1230: 0.07 Hz (1 messages)
+2025-05-07 15:03:39,377 - INFO -   Total: 7.11 Hz (107 messages in 15.04s)
+2025-05-07 15:03:39,377 - INFO -   CRC Errors: 0.00 Hz (0 errors)
+2025-05-07 15:03:42,378 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 327.667m
+2025-05-07 15:03:42,378 - INFO - Last GGA Message: $GPGGA,190259.760,4020.7224875,N,08007.7285619,W,5,26,0.5,327.667,M,-33.184,M,,0000*6B
+2025-05-07 15:03:48,376 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 327.668m
+2025-05-07 15:03:48,376 - INFO - Last GGA Message: $GPGGA,190259.840,4020.7224875,N,08007.7285619,W,5,26,0.5,327.668,M,-33.184,M,,0000*69
+2025-05-07 15:03:55,326 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:03:55,326 - INFO -   Type 1005: 1.00 Hz (16 messages)
+2025-05-07 15:03:55,326 - INFO -   Type 1019: 1.50 Hz (24 messages)
+2025-05-07 15:03:55,326 - INFO -   Type 1020: 0.50 Hz (8 messages)
+2025-05-07 15:03:55,326 - INFO -   Type 1033: 0.13 Hz (2 messages)
+2025-05-07 15:03:55,326 - INFO -   Type 1042: 0.63 Hz (10 messages)
+2025-05-07 15:03:55,326 - INFO -   Type 1046: 1.13 Hz (18 messages)
+2025-05-07 15:03:55,327 - INFO -   Type 1074: 1.00 Hz (16 messages)
+2025-05-07 15:03:55,327 - INFO -   Type 1084: 1.00 Hz (16 messages)
+2025-05-07 15:03:55,327 - INFO -   Type 1094: 1.00 Hz (16 messages)
+2025-05-07 15:03:55,327 - INFO -   Type 1124: 1.00 Hz (16 messages)
+2025-05-07 15:03:55,327 - INFO -   Type 1230: 0.13 Hz (2 messages)
+2025-05-07 15:03:55,327 - INFO -   Total: 9.03 Hz (144 messages in 15.95s)
+2025-05-07 15:03:55,327 - INFO -   CRC Errors: 0.00 Hz (0 errors)
+2025-05-07 15:03:56,323 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 327.669m
+2025-05-07 15:03:56,323 - INFO - Last GGA Message: $GPGGA,190259.960,4020.7224875,N,08007.7285619,W,5,26,0.5,327.669,M,-33.184,M,,0000*6B
+2025-05-07 15:04:02,383 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 326.991m
+2025-05-07 15:04:02,384 - INFO - Last GGA Message: $GPGGA,190351.560,4020.7225345,N,08007.7282592,W,5,26,0.5,326.991,M,-33.184,M,,0000*69
+2025-05-07 15:04:08,379 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 326.992m
+2025-05-07 15:04:08,379 - INFO - Last GGA Message: $GPGGA,190351.640,4020.7225343,N,08007.7282592,W,5,26,0.5,326.992,M,-33.184,M,,0000*6D
+2025-05-07 15:04:10,389 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:04:10,389 - INFO -   Type 1005: 1.00 Hz (15 messages)
+2025-05-07 15:04:10,389 - INFO -   Type 1019: 0.80 Hz (12 messages)
+2025-05-07 15:04:10,389 - INFO -   Type 1020: 0.27 Hz (4 messages)
+2025-05-07 15:04:10,389 - INFO -   Type 1033: 0.07 Hz (1 messages)
+2025-05-07 15:04:10,389 - INFO -   Type 1042: 0.33 Hz (5 messages)
+2025-05-07 15:04:10,389 - INFO -   Type 1046: 0.60 Hz (9 messages)
+2025-05-07 15:04:10,389 - INFO -   Type 1074: 1.00 Hz (15 messages)
+2025-05-07 15:04:10,389 - INFO -   Type 1084: 1.00 Hz (15 messages)
+2025-05-07 15:04:10,390 - INFO -   Type 1094: 1.00 Hz (15 messages)
+2025-05-07 15:04:10,390 - INFO -   Type 1124: 1.00 Hz (15 messages)
+2025-05-07 15:04:10,390 - INFO -   Type 1230: 0.07 Hz (1 messages)
+2025-05-07 15:04:10,390 - INFO -   Total: 7.10 Hz (107 messages in 15.06s)
+2025-05-07 15:04:10,390 - INFO -   CRC Errors: 0.00 Hz (0 errors)
+2025-05-07 15:04:16,366 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 326.994m
+2025-05-07 15:04:16,367 - INFO - Last GGA Message: $GPGGA,190351.760,4020.7225340,N,08007.7282592,W,5,26,0.5,326.994,M,-33.184,M,,0000*6B
+2025-05-07 15:04:21,569 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 326.996m
+2025-05-07 15:04:21,569 - INFO - Last GGA Message: $GPGGA,190351.840,4020.7225338,N,08007.7282592,W,5,26,0.5,326.996,M,-33.184,M,,0000*6B
+2025-05-07 15:04:26,358 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:04:26,358 - INFO -   Type 1005: 1.00 Hz (16 messages)
+2025-05-07 15:04:26,358 - INFO -   Type 1019: 1.50 Hz (24 messages)
+2025-05-07 15:04:26,358 - INFO -   Type 1020: 0.63 Hz (10 messages)
+2025-05-07 15:04:26,358 - INFO -   Type 1033: 0.13 Hz (2 messages)
+2025-05-07 15:04:26,358 - INFO -   Type 1042: 0.63 Hz (10 messages)
+2025-05-07 15:04:26,358 - INFO -   Type 1046: 1.13 Hz (18 messages)
+2025-05-07 15:04:26,358 - INFO -   Type 1074: 1.00 Hz (16 messages)
+2025-05-07 15:04:26,358 - INFO -   Type 1084: 1.00 Hz (16 messages)
+2025-05-07 15:04:26,359 - INFO -   Type 1094: 1.00 Hz (16 messages)
+2025-05-07 15:04:26,359 - INFO -   Type 1124: 1.00 Hz (16 messages)
+2025-05-07 15:04:26,359 - INFO -   Type 1230: 0.13 Hz (2 messages)
+2025-05-07 15:04:26,359 - INFO -   Total: 9.14 Hz (146 messages in 15.97s)
+2025-05-07 15:04:26,359 - INFO -   CRC Errors: 0.00 Hz (0 errors)
+2025-05-07 15:04:27,349 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 326.997m
+2025-05-07 15:04:27,349 - INFO - Last GGA Message: $GPGGA,190351.920,4020.7225336,N,08007.7282592,W,5,26,0.5,326.997,M,-33.184,M,,0000*63
+2025-05-07 15:04:41,415 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:04:41,415 - INFO -   Type 1005: 1.00 Hz (15 messages)
+2025-05-07 15:04:41,415 - INFO -   Type 1019: 1.59 Hz (24 messages)
+2025-05-07 15:04:41,415 - INFO -   Type 1020: 0.60 Hz (9 messages)
+2025-05-07 15:04:41,415 - INFO -   Type 1033: 0.07 Hz (1 messages)
+2025-05-07 15:04:41,415 - INFO -   Type 1042: 0.33 Hz (5 messages)
+2025-05-07 15:04:41,415 - INFO -   Type 1046: 0.60 Hz (9 messages)
+2025-05-07 15:04:41,415 - INFO -   Type 1074: 1.00 Hz (15 messages)
+2025-05-07 15:04:41,415 - INFO -   Type 1084: 1.00 Hz (15 messages)
+2025-05-07 15:04:41,415 - INFO -   Type 1094: 1.00 Hz (15 messages)
+2025-05-07 15:04:41,416 - INFO -   Type 1124: 1.00 Hz (15 messages)
+2025-05-07 15:04:41,416 - INFO -   Type 1230: 0.07 Hz (1 messages)
+2025-05-07 15:04:41,416 - INFO -   Total: 8.24 Hz (124 messages in 15.06s)
+2025-05-07 15:04:41,416 - INFO -   CRC Errors: 0.00 Hz (0 errors)
+2025-05-07 15:04:52,429 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 326.988m
+2025-05-07 15:04:52,430 - INFO - Last GGA Message: $GPGGA,120639.240,4020.7225381,N,08007.7282616,W,5,26,0.5,326.988,M,-33.184,M,,0000*63
+2025-05-07 15:04:57,405 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:04:57,405 - INFO -   Type 1005: 1.00 Hz (16 messages)
+2025-05-07 15:04:57,405 - INFO -   Type 1019: 0.75 Hz (12 messages)
+2025-05-07 15:04:57,405 - INFO -   Type 1020: 0.38 Hz (6 messages)
+2025-05-07 15:04:57,405 - INFO -   Type 1033: 0.13 Hz (2 messages)
+2025-05-07 15:04:57,405 - INFO -   Type 1042: 0.63 Hz (10 messages)
+2025-05-07 15:04:57,405 - INFO -   Type 1046: 1.13 Hz (18 messages)
+2025-05-07 15:04:57,405 - INFO -   Type 1074: 1.00 Hz (16 messages)
+2025-05-07 15:04:57,405 - INFO -   Type 1084: 1.00 Hz (16 messages)
+2025-05-07 15:04:57,405 - INFO -   Type 1094: 1.00 Hz (16 messages)
+2025-05-07 15:04:57,405 - INFO -   Type 1124: 1.00 Hz (16 messages)
+2025-05-07 15:04:57,406 - INFO -   Type 1230: 0.13 Hz (2 messages)
+2025-05-07 15:04:57,406 - INFO -   Total: 8.13 Hz (130 messages in 15.99s)
+2025-05-07 15:04:57,406 - INFO -   CRC Errors: 0.00 Hz (0 errors)
+2025-05-07 15:05:00,432 - INFO - RTK Status: RTK Float | Satellites: 25 | Altitude: 326.643m
+2025-05-07 15:05:00,432 - INFO - Last GGA Message: $GPGGA,190444.360,4020.7226810,N,08007.7283039,W,5,25,0.5,326.643,M,-33.184,M,,0000*62
+2025-05-07 15:05:08,382 - INFO - RTK Status: RTK Float | Satellites: 25 | Altitude: 326.643m
+2025-05-07 15:05:08,383 - INFO - Last GGA Message: $GPGGA,190444.480,4020.7226814,N,08007.7283043,W,5,25,0.5,326.643,M,-33.184,M,,0000*62
+2025-05-07 15:05:13,344 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:05:13,344 - INFO -   Type 1005: 1.00 Hz (16 messages)
+2025-05-07 15:05:13,344 - INFO -   Type 1019: 1.51 Hz (24 messages)
+2025-05-07 15:05:13,344 - INFO -   Type 1020: 0.63 Hz (10 messages)
+2025-05-07 15:05:13,344 - INFO -   Type 1033: 0.13 Hz (2 messages)
+2025-05-07 15:05:13,344 - INFO -   Type 1042: 0.63 Hz (10 messages)
+2025-05-07 15:05:13,344 - INFO -   Type 1046: 1.13 Hz (18 messages)
+2025-05-07 15:05:13,344 - INFO -   Type 1074: 1.00 Hz (16 messages)
+2025-05-07 15:05:13,344 - INFO -   Type 1084: 1.00 Hz (16 messages)
+2025-05-07 15:05:13,344 - INFO -   Type 1094: 1.00 Hz (16 messages)
+2025-05-07 15:05:13,344 - INFO -   Type 1124: 1.00 Hz (16 messages)
+2025-05-07 15:05:13,344 - INFO -   Type 1230: 0.13 Hz (2 messages)
+2025-05-07 15:05:13,345 - INFO -   Total: 9.16 Hz (146 messages in 15.94s)
+2025-05-07 15:05:13,345 - INFO -   CRC Errors: 0.00 Hz (0 errors)
+2025-05-07 15:05:16,362 - INFO - RTK Status: RTK Float | Satellites: 25 | Altitude: 326.644m
+2025-05-07 15:05:16,362 - INFO - Last GGA Message: $GPGGA,190444.600,4020.7226818,N,08007.7283048,W,5,25,0.5,326.644,M,-33.184,M,,0000*68
+2025-05-07 15:05:21,576 - INFO - RTK Status: RTK Float | Satellites: 25 | Altitude: 326.644m
+2025-05-07 15:05:21,576 - INFO - Last GGA Message: $GPGGA,190444.680,4020.7226821,N,08007.7283051,W,5,25,0.5,326.644,M,-33.184,M,,0000*62
+2025-05-07 15:05:27,390 - INFO - RTK Status: RTK Float | Satellites: 25 | Altitude: 326.644m
+2025-05-07 15:05:27,390 - INFO - Last GGA Message: $GPGGA,190444.760,4020.7226824,N,08007.7283053,W,5,25,0.5,326.644,M,-33.184,M,,0000*6A
+2025-05-07 15:05:28,379 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:05:28,379 - INFO -   Type 1005: 1.00 Hz (15 messages)
+2025-05-07 15:05:28,379 - INFO -   Type 1019: 0.80 Hz (12 messages)
+2025-05-07 15:05:28,379 - INFO -   Type 1020: 0.33 Hz (5 messages)
+2025-05-07 15:05:28,379 - INFO -   Type 1033: 0.07 Hz (1 messages)
+2025-05-07 15:05:28,379 - INFO -   Type 1042: 0.33 Hz (5 messages)
+2025-05-07 15:05:28,379 - INFO -   Type 1046: 0.60 Hz (9 messages)
+2025-05-07 15:05:28,379 - INFO -   Type 1074: 1.00 Hz (15 messages)
+2025-05-07 15:05:28,379 - INFO -   Type 1084: 1.00 Hz (15 messages)
+2025-05-07 15:05:28,379 - INFO -   Type 1094: 1.00 Hz (15 messages)
+2025-05-07 15:05:28,379 - INFO -   Type 1124: 1.00 Hz (15 messages)
+2025-05-07 15:05:28,379 - INFO -   Type 1230: 0.07 Hz (1 messages)
+2025-05-07 15:05:28,379 - INFO -   Total: 7.18 Hz (108 messages in 15.03s)
+2025-05-07 15:05:28,380 - INFO -   CRC Errors: 0.00 Hz (0 errors)
+2025-05-07 15:05:32,392 - INFO - RTK Status: RTK Float | Satellites: 25 | Altitude: 326.644m
+2025-05-07 15:05:32,392 - INFO - Last GGA Message: $GPGGA,190444.840,4020.7226826,N,08007.7283056,W,5,25,0.5,326.644,M,-33.184,M,,0000*60
+2025-05-07 15:05:38,385 - INFO - RTK Status: RTK Float | Satellites: 25 | Altitude: 326.645m
+2025-05-07 15:05:38,385 - INFO - Last GGA Message: $GPGGA,190444.920,4020.7226829,N,08007.7283059,W,5,25,0.5,326.645,M,-33.184,M,,0000*66
+2025-05-07 15:05:44,335 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:05:44,335 - INFO -   Type 1005: 1.00 Hz (16 messages)
+2025-05-07 15:05:44,335 - INFO -   Type 1019: 1.50 Hz (24 messages)
+2025-05-07 15:05:44,335 - INFO -   Type 1020: 0.63 Hz (10 messages)
+2025-05-07 15:05:44,335 - INFO -   Type 1033: 0.13 Hz (2 messages)
+2025-05-07 15:05:44,335 - INFO -   Type 1042: 0.63 Hz (10 messages)
+2025-05-07 15:05:44,335 - INFO -   Type 1046: 1.13 Hz (18 messages)
+2025-05-07 15:05:44,335 - INFO -   Type 1074: 1.00 Hz (16 messages)
+2025-05-07 15:05:44,335 - INFO -   Type 1084: 1.00 Hz (16 messages)
+2025-05-07 15:05:44,335 - INFO -   Type 1094: 1.00 Hz (16 messages)
+2025-05-07 15:05:44,335 - INFO -   Type 1124: 1.00 Hz (16 messages)
+2025-05-07 15:05:44,335 - INFO -   Type 1230: 0.13 Hz (2 messages)
+2025-05-07 15:05:44,335 - INFO -   Total: 9.15 Hz (146 messages in 15.96s)
+2025-05-07 15:05:44,336 - INFO -   CRC Errors: 0.00 Hz (0 errors)
+2025-05-07 15:05:50,381 - INFO - RTK Status: RTK Float | Satellites: 27 | Altitude: 326.043m
+2025-05-07 15:05:50,381 - INFO - Last GGA Message: $GPGGA,190538.360,4020.7229757,N,08007.7283897,W,5,27,0.5,326.043,M,-33.184,M,,0000*63
+2025-05-07 15:05:58,342 - INFO - RTK Status: RTK Float | Satellites: 27 | Altitude: 326.045m
+2025-05-07 15:05:58,342 - INFO - Last GGA Message: $GPGGA,190538.480,4020.7229755,N,08007.7283894,W,5,27,0.5,326.045,M,-33.184,M,,0000*6D
+2025-05-07 15:05:59,364 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:05:59,365 - INFO -   Type 1005: 1.00 Hz (15 messages)
+2025-05-07 15:05:59,365 - INFO -   Type 1019: 0.80 Hz (12 messages)
+2025-05-07 15:05:59,365 - INFO -   Type 1020: 0.33 Hz (5 messages)
+2025-05-07 15:05:59,365 - INFO -   Type 1033: 0.07 Hz (1 messages)
+2025-05-07 15:05:59,365 - INFO -   Type 1042: 0.33 Hz (5 messages)
+2025-05-07 15:05:59,365 - INFO -   Type 1046: 0.60 Hz (9 messages)
+2025-05-07 15:05:59,365 - INFO -   Type 1074: 1.00 Hz (15 messages)
+2025-05-07 15:05:59,365 - INFO -   Type 1084: 1.00 Hz (15 messages)
+2025-05-07 15:05:59,365 - INFO -   Type 1094: 1.00 Hz (15 messages)
+2025-05-07 15:05:59,365 - INFO -   Type 1124: 1.00 Hz (15 messages)
+2025-05-07 15:05:59,365 - INFO -   Type 1230: 0.07 Hz (1 messages)
+2025-05-07 15:05:59,365 - INFO -   Total: 7.19 Hz (108 messages in 15.03s)
+2025-05-07 15:05:59,365 - INFO -   CRC Errors: 0.00 Hz (0 errors)
+2025-05-07 15:06:03,348 - INFO - RTK Status: RTK Float | Satellites: 27 | Altitude: 326.046m
+2025-05-07 15:06:03,348 - INFO - Last GGA Message: $GPGGA,190538.560,4020.7229753,N,08007.7283891,W,5,27,0.5,326.046,M,-33.184,M,,0000*62
+2025-05-07 15:06:09,419 - INFO - RTK Status: RTK Float | Satellites: 27 | Altitude: 326.048m
+2025-05-07 15:06:09,419 - INFO - Last GGA Message: $GPGGA,190538.640,4020.7229752,N,08007.7283889,W,5,27,0.5,326.048,M,-33.184,M,,0000*65
+2025-05-07 15:06:15,351 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:06:15,352 - INFO -   Type 1005: 1.00 Hz (16 messages)
+2025-05-07 15:06:15,352 - INFO -   Type 1019: 1.50 Hz (24 messages)
+2025-05-07 15:06:15,352 - INFO -   Type 1020: 0.63 Hz (10 messages)
+2025-05-07 15:06:15,352 - INFO -   Type 1033: 0.13 Hz (2 messages)
+2025-05-07 15:06:15,352 - INFO -   Type 1042: 0.63 Hz (10 messages)
+2025-05-07 15:06:15,352 - INFO -   Type 1046: 1.13 Hz (18 messages)
+2025-05-07 15:06:15,352 - INFO -   Type 1074: 1.00 Hz (16 messages)
+2025-05-07 15:06:15,352 - INFO -   Type 1084: 1.00 Hz (16 messages)
+2025-05-07 15:06:15,352 - INFO -   Type 1094: 1.00 Hz (16 messages)
+2025-05-07 15:06:15,352 - INFO -   Type 1124: 1.00 Hz (16 messages)
+2025-05-07 15:06:15,352 - INFO -   Type 1230: 0.13 Hz (2 messages)
+2025-05-07 15:06:15,352 - INFO -   Total: 9.13 Hz (146 messages in 15.99s)
+2025-05-07 15:06:15,352 - INFO -   CRC Errors: 0.00 Hz (0 errors)
+2025-05-07 15:06:17,376 - INFO - RTK Status: RTK Float | Satellites: 27 | Altitude: 326.050m
+2025-05-07 15:06:17,376 - INFO - Last GGA Message: $GPGGA,190538.760,4020.7229749,N,08007.7283885,W,5,27,0.5,326.050,M,-33.184,M,,0000*69
+2025-05-07 15:06:22,381 - INFO - RTK Status: RTK Float | Satellites: 27 | Altitude: 326.051m
+2025-05-07 15:06:22,381 - INFO - Last GGA Message: $GPGGA,190538.840,4020.7229748,N,08007.7283882,W,5,27,0.5,326.051,M,-33.184,M,,0000*63
+2025-05-07 15:06:28,365 - INFO - RTK Status: RTK Float | Satellites: 27 | Altitude: 326.053m
+2025-05-07 15:06:28,366 - INFO - Last GGA Message: $GPGGA,190538.920,4020.7229746,N,08007.7283880,W,5,27,0.5,326.053,M,-33.184,M,,0000*6A
+2025-05-07 15:06:30,372 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:06:30,373 - INFO -   Type 1005: 1.00 Hz (15 messages)
+2025-05-07 15:06:30,373 - INFO -   Type 1019: 0.80 Hz (12 messages)
+2025-05-07 15:06:30,373 - INFO -   Type 1020: 0.33 Hz (5 messages)
+2025-05-07 15:06:30,373 - INFO -   Type 1033: 0.07 Hz (1 messages)
+2025-05-07 15:06:30,373 - INFO -   Type 1042: 0.33 Hz (5 messages)
+2025-05-07 15:06:30,373 - INFO -   Type 1046: 0.60 Hz (9 messages)
+2025-05-07 15:06:30,373 - INFO -   Type 1074: 1.00 Hz (15 messages)
+2025-05-07 15:06:30,373 - INFO -   Type 1084: 1.00 Hz (15 messages)
+2025-05-07 15:06:30,373 - INFO -   Type 1094: 1.00 Hz (15 messages)
+2025-05-07 15:06:30,373 - INFO -   Type 1124: 1.00 Hz (15 messages)
+2025-05-07 15:06:30,373 - INFO -   Type 1230: 0.07 Hz (1 messages)
+2025-05-07 15:06:30,373 - INFO -   Total: 7.19 Hz (108 messages in 15.02s)
+2025-05-07 15:06:30,373 - INFO -   CRC Errors: 0.00 Hz (0 errors)
+2025-05-07 15:06:42,383 - INFO - RTK Status: RTK Float | Satellites: 24 | Altitude: 325.572m
+2025-05-07 15:06:42,383 - INFO - Last GGA Message: $GPGGA,190631.480,4020.7230669,N,08007.7284092,W,5,24,0.6,325.572,M,-33.184,M,,0000*6A
+2025-05-07 15:06:46,361 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:06:46,361 - INFO -   Type 1005: 1.00 Hz (16 messages)
+2025-05-07 15:06:46,362 - INFO -   Type 1019: 1.50 Hz (24 messages)
+2025-05-07 15:06:46,362 - INFO -   Type 1020: 0.63 Hz (10 messages)
+2025-05-07 15:06:46,362 - INFO -   Type 1033: 0.13 Hz (2 messages)
+2025-05-07 15:06:46,362 - INFO -   Type 1042: 0.63 Hz (10 messages)
+2025-05-07 15:06:46,362 - INFO -   Type 1046: 1.13 Hz (18 messages)
+2025-05-07 15:06:46,362 - INFO -   Type 1074: 1.00 Hz (16 messages)
+2025-05-07 15:06:46,362 - INFO -   Type 1084: 1.00 Hz (16 messages)
+2025-05-07 15:06:46,362 - INFO -   Type 1094: 1.00 Hz (16 messages)
+2025-05-07 15:06:46,362 - INFO -   Type 1124: 1.00 Hz (16 messages)
+2025-05-07 15:06:46,362 - INFO -   Type 1230: 0.13 Hz (2 messages)
+2025-05-07 15:06:46,362 - INFO -   Total: 9.13 Hz (146 messages in 15.99s)
+2025-05-07 15:06:46,362 - INFO -   CRC Errors: 0.00 Hz (0 errors)
+2025-05-07 15:06:48,395 - INFO - RTK Status: RTK Float | Satellites: 24 | Altitude: 325.573m
+2025-05-07 15:06:48,395 - INFO - Last GGA Message: $GPGGA,190631.560,4020.7230667,N,08007.7284090,W,5,24,0.6,325.573,M,-33.184,M,,0000*68
+2025-05-07 15:06:56,337 - INFO - RTK Status: RTK Float | Satellites: 24 | Altitude: 325.575m
+2025-05-07 15:06:56,337 - INFO - Last GGA Message: $GPGGA,190631.680,4020.7230663,N,08007.7284088,W,5,24,0.6,325.575,M,-33.184,M,,0000*6E
+2025-05-07 15:07:01,391 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:07:01,391 - INFO -   Type 1005: 1.00 Hz (15 messages)
+2025-05-07 15:07:01,392 - INFO -   Type 1019: 1.60 Hz (24 messages)
+2025-05-07 15:07:01,392 - INFO -   Type 1020: 0.53 Hz (8 messages)
+2025-05-07 15:07:01,392 - INFO -   Type 1033: 0.07 Hz (1 messages)
+2025-05-07 15:07:01,392 - INFO -   Type 1042: 0.33 Hz (5 messages)
+2025-05-07 15:07:01,392 - INFO -   Type 1046: 0.60 Hz (9 messages)
+2025-05-07 15:07:01,392 - INFO -   Type 1074: 1.00 Hz (15 messages)
+2025-05-07 15:07:01,392 - INFO -   Type 1084: 1.00 Hz (15 messages)
+2025-05-07 15:07:01,392 - INFO -   Type 1094: 1.00 Hz (15 messages)
+2025-05-07 15:07:01,392 - INFO -   Type 1124: 1.00 Hz (15 messages)
+2025-05-07 15:07:01,392 - INFO -   Type 1230: 0.07 Hz (1 messages)
+2025-05-07 15:07:01,392 - INFO -   Total: 8.18 Hz (123 messages in 15.03s)
+2025-05-07 15:07:01,392 - INFO -   CRC Errors: 0.00 Hz (0 errors)
+2025-05-07 15:07:01,551 - INFO - RTK Status: RTK Float | Satellites: 24 | Altitude: 325.577m
+2025-05-07 15:07:01,551 - INFO - Last GGA Message: $GPGGA,190631.760,4020.7230661,N,08007.7284086,W,5,24,0.6,325.577,M,-33.184,M,,0000*6F
+2025-05-07 15:07:07,379 - INFO - RTK Status: RTK Float | Satellites: 24 | Altitude: 325.578m
+2025-05-07 15:07:07,379 - INFO - Last GGA Message: $GPGGA,190631.840,4020.7230659,N,08007.7284085,W,5,24,0.6,325.578,M,-33.184,M,,0000*65
+2025-05-07 15:07:12,404 - INFO - RTK Status: RTK Float | Satellites: 24 | Altitude: 325.580m
+2025-05-07 15:07:12,404 - INFO - Last GGA Message: $GPGGA,190631.920,4020.7230656,N,08007.7284083,W,5,24,0.6,325.580,M,-33.184,M,,0000*6C
+2025-05-07 15:07:17,378 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:07:17,378 - INFO -   Type 1005: 1.00 Hz (16 messages)
+2025-05-07 15:07:17,378 - INFO -   Type 1019: 0.75 Hz (12 messages)
+2025-05-07 15:07:17,379 - INFO -   Type 1020: 0.44 Hz (7 messages)
+2025-05-07 15:07:17,379 - INFO -   Type 1033: 0.13 Hz (2 messages)
+2025-05-07 15:07:17,379 - INFO -   Type 1042: 0.63 Hz (10 messages)
+2025-05-07 15:07:17,379 - INFO -   Type 1046: 1.13 Hz (18 messages)
+2025-05-07 15:07:17,379 - INFO -   Type 1074: 1.00 Hz (16 messages)
+2025-05-07 15:07:17,379 - INFO -   Type 1084: 1.00 Hz (16 messages)
+2025-05-07 15:07:17,379 - INFO -   Type 1094: 1.00 Hz (16 messages)
+2025-05-07 15:07:17,379 - INFO -   Type 1124: 1.00 Hz (16 messages)
+2025-05-07 15:07:17,379 - INFO -   Type 1230: 0.13 Hz (2 messages)
+2025-05-07 15:07:17,379 - INFO -   Total: 8.19 Hz (131 messages in 15.99s)
+2025-05-07 15:07:17,379 - INFO -   CRC Errors: 0.00 Hz (0 errors)
+2025-05-07 15:07:18,387 - INFO - RTK Status: RTK Float | Satellites: 24 | Altitude: 325.477m
+2025-05-07 15:07:18,388 - INFO - Last GGA Message: $GPGGA,190632.000,4020.7230726,N,08007.7284141,W,5,24,0.6,325.477,M,-33.100,M,1.000,0000*47
+2025-05-07 15:07:33,320 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:07:33,320 - INFO -   Type 1005: 1.00 Hz (16 messages)
+2025-05-07 15:07:33,320 - INFO -   Type 1019: 1.51 Hz (24 messages)
+2025-05-07 15:07:33,321 - INFO -   Type 1020: 0.63 Hz (10 messages)
+2025-05-07 15:07:33,321 - INFO -   Type 1033: 0.13 Hz (2 messages)
+2025-05-07 15:07:33,321 - INFO -   Type 1042: 0.63 Hz (10 messages)
+2025-05-07 15:07:33,321 - INFO -   Type 1046: 1.13 Hz (18 messages)
+2025-05-07 15:07:33,321 - INFO -   Type 1074: 1.00 Hz (16 messages)
+2025-05-07 15:07:33,321 - INFO -   Type 1084: 1.00 Hz (16 messages)
+2025-05-07 15:07:33,321 - INFO -   Type 1094: 1.00 Hz (16 messages)
+2025-05-07 15:07:33,321 - INFO -   Type 1124: 1.00 Hz (16 messages)
+2025-05-07 15:07:33,321 - INFO -   Type 1230: 0.13 Hz (2 messages)
+2025-05-07 15:07:33,321 - INFO -   Total: 9.16 Hz (146 messages in 15.94s)
+2025-05-07 15:07:33,321 - INFO -   CRC Errors: 0.00 Hz (0 errors)
+2025-05-07 15:07:36,342 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 325.412m
+2025-05-07 15:07:36,342 - INFO - Last GGA Message: $GPGGA,190723.320,4020.7231433,N,08007.7284169,W,5,26,0.5,325.412,M,-33.184,M,,0000*6A
+2025-05-07 15:07:41,575 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 325.413m
+2025-05-07 15:07:41,575 - INFO - Last GGA Message: $GPGGA,190723.400,4020.7231431,N,08007.7284166,W,5,26,0.5,325.413,M,-33.184,M,,0000*63
+2025-05-07 15:07:47,391 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 325.415m
+2025-05-07 15:07:47,391 - INFO - Last GGA Message: $GPGGA,190723.480,4020.7231430,N,08007.7284163,W,5,26,0.5,325.415,M,-33.184,M,,0000*69
+2025-05-07 15:07:48,397 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:07:48,397 - INFO -   Type 1005: 0.99 Hz (15 messages)
+2025-05-07 15:07:48,397 - INFO -   Type 1019: 0.80 Hz (12 messages)
+2025-05-07 15:07:48,397 - INFO -   Type 1020: 0.33 Hz (5 messages)
+2025-05-07 15:07:48,398 - INFO -   Type 1033: 0.07 Hz (1 messages)
+2025-05-07 15:07:48,398 - INFO -   Type 1042: 0.33 Hz (5 messages)
+2025-05-07 15:07:48,398 - INFO -   Type 1046: 0.60 Hz (9 messages)
+2025-05-07 15:07:48,398 - INFO -   Type 1074: 0.99 Hz (15 messages)
+2025-05-07 15:07:48,398 - INFO -   Type 1084: 0.99 Hz (15 messages)
+2025-05-07 15:07:48,398 - INFO -   Type 1094: 0.99 Hz (15 messages)
+2025-05-07 15:07:48,398 - INFO -   Type 1124: 0.99 Hz (15 messages)
+2025-05-07 15:07:48,398 - INFO -   Type 1230: 0.07 Hz (1 messages)
+2025-05-07 15:07:48,398 - INFO -   Total: 7.16 Hz (108 messages in 15.08s)
+2025-05-07 15:07:48,398 - INFO -   CRC Errors: 0.00 Hz (0 errors)
+2025-05-07 15:07:55,374 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 325.417m
+2025-05-07 15:07:55,374 - INFO - Last GGA Message: $GPGGA,190723.600,4020.7231427,N,08007.7284158,W,5,26,0.5,325.417,M,-33.184,M,,0000*6F
+2025-05-07 15:08:01,617 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 325.419m
+2025-05-07 15:08:01,617 - INFO - Last GGA Message: $GPGGA,190723.680,4020.7231425,N,08007.7284155,W,5,26,0.5,325.419,M,-33.184,M,,0000*66
+2025-05-07 15:08:02,279 - WARNING - CRC mismatch at buffer pos 14, skipping. Total CRC errors: 0
+2025-05-07 15:08:04,330 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:08:04,330 - INFO -   Type 1005: 1.00 Hz (16 messages)
+2025-05-07 15:08:04,330 - INFO -   Type 1019: 1.63 Hz (26 messages)
+2025-05-07 15:08:04,330 - INFO -   Type 1020: 0.63 Hz (10 messages)
+2025-05-07 15:08:04,330 - INFO -   Type 1033: 0.13 Hz (2 messages)
+2025-05-07 15:08:04,331 - INFO -   Type 1042: 0.63 Hz (10 messages)
+2025-05-07 15:08:04,331 - INFO -   Type 1046: 1.13 Hz (18 messages)
+2025-05-07 15:08:04,331 - INFO -   Type 1074: 1.00 Hz (16 messages)
+2025-05-07 15:08:04,331 - INFO -   Type 1084: 1.00 Hz (16 messages)
+2025-05-07 15:08:04,331 - INFO -   Type 1094: 1.00 Hz (16 messages)
+2025-05-07 15:08:04,331 - INFO -   Type 1124: 1.00 Hz (16 messages)
+2025-05-07 15:08:04,331 - INFO -   Type 1230: 0.13 Hz (2 messages)
+2025-05-07 15:08:04,331 - INFO -   Total: 9.29 Hz (148 messages in 15.93s)
+2025-05-07 15:08:04,331 - INFO -   CRC Errors: 0.06 Hz (1 errors)
+2025-05-07 15:08:09,371 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 325.422m
+2025-05-07 15:08:09,371 - INFO - Last GGA Message: $GPGGA,190723.800,4020.7231422,N,08007.7284150,W,5,26,0.5,325.422,M,-33.184,M,,0000*6A
+2025-05-07 15:08:12,315 - WARNING - CRC mismatch at buffer pos 8, skipping. Total CRC errors: 0
+2025-05-07 15:08:17,391 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 325.424m
+2025-05-07 15:08:17,391 - INFO - Last GGA Message: $GPGGA,190723.920,4020.7231420,N,08007.7284146,W,5,26,0.5,325.424,M,-33.184,M,,0000*6A
+2025-05-07 15:08:19,409 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:08:19,409 - INFO -   Type 1005: 0.99 Hz (15 messages)
+2025-05-07 15:08:19,409 - INFO -   Type 1019: 0.86 Hz (13 messages)
+2025-05-07 15:08:19,409 - INFO -   Type 1020: 0.33 Hz (5 messages)
+2025-05-07 15:08:19,409 - INFO -   Type 1033: 0.07 Hz (1 messages)
+2025-05-07 15:08:19,409 - INFO -   Type 1042: 0.33 Hz (5 messages)
+2025-05-07 15:08:19,410 - INFO -   Type 1046: 0.60 Hz (9 messages)
+2025-05-07 15:08:19,410 - INFO -   Type 1074: 0.99 Hz (15 messages)
+2025-05-07 15:08:19,410 - INFO -   Type 1084: 0.99 Hz (15 messages)
+2025-05-07 15:08:19,410 - INFO -   Type 1094: 0.99 Hz (15 messages)
+2025-05-07 15:08:19,410 - INFO -   Type 1124: 0.99 Hz (15 messages)
+2025-05-07 15:08:19,410 - INFO -   Type 1230: 0.07 Hz (1 messages)
+2025-05-07 15:08:19,410 - INFO -   Total: 7.23 Hz (109 messages in 15.08s)
+2025-05-07 15:08:19,410 - INFO -   CRC Errors: 0.07 Hz (1 errors)
+2025-05-07 15:08:22,332 - WARNING - CRC mismatch at buffer pos 2, skipping. Total CRC errors: 0
+2025-05-07 15:08:22,441 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 325.322m
+2025-05-07 15:08:22,441 - INFO - Last GGA Message: $GPGGA,190724.000,4020.7231456,N,08007.7284218,W,5,26,0.5,325.322,M,-33.100,M,1.000,0000*4D
+2025-05-07 15:08:29,413 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 325.242m
+2025-05-07 15:08:29,413 - INFO - Last GGA Message: $GPGGA,190817.400,4020.7231561,N,08007.7284870,W,5,26,0.5,325.242,M,-33.184,M,,0000*63
+2025-05-07 15:08:35,320 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:08:35,320 - INFO -   Type 1005: 1.01 Hz (16 messages)
+2025-05-07 15:08:35,320 - INFO -   Type 1019: 1.63 Hz (26 messages)
+2025-05-07 15:08:35,320 - INFO -   Type 1020: 0.63 Hz (10 messages)
+2025-05-07 15:08:35,320 - INFO -   Type 1033: 0.13 Hz (2 messages)
+2025-05-07 15:08:35,320 - INFO -   Type 1042: 0.63 Hz (10 messages)
+2025-05-07 15:08:35,320 - INFO -   Type 1046: 1.13 Hz (18 messages)
+2025-05-07 15:08:35,321 - INFO -   Type 1074: 1.01 Hz (16 messages)
+2025-05-07 15:08:35,321 - INFO -   Type 1084: 1.01 Hz (16 messages)
+2025-05-07 15:08:35,321 - INFO -   Type 1094: 1.01 Hz (16 messages)
+2025-05-07 15:08:35,321 - INFO -   Type 1124: 1.01 Hz (16 messages)
+2025-05-07 15:08:35,321 - INFO -   Type 1230: 0.13 Hz (2 messages)
+2025-05-07 15:08:35,321 - INFO -   Total: 9.30 Hz (148 messages in 15.91s)
+2025-05-07 15:08:35,321 - INFO -   CRC Errors: 0.06 Hz (1 errors)
+2025-05-07 15:08:37,342 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 325.244m
+2025-05-07 15:08:37,342 - INFO - Last GGA Message: $GPGGA,190817.520,4020.7231562,N,08007.7284876,W,5,26,0.5,325.244,M,-33.184,M,,0000*63
+2025-05-07 15:08:42,318 - WARNING - CRC mismatch at buffer pos 60, skipping. Total CRC errors: 0
+2025-05-07 15:08:42,422 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 325.244m
+2025-05-07 15:08:42,422 - INFO - Last GGA Message: $GPGGA,190817.600,4020.7231562,N,08007.7284880,W,5,26,0.5,325.244,M,-33.184,M,,0000*6B
+2025-05-07 15:08:48,402 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 325.245m
+2025-05-07 15:08:48,402 - INFO - Last GGA Message: $GPGGA,190817.680,4020.7231563,N,08007.7284884,W,5,26,0.5,325.245,M,-33.184,M,,0000*67
+2025-05-07 15:08:50,407 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:08:50,407 - INFO -   Type 1005: 0.99 Hz (15 messages)
+2025-05-07 15:08:50,407 - INFO -   Type 1019: 0.86 Hz (13 messages)
+2025-05-07 15:08:50,407 - INFO -   Type 1020: 0.33 Hz (5 messages)
+2025-05-07 15:08:50,407 - INFO -   Type 1033: 0.07 Hz (1 messages)
+2025-05-07 15:08:50,407 - INFO -   Type 1042: 0.33 Hz (5 messages)
+2025-05-07 15:08:50,407 - INFO -   Type 1046: 0.60 Hz (9 messages)
+2025-05-07 15:08:50,407 - INFO -   Type 1074: 0.99 Hz (15 messages)
+2025-05-07 15:08:50,408 - INFO -   Type 1084: 0.99 Hz (15 messages)
+2025-05-07 15:08:50,408 - INFO -   Type 1094: 0.99 Hz (15 messages)
+2025-05-07 15:08:50,408 - INFO -   Type 1124: 0.99 Hz (15 messages)
+2025-05-07 15:08:50,408 - INFO -   Type 1230: 0.07 Hz (1 messages)
+2025-05-07 15:08:50,408 - INFO -   Total: 7.22 Hz (109 messages in 15.09s)
+2025-05-07 15:08:50,408 - INFO -   CRC Errors: 0.07 Hz (1 errors)
+2025-05-07 15:08:52,280 - WARNING - CRC mismatch at buffer pos 51, skipping. Total CRC errors: 0
+2025-05-07 15:08:56,343 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 325.246m
+2025-05-07 15:08:56,344 - INFO - Last GGA Message: $GPGGA,190817.800,4020.7231564,N,08007.7284889,W,5,26,0.5,325.246,M,-33.184,M,,0000*68
+2025-05-07 15:09:01,819 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 325.247m
+2025-05-07 15:09:01,819 - INFO - Last GGA Message: $GPGGA,190817.880,4020.7231565,N,08007.7284893,W,5,26,0.5,325.247,M,-33.184,M,,0000*6B
+2025-05-07 15:09:02,311 - WARNING - CRC mismatch at buffer pos 0, skipping. Total CRC errors: 1
+2025-05-07 15:09:06,363 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:09:06,363 - INFO -   Type 1005: 1.00 Hz (16 messages)
+2025-05-07 15:09:06,363 - INFO -   Type 1019: 1.63 Hz (26 messages)
+2025-05-07 15:09:06,363 - INFO -   Type 1020: 0.63 Hz (10 messages)
+2025-05-07 15:09:06,363 - INFO -   Type 1033: 0.13 Hz (2 messages)
+2025-05-07 15:09:06,363 - INFO -   Type 1042: 0.63 Hz (10 messages)
+2025-05-07 15:09:06,363 - INFO -   Type 1046: 1.13 Hz (18 messages)
+2025-05-07 15:09:06,363 - INFO -   Type 1074: 1.00 Hz (16 messages)
+2025-05-07 15:09:06,364 - INFO -   Type 1084: 1.00 Hz (16 messages)
+2025-05-07 15:09:06,364 - INFO -   Type 1094: 1.00 Hz (16 messages)
+2025-05-07 15:09:06,364 - INFO -   Type 1124: 1.00 Hz (16 messages)
+2025-05-07 15:09:06,364 - INFO -   Type 1230: 0.13 Hz (2 messages)
+2025-05-07 15:09:06,364 - INFO -   Total: 9.28 Hz (148 messages in 15.96s)
+2025-05-07 15:09:06,364 - INFO -   CRC Errors: 0.13 Hz (2 errors)
+2025-05-07 15:09:07,373 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 325.161m
+2025-05-07 15:09:07,373 - INFO - Last GGA Message: $GPGGA,190818.000,4020.7231557,N,08007.7284857,W,5,26,0.5,325.161,M,-33.100,M,1.000,0000*49
+2025-05-07 15:09:12,320 - WARNING - CRC mismatch at buffer pos 51, skipping. Total CRC errors: 0
+2025-05-07 15:09:21,408 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:09:21,408 - INFO -   Type 1005: 1.00 Hz (15 messages)
+2025-05-07 15:09:21,408 - INFO -   Type 1019: 1.73 Hz (26 messages)
+2025-05-07 15:09:21,408 - INFO -   Type 1020: 0.47 Hz (7 messages)
+2025-05-07 15:09:21,408 - INFO -   Type 1033: 0.07 Hz (1 messages)
+2025-05-07 15:09:21,408 - INFO -   Type 1042: 0.33 Hz (5 messages)
+2025-05-07 15:09:21,408 - INFO -   Type 1046: 0.60 Hz (9 messages)
+2025-05-07 15:09:21,408 - INFO -   Type 1074: 1.00 Hz (15 messages)
+2025-05-07 15:09:21,408 - INFO -   Type 1084: 1.00 Hz (15 messages)
+2025-05-07 15:09:21,409 - INFO -   Type 1094: 1.00 Hz (15 messages)
+2025-05-07 15:09:21,409 - INFO -   Type 1124: 1.00 Hz (15 messages)
+2025-05-07 15:09:21,409 - INFO -   Type 1230: 0.07 Hz (1 messages)
+2025-05-07 15:09:21,409 - INFO -   Total: 8.24 Hz (124 messages in 15.04s)
+2025-05-07 15:09:21,409 - INFO -   CRC Errors: 0.07 Hz (1 errors)
+2025-05-07 15:09:21,568 - INFO - RTK Status: RTK Float | Satellites: 27 | Altitude: 325.229m
+2025-05-07 15:09:21,568 - INFO - Last GGA Message: $GPGGA,190909.400,4020.7231548,N,08007.7284692,W,5,27,0.5,325.229,M,-33.184,M,,0000*68
+2025-05-07 15:09:22,318 - WARNING - CRC mismatch at buffer pos 43, skipping. Total CRC errors: 0
+2025-05-07 15:09:27,398 - INFO - RTK Status: RTK Float | Satellites: 27 | Altitude: 325.230m
+2025-05-07 15:09:27,398 - INFO - Last GGA Message: $GPGGA,190909.480,4020.7231550,N,08007.7284694,W,5,27,0.5,325.230,M,-33.184,M,,0000*67
+2025-05-07 15:09:32,305 - WARNING - CRC mismatch at buffer pos 8, skipping. Total CRC errors: 1
+2025-05-07 15:09:32,413 - INFO - RTK Status: RTK Float | Satellites: 27 | Altitude: 325.232m
+2025-05-07 15:09:32,413 - INFO - Last GGA Message: $GPGGA,190909.560,4020.7231551,N,08007.7284696,W,5,27,0.5,325.232,M,-33.184,M,,0000*69
+2025-05-07 15:09:37,367 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:09:37,367 - INFO -   Type 1005: 1.00 Hz (16 messages)
+2025-05-07 15:09:37,367 - INFO -   Type 1019: 0.81 Hz (13 messages)
+2025-05-07 15:09:37,367 - INFO -   Type 1020: 0.50 Hz (8 messages)
+2025-05-07 15:09:37,367 - INFO -   Type 1033: 0.13 Hz (2 messages)
+2025-05-07 15:09:37,367 - INFO -   Type 1042: 0.63 Hz (10 messages)
+2025-05-07 15:09:37,367 - INFO -   Type 1046: 1.13 Hz (18 messages)
+2025-05-07 15:09:37,367 - INFO -   Type 1074: 1.00 Hz (16 messages)
+2025-05-07 15:09:37,367 - INFO -   Type 1084: 1.00 Hz (16 messages)
+2025-05-07 15:09:37,367 - INFO -   Type 1094: 1.00 Hz (16 messages)
+2025-05-07 15:09:37,367 - INFO -   Type 1124: 1.00 Hz (16 messages)
+2025-05-07 15:09:37,368 - INFO -   Type 1230: 0.13 Hz (2 messages)
+2025-05-07 15:09:37,368 - INFO -   Total: 8.33 Hz (133 messages in 15.96s)
+2025-05-07 15:09:37,368 - INFO -   CRC Errors: 0.13 Hz (2 errors)
+2025-05-07 15:09:38,377 - INFO - RTK Status: RTK Float | Satellites: 27 | Altitude: 325.233m
+2025-05-07 15:09:38,377 - INFO - Last GGA Message: $GPGGA,190909.640,4020.7231552,N,08007.7284697,W,5,27,0.5,325.233,M,-33.184,M,,0000*6B
+2025-05-07 15:09:42,297 - WARNING - CRC mismatch at buffer pos 60, skipping. Total CRC errors: 0
+2025-05-07 15:09:46,395 - INFO - RTK Status: RTK Float | Satellites: 27 | Altitude: 325.235m
+2025-05-07 15:09:46,395 - INFO - Last GGA Message: $GPGGA,190909.760,4020.7231553,N,08007.7284700,W,5,27,0.5,325.235,M,-33.184,M,,0000*60
+2025-05-07 15:09:51,568 - INFO - RTK Status: RTK Float | Satellites: 27 | Altitude: 325.236m
+2025-05-07 15:09:51,568 - INFO - Last GGA Message: $GPGGA,190909.840,4020.7231554,N,08007.7284702,W,5,27,0.5,325.236,M,-33.184,M,,0000*6B
+2025-05-07 15:09:52,394 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:09:52,394 - INFO -   Type 1005: 1.00 Hz (15 messages)
+2025-05-07 15:09:52,394 - INFO -   Type 1019: 1.73 Hz (26 messages)
+2025-05-07 15:09:52,394 - INFO -   Type 1020: 0.67 Hz (10 messages)
+2025-05-07 15:09:52,394 - INFO -   Type 1033: 0.13 Hz (2 messages)
+2025-05-07 15:09:52,394 - INFO -   Type 1042: 0.67 Hz (10 messages)
+2025-05-07 15:09:52,394 - INFO -   Type 1046: 1.13 Hz (17 messages)
+2025-05-07 15:09:52,394 - INFO -   Type 1074: 1.00 Hz (15 messages)
+2025-05-07 15:09:52,394 - INFO -   Type 1084: 1.00 Hz (15 messages)
+2025-05-07 15:09:52,394 - INFO -   Type 1094: 1.00 Hz (15 messages)
+2025-05-07 15:09:52,394 - INFO -   Type 1124: 1.00 Hz (15 messages)
+2025-05-07 15:09:52,394 - INFO -   Type 1230: 0.13 Hz (2 messages)
+2025-05-07 15:09:52,395 - INFO -   Total: 9.45 Hz (142 messages in 15.03s)
+2025-05-07 15:09:52,395 - INFO -   CRC Errors: 0.07 Hz (1 errors)
+2025-05-07 15:09:57,378 - INFO - RTK Status: RTK Float | Satellites: 27 | Altitude: 325.237m
+2025-05-07 15:09:57,378 - INFO - Last GGA Message: $GPGGA,190909.920,4020.7231555,N,08007.7284704,W,5,27,0.5,325.237,M,-33.184,M,,0000*6A
+2025-05-07 15:10:02,396 - INFO - RTK Status: RTK Float | Satellites: 27 | Altitude: 325.133m
+2025-05-07 15:10:02,397 - INFO - Last GGA Message: $GPGGA,190910.000,4020.7231525,N,08007.7284690,W,5,27,0.5,325.133,M,-33.100,M,1.000,0000*46
+2025-05-07 15:10:08,428 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:10:08,428 - INFO -   Type 1005: 1.00 Hz (16 messages)
+2025-05-07 15:10:08,428 - INFO -   Type 1019: 0.81 Hz (13 messages)
+2025-05-07 15:10:08,428 - INFO -   Type 1020: 0.31 Hz (5 messages)
+2025-05-07 15:10:08,428 - INFO -   Type 1033: 0.06 Hz (1 messages)
+2025-05-07 15:10:08,428 - INFO -   Type 1042: 0.31 Hz (5 messages)
+2025-05-07 15:10:08,428 - INFO -   Type 1046: 0.56 Hz (9 messages)
+2025-05-07 15:10:08,428 - INFO -   Type 1074: 1.00 Hz (16 messages)
+2025-05-07 15:10:08,428 - INFO -   Type 1084: 1.00 Hz (16 messages)
+2025-05-07 15:10:08,428 - INFO -   Type 1094: 1.00 Hz (16 messages)
+2025-05-07 15:10:08,428 - INFO -   Type 1124: 1.00 Hz (16 messages)
+2025-05-07 15:10:08,428 - INFO -   Type 1230: 0.06 Hz (1 messages)
+2025-05-07 15:10:08,428 - INFO -   Total: 7.11 Hz (114 messages in 16.03s)
+2025-05-07 15:10:08,429 - INFO -   CRC Errors: 0.00 Hz (0 errors)
+2025-05-07 15:10:12,301 - WARNING - CRC mismatch at buffer pos 0, skipping. Total CRC errors: 0
+2025-05-07 15:10:15,371 - INFO - RTK Status: RTK Float | Satellites: 27 | Altitude: 325.229m
+2025-05-07 15:10:15,371 - INFO - Last GGA Message: $GPGGA,191002.400,4020.7230882,N,08007.7285343,W,5,27,0.5,325.229,M,-33.184,M,,0000*69
+2025-05-07 15:10:21,417 - INFO - RTK Status: RTK Float | Satellites: 27 | Altitude: 325.232m
+2025-05-07 15:10:21,417 - INFO - Last GGA Message: $GPGGA,191002.480,4020.7230880,N,08007.7285340,W,5,27,0.5,325.232,M,-33.184,M,,0000*6A
+2025-05-07 15:10:22,303 - WARNING - CRC mismatch at buffer pos 0, skipping. Total CRC errors: 1
+2025-05-07 15:10:24,365 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:10:24,365 - INFO -   Type 1005: 1.00 Hz (16 messages)
+2025-05-07 15:10:24,365 - INFO -   Type 1019: 1.63 Hz (26 messages)
+2025-05-07 15:10:24,365 - INFO -   Type 1020: 0.63 Hz (10 messages)
+2025-05-07 15:10:24,365 - INFO -   Type 1033: 0.13 Hz (2 messages)
+2025-05-07 15:10:24,365 - INFO -   Type 1042: 0.63 Hz (10 messages)
+2025-05-07 15:10:24,365 - INFO -   Type 1046: 1.00 Hz (16 messages)
+2025-05-07 15:10:24,365 - INFO -   Type 1074: 1.00 Hz (16 messages)
+2025-05-07 15:10:24,365 - INFO -   Type 1084: 1.00 Hz (16 messages)
+2025-05-07 15:10:24,365 - INFO -   Type 1094: 1.00 Hz (16 messages)
+2025-05-07 15:10:24,365 - INFO -   Type 1124: 1.00 Hz (16 messages)
+2025-05-07 15:10:24,365 - INFO -   Type 1230: 0.13 Hz (2 messages)
+2025-05-07 15:10:24,365 - INFO -   Total: 9.16 Hz (146 messages in 15.94s)
+2025-05-07 15:10:24,366 - INFO -   CRC Errors: 0.13 Hz (2 errors)
+2025-05-07 15:10:29,396 - INFO - RTK Status: RTK Float | Satellites: 27 | Altitude: 325.235m
+2025-05-07 15:10:29,396 - INFO - Last GGA Message: $GPGGA,191002.600,4020.7230878,N,08007.7285335,W,5,27,0.5,325.235,M,-33.184,M,,0000*62
+2025-05-07 15:10:32,344 - WARNING - CRC mismatch at buffer pos 0, skipping. Total CRC errors: 0
+2025-05-07 15:10:37,371 - INFO - RTK Status: RTK Float | Satellites: 27 | Altitude: 325.238m
+2025-05-07 15:10:37,371 - INFO - Last GGA Message: $GPGGA,191002.720,4020.7230876,N,08007.7285331,W,5,27,0.5,325.238,M,-33.184,M,,0000*66
+2025-05-07 15:10:39,382 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:10:39,383 - INFO -   Type 1005: 1.00 Hz (15 messages)
+2025-05-07 15:10:39,383 - INFO -   Type 1019: 0.87 Hz (13 messages)
+2025-05-07 15:10:39,383 - INFO -   Type 1020: 0.33 Hz (5 messages)
+2025-05-07 15:10:39,383 - INFO -   Type 1033: 0.07 Hz (1 messages)
+2025-05-07 15:10:39,383 - INFO -   Type 1042: 0.33 Hz (5 messages)
+2025-05-07 15:10:39,383 - INFO -   Type 1046: 0.53 Hz (8 messages)
+2025-05-07 15:10:39,383 - INFO -   Type 1074: 1.00 Hz (15 messages)
+2025-05-07 15:10:39,383 - INFO -   Type 1084: 1.00 Hz (15 messages)
+2025-05-07 15:10:39,383 - INFO -   Type 1094: 1.00 Hz (15 messages)
+2025-05-07 15:10:39,383 - INFO -   Type 1124: 1.00 Hz (15 messages)
+2025-05-07 15:10:39,383 - INFO -   Type 1230: 0.07 Hz (1 messages)
+2025-05-07 15:10:39,383 - INFO -   Total: 7.19 Hz (108 messages in 15.02s)
+2025-05-07 15:10:39,383 - INFO -   CRC Errors: 0.07 Hz (1 errors)
+2025-05-07 15:10:42,300 - WARNING - CRC mismatch at buffer pos 45, skipping. Total CRC errors: 0
+2025-05-07 15:10:42,404 - INFO - RTK Status: RTK Float | Satellites: 27 | Altitude: 325.240m
+2025-05-07 15:10:42,404 - INFO - Last GGA Message: $GPGGA,191002.800,4020.7230874,N,08007.7285328,W,5,27,0.5,325.240,M,-33.184,M,,0000*6E
+2025-05-07 15:10:48,416 - INFO - RTK Status: RTK Float | Satellites: 27 | Altitude: 325.242m
+2025-05-07 15:10:48,416 - INFO - Last GGA Message: $GPGGA,191002.880,4020.7230873,N,08007.7285325,W,5,27,0.5,325.242,M,-33.184,M,,0000*6E
+2025-05-07 15:10:52,311 - WARNING - CRC mismatch at buffer pos 17, skipping. Total CRC errors: 1
+2025-05-07 15:10:55,389 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:10:55,390 - INFO -   Type 1005: 1.00 Hz (16 messages)
+2025-05-07 15:10:55,390 - INFO -   Type 1019: 1.62 Hz (26 messages)
+2025-05-07 15:10:55,390 - INFO -   Type 1020: 0.81 Hz (13 messages)
+2025-05-07 15:10:55,390 - INFO -   Type 1033: 0.12 Hz (2 messages)
+2025-05-07 15:10:55,390 - INFO -   Type 1042: 0.62 Hz (10 messages)
+2025-05-07 15:10:55,390 - INFO -   Type 1046: 1.00 Hz (16 messages)
+2025-05-07 15:10:55,390 - INFO -   Type 1074: 1.00 Hz (16 messages)
+2025-05-07 15:10:55,390 - INFO -   Type 1084: 1.00 Hz (16 messages)
+2025-05-07 15:10:55,390 - INFO -   Type 1094: 1.00 Hz (16 messages)
+2025-05-07 15:10:55,390 - INFO -   Type 1124: 1.00 Hz (16 messages)
+2025-05-07 15:10:55,390 - INFO -   Type 1230: 0.12 Hz (2 messages)
+2025-05-07 15:10:55,390 - INFO -   Total: 9.31 Hz (149 messages in 16.01s)
+2025-05-07 15:10:55,390 - INFO -   CRC Errors: 0.12 Hz (2 errors)
+2025-05-07 15:10:56,381 - INFO - RTK Status: RTK Float | Satellites: 27 | Altitude: 325.136m
+2025-05-07 15:10:56,381 - INFO - Last GGA Message: $GPGGA,191003.000,4020.7230890,N,08007.7285373,W,5,27,0.5,325.136,M,-33.100,M,1.000,0000*42
+2025-05-07 15:11:02,311 - WARNING - CRC mismatch at buffer pos 31, skipping. Total CRC errors: 0
+2025-05-07 15:11:08,397 - INFO - RTK Status: RTK Float | Satellites: 27 | Altitude: 325.370m
+2025-05-07 15:11:08,398 - INFO - Last GGA Message: $GPGGA,191056.360,4020.7230738,N,08007.7284076,W,5,27,0.5,325.370,M,-33.184,M,,0000*6E
+2025-05-07 15:11:10,414 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:11:10,415 - INFO -   Type 1005: 1.00 Hz (15 messages)
+2025-05-07 15:11:10,415 - INFO -   Type 1019: 0.87 Hz (13 messages)
+2025-05-07 15:11:10,415 - INFO -   Type 1020: 0.40 Hz (6 messages)
+2025-05-07 15:11:10,415 - INFO -   Type 1033: 0.07 Hz (1 messages)
+2025-05-07 15:11:10,415 - INFO -   Type 1042: 0.33 Hz (5 messages)
+2025-05-07 15:11:10,415 - INFO -   Type 1046: 0.53 Hz (8 messages)
+2025-05-07 15:11:10,415 - INFO -   Type 1074: 1.00 Hz (15 messages)
+2025-05-07 15:11:10,415 - INFO -   Type 1084: 1.00 Hz (15 messages)
+2025-05-07 15:11:10,415 - INFO -   Type 1094: 1.00 Hz (15 messages)
+2025-05-07 15:11:10,415 - INFO -   Type 1124: 1.00 Hz (15 messages)
+2025-05-07 15:11:10,415 - INFO -   Type 1230: 0.07 Hz (1 messages)
+2025-05-07 15:11:10,415 - INFO -   Total: 7.25 Hz (109 messages in 15.02s)
+2025-05-07 15:11:10,415 - INFO -   CRC Errors: 0.07 Hz (1 errors)
+2025-05-07 15:11:12,304 - WARNING - CRC mismatch at buffer pos 39, skipping. Total CRC errors: 0
+2025-05-07 15:11:16,447 - INFO - RTK Status: RTK Float | Satellites: 27 | Altitude: 325.373m
+2025-05-07 15:11:16,447 - INFO - Last GGA Message: $GPGGA,191056.480,4020.7230736,N,08007.7284077,W,5,27,0.5,325.373,M,-33.184,M,,0000*6B
+2025-05-07 15:11:21,582 - INFO - RTK Status: RTK Float | Satellites: 27 | Altitude: 325.374m
+2025-05-07 15:11:21,582 - INFO - Last GGA Message: $GPGGA,191056.560,4020.7230735,N,08007.7284077,W,5,27,0.5,325.374,M,-33.184,M,,0000*60
+2025-05-07 15:11:22,310 - WARNING - CRC mismatch at buffer pos 31, skipping. Total CRC errors: 1
+2025-05-07 15:11:26,388 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:11:26,389 - INFO -   Type 1005: 1.00 Hz (16 messages)
+2025-05-07 15:11:26,389 - INFO -   Type 1019: 1.63 Hz (26 messages)
+2025-05-07 15:11:26,389 - INFO -   Type 1020: 0.75 Hz (12 messages)
+2025-05-07 15:11:26,389 - INFO -   Type 1033: 0.13 Hz (2 messages)
+2025-05-07 15:11:26,389 - INFO -   Type 1042: 0.63 Hz (10 messages)
+2025-05-07 15:11:26,389 - INFO -   Type 1046: 1.00 Hz (16 messages)
+2025-05-07 15:11:26,389 - INFO -   Type 1074: 1.00 Hz (16 messages)
+2025-05-07 15:11:26,389 - INFO -   Type 1084: 1.00 Hz (16 messages)
+2025-05-07 15:11:26,389 - INFO -   Type 1094: 1.00 Hz (16 messages)
+2025-05-07 15:11:26,389 - INFO -   Type 1124: 1.00 Hz (16 messages)
+2025-05-07 15:11:26,389 - INFO -   Type 1230: 0.13 Hz (2 messages)
+2025-05-07 15:11:26,389 - INFO -   Total: 9.27 Hz (148 messages in 15.97s)
+2025-05-07 15:11:26,389 - INFO -   CRC Errors: 0.13 Hz (2 errors)
+2025-05-07 15:11:27,389 - INFO - RTK Status: RTK Float | Satellites: 27 | Altitude: 325.376m
+2025-05-07 15:11:27,389 - INFO - Last GGA Message: $GPGGA,191056.640,4020.7230734,N,08007.7284078,W,5,27,0.5,325.376,M,-33.184,M,,0000*6D
+2025-05-07 15:11:32,305 - WARNING - CRC mismatch at buffer pos 45, skipping. Total CRC errors: 0
+2025-05-07 15:11:32,415 - INFO - RTK Status: RTK Float | Satellites: 27 | Altitude: 325.377m
+2025-05-07 15:11:32,415 - INFO - Last GGA Message: $GPGGA,191056.720,4020.7230733,N,08007.7284078,W,5,27,0.5,325.377,M,-33.184,M,,0000*6C
+2025-05-07 15:11:38,378 - INFO - RTK Status: RTK Float | Satellites: 27 | Altitude: 325.379m
+2025-05-07 15:11:38,378 - INFO - Last GGA Message: $GPGGA,191056.800,4020.7230732,N,08007.7284079,W,5,27,0.5,325.379,M,-33.184,M,,0000*6F
+2025-05-07 15:11:41,449 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:11:41,449 - INFO -   Type 1005: 1.00 Hz (15 messages)
+2025-05-07 15:11:41,450 - INFO -   Type 1019: 1.73 Hz (26 messages)
+2025-05-07 15:11:41,450 - INFO -   Type 1020: 0.53 Hz (8 messages)
+2025-05-07 15:11:41,450 - INFO -   Type 1033: 0.07 Hz (1 messages)
+2025-05-07 15:11:41,450 - INFO -   Type 1042: 0.33 Hz (5 messages)
+2025-05-07 15:11:41,450 - INFO -   Type 1046: 0.53 Hz (8 messages)
+2025-05-07 15:11:41,450 - INFO -   Type 1074: 1.00 Hz (15 messages)
+2025-05-07 15:11:41,450 - INFO -   Type 1084: 1.00 Hz (15 messages)
+2025-05-07 15:11:41,450 - INFO -   Type 1094: 1.00 Hz (15 messages)
+2025-05-07 15:11:41,450 - INFO -   Type 1124: 1.00 Hz (15 messages)
+2025-05-07 15:11:41,450 - INFO -   Type 1230: 0.07 Hz (1 messages)
+2025-05-07 15:11:41,450 - INFO -   Total: 8.23 Hz (124 messages in 15.06s)
+2025-05-07 15:11:41,450 - INFO -   CRC Errors: 0.07 Hz (1 errors)
+2025-05-07 15:11:42,359 - WARNING - CRC mismatch at buffer pos 51, skipping. Total CRC errors: 0
+2025-05-07 15:11:46,426 - INFO - RTK Status: RTK Float | Satellites: 27 | Altitude: 325.381m
+2025-05-07 15:11:46,426 - INFO - Last GGA Message: $GPGGA,191056.920,4020.7230731,N,08007.7284079,W,5,27,0.5,325.381,M,-33.184,M,,0000*68
+2025-05-07 15:11:51,571 - INFO - RTK Status: RTK Float | Satellites: 27 | Altitude: 325.272m
+2025-05-07 15:11:51,571 - INFO - Last GGA Message: $GPGGA,191057.000,4020.7230746,N,08007.7283994,W,5,27,0.5,325.272,M,-33.100,M,1.000,0000*41
+2025-05-07 15:11:52,306 - WARNING - CRC mismatch at buffer pos 45, skipping. Total CRC errors: 1
+2025-05-07 15:11:57,386 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:11:57,386 - INFO -   Type 1005: 1.00 Hz (16 messages)
+2025-05-07 15:11:57,387 - INFO -   Type 1019: 0.82 Hz (13 messages)
+2025-05-07 15:11:57,387 - INFO -   Type 1020: 0.63 Hz (10 messages)
+2025-05-07 15:11:57,387 - INFO -   Type 1033: 0.13 Hz (2 messages)
+2025-05-07 15:11:57,387 - INFO -   Type 1042: 0.63 Hz (10 messages)
+2025-05-07 15:11:57,387 - INFO -   Type 1046: 1.00 Hz (16 messages)
+2025-05-07 15:11:57,387 - INFO -   Type 1074: 1.00 Hz (16 messages)
+2025-05-07 15:11:57,387 - INFO -   Type 1084: 1.00 Hz (16 messages)
+2025-05-07 15:11:57,387 - INFO -   Type 1094: 1.00 Hz (16 messages)
+2025-05-07 15:11:57,387 - INFO -   Type 1124: 1.00 Hz (16 messages)
+2025-05-07 15:11:57,387 - INFO -   Type 1230: 0.13 Hz (2 messages)
+2025-05-07 15:11:57,387 - INFO -   Total: 8.35 Hz (133 messages in 15.94s)
+2025-05-07 15:11:57,387 - INFO -   CRC Errors: 0.13 Hz (2 errors)
+2025-05-07 15:12:01,785 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 325.411m
+2025-05-07 15:12:01,785 - INFO - Last GGA Message: $GPGGA,191151.400,4020.7230904,N,08007.7282557,W,5,26,0.5,325.411,M,-33.184,M,,0000*69
+2025-05-07 15:12:02,317 - WARNING - CRC mismatch at buffer pos 39, skipping. Total CRC errors: 0
+2025-05-07 15:12:07,386 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 325.412m
+2025-05-07 15:12:07,386 - INFO - Last GGA Message: $GPGGA,191151.480,4020.7230904,N,08007.7282556,W,5,26,0.5,325.412,M,-33.184,M,,0000*63
+2025-05-07 15:12:12,304 - WARNING - CRC mismatch at buffer pos 53, skipping. Total CRC errors: 1
+2025-05-07 15:12:12,406 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:12:12,406 - INFO -   Type 1005: 1.00 Hz (15 messages)
+2025-05-07 15:12:12,406 - INFO -   Type 1019: 1.73 Hz (26 messages)
+2025-05-07 15:12:12,406 - INFO -   Type 1020: 0.87 Hz (13 messages)
+2025-05-07 15:12:12,407 - INFO -   Type 1033: 0.13 Hz (2 messages)
+2025-05-07 15:12:12,407 - INFO -   Type 1042: 0.67 Hz (10 messages)
+2025-05-07 15:12:12,407 - INFO -   Type 1046: 1.07 Hz (16 messages)
+2025-05-07 15:12:12,407 - INFO -   Type 1074: 1.00 Hz (15 messages)
+2025-05-07 15:12:12,407 - INFO -   Type 1084: 1.00 Hz (15 messages)
+2025-05-07 15:12:12,407 - INFO -   Type 1094: 1.00 Hz (15 messages)
+2025-05-07 15:12:12,407 - INFO -   Type 1124: 1.00 Hz (15 messages)
+2025-05-07 15:12:12,407 - INFO -   Type 1230: 0.13 Hz (2 messages)
+2025-05-07 15:12:12,407 - INFO -   Total: 9.59 Hz (144 messages in 15.02s)
+2025-05-07 15:12:12,407 - INFO -   CRC Errors: 0.13 Hz (2 errors)
+2025-05-07 15:12:13,362 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 325.414m
+2025-05-07 15:12:13,362 - INFO - Last GGA Message: $GPGGA,191151.560,4020.7230903,N,08007.7282555,W,5,26,0.5,325.414,M,-33.184,M,,0000*6E
+2025-05-07 15:12:19,408 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 325.415m
+2025-05-07 15:12:19,408 - INFO - Last GGA Message: $GPGGA,191151.640,4020.7230902,N,08007.7282554,W,5,26,0.5,325.415,M,-33.184,M,,0000*6E
+2025-05-07 15:12:22,304 - WARNING - CRC mismatch at buffer pos 39, skipping. Total CRC errors: 0
+2025-05-07 15:12:27,387 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 325.417m
+2025-05-07 15:12:27,387 - INFO - Last GGA Message: $GPGGA,191151.760,4020.7230902,N,08007.7282552,W,5,26,0.5,325.417,M,-33.184,M,,0000*69
+2025-05-07 15:12:28,388 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:12:28,388 - INFO -   Type 1005: 1.00 Hz (16 messages)
+2025-05-07 15:12:28,388 - INFO -   Type 1019: 0.81 Hz (13 messages)
+2025-05-07 15:12:28,388 - INFO -   Type 1020: 0.38 Hz (6 messages)
+2025-05-07 15:12:28,388 - INFO -   Type 1033: 0.06 Hz (1 messages)
+2025-05-07 15:12:28,389 - INFO -   Type 1042: 0.31 Hz (5 messages)
+2025-05-07 15:12:28,389 - INFO -   Type 1046: 0.50 Hz (8 messages)
+2025-05-07 15:12:28,389 - INFO -   Type 1074: 1.00 Hz (16 messages)
+2025-05-07 15:12:28,389 - INFO -   Type 1084: 1.00 Hz (16 messages)
+2025-05-07 15:12:28,389 - INFO -   Type 1094: 1.00 Hz (16 messages)
+2025-05-07 15:12:28,389 - INFO -   Type 1124: 1.00 Hz (16 messages)
+2025-05-07 15:12:28,389 - INFO -   Type 1230: 0.06 Hz (1 messages)
+2025-05-07 15:12:28,389 - INFO -   Total: 7.13 Hz (114 messages in 15.98s)
+2025-05-07 15:12:28,389 - INFO -   CRC Errors: 0.06 Hz (1 errors)
+2025-05-07 15:12:32,310 - WARNING - CRC mismatch at buffer pos 31, skipping. Total CRC errors: 0
+2025-05-07 15:12:32,411 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 325.419m
+2025-05-07 15:12:32,412 - INFO - Last GGA Message: $GPGGA,191151.840,4020.7230901,N,08007.7282551,W,5,26,0.5,325.419,M,-33.184,M,,0000*6A
+2025-05-07 15:12:38,404 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 325.420m
+2025-05-07 15:12:38,404 - INFO - Last GGA Message: $GPGGA,191151.920,4020.7230901,N,08007.7282551,W,5,26,0.5,325.420,M,-33.184,M,,0000*67
+2025-05-07 15:12:42,285 - WARNING - CRC mismatch at buffer pos 53, skipping. Total CRC errors: 1
+2025-05-07 15:12:44,335 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:12:44,335 - INFO -   Type 1005: 1.00 Hz (16 messages)
+2025-05-07 15:12:44,335 - INFO -   Type 1019: 1.63 Hz (26 messages)
+2025-05-07 15:12:44,335 - INFO -   Type 1020: 0.75 Hz (12 messages)
+2025-05-07 15:12:44,336 - INFO -   Type 1033: 0.13 Hz (2 messages)
+2025-05-07 15:12:44,336 - INFO -   Type 1042: 0.63 Hz (10 messages)
+2025-05-07 15:12:44,336 - INFO -   Type 1046: 1.00 Hz (16 messages)
+2025-05-07 15:12:44,336 - INFO -   Type 1074: 1.00 Hz (16 messages)
+2025-05-07 15:12:44,336 - INFO -   Type 1084: 1.00 Hz (16 messages)
+2025-05-07 15:12:44,336 - INFO -   Type 1094: 1.00 Hz (16 messages)
+2025-05-07 15:12:44,336 - INFO -   Type 1124: 1.00 Hz (16 messages)
+2025-05-07 15:12:44,336 - INFO -   Type 1230: 0.13 Hz (2 messages)
+2025-05-07 15:12:44,336 - INFO -   Total: 9.28 Hz (148 messages in 15.95s)
+2025-05-07 15:12:44,336 - INFO -   CRC Errors: 0.13 Hz (2 errors)
+2025-05-07 15:12:52,305 - WARNING - CRC mismatch at buffer pos 41, skipping. Total CRC errors: 0
+2025-05-07 15:12:59,432 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:12:59,432 - INFO -   Type 1005: 0.99 Hz (15 messages)
+2025-05-07 15:12:59,432 - INFO -   Type 1019: 0.86 Hz (13 messages)
+2025-05-07 15:12:59,432 - INFO -   Type 1020: 0.40 Hz (6 messages)
+2025-05-07 15:12:59,432 - INFO -   Type 1033: 0.07 Hz (1 messages)
+2025-05-07 15:12:59,432 - INFO -   Type 1042: 0.33 Hz (5 messages)
+2025-05-07 15:12:59,433 - INFO -   Type 1046: 0.53 Hz (8 messages)
+2025-05-07 15:12:59,433 - INFO -   Type 1074: 0.99 Hz (15 messages)
+2025-05-07 15:12:59,433 - INFO -   Type 1084: 0.99 Hz (15 messages)
+2025-05-07 15:12:59,433 - INFO -   Type 1094: 0.99 Hz (15 messages)
+2025-05-07 15:12:59,433 - INFO -   Type 1124: 0.99 Hz (15 messages)
+2025-05-07 15:12:59,433 - INFO -   Type 1230: 0.07 Hz (1 messages)
+2025-05-07 15:12:59,433 - INFO -   Total: 7.22 Hz (109 messages in 15.10s)
+2025-05-07 15:12:59,433 - INFO -   CRC Errors: 0.07 Hz (1 errors)
+2025-05-07 15:12:59,434 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 325.529m
+2025-05-07 15:12:59,434 - INFO - Last GGA Message: $GPGGA,191247.360,4020.7230468,N,08007.7283003,W,5,26,0.5,325.529,M,-33.184,M,,0000*64
+2025-05-07 15:13:02,313 - WARNING - CRC mismatch at buffer pos 41, skipping. Total CRC errors: 0
+2025-05-07 15:13:07,418 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 325.531m
+2025-05-07 15:13:07,418 - INFO - Last GGA Message: $GPGGA,191247.480,4020.7230466,N,08007.7283001,W,5,26,0.5,325.531,M,-33.184,M,,0000*68
+2025-05-07 15:13:12,340 - WARNING - CRC mismatch at buffer pos 41, skipping. Total CRC errors: 1
+2025-05-07 15:13:12,444 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 325.532m
+2025-05-07 15:13:12,444 - INFO - Last GGA Message: $GPGGA,191247.560,4020.7230465,N,08007.7282999,W,5,26,0.5,325.532,M,-33.184,M,,0000*6E
+2025-05-07 15:13:15,411 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:13:15,411 - INFO -   Type 1005: 1.00 Hz (16 messages)
+2025-05-07 15:13:15,411 - INFO -   Type 1019: 1.63 Hz (26 messages)
+2025-05-07 15:13:15,411 - INFO -   Type 1020: 0.75 Hz (12 messages)
+2025-05-07 15:13:15,411 - INFO -   Type 1033: 0.13 Hz (2 messages)
+2025-05-07 15:13:15,411 - INFO -   Type 1042: 0.63 Hz (10 messages)
+2025-05-07 15:13:15,412 - INFO -   Type 1046: 1.00 Hz (16 messages)
+2025-05-07 15:13:15,412 - INFO -   Type 1074: 1.00 Hz (16 messages)
+2025-05-07 15:13:15,412 - INFO -   Type 1084: 1.00 Hz (16 messages)
+2025-05-07 15:13:15,412 - INFO -   Type 1094: 1.00 Hz (16 messages)
+2025-05-07 15:13:15,412 - INFO -   Type 1124: 1.00 Hz (16 messages)
+2025-05-07 15:13:15,412 - INFO -   Type 1230: 0.13 Hz (2 messages)
+2025-05-07 15:13:15,412 - INFO -   Total: 9.26 Hz (148 messages in 15.98s)
+2025-05-07 15:13:15,412 - INFO -   CRC Errors: 0.13 Hz (2 errors)
+2025-05-07 15:13:18,396 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 325.533m
+2025-05-07 15:13:18,396 - INFO - Last GGA Message: $GPGGA,191247.640,4020.7230464,N,08007.7282997,W,5,26,0.5,325.533,M,-33.184,M,,0000*61
+2025-05-07 15:13:22,343 - WARNING - CRC mismatch at buffer pos 51, skipping. Total CRC errors: 0
+2025-05-07 15:13:26,393 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 325.535m
+2025-05-07 15:13:26,393 - INFO - Last GGA Message: $GPGGA,191247.760,4020.7230462,N,08007.7282994,W,5,26,0.5,325.535,M,-33.184,M,,0000*61
+2025-05-07 15:13:30,423 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:13:30,423 - INFO -   Type 1005: 1.00 Hz (15 messages)
+2025-05-07 15:13:30,423 - INFO -   Type 1019: 0.87 Hz (13 messages)
+2025-05-07 15:13:30,423 - INFO -   Type 1020: 0.40 Hz (6 messages)
+2025-05-07 15:13:30,423 - INFO -   Type 1033: 0.07 Hz (1 messages)
+2025-05-07 15:13:30,423 - INFO -   Type 1042: 0.33 Hz (5 messages)
+2025-05-07 15:13:30,423 - INFO -   Type 1046: 0.53 Hz (8 messages)
+2025-05-07 15:13:30,423 - INFO -   Type 1074: 1.00 Hz (15 messages)
+2025-05-07 15:13:30,424 - INFO -   Type 1084: 1.00 Hz (15 messages)
+2025-05-07 15:13:30,424 - INFO -   Type 1094: 1.00 Hz (15 messages)
+2025-05-07 15:13:30,424 - INFO -   Type 1124: 1.00 Hz (15 messages)
+2025-05-07 15:13:30,424 - INFO -   Type 1230: 0.07 Hz (1 messages)
+2025-05-07 15:13:30,424 - INFO -   Total: 7.26 Hz (109 messages in 15.01s)
+2025-05-07 15:13:30,424 - INFO -   CRC Errors: 0.07 Hz (1 errors)
+2025-05-07 15:13:31,593 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 325.537m
+2025-05-07 15:13:31,593 - INFO - Last GGA Message: $GPGGA,191247.840,4020.7230461,N,08007.7282993,W,5,26,0.5,325.537,M,-33.184,M,,0000*6A
+2025-05-07 15:13:32,347 - WARNING - CRC mismatch at buffer pos 41, skipping. Total CRC errors: 0
+2025-05-07 15:13:37,385 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 325.538m
+2025-05-07 15:13:37,386 - INFO - Last GGA Message: $GPGGA,191247.920,4020.7230460,N,08007.7282991,W,5,26,0.5,325.538,M,-33.184,M,,0000*61
+2025-05-07 15:13:42,278 - WARNING - CRC mismatch at buffer pos 45, skipping. Total CRC errors: 1
+2025-05-07 15:13:46,344 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:13:46,344 - INFO -   Type 1005: 1.00 Hz (16 messages)
+2025-05-07 15:13:46,344 - INFO -   Type 1019: 1.63 Hz (26 messages)
+2025-05-07 15:13:46,344 - INFO -   Type 1020: 0.75 Hz (12 messages)
+2025-05-07 15:13:46,344 - INFO -   Type 1033: 0.13 Hz (2 messages)
+2025-05-07 15:13:46,344 - INFO -   Type 1042: 0.63 Hz (10 messages)
+2025-05-07 15:13:46,344 - INFO -   Type 1046: 1.00 Hz (16 messages)
+2025-05-07 15:13:46,344 - INFO -   Type 1074: 1.00 Hz (16 messages)
+2025-05-07 15:13:46,345 - INFO -   Type 1084: 1.00 Hz (16 messages)
+2025-05-07 15:13:46,345 - INFO -   Type 1094: 1.00 Hz (16 messages)
+2025-05-07 15:13:46,345 - INFO -   Type 1124: 1.00 Hz (16 messages)
+2025-05-07 15:13:46,345 - INFO -   Type 1230: 0.13 Hz (2 messages)
+2025-05-07 15:13:46,345 - INFO -   Total: 9.30 Hz (148 messages in 15.92s)
+2025-05-07 15:13:46,345 - INFO -   CRC Errors: 0.13 Hz (2 errors)
+2025-05-07 15:13:52,307 - WARNING - CRC mismatch at buffer pos 51, skipping. Total CRC errors: 0
+2025-05-07 15:13:52,410 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 325.577m
+2025-05-07 15:13:52,410 - INFO - Last GGA Message: $GPGGA,191341.400,4020.7230353,N,08007.7282969,W,5,26,0.5,325.577,M,-33.184,M,,0000*62
+2025-05-07 15:13:58,400 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 325.579m
+2025-05-07 15:13:58,400 - INFO - Last GGA Message: $GPGGA,191341.480,4020.7230353,N,08007.7282966,W,5,26,0.5,325.579,M,-33.184,M,,0000*6B
+2025-05-07 15:14:01,418 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:14:01,418 - INFO -   Type 1005: 1.00 Hz (15 messages)
+2025-05-07 15:14:01,418 - INFO -   Type 1019: 1.72 Hz (26 messages)
+2025-05-07 15:14:01,418 - INFO -   Type 1020: 0.53 Hz (8 messages)
+2025-05-07 15:14:01,418 - INFO -   Type 1033: 0.07 Hz (1 messages)
+2025-05-07 15:14:01,418 - INFO -   Type 1042: 0.33 Hz (5 messages)
+2025-05-07 15:14:01,418 - INFO -   Type 1046: 0.53 Hz (8 messages)
+2025-05-07 15:14:01,418 - INFO -   Type 1074: 1.00 Hz (15 messages)
+2025-05-07 15:14:01,418 - INFO -   Type 1084: 1.00 Hz (15 messages)
+2025-05-07 15:14:01,419 - INFO -   Type 1094: 1.00 Hz (15 messages)
+2025-05-07 15:14:01,419 - INFO -   Type 1124: 1.00 Hz (15 messages)
+2025-05-07 15:14:01,419 - INFO -   Type 1230: 0.07 Hz (1 messages)
+2025-05-07 15:14:01,419 - INFO -   Total: 8.23 Hz (124 messages in 15.07s)
+2025-05-07 15:14:01,419 - INFO -   CRC Errors: 0.07 Hz (1 errors)
+2025-05-07 15:14:02,312 - WARNING - CRC mismatch at buffer pos 51, skipping. Total CRC errors: 0
+2025-05-07 15:14:06,405 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 325.581m
+2025-05-07 15:14:06,405 - INFO - Last GGA Message: $GPGGA,191341.600,4020.7230353,N,08007.7282962,W,5,26,0.5,325.581,M,-33.184,M,,0000*62
+2025-05-07 15:14:11,573 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 325.583m
+2025-05-07 15:14:11,573 - INFO - Last GGA Message: $GPGGA,191341.680,4020.7230353,N,08007.7282959,W,5,26,0.5,325.583,M,-33.184,M,,0000*60
+2025-05-07 15:14:12,300 - WARNING - CRC mismatch at buffer pos 45, skipping. Total CRC errors: 1
+2025-05-07 15:14:17,373 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:14:17,373 - INFO -   Type 1005: 1.00 Hz (16 messages)
+2025-05-07 15:14:17,373 - INFO -   Type 1019: 0.81 Hz (13 messages)
+2025-05-07 15:14:17,373 - INFO -   Type 1020: 0.63 Hz (10 messages)
+2025-05-07 15:14:17,373 - INFO -   Type 1033: 0.13 Hz (2 messages)
+2025-05-07 15:14:17,373 - INFO -   Type 1042: 0.63 Hz (10 messages)
+2025-05-07 15:14:17,373 - INFO -   Type 1046: 1.00 Hz (16 messages)
+2025-05-07 15:14:17,373 - INFO -   Type 1074: 1.00 Hz (16 messages)
+2025-05-07 15:14:17,373 - INFO -   Type 1084: 1.00 Hz (16 messages)
+2025-05-07 15:14:17,373 - INFO -   Type 1094: 1.00 Hz (16 messages)
+2025-05-07 15:14:17,373 - INFO -   Type 1124: 1.00 Hz (16 messages)
+2025-05-07 15:14:17,374 - INFO -   Type 1230: 0.13 Hz (2 messages)
+2025-05-07 15:14:17,374 - INFO -   Total: 8.34 Hz (133 messages in 15.95s)
+2025-05-07 15:14:17,374 - INFO -   CRC Errors: 0.13 Hz (2 errors)
+2025-05-07 15:14:17,375 - INFO - RTK Status: RTK Float | Satellites: 26 | Altitude: 325.585m
+2025-05-07 15:14:17,375 - INFO - Last GGA Message: $GPGGA,191341.760,4020.7230353,N,08007.7282957,W,5,26,0.5,325.585,M,-33.184,M,,0000*67
+2025-05-07 15:14:19,514 - INFO - Exiting...
+2025-05-07 15:31:01,069 - INFO - Successfully opened /dev/ttyUSB0
+2025-05-07 15:31:01,374 - INFO - Connected to TCP server at 192.168.1.233:6001
+2025-05-07 15:31:02,294 - WARNING - CRC mismatch at buffer pos 28, skipping. Total CRC errors: 0
+2025-05-07 15:31:02,296 - INFO - 1005 Decoded: RefStationID=3792, ECEF_X=1315.690m, ECEF_Y=19102575.880m, ECEF_Z=-7165462.920m
+2025-05-07 15:31:03,300 - INFO - 1005 Decoded: RefStationID=3792, ECEF_X=1315.690m, ECEF_Y=19102575.880m, ECEF_Z=-7165462.920m
+2025-05-07 15:31:04,321 - INFO - 1005 Decoded: RefStationID=3792, ECEF_X=1315.690m, ECEF_Y=19102575.880m, ECEF_Z=-7165462.920m
+2025-05-07 15:31:05,313 - INFO - 1005 Decoded: RefStationID=3792, ECEF_X=1315.690m, ECEF_Y=19102575.880m, ECEF_Z=-7165462.920m
+2025-05-07 15:31:06,329 - INFO - 1005 Decoded: RefStationID=3792, ECEF_X=1315.690m, ECEF_Y=19102575.880m, ECEF_Z=-7165462.920m
+2025-05-07 15:31:07,330 - INFO - 1005 Decoded: RefStationID=3792, ECEF_X=1315.690m, ECEF_Y=19102575.880m, ECEF_Z=-7165462.920m
+2025-05-07 15:31:08,335 - INFO - 1005 Decoded: RefStationID=3792, ECEF_X=1315.690m, ECEF_Y=19102575.880m, ECEF_Z=-7165462.920m
+2025-05-07 15:31:09,342 - INFO - 1005 Decoded: RefStationID=3792, ECEF_X=1315.690m, ECEF_Y=19102575.880m, ECEF_Z=-7165462.920m
+2025-05-07 15:31:10,351 - INFO - 1005 Decoded: RefStationID=3792, ECEF_X=1315.690m, ECEF_Y=19102575.880m, ECEF_Z=-7165462.920m
+2025-05-07 15:31:11,279 - INFO - 1005 Decoded: RefStationID=3792, ECEF_X=1315.690m, ECEF_Y=19102575.880m, ECEF_Z=-7165462.920m
+2025-05-07 15:31:12,939 - WARNING - CRC mismatch at buffer pos 20, skipping. Total CRC errors: 1
+2025-05-07 15:31:12,940 - INFO - 1005 Decoded: RefStationID=3792, ECEF_X=1315.690m, ECEF_Y=19102575.880m, ECEF_Z=-7165462.920m
+2025-05-07 15:31:13,993 - INFO - 1005 Decoded: RefStationID=3792, ECEF_X=1315.690m, ECEF_Y=19102575.880m, ECEF_Z=-7165462.920m
+2025-05-07 15:31:14,946 - INFO - 1005 Decoded: RefStationID=3792, ECEF_X=1315.690m, ECEF_Y=19102575.880m, ECEF_Z=-7165462.920m
+2025-05-07 15:31:15,954 - INFO - 1005 Decoded: RefStationID=3792, ECEF_X=1315.690m, ECEF_Y=19102575.880m, ECEF_Z=-7165462.920m
+2025-05-07 15:31:16,957 - INFO - 1005 Decoded: RefStationID=3792, ECEF_X=1315.690m, ECEF_Y=19102575.880m, ECEF_Z=-7165462.920m
+2025-05-07 15:31:16,997 - INFO - RTCM Message Rates (messages/sec):
+2025-05-07 15:31:16,998 - INFO -   Type 1005: 0.94 Hz (15 messages)
+2025-05-07 15:31:16,998 - INFO -   Type 1019: 0.82 Hz (13 messages)
+2025-05-07 15:31:16,998 - INFO -   Type 1020: 0.31 Hz (5 messages)
+2025-05-07 15:31:16,998 - INFO -   Type 1033: 0.13 Hz (2 messages)
+2025-05-07 15:31:16,998 - INFO -   Type 1042: 0.31 Hz (5 messages)
+2025-05-07 15:31:16,998 - INFO -   Type 1046: 0.94 Hz (15 messages)
+2025-05-07 15:31:16,998 - INFO -   Type 1074: 0.94 Hz (15 messages)
+2025-05-07 15:31:16,998 - INFO -   Type 1084: 0.94 Hz (15 messages)
+2025-05-07 15:31:16,998 - INFO -   Type 1094: 0.94 Hz (15 messages)
+2025-05-07 15:31:16,998 - INFO -   Type 1124: 0.94 Hz (15 messages)
+2025-05-07 15:31:16,998 - INFO -   Type 1230: 0.13 Hz (2 messages)
+2025-05-07 15:31:16,998 - INFO -   Total: 7.35 Hz (117 messages in 15.93s)
+2025-05-07 15:31:16,998 - INFO -   CRC Errors: 0.13 Hz (2 errors)
+2025-05-07 15:31:17,960 - INFO - 1005 Decoded: RefStationID=3792, ECEF_X=1315.690m, ECEF_Y=19102575.880m, ECEF_Z=-7165462.920m
+2025-05-07 15:31:18,971 - INFO - 1005 Decoded: RefStationID=3792, ECEF_X=1315.690m, ECEF_Y=19102575.880m, ECEF_Z=-7165462.920m
+2025-05-07 15:31:20,002 - INFO - 1005 Decoded: RefStationID=3792, ECEF_X=1315.690m, ECEF_Y=19102575.880m, ECEF_Z=-7165462.920m
+2025-05-07 15:31:20,986 - INFO - 1005 Decoded: RefStationID=3792, ECEF_X=1315.690m, ECEF_Y=19102575.880m, ECEF_Z=-7165462.920m
+2025-05-07 15:31:21,279 - INFO - 1005 Decoded: RefStationID=3792, ECEF_X=1315.690m, ECEF_Y=19102575.880m, ECEF_Z=-7165462.920m
+2025-05-07 15:31:22,292 - WARNING - CRC mismatch at buffer pos 20, skipping. Total CRC errors: 0
+2025-05-07 15:31:22,293 - INFO - 1005 Decoded: RefStationID=3792, ECEF_X=1315.690m, ECEF_Y=19102575.880m, ECEF_Z=-7165462.920m
+2025-05-07 15:31:23,299 - INFO - 1005 Decoded: RefStationID=3792, ECEF_X=1315.690m, ECEF_Y=19102575.880m, ECEF_Z=-7165462.920m
+2025-05-07 15:31:24,306 - INFO - 1005 Decoded: RefStationID=3792, ECEF_X=1315.690m, ECEF_Y=19102575.880m, ECEF_Z=-7165462.920m
+2025-05-07 15:31:25,313 - INFO - 1005 Decoded: RefStationID=3792, ECEF_X=1315.690m, ECEF_Y=19102575.880m, ECEF_Z=-7165462.920m
+2025-05-07 15:31:25,354 - INFO - RTK Status: GPS Fix | Satellites: 27 | Altitude: 325.553m
+2025-05-07 15:31:25,354 - INFO - Last GGA Message: $GPGGA,123348.240,4020.7249028,N,08007.7283178,W,1,27,0.5,325.553,M,-33.184,M,,0000*6B
+2025-05-07 15:31:26,318 - INFO - 1005 Decoded: RefStationID=3792, ECEF_X=1315.690m, ECEF_Y=19102575.880m, ECEF_Z=-7165462.920m
+2025-05-07 15:31:27,328 - INFO - 1005 Decoded: RefStationID=3792, ECEF_X=1315.690m, ECEF_Y=19102575.880m, ECEF_Z=-7165462.920m
+2025-05-07 15:31:28,335 - INFO - 1005 Decoded: RefStationID=3792, ECEF_X=1315.690m, ECEF_Y=19102575.880m, ECEF_Z=-7165462.920m
+2025-05-07 15:31:29,374 - INFO - 1005 Decoded: RefStationID=3792, ECEF_X=1315.690m, ECEF_Y=19102575.880m, ECEF_Z=-7165462.920m
+2025-05-07 15:31:30,350 - INFO - 1005 Decoded: RefStationID=3792, ECEF_X=1315.690m, ECEF_Y=19102575.880m, ECEF_Z=-7165462.920m
+2025-05-07 15:31:30,706 - INFO - Exiting...

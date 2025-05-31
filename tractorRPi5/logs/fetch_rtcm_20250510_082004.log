@@ -1,0 +1,60 @@
+2025-05-10 08:20:04,286 - INFO - Verifying mountpoint availability...
+2025-05-10 08:20:04,287 - INFO - Connecting to rtk2go.com:2101 for source table...
+2025-05-10 08:20:04,386 - INFO - Connected to rtk2go.com:2101
+2025-05-10 08:20:04,386 - INFO - Sent source table request
+2025-05-10 08:20:04,696 - INFO - Mountpoint 'cmuairlab01' found in source table!
+2025-05-10 08:20:04,696 - INFO - Waiting 2 seconds before connecting...
+2025-05-10 08:20:06,697 - INFO - Connecting to rtk2go.com:2101...
+2025-05-10 08:20:06,754 - INFO - Connected to rtk2go.com:2101
+2025-05-10 08:20:06,754 - INFO - Sending NTRIP request headers...
+2025-05-10 08:20:09,785 - INFO - Server response: ICY 200 OK
+2025-05-10 08:20:09,786 - INFO - NTRIP server connected successfully
+2025-05-10 08:20:09,818 - INFO - Opened serial port /dev/ttyUSB1 at 115200 baud
+2025-05-10 08:20:09,818 - INFO - Sent initial GPGGA position: $GPGGA,092750.000,4020.7212606,N,08007.7235976,W,1,8,1.03,362.0,M,-33.184,M,,*52
+2025-05-10 08:20:15,757 - INFO - RTCM data received: 228 bytes (Total: 9356 bytes)
+2025-05-10 08:20:20,733 - INFO - Sent GPGGA update: $GPGGA,092750.000,4020.7212606,N,08007.7235976,W,1,8,1.03,362.0,M,-33.184,M,,*52
+2025-05-10 08:20:20,780 - INFO - RTCM data received: 228 bytes (Total: 16375 bytes)
+2025-05-10 08:20:26,121 - INFO - RTCM data received: 228 bytes (Total: 23999 bytes)
+2025-05-10 08:20:30,819 - INFO - Sent GPGGA update: $GPGGA,092750.000,4020.7212606,N,08007.7235976,W,1,8,1.03,362.0,M,-33.184,M,,*52
+2025-05-10 08:20:31,668 - INFO - RTCM data received: 243 bytes (Total: 31004 bytes)
+2025-05-10 08:20:37,128 - INFO - RTCM data received: 243 bytes (Total: 38718 bytes)
+2025-05-10 08:20:41,655 - INFO - Sent GPGGA update: $GPGGA,092750.000,4020.7212606,N,08007.7235976,W,1,8,1.03,362.0,M,-33.184,M,,*52
+2025-05-10 08:20:42,159 - INFO - RTCM data received: 288 bytes (Total: 46691 bytes)
+2025-05-10 08:20:47,638 - INFO - RTCM data received: 253 bytes (Total: 53908 bytes)
+2025-05-10 08:20:51,688 - INFO - Sent GPGGA update: $GPGGA,092750.000,4020.7212606,N,08007.7235976,W,1,8,1.03,362.0,M,-33.184,M,,*52
+2025-05-10 08:20:53,654 - INFO - RTCM data received: 243 bytes (Total: 62381 bytes)
+2025-05-10 08:20:59,133 - INFO - RTCM data received: 243 bytes (Total: 69993 bytes)
+2025-05-10 08:21:02,138 - INFO - Sent GPGGA update: $GPGGA,092750.000,4020.7212606,N,08007.7235976,W,1,8,1.03,362.0,M,-33.184,M,,*52
+2025-05-10 08:21:05,758 - INFO - RTCM data received: 1024 bytes (Total: 78134 bytes)
+2025-05-10 08:21:10,661 - INFO - RTCM data received: 243 bytes (Total: 86305 bytes)
+2025-05-10 08:21:12,702 - INFO - Sent GPGGA update: $GPGGA,092750.000,4020.7212606,N,08007.7235976,W,1,8,1.03,362.0,M,-33.184,M,,*52
+2025-05-10 08:21:15,792 - INFO - RTCM data received: 253 bytes (Total: 93537 bytes)
+2025-05-10 08:21:21,595 - INFO - RTCM data received: 243 bytes (Total: 101908 bytes)
+2025-05-10 08:21:22,758 - INFO - Sent GPGGA update: $GPGGA,092750.000,4020.7212606,N,08007.7235976,W,1,8,1.03,362.0,M,-33.184,M,,*52
+2025-05-10 08:21:26,759 - INFO - RTCM data received: 253 bytes (Total: 108405 bytes)
+2025-05-10 08:21:32,128 - INFO - RTCM data received: 243 bytes (Total: 116677 bytes)
+2025-05-10 08:21:33,112 - INFO - Sent GPGGA update: $GPGGA,092750.000,4020.7212606,N,08007.7235976,W,1,8,1.03,362.0,M,-33.184,M,,*52
+2025-05-10 08:21:38,814 - INFO - RTCM data received: 1024 bytes (Total: 124148 bytes)
+2025-05-10 08:21:43,632 - INFO - Sent GPGGA update: $GPGGA,092750.000,4020.7212606,N,08007.7235976,W,1,8,1.03,362.0,M,-33.184,M,,*52
+2025-05-10 08:21:43,633 - INFO - RTCM data received: 253 bytes (Total: 132451 bytes)
+2025-05-10 08:21:49,666 - INFO - RTCM data received: 1024 bytes (Total: 141334 bytes)
+2025-05-10 08:21:54,134 - INFO - Sent GPGGA update: $GPGGA,092750.000,4020.7212606,N,08007.7235976,W,1,8,1.03,362.0,M,-33.184,M,,*52
+2025-05-10 08:21:54,134 - INFO - RTCM data received: 243 bytes (Total: 148024 bytes)
+2025-05-10 08:22:00,887 - INFO - RTCM data received: 1024 bytes (Total: 156169 bytes)
+2025-05-10 08:22:05,119 - INFO - Sent GPGGA update: $GPGGA,092750.000,4020.7212606,N,08007.7235976,W,1,8,1.03,362.0,M,-33.184,M,,*52
+2025-05-10 08:22:05,119 - INFO - RTCM data received: 243 bytes (Total: 162753 bytes)
+2025-05-10 08:22:10,408 - INFO - RTCM data received: 1024 bytes (Total: 169367 bytes)
+2025-05-10 08:22:15,608 - INFO - Sent GPGGA update: $GPGGA,092750.000,4020.7212606,N,08007.7235976,W,1,8,1.03,362.0,M,-33.184,M,,*52
+2025-05-10 08:22:15,793 - INFO - RTCM data received: 1024 bytes (Total: 177655 bytes)
+2025-05-10 08:22:18,921 - INFO - Exiting...
+2025-05-10 08:22:18,922 - INFO - === RTK Fix Consistency Summary ===
+2025-05-10 08:22:18,922 - INFO - Total Runtime: 134.6s
+2025-05-10 08:22:18,922 - INFO - RTK Fixed: 0.0s (0.00%)
+2025-05-10 08:22:18,922 - INFO - RTK Float: 0.0s (0.00%)
+2025-05-10 08:22:18,922 - INFO - No Fix: 0.0s (0.00%)
+2025-05-10 08:22:18,922 - INFO - Number of Drops to Float/No Fix: 0
+2025-05-10 08:22:18,922 - INFO - Fixed Periods: 0
+2025-05-10 08:22:18,922 - INFO - Float Periods: 0
+2025-05-10 08:22:18,922 - INFO - Average Satellites (Fixed): 0.0
+2025-05-10 08:22:18,922 - INFO - Average HDOP (Fixed): 0.00
+2025-05-10 08:22:18,922 - INFO - NTRIP connection closed
