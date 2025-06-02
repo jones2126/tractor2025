@@ -1,19 +1,211 @@
-#include <Arduino.h>
+#include <SPI.h>
+#include <RF24.h>
+#include <Adafruit_NeoPixel.h>
 
-// put function declarations here:
-int myFunction(int, int);
+// NeoPixel definitions
+#define NUM_LEDS 1
+#define DATA_PIN 2
+Adafruit_NeoPixel strip(NUM_LEDS, DATA_PIN, NEO_GRB + NEO_KHZ800);
+
+#define BLINK_INTERVAL 500 // LED blink interval in milliseconds
+
+RF24 radio(9, 10);  // CE, CSN pins for Teensy 3.5 since JRK G2 motor controller is using 7 and 8
+
+// Data structure for receiving
+struct RadioControlStruct {
+    float steering_val;
+    float throttle_val;
+    float voltage;
+    byte estop;
+    byte control_mode;
+    unsigned long counter;
+    uint32_t dummy;
+};
+
+// Data structure for acknowledgment
+struct AckPayloadStruct {
+    unsigned long counter;
+    uint32_t dummy[4];
+};
+
+RadioControlStruct radioData;
+AckPayloadStruct ackPayload;
+
+const uint8_t address[][6] = {"RCTRL", "TRACT"};
+unsigned long currentMillis = 0;
+
+// Timing variables
+unsigned long lastRateCalc = 0;
+const unsigned long rateCalcInterval = 10000; // Print rate every 10 seconds
+unsigned long lastLedUpdate = 0;
+const unsigned long ledUpdateInterval = 500; // Update LEDs every 500ms (2 Hz)
+unsigned long lastBlinkUpdate = 0;
+unsigned long ackCount = 0;
+unsigned long shortTermAckCount = 0;
+bool ledState = false;
+
+// Function to set NeoPixel color
+void setNeoPixelColor(uint8_t red, uint8_t green, uint8_t blue) {
+    strip.setPixelColor(0, strip.Color(red, green, blue));
+    strip.show();
+}
 
 void setup() {
-  // put your setup code here, to run once:
-  int result = myFunction(2, 3);
+    Serial.begin(115200);
+    Serial.println("Teensy 3.5 Receiver Starting...");
+
+    // Initialize NeoPixel
+    strip.begin();
+    strip.show(); // Turn off all LEDs initially
+
+    // Configure alternate SPI pins BEFORE SPI.begin() to avoid on-board LED pin 13
+    SPI.setSCK(27);   // Set SCK to pin 27
+    SPI.setMOSI(28);  // Set MOSI to pin 28  
+    SPI.setMISO(39);  // Set MISO to pin 39
+
+    // Initialize SPI
+    SPI.begin();
+    delay(100);
+
+    // Try to initialize the radio
+    bool initialized = false;
+    for (int i = 0; i < 5; i++) {
+        Serial.print("Radio initialization attempt ");
+        Serial.println(i + 1);
+        if (radio.begin()) {
+            initialized = true;
+            Serial.println("Radio initialized successfully!");
+            break;
+        }
+        Serial.println("Radio init failed, retrying...");
+        delay(1000);
+    }
+
+    if (!initialized) {
+        Serial.println("Radio hardware not responding!");
+        while (1) {
+            setNeoPixelColor(255, 0, 0); // Indicate failure with red color
+            delay(500);
+            setNeoPixelColor(0, 0, 0); // Turn off
+            delay(500);
+        }
+    }
+
+    // Configure the radio
+    radio.setPALevel(RF24_PA_HIGH);
+    radio.setDataRate(RF24_250KBPS);
+    radio.setChannel(124);
+    radio.openWritingPipe(address[1]);    // "TRACT" = robot tractor
+    radio.openReadingPipe(1, address[0]); // "RCTRL" = radio control unit
+    radio.enableAckPayload();             // THIS IS CRITICAL!
+    radio.startListening();
+    radio.printDetails();
+
+    // Initialize counters
+    ackPayload.counter = 0;
+    for (int i = 0; i < 4; i++) {
+        ackPayload.dummy[i] = 0xDEADBEEF;
+    }
+
+    lastRateCalc = millis();
+    lastLedUpdate = millis();
+    lastBlinkUpdate = millis();
+
+    Serial.println("Setup complete - listening for transmissions...");
+}
+
+void updateLEDs() {
+    if (currentMillis - lastLedUpdate >= ledUpdateInterval) {
+        float timeElapsed = (currentMillis - lastLedUpdate) / 1000.0;
+        float currentRate = shortTermAckCount / timeElapsed;
+
+        Serial.print("Current communication rate: ");
+        Serial.print(currentRate);
+        Serial.println(" Hz");
+
+        // Only update LED if not in special blink mode
+        if (radioData.steering_val != 9999.0) {
+            // Set NeoPixel color based on rate
+            if (currentRate < 2.0) {
+                setNeoPixelColor(255, 0, 0); // Red - poor signal
+            } else if (currentRate >= 2.0 && currentRate <= 5.0) {
+                setNeoPixelColor(255, 255, 0); // Yellow - moderate signal
+            } else {
+                setNeoPixelColor(0, 255, 0); // Green - good signal
+            }
+        }
+
+        shortTermAckCount = 0; // Reset counter
+        lastLedUpdate = currentMillis;
+    }
+}
+
+void getData() {
+    if (radio.available()) {
+        uint8_t bytes = radio.getDynamicPayloadSize();
+        Serial.print("Received packet, size: ");
+        Serial.println(bytes);
+        
+        if (bytes == sizeof(RadioControlStruct)) {
+            radio.read(&radioData, sizeof(RadioControlStruct));
+
+            // Print received data for debugging
+            Serial.print("Data: steering=");
+            Serial.print(radioData.steering_val);
+            Serial.print(", throttle=");
+            Serial.print(radioData.throttle_val);
+            Serial.print(", mode=");
+            Serial.print(radioData.control_mode);
+            Serial.print(", counter=");
+            Serial.println(radioData.counter);
+
+            ackPayload.counter++;
+            radio.writeAckPayload(1, &ackPayload, sizeof(AckPayloadStruct));
+
+            ackCount++;
+            shortTermAckCount++;
+
+            // Handle special blink mode
+            if (radioData.steering_val == 9999.0) {
+                if (currentMillis - lastBlinkUpdate >= BLINK_INTERVAL) {
+                    ledState = !ledState;
+                    if (ledState) {
+                        setNeoPixelColor(0, 0, 255); // Blink blue
+                    } else {
+                        setNeoPixelColor(0, 0, 0); // Turn off
+                    }
+                    lastBlinkUpdate = currentMillis;
+                }
+            }
+        } else {
+            Serial.print("Wrong payload size, flushing buffer. Expected: ");
+            Serial.print(sizeof(RadioControlStruct));
+            Serial.print(", got: ");
+            Serial.println(bytes);
+            radio.flush_rx();
+        }
+    }
+}
+
+void printACKRate() {
+    if (currentMillis - lastRateCalc >= rateCalcInterval) {
+        float timeElapsed = (currentMillis - lastRateCalc) / 1000.0;
+        float rate = ackCount / timeElapsed;
+
+        Serial.print("ACK Rate (Receiver): ");
+        Serial.print(rate);
+        Serial.print(" Hz (");
+        Serial.print(ackCount);
+        Serial.println(" ACKs sent in 10 seconds)");
+
+        ackCount = 0;
+        lastRateCalc = currentMillis;
+    }
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
+    currentMillis = millis();
+    getData();
+    updateLEDs();
+    printACKRate();
 }
-
-// put function definitions here:
-int myFunction(int x, int y) {
-  return x + y;
-}
-// added 6/2/25
