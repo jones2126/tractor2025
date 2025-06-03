@@ -13,14 +13,16 @@ RF24 radio(9, 10);  // CE, CSN pins for Teensy 3.5 since JRK G2 motor controller
 
 // Data structure for receiving
 struct RadioControlStruct {
-    float steering_val;
-    float throttle_val;
-    float voltage;
-    byte estop;
-    byte control_mode;
-    unsigned long counter;
-    uint32_t dummy;
-};
+    float steering_val;     // 4 bytes - Pin 15
+    float throttle_val;     // 4 bytes - Pin 14
+    float voltage;          // 4 bytes
+    float pot3_val;         // 4 bytes - Pin 16
+    float pot4_val;         // 4 bytes - Pin 17
+    byte estop;            // 1 byte - Pin 10
+    byte control_mode;     // 1 byte
+    byte button01;         // 1 byte - Pin 9
+    byte button06;         // 1 byte - Pin 6
+}; // Total: 23 bytes
 
 // Data structure for acknowledgment
 struct AckPayloadStruct {
@@ -95,12 +97,8 @@ void setup() {
     radio.setPALevel(RF24_PA_HIGH);
     radio.setDataRate(RF24_250KBPS);
     radio.setChannel(124);
-    // radio.openWritingPipe(address[1]);    // "TRACT" = robot tractor
-    // radio.openReadingPipe(1, address[0]); // "RCTRL" = radio control unit
-
-    radio.openWritingPipe(address[0]);    // "RCTRL" = send ACKs back to control unit  
-    radio.openReadingPipe(1, address[1]); // "TRACT" = listen for data from transmitter
-
+    radio.openWritingPipe(address[1]);    // "TRACT" = robot tractor
+    radio.openReadingPipe(1, address[0]); // "RCTRL" = radio control unit
     radio.enableAckPayload();             // THIS IS CRITICAL!
     radio.startListening();
     radio.printDetails();
@@ -155,13 +153,23 @@ void getData() {
 
             // Print received data for debugging
             Serial.print("Data: steering=");
-            Serial.print(radioData.steering_val);
+            Serial.print(radioData.steering_val, 2);
             Serial.print(", throttle=");
-            Serial.print(radioData.throttle_val);
+            Serial.print(radioData.throttle_val, 2);
+            Serial.print(", pot3=");
+            Serial.print(radioData.pot3_val, 2);
+            Serial.print(", pot4=");
+            Serial.print(radioData.pot4_val, 2);
+            Serial.print(", voltage=");
+            Serial.print(radioData.voltage, 1);
+            Serial.print("V, estop=");
+            Serial.print(radioData.estop);
             Serial.print(", mode=");
             Serial.print(radioData.control_mode);
-            Serial.print(", counter=");
-            Serial.println(radioData.counter);
+            Serial.print(", btn01=");
+            Serial.print(radioData.button01);
+            Serial.print(", btn06=");
+            Serial.println(radioData.button06);
 
             ackPayload.counter++;
             radio.writeAckPayload(1, &ackPayload, sizeof(AckPayloadStruct));
