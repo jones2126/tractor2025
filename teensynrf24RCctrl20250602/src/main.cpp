@@ -34,14 +34,16 @@ int numColors = sizeof(colors) / sizeof(Color);
 
 // Data structure for sending
 struct RadioControlStruct {
-    float steering_val;     // 4 bytes
-    float throttle_val;     // 4 bytes
+    float steering_val;     // 4 bytes - Pin 15
+    float throttle_val;     // 4 bytes - Pin 14
     float voltage;          // 4 bytes
-    byte estop;            // 1 byte
+    float pot3_val;         // 4 bytes - Pin 16
+    float pot4_val;         // 4 bytes - Pin 17
+    byte estop;            // 1 byte - Pin 10
     byte control_mode;     // 1 byte
-    unsigned long counter; // 4 bytes
-    uint32_t dummy;       // 4 bytes added to make total 22 bytes
-};
+    byte button01;         // 1 byte - Pin 9
+    byte button02;         // 1 byte - Pin 6
+}; // Total: 23 bytes
 
 // Data structure for receiving acknowledgment
 struct AckPayloadStruct {
@@ -59,6 +61,15 @@ const unsigned long transmitInterval = 100;  // Send every 100ms = 10 Hz
 // Mode switch pins
 const int leftPin = 3;   // Left position of switch
 const int rightPin = 4;  // Right position of switch
+
+// Control input pins
+const int STEERING_PIN = 15;   // Steering potentiometer
+const int THROTTLE_PIN = 14;   // Throttle potentiometer
+const int POT3_PIN = 16;       // Potentiometer 3
+const int POT4_PIN = 17;       // Potentiometer 4
+const int BUTTON01_PIN = 9;    // Button 01
+const int ESTOP_PIN = 10;      // E-Stop button
+const int BUTTON02_PIN = 6;    // Button 06
 
 // Variables for ACK rate calculation
 unsigned long currentMillis = 0;
@@ -87,6 +98,16 @@ void setup() {
     pinMode(leftPin, INPUT_PULLUP);
     pinMode(rightPin, INPUT_PULLUP);
     Serial.println("Mode switch initialized");
+    
+    // Initialize control input pins
+    pinMode(STEERING_PIN, INPUT);
+    pinMode(THROTTLE_PIN, INPUT);
+    pinMode(POT3_PIN, INPUT);
+    pinMode(POT4_PIN, INPUT);
+    pinMode(BUTTON01_PIN, INPUT_PULLUP);
+    pinMode(ESTOP_PIN, INPUT_PULLUP);
+    pinMode(BUTTON02_PIN, INPUT_PULLUP);
+    Serial.println("Control inputs initialized");
     
     // Initialize SPI manually first
     SPI.begin();
@@ -131,10 +152,12 @@ void setup() {
     radioData.steering_val = 0.0;
     radioData.throttle_val = 0.0;
     radioData.voltage = 12.0;
+    radioData.pot3_val = 0.0;
+    radioData.pot4_val = 0.0;
     radioData.estop = 0;
     radioData.control_mode = 1;
-    radioData.counter = 0;
-    radioData.dummy = 0xDEADBEEF;
+    radioData.button01 = 0;
+    radioData.button02 = 0;
 
     Serial.println("Setup complete");
     
@@ -152,10 +175,13 @@ void setup() {
 void sendData(){
     // Send data every transmitInterval milliseconds
     if (currentMillis - lastTransmit >= transmitInterval) {
-        radioData.counter++;
+        // Read all control inputs
+        readControlInputs();
         
-        // Set steering value based on test mode
-        radioData.steering_val = sendTestValue ? 9999.0 : 0.0;
+        // Set steering value based on test mode (override for testing)
+        if (sendTestValue) {
+            radioData.steering_val = 9999.0; // Test mode override
+        }
         
         // Send the data
         bool report = radio.write(&radioData, sizeof(RadioControlStruct));
@@ -187,6 +213,22 @@ void printACKRate(){
         ackCount = 0;
         lastRateCalc = currentMillis;
     }
+}
+
+void readControlInputs() {
+    // Read analog inputs and convert to -1.0 to 1.0 range
+    radioData.steering_val = (analogRead(STEERING_PIN) - 512) / 512.0;
+    radioData.throttle_val = (analogRead(THROTTLE_PIN) - 512) / 512.0;
+    radioData.pot3_val = (analogRead(POT3_PIN) - 512) / 512.0;
+    radioData.pot4_val = (analogRead(POT4_PIN) - 512) / 512.0;
+    
+    // Read voltage (assuming voltage divider on A2)
+    radioData.voltage = analogRead(A2) * (5.0 / 1023.0) * 3.0; // Adjust multiplier as needed
+    
+    // Read digital inputs (buttons are active low with pullups)
+    radioData.estop = !digitalRead(ESTOP_PIN);
+    radioData.button01 = !digitalRead(BUTTON01_PIN);
+    radioData.button02 = !digitalRead(BUTTON02_PIN);
 }
 
 void checkModeSW() {
