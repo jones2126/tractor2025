@@ -83,6 +83,13 @@ unsigned long ackCount = 0;
 unsigned long shortTermAckCount = 0;
 float currentRate = 0.0;
 
+// Function declarations
+void readControlInputs();
+void checkModeSW();
+void sendData();
+void updateLEDs();
+void printACKRate();
+
 void setup() {
     Serial.begin(115200);
     Serial.println("Transmitter Starting...");
