@@ -228,6 +228,8 @@ void printACKRate() {
 
         ackCount = 0;
         lastRateCalc = currentMillis;
+        Serial.print("RadioControlStruct size: ");
+        Serial.println(sizeof(RadioControlStruct));
     }
 }
 
