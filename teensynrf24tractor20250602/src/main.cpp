@@ -15,14 +15,14 @@ RF24 radio(9, 10);  // CE, CSN pins for Teensy 3.5 since JRK G2 motor controller
 struct RadioControlStruct {
     float steering_val;     // 4 bytes - Pin 15
     float throttle_val;     // 4 bytes - Pin 14
-    float voltage;          // 4 bytes
+    float voltage;          // 4 bytes - TBD
     float pot3_val;         // 4 bytes - Pin 16
     float pot4_val;         // 4 bytes - Pin 17
-    byte estop;            // 1 byte - Pin 10
-    byte control_mode;     // 1 byte
-    byte button01;         // 1 byte - Pin 9
-    byte button02;         // 1 byte - Pin 6
-}; // Total: 23 bytes
+    byte estop;             // 1 byte - Pin 10
+    byte control_mode;      // 1 byte - Pins 3 and 4
+    byte button01;          // 1 byte - Pin 9
+    byte button02;          // 1 byte - Pin 6
+}; // Total: 24 bytes
 
 // Data structure for acknowledgment
 struct AckPayloadStruct {
