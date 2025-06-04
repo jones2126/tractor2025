@@ -1,25 +1,18 @@
-//
-// NRF24L01 Radio Control Unit / Transmitter Code with PL9823 LEDs
-//
-
 #include <SPI.h>
 #include <RF24.h>
 #include <Adafruit_NeoPixel.h>
 
 RF24 radio(7, 8);  // CE, CSN pins
 
-// PL9823 LED definitions
 #define LED_PIN 2
 #define NUM_LEDS 4
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_LEDS, LED_PIN, NEO_RGB + NEO_KHZ800);
 
-// Color array for different patterns
 struct Color {
   uint8_t r, g, b;
   const char* name;
 };
 
-// Define color palette
 Color colors[] = {
   {255, 0, 0, "Red"},
   {0, 255, 0, "Green"},
@@ -32,58 +25,51 @@ Color colors[] = {
 };
 int numColors = sizeof(colors) / sizeof(Color);
 
-// Data structure for sending
-struct RadioControlStruct {
-    float steering_val;     // 4 bytes - Pin 15
-    float throttle_val;     // 4 bytes - Pin 14
-    float voltage;          // 4 bytes
-    float pot3_val;         // 4 bytes - Pin 16
-    float pot4_val;         // 4 bytes - Pin 17
-    byte estop;            // 1 byte - Pin 10
-    byte control_mode;     // 1 byte
-    byte button01;         // 1 byte - Pin 9
-    byte button02;         // 1 byte - Pin 6
-}; // Total: 23 bytes
+struct __attribute__((packed)) RadioControlStruct {
+    float steering_val;
+    float throttle_val;
+    float voltage;
+    float pot3_val;
+    float pot4_val;
+    byte estop;
+    byte control_mode;
+    byte button01;
+    byte button02;
+};
 
-// Data structure for receiving acknowledgment
-struct AckPayloadStruct {
-    unsigned long counter;  // 4 bytes
-    uint32_t dummy[4];     // 18 bytes of dummy data to make total 22 bytes
+struct __attribute__((packed)) AckPayloadStruct {
+    unsigned long counter;
+    uint32_t dummy[4];
 };
 
 RadioControlStruct radioData;
 AckPayloadStruct ackPayload;
-const uint8_t address[][6] = {"RCTRL", "TRACT"}; // "RCTRL" = radio control unit, "TRACT" = robot tractor
+const uint8_t address[][6] = {"RCTRL", "TRACT"};
 bool sendTestValue = true;
 unsigned long lastTransmit = 0;
-const unsigned long transmitInterval = 100;  // Send every 100ms = 10 Hz
+const unsigned long transmitInterval = 100;
 
-// Mode switch pins
-const int leftPin = 3;   // Left position of switch
-const int rightPin = 4;  // Right position of switch
+const int leftPin = 3;
+const int rightPin = 4;
+const int STEERING_PIN = 15;
+const int THROTTLE_PIN = 14;
+const int POT3_PIN = 16;
+const int POT4_PIN = 17;
+const int BUTTON01_PIN = 9;
+const int ESTOP_PIN = 10;
+const int BUTTON02_PIN = 6;
 
-// Control input pins
-const int STEERING_PIN = 15;   // Steering potentiometer
-const int THROTTLE_PIN = 14;   // Throttle potentiometer
-const int POT3_PIN = 16;       // Potentiometer 3
-const int POT4_PIN = 17;       // Potentiometer 4
-const int BUTTON01_PIN = 9;    // Button 01
-const int ESTOP_PIN = 10;      // E-Stop button
-const int BUTTON02_PIN = 6;    // Button 06
-
-// Variables for ACK rate calculation
 unsigned long currentMillis = 0;
 unsigned long lastRateCalc = 0;
-const unsigned long rateCalcInterval = 10000;  // Print rate every 10 seconds
+const unsigned long rateCalcInterval = 10000;
 unsigned long lastLedUpdate = 0;
-const unsigned long ledUpdateInterval = 500;   // Update LEDs every 500ms (2 Hz)
+const unsigned long ledUpdateInterval = 500;
 unsigned long lastModeCheck = 0;
-const unsigned long modeCheckInterval = 100;   // Check mode switch every 100ms (10 Hz)
+const unsigned long modeCheckInterval = 100;
 unsigned long ackCount = 0;
 unsigned long shortTermAckCount = 0;
 float currentRate = 0.0;
 
-// Function declarations
 void readControlInputs();
 void checkModeSW();
 void sendData();
@@ -93,20 +79,14 @@ void printACKRate();
 void setup() {
     Serial.begin(115200);
     Serial.println("Transmitter Starting...");
-    
-    // Initialize PL9823 LEDs
+
     strip.begin();
-    strip.setBrightness(64); // 25% brightness to reduce power demand
+    strip.setBrightness(64);
     strip.clear();
     strip.show();
-    Serial.println("PL9823 LEDs initialized");
-    
-    // Initialize mode switch pins
+
     pinMode(leftPin, INPUT_PULLUP);
     pinMode(rightPin, INPUT_PULLUP);
-    Serial.println("Mode switch initialized");
-    
-    // Initialize control input pins
     pinMode(STEERING_PIN, INPUT);
     pinMode(THROTTLE_PIN, INPUT);
     pinMode(POT3_PIN, INPUT);
@@ -114,212 +94,145 @@ void setup() {
     pinMode(BUTTON01_PIN, INPUT_PULLUP);
     pinMode(ESTOP_PIN, INPUT_PULLUP);
     pinMode(BUTTON02_PIN, INPUT_PULLUP);
-    Serial.println("Control inputs initialized");
-    
-    // Initialize SPI manually first
+
     SPI.begin();
     delay(100);
-    
-    // Try to initialize radio multiple times
+
     bool initialized = false;
     for(int i = 0; i < 5; i++) {
         if (radio.begin()) {
             initialized = true;
-            Serial.println("Radio initialized!");
             break;
         }
-        Serial.println("Radio init failed. Retrying...");
         delay(1000);
     }
-    
+
     if (!initialized) {
-        Serial.println("Radio hardware not responding!");
         while (1) {
-            // Flash LED #1 red to indicate failure
-            strip.setPixelColor(0, colors[0].r, colors[0].g, colors[0].b); // Red
+            strip.setPixelColor(0, colors[0].r, colors[0].g, colors[0].b);
             strip.show();
             delay(500);
-            strip.setPixelColor(0, 0, 0, 0); // Off
+            strip.setPixelColor(0, 0, 0, 0);
             strip.show();
             delay(500);
         }
     }
-    
+
     radio.setPALevel(RF24_PA_HIGH);
     radio.setDataRate(RF24_250KBPS);
-    radio.setChannel(124);     
-    radio.openWritingPipe(address[1]);    // "TRACT" = send TO the tractor
-    radio.openReadingPipe(1, address[0]); // "RCTRL" = listen for ACKs from control unit
-
+    radio.setChannel(124);
     radio.enableAckPayload();
-    radio.stopListening();  // For initializing assume the transmitter will be first to send msgs    
-    radio.printDetails();  // Optional but helpful for debugging   
-    
-    // Initialize dummy data
-    radioData.steering_val = 0.0;
-    radioData.throttle_val = 0.0;
-    radioData.voltage = 12.0;
-    radioData.pot3_val = 0.0;
-    radioData.pot4_val = 0.0;
-    radioData.estop = 0;
-    radioData.control_mode = 1;
-    radioData.button01 = 0;
-    radioData.button02 = 0;
+    radio.enableDynamicPayloads();  // ✅ Added
+    radio.openWritingPipe(address[1]);
+    radio.openReadingPipe(1, address[0]);
+    radio.stopListening();
+    radio.printDetails();
 
-    Serial.println("Setup complete");
-    
-    // Initialize timing variables
     lastRateCalc = millis();
     lastLedUpdate = millis();
     lastModeCheck = millis();
-    
-    // Show initialization complete with green LED #1
-    strip.setPixelColor(0, colors[1].r, colors[1].g, colors[1].b); // Green
+
+    strip.setPixelColor(0, colors[1].r, colors[1].g, colors[1].b);
     strip.show();
     delay(1000);
 }
 
-void sendData(){
-    // Send data every transmitInterval milliseconds
+void sendData() {
     if (currentMillis - lastTransmit >= transmitInterval) {
-        // Read all control inputs
         readControlInputs();
-        
-        // Set steering value based on test mode (override for testing)
         if (sendTestValue) {
-            radioData.steering_val = 9999.0; // Test mode override
+            radioData.steering_val = 9999.0;
         }
-        
-        // Send the data
         bool report = radio.write(&radioData, sizeof(RadioControlStruct));
-        
-        // Check if we got an acknowledgment payload
         if (report && radio.isAckPayloadAvailable()) {
             radio.read(&ackPayload, sizeof(AckPayloadStruct));
-            ackCount++;        // For communication rate calculation
-            shortTermAckCount++; // For LED update rate calculation
+            ackCount++;
+            shortTermAckCount++;
         }
-        
         lastTransmit = currentMillis;
-    }    
+    }
 }
 
-void printACKRate(){
-    // Calculate and display rate every 10 seconds
+void printACKRate() {
     if (currentMillis - lastRateCalc >= rateCalcInterval) {
-        float timeElapsed = (currentMillis - lastRateCalc) / 1000.0;  // Convert to seconds
-        float rate = ackCount / timeElapsed;  // Calculate Hz
-        
+        float timeElapsed = (currentMillis - lastRateCalc) / 1000.0;
+        float rate = ackCount / timeElapsed;
         Serial.print("ACK Rate: ");
         Serial.print(rate);
-        Serial.print(" Hz (");
-        Serial.print(ackCount);
-        Serial.println(" ACKs in 10 seconds)");
-        
-        // Reset long-term counter
+        Serial.println(" Hz");
         ackCount = 0;
         lastRateCalc = currentMillis;
     }
 }
 
 void readControlInputs() {
-    // Read analog inputs and convert to -1.0 to 1.0 range
     radioData.steering_val = (analogRead(STEERING_PIN) - 512) / 512.0;
     radioData.throttle_val = (analogRead(THROTTLE_PIN) - 512) / 512.0;
     radioData.pot3_val = (analogRead(POT3_PIN) - 512) / 512.0;
     radioData.pot4_val = (analogRead(POT4_PIN) - 512) / 512.0;
-    
-    // Read voltage (assuming voltage divider on A2)
-    radioData.voltage = analogRead(A2) * (5.0 / 1023.0) * 3.0; // Adjust multiplier as needed
-    
-    // Read digital inputs (buttons are active low with pullups)
+    radioData.voltage = analogRead(A2) * (5.0 / 1023.0) * 3.0;
     radioData.estop = !digitalRead(ESTOP_PIN);
     radioData.button01 = !digitalRead(BUTTON01_PIN);
     radioData.button02 = !digitalRead(BUTTON02_PIN);
 }
 
 void checkModeSW() {
-    // Check mode switch every 100ms (10 Hz)
     if (currentMillis - lastModeCheck >= modeCheckInterval) {
         int leftState = digitalRead(leftPin);
         int rightState = digitalRead(rightPin);
-        
         if (leftState == LOW) {
-            radioData.control_mode = 0;  // Left position
+            radioData.control_mode = 0;
         } else if (rightState == LOW) {
-            radioData.control_mode = 1;  // Right position
+            radioData.control_mode = 1;
         } else {
-            radioData.control_mode = 2;  // Center position
+            radioData.control_mode = 2;
         }
-        
         lastModeCheck = currentMillis;
     }
 }
 
 void updateLEDs() {
-    // Update LEDs every 500ms (2 Hz)
     if (currentMillis - lastLedUpdate >= ledUpdateInterval) {
-        float timeElapsed = (currentMillis - lastLedUpdate) / 1000.0;  // Convert to seconds
-        currentRate = shortTermAckCount / timeElapsed;  // Calculate Hz
-
-        // Clear all LEDs first
+        float timeElapsed = (currentMillis - lastLedUpdate) / 1000.0;
+        currentRate = shortTermAckCount / timeElapsed;
         strip.clear();
-        
-        // Set LED #1 (index 0) color based on currentRate
         if (currentRate < 2.0) {
-            // Poor signal - Red
             strip.setPixelColor(0, colors[0].r, colors[0].g, colors[0].b);
-            Serial.print("Signal: POOR (");
-        } else if (currentRate >= 2.0 && currentRate <= 5.0) {
-            // Moderate signal - Orange
+        } else if (currentRate <= 5.0) {
             strip.setPixelColor(0, colors[6].r, colors[6].g, colors[6].b);
-            Serial.print("Signal: MODERATE (");
         } else {
-            // Good signal - Green
             strip.setPixelColor(0, colors[1].r, colors[1].g, colors[1].b);
-            Serial.print("Signal: GOOD (");
         }
-        
-        // You can use LEDs #2, #3, #4 for other status indicators
-        // Example: LED #2 for E-Stop status
-        if (radioData.estop) {
-            strip.setPixelColor(1, colors[0].r, colors[0].g, colors[0].b); // Red for E-Stop active
-        } else {
-            strip.setPixelColor(1, 0, 0, 0);   // Off for E-Stop inactive
-        }
-        
-        // Example: LED #3 for control mode
-        if (radioData.control_mode == 0) {
-            strip.setPixelColor(2, colors[4].r, colors[4].g, colors[4].b); // Purple for LEFT position
-        } else if (radioData.control_mode == 1) {
-            strip.setPixelColor(2, colors[2].r, colors[2].g, colors[2].b); // Blue for RIGHT position
-        } else {
-            strip.setPixelColor(2, colors[3].r, colors[3].g, colors[3].b); // Yellow for CENTER position
-        }
-        
-        // Example: LED #4 for voltage status (assuming 12V nominal)
-        if (radioData.voltage > 11.5) {
-            strip.setPixelColor(3, colors[1].r, colors[1].g, colors[1].b); // Green for good voltage
-        } else if (radioData.voltage > 10.5) {
-            strip.setPixelColor(3, colors[6].r, colors[6].g, colors[6].b); // Orange for low voltage
-        } else {
-            strip.setPixelColor(3, colors[0].r, colors[0].g, colors[0].b); // Red for critical voltage
-        }
-        
-        strip.show(); // Update all LEDs
-        
-        Serial.print(currentRate);
-        Serial.println(" Hz)");
-        
-        shortTermAckCount = 0;  // Reset short-term counter
-        lastLedUpdate = currentMillis;        
+
+        if (radioData.estop)
+            strip.setPixelColor(1, colors[0].r, colors[0].g, colors[0].b);
+        else
+            strip.setPixelColor(1, 0, 0, 0);
+
+        if (radioData.control_mode == 0)
+            strip.setPixelColor(2, colors[4].r, colors[4].g, colors[4].b);
+        else if (radioData.control_mode == 1)
+            strip.setPixelColor(2, colors[2].r, colors[2].g, colors[2].b);
+        else
+            strip.setPixelColor(2, colors[3].r, colors[3].g, colors[3].b);
+
+        if (radioData.voltage > 11.5)
+            strip.setPixelColor(3, colors[1].r, colors[1].g, colors[1].b);
+        else if (radioData.voltage > 10.5)
+            strip.setPixelColor(3, colors[6].r, colors[6].g, colors[6].b);
+        else
+            strip.setPixelColor(3, colors[0].r, colors[0].g, colors[0].b);
+
+        strip.show();
+        shortTermAckCount = 0;
+        lastLedUpdate = currentMillis;
     }
 }
 
 void loop() {
     currentMillis = millis();
-    checkModeSW();  // Check mode switch at 10 Hz
-    sendData();  
+    checkModeSW();
+    sendData();
     updateLEDs();
     printACKRate();
 }
