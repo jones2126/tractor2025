@@ -24,7 +24,19 @@ RF24 radio(9, 10);  // CE, CSN pins for Teensy 3.5 since JRK G2 motor controller
 //     byte button02;          // 1 byte - Pin 6
 // }; // Total: 24 bytes
 
-struct __attribute__((packed)) RadioControlStruct {
+// struct __attribute__((packed)) RadioControlStruct {
+//     float steering_val;
+//     float throttle_val;
+//     float voltage;
+//     float pot3_val;
+//     float pot4_val;
+//     byte estop;
+//     byte control_mode;
+//     byte button01;
+//     byte button02;
+// };
+
+struct RadioControlStruct {
     float steering_val;
     float throttle_val;
     float voltage;
@@ -109,7 +121,7 @@ void setup() {
         }
     }
     // Configure the radio
-    radio.enableDynamicPayloads();
+    // radio.enableDynamicPayloads();
     radio.setPALevel(RF24_PA_HIGH);
     radio.setDataRate(RF24_250KBPS);
     radio.setChannel(124);
@@ -162,63 +174,108 @@ void updateLEDs() {
     }
 }
 
+
+// void getData() {
+//     if (radio.available()) {
+//         uint8_t bytes = radio.getDynamicPayloadSize();
+//         Serial.print("Received packet, size: ");
+//         Serial.println(bytes);
+        
+//         if (bytes == sizeof(RadioControlStruct)) {
+//             radio.read(&radioData, sizeof(RadioControlStruct));
+
+//             // Print received data for debugging
+//             Serial.print("Data: steering=");
+//             Serial.print(radioData.steering_val, 2);
+//             Serial.print(", throttle=");
+//             Serial.print(radioData.throttle_val, 2);
+//             Serial.print(", pot3=");
+//             Serial.print(radioData.pot3_val, 2);
+//             Serial.print(", pot4=");
+//             Serial.print(radioData.pot4_val, 2);
+//             Serial.print(", voltage=");
+//             Serial.print(radioData.voltage, 1);
+//             Serial.print("V, estop=");
+//             Serial.print(radioData.estop);
+//             Serial.print(", mode=");
+//             Serial.print(radioData.control_mode);
+//             Serial.print(", btn01=");
+//             Serial.print(radioData.button01);
+//             Serial.print(", btn02=");
+//             Serial.println(radioData.button02);
+
+//             ackPayload.counter++;
+//             radio.writeAckPayload(1, &ackPayload, sizeof(AckPayloadStruct));
+
+//             ackCount++;
+//             shortTermAckCount++;
+
+//             // Handle special blink mode
+//             if (radioData.steering_val == 9999.0) {
+//                 if (currentMillis - lastBlinkUpdate >= BLINK_INTERVAL) {
+//                     ledState = !ledState;
+//                     if (ledState) {
+//                         setNeoPixelColor(0, 0, 255); // Blink blue
+//                     } else {
+//                         setNeoPixelColor(0, 0, 0); // Turn off
+//                     }
+//                     lastBlinkUpdate = currentMillis;
+//                 }
+//             }
+//         } else {
+//             Serial.print("Wrong payload size, flushing buffer. Expected: ");
+//             Serial.print(sizeof(RadioControlStruct));
+//             Serial.print(", got: ");
+//             Serial.println(bytes);
+//             radio.flush_rx();
+//         }
+//     }
+// }
+
 void getData() {
     if (radio.available()) {
-        uint8_t bytes = radio.getDynamicPayloadSize();
-        Serial.print("Received packet, size: ");
-        Serial.println(bytes);
-        
-        if (bytes == sizeof(RadioControlStruct)) {
-            radio.read(&radioData, sizeof(RadioControlStruct));
+        radio.read(&radioData, sizeof(RadioControlStruct));
 
-            // Print received data for debugging
-            Serial.print("Data: steering=");
-            Serial.print(radioData.steering_val, 2);
-            Serial.print(", throttle=");
-            Serial.print(radioData.throttle_val, 2);
-            Serial.print(", pot3=");
-            Serial.print(radioData.pot3_val, 2);
-            Serial.print(", pot4=");
-            Serial.print(radioData.pot4_val, 2);
-            Serial.print(", voltage=");
-            Serial.print(radioData.voltage, 1);
-            Serial.print("V, estop=");
-            Serial.print(radioData.estop);
-            Serial.print(", mode=");
-            Serial.print(radioData.control_mode);
-            Serial.print(", btn01=");
-            Serial.print(radioData.button01);
-            Serial.print(", btn02=");
-            Serial.println(radioData.button02);
+        // Print received data for debugging
+        Serial.print("Data: steering=");
+        Serial.print(radioData.steering_val, 2);
+        Serial.print(", throttle=");
+        Serial.print(radioData.throttle_val, 2);
+        Serial.print(", pot3=");
+        Serial.print(radioData.pot3_val, 2);
+        Serial.print(", pot4=");
+        Serial.print(radioData.pot4_val, 2);
+        Serial.print(", voltage=");
+        Serial.print(radioData.voltage, 1);
+        Serial.print("V, estop=");
+        Serial.print(radioData.estop);
+        Serial.print(", mode=");
+        Serial.print(radioData.control_mode);
+        Serial.print(", btn01=");
+        Serial.print(radioData.button01);
+        Serial.print(", btn02=");
+        Serial.println(radioData.button02);
 
-            ackPayload.counter++;
-            radio.writeAckPayload(1, &ackPayload, sizeof(AckPayloadStruct));
+        ackPayload.counter++;
+        radio.writeAckPayload(1, &ackPayload, sizeof(AckPayloadStruct));
 
-            ackCount++;
-            shortTermAckCount++;
+        ackCount++;
+        shortTermAckCount++;
 
-            // Handle special blink mode
-            if (radioData.steering_val == 9999.0) {
-                if (currentMillis - lastBlinkUpdate >= BLINK_INTERVAL) {
-                    ledState = !ledState;
-                    if (ledState) {
-                        setNeoPixelColor(0, 0, 255); // Blink blue
-                    } else {
-                        setNeoPixelColor(0, 0, 0); // Turn off
-                    }
-                    lastBlinkUpdate = currentMillis;
-                }
-            }
-        } else {
-            Serial.print("Wrong payload size, flushing buffer. Expected: ");
-            Serial.print(sizeof(RadioControlStruct));
-            Serial.print(", got: ");
-            Serial.println(bytes);
-            radio.flush_rx();
-        }
+        // // Handle special blink mode
+        // if (radioData.steering_val == 9999.0) {
+        //     if (currentMillis - lastBlinkUpdate >= BLINK_INTERVAL) {
+        //         ledState = !ledState;
+        //         if (ledState) {
+        //             setNeoPixelColor(0, 0, 255); // Blink blue
+        //         } else {
+        //             setNeoPixelColor(0, 0, 0); // Turn off
+        //         }
+        //         lastBlinkUpdate = currentMillis;
+        //     }
+        // }
     }
 }
-
 void printACKRate() {
     if (currentMillis - lastRateCalc >= rateCalcInterval) {
         float timeElapsed = (currentMillis - lastRateCalc) / 1000.0;

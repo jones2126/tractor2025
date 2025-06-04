@@ -25,7 +25,19 @@ Color colors[] = {
 };
 int numColors = sizeof(colors) / sizeof(Color);
 
-struct __attribute__((packed)) RadioControlStruct {
+// struct __attribute__((packed)) RadioControlStruct {
+//     float steering_val;
+//     float throttle_val;
+//     float voltage;
+//     float pot3_val;
+//     float pot4_val;
+//     byte estop;
+//     byte control_mode;
+//     byte button01;
+//     byte button02;
+// };
+
+struct RadioControlStruct {
     float steering_val;
     float throttle_val;
     float voltage;
@@ -45,7 +57,6 @@ struct __attribute__((packed)) AckPayloadStruct {
 RadioControlStruct radioData;
 AckPayloadStruct ackPayload;
 const uint8_t address[][6] = {"RCTRL", "TRACT"};
-bool sendTestValue = true;
 unsigned long lastTransmit = 0;
 const unsigned long transmitInterval = 100;
 
@@ -122,7 +133,7 @@ void setup() {
     radio.setDataRate(RF24_250KBPS);
     radio.setChannel(124);
     radio.enableAckPayload();
-    radio.enableDynamicPayloads(); 
+    // radio.enableDynamicPayloads(); 
     radio.openWritingPipe(address[1]);
     radio.openReadingPipe(1, address[0]);
     radio.stopListening();
@@ -140,9 +151,6 @@ void setup() {
 void sendData() {
     if (currentMillis - lastTransmit >= transmitInterval) {
         readControlInputs();
-        if (sendTestValue) {
-            radioData.steering_val = 9999.0;
-        }
         bool report = radio.write(&radioData, sizeof(RadioControlStruct));
         if (report && radio.isAckPayloadAvailable()) {
             radio.read(&ackPayload, sizeof(AckPayloadStruct));
