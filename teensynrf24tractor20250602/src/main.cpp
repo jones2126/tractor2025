@@ -21,7 +21,7 @@ struct RadioControlStruct {
     byte estop;            // 1 byte - Pin 10
     byte control_mode;     // 1 byte
     byte button01;         // 1 byte - Pin 9
-    byte button06;         // 1 byte - Pin 6
+    byte button02;         // 1 byte - Pin 6
 }; // Total: 23 bytes
 
 // Data structure for acknowledgment
@@ -169,7 +169,7 @@ void getData() {
             Serial.print(", btn01=");
             Serial.print(radioData.button01);
             Serial.print(", btn06=");
-            Serial.println(radioData.button06);
+            Serial.println(radioData.button02);
 
             ackPayload.counter++;
             radio.writeAckPayload(1, &ackPayload, sizeof(AckPayloadStruct));
