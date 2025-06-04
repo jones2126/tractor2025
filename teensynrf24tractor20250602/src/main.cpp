@@ -168,7 +168,7 @@ void getData() {
             Serial.print(radioData.control_mode);
             Serial.print(", btn01=");
             Serial.print(radioData.button01);
-            Serial.print(", btn06=");
+            Serial.print(", btn02=");
             Serial.println(radioData.button02);
 
             ackPayload.counter++;
