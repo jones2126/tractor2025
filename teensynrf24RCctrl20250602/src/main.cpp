@@ -122,7 +122,7 @@ void setup() {
     radio.setDataRate(RF24_250KBPS);
     radio.setChannel(124);
     radio.enableAckPayload();
-    radio.enableDynamicPayloads();  // ✅ Added
+    radio.enableDynamicPayloads(); 
     radio.openWritingPipe(address[1]);
     radio.openReadingPipe(1, address[0]);
     radio.stopListening();

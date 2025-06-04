@@ -12,20 +12,36 @@ Adafruit_NeoPixel strip(NUM_LEDS, DATA_PIN, NEO_GRB + NEO_KHZ800);
 RF24 radio(9, 10);  // CE, CSN pins for Teensy 3.5 since JRK G2 motor controller is using 7 and 8
 
 // Data structure for receiving
-struct RadioControlStruct {
-    float steering_val;     // 4 bytes - Pin 15
-    float throttle_val;     // 4 bytes - Pin 14
-    float voltage;          // 4 bytes - TBD
-    float pot3_val;         // 4 bytes - Pin 16
-    float pot4_val;         // 4 bytes - Pin 17
-    byte estop;             // 1 byte - Pin 10
-    byte control_mode;      // 1 byte - Pins 3 and 4
-    byte button01;          // 1 byte - Pin 9
-    byte button02;          // 1 byte - Pin 6
-}; // Total: 24 bytes
+// struct RadioControlStruct {
+//     float steering_val;     // 4 bytes - Pin 15
+//     float throttle_val;     // 4 bytes - Pin 14
+//     float voltage;          // 4 bytes - TBD
+//     float pot3_val;         // 4 bytes - Pin 16
+//     float pot4_val;         // 4 bytes - Pin 17
+//     byte estop;             // 1 byte - Pin 10
+//     byte control_mode;      // 1 byte - Pins 3 and 4
+//     byte button01;          // 1 byte - Pin 9
+//     byte button02;          // 1 byte - Pin 6
+// }; // Total: 24 bytes
+
+struct __attribute__((packed)) RadioControlStruct {
+    float steering_val;
+    float throttle_val;
+    float voltage;
+    float pot3_val;
+    float pot4_val;
+    byte estop;
+    byte control_mode;
+    byte button01;
+    byte button02;
+};
 
 // Data structure for acknowledgment
-struct AckPayloadStruct {
+// struct AckPayloadStruct {
+//     unsigned long counter;
+//     uint32_t dummy[4];
+// };
+struct __attribute__((packed)) AckPayloadStruct {
     unsigned long counter;
     uint32_t dummy[4];
 };
@@ -92,8 +108,8 @@ void setup() {
             delay(500);
         }
     }
-
     // Configure the radio
+    radio.enableDynamicPayloads();
     radio.setPALevel(RF24_PA_HIGH);
     radio.setDataRate(RF24_250KBPS);
     radio.setChannel(124);
