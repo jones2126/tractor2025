@@ -335,6 +335,8 @@ because JRK expects an integer target.
     float normalized = (radioData.throttle_val + 1.0f) / 2.0f;
     uint16_t target = (uint16_t)(normalized * MAX_JRK_TARGET);
     setJrkTarget(target);
+    Serial.print("target=");
+    Serial.println(target);    
 
     lastControlRun = currentMillis;
 }
