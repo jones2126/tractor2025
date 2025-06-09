@@ -321,6 +321,16 @@ void controlTransmission() {
     }
 
     // Map throttle_val (-1 to 1) to JRK target range 0-2500
+'''
+MAX_JRK_TARGET represents the highest JRK controller value you want to send. The JRK accepts 
+values up to 4095, but the code may limits it for safer testing.
+normalized: radioData.throttle_val comes from the radio and ranges from -1 (full reverse) 
+to 1 (full forward). Adding 1 shifts that range to 0-2. Dividing by 2 scales it down to 0-1. 
+Now normalized is a percentage (0.0 to 1.0) of the throttle position.
+target: The code multiplies normalized by MAX_JRK_TARGET to convert that 0-1 range into 
+a 0 - MAX_JRK_TARGET range.  The result is cast to uint16_t (an unsigned 16-bit integer) 
+because JRK expects an integer target.
+'''
     const float MAX_JRK_TARGET = 2500.0f;
     float normalized = (radioData.throttle_val + 1.0f) / 2.0f;
     uint16_t target = (uint16_t)(normalized * MAX_JRK_TARGET);
