@@ -2,6 +2,9 @@
 #include <RF24.h>
 #include <Adafruit_NeoPixel.h>
 
+// JRK controller serial port
+#define JRK_BAUD 9600
+
 // NeoPixel definitions
 #define NUM_LEDS 1
 #define DATA_PIN 2
@@ -74,6 +77,14 @@ unsigned long ackCount = 0;
 unsigned long shortTermAckCount = 0;
 bool ledState = false;
 
+// Control transmission timing
+unsigned long lastControlRun = 0;
+const unsigned long controlInterval = 100; // 10 Hz
+
+// JRK helper function declarations
+void setJrkTarget(uint16_t target);
+void controlTransmission();
+
 // Function to set NeoPixel color
 void setNeoPixelColor(uint8_t red, uint8_t green, uint8_t blue) {
     strip.setPixelColor(0, strip.Color(red, green, blue));
@@ -83,6 +94,8 @@ void setNeoPixelColor(uint8_t red, uint8_t green, uint8_t blue) {
 void setup() {
     Serial.begin(115200);
     Serial.println("Teensy 3.5 Receiver Starting...");
+
+    Serial3.begin(JRK_BAUD);
 
     // Initialize NeoPixel
     strip.begin();
@@ -294,9 +307,32 @@ void printACKRate() {
     }
 }
 
+// Send a target position to the JRK controller
+void setJrkTarget(uint16_t target) {
+    Serial3.write(0xC0);
+    Serial3.write(target & 0x1F);
+    Serial3.write((target >> 5) & 0x7F);
+}
+
+// Apply the throttle value from the radio to the JRK at 10 Hz
+void controlTransmission() {
+    if (currentMillis - lastControlRun < controlInterval) {
+        return;
+    }
+
+    // Map throttle_val (-1 to 1) to JRK target range 0-2500
+    const float MAX_JRK_TARGET = 2500.0f;
+    float normalized = (radioData.throttle_val + 1.0f) / 2.0f;
+    uint16_t target = (uint16_t)(normalized * MAX_JRK_TARGET);
+    setJrkTarget(target);
+
+    lastControlRun = currentMillis;
+}
+
 void loop() {
     currentMillis = millis();
     getData();
+    controlTransmission();
     updateLEDs();
     printACKRate();
 }
