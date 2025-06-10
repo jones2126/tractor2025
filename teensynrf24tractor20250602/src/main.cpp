@@ -52,10 +52,6 @@ struct RadioControlStruct {
 };
 
 // Data structure for acknowledgment
-// struct AckPayloadStruct {
-//     unsigned long counter;
-//     uint32_t dummy[4];
-// };
 struct __attribute__((packed)) AckPayloadStruct {
     unsigned long counter;
     uint32_t dummy[4];
@@ -81,9 +77,10 @@ bool ledState = false;
 unsigned long lastControlRun = 0;
 const unsigned long controlInterval = 100; // 10 Hz
 
-// JRK helper function declarations
+// function declarations
 void setJrkTarget(uint16_t target);
 void controlTransmission();
+void debugSerial();
 
 // Function to set NeoPixel color
 void setNeoPixelColor(uint8_t red, uint8_t green, uint8_t blue) {
@@ -93,7 +90,23 @@ void setNeoPixelColor(uint8_t red, uint8_t green, uint8_t blue) {
 
 void setup() {
     Serial.begin(115200);
+    delay(2000);
     Serial.println("Teensy 3.5 Receiver Starting...");
+    Serial.flush();
+
+    // Print multiple times to ensure we see something
+    for(int i = 0; i < 10; i++) {
+        Serial.print("Debug message #");
+        Serial.println(i);
+        Serial.flush();
+        delay(100);
+    }
+    
+    Serial.println("If you see this, serial is working!");
+    Serial.flush();
+    
+    // Continue with your normal setup...
+    Serial.println("Teensy 3.5 Receiver continuing...");
 
     Serial3.begin(JRK_BAUD);
 
@@ -161,6 +174,15 @@ void setup() {
     Serial.println("Setup complete - listening for transmissions...");
 }
 
+void debugSerial() {
+    static unsigned long lastDebug = 0;
+    if (currentMillis - lastDebug > 5000) {  // Every 5 seconds
+        Serial.println("HEARTBEAT - Serial is working");
+        Serial.flush();
+        lastDebug = currentMillis;
+    }
+}
+
 void updateLEDs() {
     if (currentMillis - lastLedUpdate >= ledUpdateInterval) {
         float timeElapsed = (currentMillis - lastLedUpdate) / 1000.0;
@@ -186,64 +208,6 @@ void updateLEDs() {
         lastLedUpdate = currentMillis;
     }
 }
-
-
-// void getData() {
-//     if (radio.available()) {
-//         uint8_t bytes = radio.getDynamicPayloadSize();
-//         Serial.print("Received packet, size: ");
-//         Serial.println(bytes);
-        
-//         if (bytes == sizeof(RadioControlStruct)) {
-//             radio.read(&radioData, sizeof(RadioControlStruct));
-
-//             // Print received data for debugging
-//             Serial.print("Data: steering=");
-//             Serial.print(radioData.steering_val, 2);
-//             Serial.print(", throttle=");
-//             Serial.print(radioData.throttle_val, 2);
-//             Serial.print(", pot3=");
-//             Serial.print(radioData.pot3_val, 2);
-//             Serial.print(", pot4=");
-//             Serial.print(radioData.pot4_val, 2);
-//             Serial.print(", voltage=");
-//             Serial.print(radioData.voltage, 1);
-//             Serial.print("V, estop=");
-//             Serial.print(radioData.estop);
-//             Serial.print(", mode=");
-//             Serial.print(radioData.control_mode);
-//             Serial.print(", btn01=");
-//             Serial.print(radioData.button01);
-//             Serial.print(", btn02=");
-//             Serial.println(radioData.button02);
-
-//             ackPayload.counter++;
-//             radio.writeAckPayload(1, &ackPayload, sizeof(AckPayloadStruct));
-
-//             ackCount++;
-//             shortTermAckCount++;
-
-//             // Handle special blink mode
-//             if (radioData.steering_val == 9999.0) {
-//                 if (currentMillis - lastBlinkUpdate >= BLINK_INTERVAL) {
-//                     ledState = !ledState;
-//                     if (ledState) {
-//                         setNeoPixelColor(0, 0, 255); // Blink blue
-//                     } else {
-//                         setNeoPixelColor(0, 0, 0); // Turn off
-//                     }
-//                     lastBlinkUpdate = currentMillis;
-//                 }
-//             }
-//         } else {
-//             Serial.print("Wrong payload size, flushing buffer. Expected: ");
-//             Serial.print(sizeof(RadioControlStruct));
-//             Serial.print(", got: ");
-//             Serial.println(bytes);
-//             radio.flush_rx();
-//         }
-//     }
-// }
 
 void getData() {
     if (radio.available()) {
@@ -274,19 +238,6 @@ void getData() {
 
         ackCount++;
         shortTermAckCount++;
-
-        // // Handle special blink mode
-        // if (radioData.steering_val == 9999.0) {
-        //     if (currentMillis - lastBlinkUpdate >= BLINK_INTERVAL) {
-        //         ledState = !ledState;
-        //         if (ledState) {
-        //             setNeoPixelColor(0, 0, 255); // Blink blue
-        //         } else {
-        //             setNeoPixelColor(0, 0, 0); // Turn off
-        //         }
-        //         lastBlinkUpdate = currentMillis;
-        //     }
-        // }
     }
 }
 void printACKRate() {
@@ -330,6 +281,7 @@ void controlTransmission() {
     // target: The code multiplies normalized by MAX_JRK_TARGET to convert that 0-1 range into 
     // a 0 - MAX_JRK_TARGET range.  The result is cast to uint16_t (an unsigned 16-bit integer) 
     // because JRK expects an integer target.
+    // I'm beginning to think I need to do all this math and smoothing in the radio control Teensy.
 
     const float MAX_JRK_TARGET = 2500.0f;
     float normalized = (radioData.throttle_val + 1.0f) / 2.0f;
@@ -347,4 +299,5 @@ void loop() {
     controlTransmission();
     updateLEDs();
     printACKRate();
+    debugSerial();
 }
