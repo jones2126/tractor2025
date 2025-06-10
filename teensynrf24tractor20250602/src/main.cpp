@@ -194,28 +194,14 @@ void debugSerial() {
 }
 
 void calcRadioCommRate() {
-    if (currentMillis - lastLedUpdate >= ledUpdateInterval) {
-        float timeElapsed = (currentMillis - lastLedUpdate) / 1000.0;
+    if (currentMillis - lastCommRatePrint >= commRatePrintInterval) {
+        float timeElapsed = (currentMillis - lastCommRatePrint) / 1000.0;
         float currentRate = shortTermAckCount / timeElapsed;
-
-        if (currentMillis - lastCommRatePrint >= commRatePrintInterval) {
-            Serial.print("Current communication rate: ");
-            Serial.print(currentRate);
-            Serial.println(" Hz");
-            lastCommRatePrint = currentMillis;
-        }
-
-        // Set NeoPixel color based on rate
-        if (currentRate < 2.0) {
-            setNeoPixelColor(255, 0, 0); // Red - poor signal
-        } else if (currentRate >= 2.0 && currentRate <= 5.0) {
-            setNeoPixelColor(255, 255, 0); // Yellow - moderate signal
-        } else {
-            setNeoPixelColor(0, 255, 0); // Green - good signal
-        }
-
+        Serial.print("Current communication rate: ");
+        Serial.print(currentRate);
+        Serial.println(" Hz");
         shortTermAckCount = 0; // Reset counter
-        lastLedUpdate = currentMillis;
+        lastCommRatePrint = currentMillis;
     }
 }
 
