@@ -48,16 +48,16 @@ unsigned long lastBlinkUpdate = 0;
 unsigned long ackCount = 0;
 unsigned long shortTermAckCount = 0;
 unsigned long lastCommRatePrint = 0;
-const unsigned long commRatePrintInterval = 10000; // Throttle rate prints to 10 seconds
+const unsigned long commRatePrintInterval = 10000; // Throttle rate prints to 10 seconds 0.1 Hz
 bool ledState = false;
 
 // Control how often we print received data
 unsigned long lastDataPrint = 0;
-const unsigned long dataPrintInterval = 1000; // 1 Hz
+const unsigned long dataPrintInterval = 2000; // 0.5 Hz
 
 // Control how often we print JRK target
 unsigned long lastTargetPrint = 0;
-const unsigned long targetPrintInterval = 500; // 2 Hz
+const unsigned long targetPrintInterval = 2000; // 0.5 Hz
 
 // Control transmission timing
 unsigned long lastControlRun = 0;
