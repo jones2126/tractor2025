@@ -77,6 +77,10 @@ bool ledState = false;
 unsigned long lastDataPrint = 0;
 const unsigned long dataPrintInterval = 1000; // 1 Hz
 
+// Control how often we print JRK target
+unsigned long lastTargetPrint = 0;
+const unsigned long targetPrintInterval = 500; // 2 Hz
+
 // Control transmission timing
 unsigned long lastControlRun = 0;
 const unsigned long controlInterval = 100; // 10 Hz
@@ -294,8 +298,13 @@ void controlTransmission() {
     float normalized = (radioData.throttle_val + 1.0f) / 2.0f;
     uint16_t target = (uint16_t)(normalized * MAX_JRK_TARGET);
     setJrkTarget(target);
-    Serial.print("target=");
-    Serial.println(target);    
+
+    // Print the JRK target at 2 Hz
+    if (currentMillis - lastTargetPrint >= targetPrintInterval) {
+        Serial.print("target=");
+        Serial.println(target);
+        lastTargetPrint = currentMillis;
+    }
 
     lastControlRun = currentMillis;
 }
