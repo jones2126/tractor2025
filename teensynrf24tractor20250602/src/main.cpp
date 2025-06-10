@@ -73,6 +73,14 @@ unsigned long ackCount = 0;
 unsigned long shortTermAckCount = 0;
 bool ledState = false;
 
+// Control how often we print received data
+unsigned long lastDataPrint = 0;
+const unsigned long dataPrintInterval = 1000; // 1 Hz
+
+// Control how often we print JRK target
+unsigned long lastTargetPrint = 0;
+const unsigned long targetPrintInterval = 500; // 2 Hz
+
 // Control transmission timing
 unsigned long lastControlRun = 0;
 const unsigned long controlInterval = 100; // 10 Hz
@@ -213,25 +221,28 @@ void getData() {
     if (radio.available()) {
         radio.read(&radioData, sizeof(RadioControlStruct));
 
-        // Print received data for debugging
-        Serial.print("Data: steering=");
-        Serial.print(radioData.steering_val, 2);
-        Serial.print(", throttle=");
-        Serial.print(radioData.throttle_val, 2);
-        Serial.print(", pot3=");
-        Serial.print(radioData.pot3_val, 2);
-        Serial.print(", pot4=");
-        Serial.print(radioData.pot4_val, 2);
-        Serial.print(", voltage=");
-        Serial.print(radioData.voltage, 1);
-        Serial.print("V, estop=");
-        Serial.print(radioData.estop);
-        Serial.print(", mode=");
-        Serial.print(radioData.control_mode);
-        Serial.print(", btn01=");
-        Serial.print(radioData.button01);
-        Serial.print(", btn02=");
-        Serial.println(radioData.button02);
+        // Print received data for debugging at 1 Hz
+        if (currentMillis - lastDataPrint >= dataPrintInterval) {
+            Serial.print("Data: steering=");
+            Serial.print(radioData.steering_val, 2);
+            Serial.print(", throttle=");
+            Serial.print(radioData.throttle_val, 2);
+            Serial.print(", pot3=");
+            Serial.print(radioData.pot3_val, 2);
+            Serial.print(", pot4=");
+            Serial.print(radioData.pot4_val, 2);
+            Serial.print(", voltage=");
+            Serial.print(radioData.voltage, 1);
+            Serial.print("V, estop=");
+            Serial.print(radioData.estop);
+            Serial.print(", mode=");
+            Serial.print(radioData.control_mode);
+            Serial.print(", btn01=");
+            Serial.print(radioData.button01);
+            Serial.print(", btn02=");
+            Serial.println(radioData.button02);
+            lastDataPrint = currentMillis;
+        }
 
         ackPayload.counter++;
         radio.writeAckPayload(1, &ackPayload, sizeof(AckPayloadStruct));
@@ -287,8 +298,13 @@ void controlTransmission() {
     float normalized = (radioData.throttle_val + 1.0f) / 2.0f;
     uint16_t target = (uint16_t)(normalized * MAX_JRK_TARGET);
     setJrkTarget(target);
-    Serial.print("target=");
-    Serial.println(target);    
+
+    // Print the JRK target at 2 Hz
+    if (currentMillis - lastTargetPrint >= targetPrintInterval) {
+        Serial.print("target=");
+        Serial.println(target);
+        lastTargetPrint = currentMillis;
+    }
 
     lastControlRun = currentMillis;
 }
