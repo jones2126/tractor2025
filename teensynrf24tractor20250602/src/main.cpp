@@ -71,6 +71,8 @@ const unsigned long ledUpdateInterval = 500; // Update LEDs every 500ms (2 Hz)
 unsigned long lastBlinkUpdate = 0;
 unsigned long ackCount = 0;
 unsigned long shortTermAckCount = 0;
+unsigned long lastCommRatePrint = 0;
+const unsigned long commRatePrintInterval = 10000; // Throttle rate prints to 10 seconds
 bool ledState = false;
 
 // Control how often we print received data
@@ -191,25 +193,25 @@ void debugSerial() {
     }
 }
 
-void updateLEDs() {
+void calcRadioCommRate() {
     if (currentMillis - lastLedUpdate >= ledUpdateInterval) {
         float timeElapsed = (currentMillis - lastLedUpdate) / 1000.0;
         float currentRate = shortTermAckCount / timeElapsed;
 
-        Serial.print("Current communication rate: ");
-        Serial.print(currentRate);
-        Serial.println(" Hz");
+        if (currentMillis - lastCommRatePrint >= commRatePrintInterval) {
+            Serial.print("Current communication rate: ");
+            Serial.print(currentRate);
+            Serial.println(" Hz");
+            lastCommRatePrint = currentMillis;
+        }
 
-        // Only update LED if not in special blink mode
-        if (radioData.steering_val != 9999.0) {
-            // Set NeoPixel color based on rate
-            if (currentRate < 2.0) {
-                setNeoPixelColor(255, 0, 0); // Red - poor signal
-            } else if (currentRate >= 2.0 && currentRate <= 5.0) {
-                setNeoPixelColor(255, 255, 0); // Yellow - moderate signal
-            } else {
-                setNeoPixelColor(0, 255, 0); // Green - good signal
-            }
+        // Set NeoPixel color based on rate
+        if (currentRate < 2.0) {
+            setNeoPixelColor(255, 0, 0); // Red - poor signal
+        } else if (currentRate >= 2.0 && currentRate <= 5.0) {
+            setNeoPixelColor(255, 255, 0); // Yellow - moderate signal
+        } else {
+            setNeoPixelColor(0, 255, 0); // Green - good signal
         }
 
         shortTermAckCount = 0; // Reset counter
@@ -313,7 +315,7 @@ void loop() {
     currentMillis = millis();
     getData();
     controlTransmission();
-    updateLEDs();
+    calcRadioCommRate();
     printACKRate();
     debugSerial();
 }
