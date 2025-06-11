@@ -1,5 +1,5 @@
 #include <Arduino.h>
-
+unsigned long jrkTarget = 1000;
 // Set up Serial3 for communication with the JRK controller
 void setup() {
   delay(45000);  // delay to let RPi boot up so Serial will work
@@ -38,16 +38,16 @@ void loop() {
   Serial.print("Current Position: ");
   Serial.println(currentPosition);
   
-  // Send command to move to position 500
-  Serial.println("Moving to 4000");
-  setJrkTarget(500 );
+  // Send command to move to position jrkTarget
+  Serial.println("Moving to " + String(jrkTarget));
+  setJrkTarget(jrkTarget);
   
   // Wait for 10 seconds
   delay(10000);
 
   // Poll and print the position after moving
   currentPosition = getJrkPosition();
-  Serial.print("Current Pos after setJrkTarget(4000): ");
+  Serial.print("Current Pos after setJrkTarget(jrkTarget): ");
   Serial.println(currentPosition);
   
   // Send command to move to position 0
