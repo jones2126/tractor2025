@@ -75,7 +75,7 @@ void setNeoPixelColor(uint8_t red, uint8_t green, uint8_t blue) {
 }
 
 void setup() {
-    delay(45000);  // wait for the Rpi to boot up
+    delay(45000);  // Added this delay to wait for the Rpi to boot up to help ensure serial comms is ready
     Serial.begin(115200);
     while (!Serial && millis() < 10000);  // wait up to 10 seconds for USB serial to initialize 
     Serial.println("Teensy 3.5 Receiver Starting...");

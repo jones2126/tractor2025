@@ -2,7 +2,7 @@
 
 // Set up Serial3 for communication with the JRK controller
 void setup() {
-  Serial.begin(9600);      // Serial monitor for debugging
+  Serial.begin(115200);      // Serial monitor for debugging
   Serial3.begin(9600);     // Ensure the baud rate matches the JRK configuration
   delay(1000);             // Small delay to let everything initialize
 }
@@ -38,15 +38,15 @@ void loop() {
   Serial.println(currentPosition);
   
   // Send command to move to position 500
-  Serial.println("Moving to 500");
-  setJrkTarget(500);
+  Serial.println("Moving to 4000");
+  setJrkTarget(4000);
   
   // Wait for 10 seconds
-  delay(5000);
+  delay(10000);
 
   // Poll and print the position after moving
   currentPosition = getJrkPosition();
-  Serial.print("Current Position after moving to 500: ");
+  Serial.print("Current Pos after setJrkTarget(4000): ");
   Serial.println(currentPosition);
   
   // Send command to move to position 0
@@ -54,10 +54,10 @@ void loop() {
   setJrkTarget(0);
 
   // Wait for another 10 seconds
-  delay(5000);
+  delay(10000);
 
   // Poll and print the position after moving to 0
   currentPosition = getJrkPosition();
-  Serial.print("Current Position after moving to 0: ");
+  Serial.print("Current Pos after setJrkTarget(0): ");
   Serial.println(currentPosition);
 }
