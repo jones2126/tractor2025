@@ -1,5 +1,5 @@
 #include <Arduino.h>
-unsigned long jrkTarget = 2000;
+unsigned long jrkTarget = 3500;
 // Set up Serial3 for communication with the JRK controller
 void setup() {
   delay(45000);  // delay to let RPi boot up so Serial will work
