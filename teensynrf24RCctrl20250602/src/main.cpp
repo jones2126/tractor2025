@@ -25,23 +25,11 @@ Color colors[] = {
 };
 int numColors = sizeof(colors) / sizeof(Color);
 
-// struct __attribute__((packed)) RadioControlStruct {
-//     float steering_val;
-//     float throttle_val;
-//     float voltage;
-//     float pot3_val;
-//     float pot4_val;
-//     byte estop;
-//     byte control_mode;
-//     byte button01;
-//     byte button02;
-// };
-
 struct RadioControlStruct {
     float steering_val;
     float throttle_val;
     float voltage;
-    float pot3_val;
+    float transmission_val;
     float pot4_val;
     byte estop;
     byte control_mode;
@@ -62,10 +50,10 @@ const unsigned long transmitInterval = 100;
 
 const int leftPin = 3;
 const int rightPin = 4;
-const int STEERING_PIN = 15;
-const int THROTTLE_PIN = 14;
-const int POT3_PIN = 16;
-const int POT4_PIN = 17;
+const int STEERING_PIN = 15;    // STEERING_PIN is the top left pot
+const int THROTTLE_PIN = 14;    // THROTTLE_PIN is top right pot
+const int TRANSMISSION_PIN = 16;        // TRANSMISSION_PIN is the lower right pot
+const int POT4_PIN = 17;        // POT4_PIN is the lower left pot
 const int BUTTON01_PIN = 9;
 const int ESTOP_PIN = 10;
 const int BUTTON02_PIN = 6;
@@ -100,7 +88,7 @@ void setup() {
     pinMode(rightPin, INPUT_PULLUP);
     pinMode(STEERING_PIN, INPUT);
     pinMode(THROTTLE_PIN, INPUT);
-    pinMode(POT3_PIN, INPUT);
+    pinMode(TRANSMISSION_PIN, INPUT);
     pinMode(POT4_PIN, INPUT);
     pinMode(BUTTON01_PIN, INPUT_PULLUP);
     pinMode(ESTOP_PIN, INPUT_PULLUP);
@@ -176,10 +164,10 @@ void printACKRate() {
 }
 
 void readControlInputs() {
-    radioData.steering_val = (analogRead(STEERING_PIN) - 512) / 512.0;
-    radioData.throttle_val = (analogRead(THROTTLE_PIN) - 512) / 512.0;
-    radioData.pot3_val = (analogRead(POT3_PIN) - 512) / 512.0;
-    radioData.pot4_val = (analogRead(POT4_PIN) - 512) / 512.0;
+    radioData.steering_val = analogRead(STEERING_PIN); // STEERING_PIN is the top left pot
+    radioData.throttle_val = analogRead(THROTTLE_PIN);  // THROTTLE_PIN is top right pot
+    radioData.transmission_val = analogRead(TRANSMISSION_PIN); // TRANSMISSION_PIN is the lower right pot - change this to TRANSMISSION_PIN
+    radioData.pot4_val = analogRead(POT4_PIN); // POT4_PIN is the lower left pot
     radioData.voltage = analogRead(A2) * (5.0 / 1023.0) * 3.0;
     radioData.estop = !digitalRead(ESTOP_PIN);
     radioData.button01 = !digitalRead(BUTTON01_PIN);

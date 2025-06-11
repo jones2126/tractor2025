@@ -19,7 +19,7 @@ struct RadioControlStruct {
     float steering_val;
     float throttle_val;
     float voltage;
-    float pot3_val;
+    float transmission_val;
     float pot4_val;
     byte estop;
     byte control_mode;
@@ -186,8 +186,8 @@ void getData() {
             Serial.print(radioData.steering_val, 2);
             Serial.print(", throttle=");
             Serial.print(radioData.throttle_val, 2);
-            Serial.print(", pot3=");
-            Serial.print(radioData.pot3_val, 2);
+            Serial.print(", transmission=");
+            Serial.print(radioData.transmission_val, 2);
             Serial.print(", pot4=");
             Serial.print(radioData.pot4_val, 2);
             Serial.print(", voltage=");
