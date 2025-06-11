@@ -76,7 +76,7 @@ void setNeoPixelColor(uint8_t red, uint8_t green, uint8_t blue) {
 
 void setup() {
     Serial.begin(115200);
-    delay(2000);
+    while (!Serial && millis() < 10000);  // wait up to 10 seconds for USB serial to initialize 
     Serial.println("Teensy 3.5 Receiver Starting...");
     Serial.flush();
 
