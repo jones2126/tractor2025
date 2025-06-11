@@ -2,6 +2,7 @@
 
 // Set up Serial3 for communication with the JRK controller
 void setup() {
+  delay(45000);  // delay to let RPi boot up so Serial will work
   Serial.begin(115200);      // Serial monitor for debugging
   Serial3.begin(9600);     // Ensure the baud rate matches the JRK configuration
   delay(1000);             // Small delay to let everything initialize
