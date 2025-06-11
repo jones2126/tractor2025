@@ -40,7 +40,7 @@ void loop() {
   
   // Send command to move to position 500
   Serial.println("Moving to 4000");
-  setJrkTarget(4000);
+  setJrkTarget(500 );
   
   // Wait for 10 seconds
   delay(10000);
