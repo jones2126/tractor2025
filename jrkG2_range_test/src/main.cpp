@@ -1,5 +1,14 @@
 #include <Arduino.h>
 unsigned long jrkTarget = 0;
+
+void setTarget(uint16_t target) {
+  Serial3.write(0xAA);               // Start byte
+  Serial3.write(11);                 // Device number
+  Serial3.write(0x40);               // Set Target command
+  Serial3.write(target & 0x1F);      // 5 LSBs
+  Serial3.write((target >> 5) & 0x7F); // 7 MSBs
+}
+
 void setup() {
   delay(45000);  // delay to let RPi boot up so Serial will work
   Serial.begin(115200);      // Serial monitor for debugging
@@ -16,12 +25,4 @@ void loop() {
   jrkTarget = 0; // Retract
   Serial.println("Moving to " + String(jrkTarget));
   setTarget(jrkTarget); delay(2000);   
-}
-
-void setTarget(uint16_t target) {
-  Serial3.write(0xAA);               // Start byte
-  Serial3.write(11);                 // Device number
-  Serial3.write(0x40);               // Set Target command
-  Serial3.write(target & 0x1F);      // 5 LSBs
-  Serial3.write((target >> 5) & 0x7F); // 7 MSBs
 }
