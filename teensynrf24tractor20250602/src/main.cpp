@@ -46,10 +46,8 @@ unsigned long currentMillis = 0;
 unsigned long lastRateCalc = 0;
 const unsigned long rateCalcInterval = 10000; // Print rate every 10 seconds
 const long minlastNRF24ack = 2000;
-const long lastNRF24ackTime = 0;
-unsigned long lastLedUpdate = 0;
+unsigned long lastNRF24ackTime = 0;
 const unsigned long ledUpdateInterval = 500; // Update LEDs every 500ms (2 Hz)
-unsigned long lastBlinkUpdate = 0;
 unsigned long ackCount = 0;
 unsigned long shortTermAckCount = 0;
 unsigned long lastCommRatePrint = 0;
@@ -157,8 +155,6 @@ void setup() {
     }
 
     lastRateCalc = millis();
-    lastLedUpdate = millis();
-    lastBlinkUpdate = millis();
 
     Serial.println("Setup complete - listening for transmissions...");
 }
@@ -289,14 +285,14 @@ void controlTransmission() {
             break;
     }
 
-    // Smooth acceleration ramping: move toward target gradually
-    if (targetValue > currentTransmissionValue + rampStep) {
-        currentTransmissionValue += rampStep;
-    } else if (targetValue < currentTransmissionValue - rampStep) {
-        currentTransmissionValue -= rampStep;
-    } else {
-        currentTransmissionValue = targetValue;  // Close enough
-    }
+    // // Smooth acceleration ramping: move toward target gradually
+    // if (targetValue > currentTransmissionValue + rampStep) {
+    //     currentTransmissionValue += rampStep;
+    // } else if (targetValue < currentTransmissionValue - rampStep) {
+    //     currentTransmissionValue -= rampStep;
+    // } else {
+    //     currentTransmissionValue = targetValue;  // Close enough
+    // }
 
     // Send updated value to JRK
     setJrkTarget(currentTransmissionValue);
