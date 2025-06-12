@@ -1,5 +1,6 @@
 #include <Arduino.h>
 unsigned long jrkTarget = 0;
+unsigned long jrkPause = 10000;
 
 void setTarget(uint16_t target) {
   Serial3.write(0xAA);               // Start byte
@@ -18,11 +19,11 @@ void setup() {
 void loop() {
   jrkTarget = 2048; // Midpoint
   Serial.println("Moving to " + String(jrkTarget));
-  setTarget(jrkTarget); delay(2000); // Midpoint
+  setTarget(jrkTarget); delay(jrkPause); // Midpoint
   jrkTarget = 4095; // Fully Extend
   Serial.println("Moving to " + String(jrkTarget));
-  setTarget(jrkTarget); delay(2000);   
+  setTarget(jrkTarget); delay(jrkPause);   
   jrkTarget = 0; // Retract
   Serial.println("Moving to " + String(jrkTarget));
-  setTarget(jrkTarget); delay(2000);   
+  setTarget(jrkTarget); delay(jrkPause);   
 }
