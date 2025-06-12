@@ -7,6 +7,8 @@
 const uint16_t transmissionFullReversePos = 500;
 const uint16_t transmissionFullForwardPos = 3000;
 const uint16_t transmissionNeutralPos = 1200;
+uint16_t currentTransmissionOutput = transmissionNeutralPos;  // Start at neutral
+const uint8_t transmissionRampStep = 10;  // Max change per update (in JRK units)
 
 // NeoPixel definitions
 #define NUM_LEDS 1
@@ -253,20 +255,21 @@ void controlTransmission() {
         return;
     }
 
-    if (NRF24radioSignalGood == false){
+    // Safety override if radio signal is lost
+    if (!NRF24radioSignalGood) {
         radioData.control_mode = 9;
     }
-    uint16_t targetValue;
+
+    // Determine desired target
+    uint16_t requestedTarget;
 
     switch (radioData.control_mode) {
         case 0:
-            // Pause mode
-            targetValue = transmissionNeutralPos;
+            requestedTarget = transmissionNeutralPos;
             break;
 
         case 1:
-            // Radio control mode
-            targetValue = map(
+            requestedTarget = map(
                 radioData.transmission_val,
                 0, 4095,
                 transmissionFullReversePos,
@@ -275,27 +278,25 @@ void controlTransmission() {
             break;
 
         case 2:
-            // Future autonomous/cmd_vel mode — for now, neutral
-            targetValue = transmissionNeutralPos;
+            requestedTarget = transmissionNeutralPos;  // Placeholder for cmd_vel
             break;
 
         default:
-            // Error condition: fallback to neutral
-            targetValue = transmissionNeutralPos;
+            requestedTarget = transmissionNeutralPos;
             break;
     }
 
-    // // Smooth acceleration ramping: move toward target gradually
-    // if (targetValue > currentTransmissionValue + rampStep) {
-    //     currentTransmissionValue += rampStep;
-    // } else if (targetValue < currentTransmissionValue - rampStep) {
-    //     currentTransmissionValue -= rampStep;
-    // } else {
-    //     currentTransmissionValue = targetValue;  // Close enough
-    // }
+    // Smooth ramping toward requested target
+    if (requestedTarget > currentTransmissionOutput + transmissionRampStep) {
+        currentTransmissionOutput += transmissionRampStep;
+    } else if (requestedTarget < currentTransmissionOutput - transmissionRampStep) {
+        currentTransmissionOutput -= transmissionRampStep;
+    } else {
+        currentTransmissionOutput = requestedTarget;
+    }
 
-    // Send updated value to JRK
-    setJrkTarget(targetValue);
+    // Send smoothed value to JRK
+    setJrkTarget(currentTransmissionOutput);
 
     // Print debug output at 2 Hz
     if (currentMillis - lastTargetPrint >= targetPrintInterval) {
@@ -303,15 +304,16 @@ void controlTransmission() {
         Serial.print(radioData.control_mode);
         Serial.print(", transmission_val=");
         Serial.print(radioData.transmission_val);
-        Serial.print(", targetValue=");
-        Serial.println(targetValue);
-        // Serial.print(", currentTransmissionValue=");
-        // Serial.println(currentTransmissionValue);
+        Serial.print(", requestedTarget=");
+        Serial.print(requestedTarget);
+        Serial.print(", currentTransmissionOutput=");
+        Serial.println(currentTransmissionOutput);
         lastTargetPrint = currentMillis;
     }
 
     lastTransmissionControlRun = currentMillis;
 }
+
 
 
 void loop() {
