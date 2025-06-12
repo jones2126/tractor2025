@@ -295,7 +295,7 @@ void controlTransmission() {
     // }
 
     // Send updated value to JRK
-    setJrkTarget(currentTransmissionValue);
+    setJrkTarget(targetValue);
 
     // Print debug output at 2 Hz
     if (currentMillis - lastTargetPrint >= targetPrintInterval) {
