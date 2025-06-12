@@ -304,9 +304,9 @@ void controlTransmission() {
         Serial.print(", throttle_val=");
         Serial.print(radioData.throttle_val);
         Serial.print(", targetValue=");
-        Serial.print(targetValue);
-        Serial.print(", currentTransmissionValue=");
-        Serial.println(currentTransmissionValue);
+        Serial.println(targetValue);
+        // Serial.print(", currentTransmissionValue=");
+        // Serial.println(currentTransmissionValue);
         lastTargetPrint = currentMillis;
     }
 
