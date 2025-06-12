@@ -75,10 +75,22 @@ void setJrkTarget(uint16_t target);
 void controlTransmission();
 void debugSerial();
 
-// Function to set NeoPixel color
-void setNeoPixelColor(uint8_t red, uint8_t green, uint8_t blue) {
-    strip.setPixelColor(0, strip.Color(red, green, blue));
-    strip.show();
+uint16_t readFeedback() {
+  Serial3.write(0xE5);  // Command: Get variables
+  Serial3.write(0x04);  // Offset for Feedback
+  Serial3.write(0x02);  // Length = 2 bytes
+
+  unsigned long start = millis();
+  while (Serial3.available() < 2) {
+    if (millis() - start > 100) {
+      Serial.println("Timeout waiting for feedback");
+      return 0xFFFF;  // Error code
+    }
+  }
+
+  uint8_t low = Serial3.read();
+  uint8_t high = Serial3.read();
+  return (high << 8) | low;
 }
 
 void setup() {
@@ -133,12 +145,6 @@ void setup() {
 
     if (!initialized) {
         Serial.println("Radio hardware not responding!");
-        while (1) {
-            setNeoPixelColor(255, 0, 0); // Indicate failure with red color
-            delay(500);
-            setNeoPixelColor(0, 0, 0); // Turn off
-            delay(500);
-        }
     }
     // Configure the radio
     radio.setPALevel(RF24_PA_HIGH);
@@ -300,6 +306,7 @@ void controlTransmission() {
 
     // Print debug output at 2 Hz
     if (currentMillis - lastTargetPrint >= targetPrintInterval) {
+        Serial.print("info,");
         Serial.print("control_mode=");
         Serial.print(radioData.control_mode);
         Serial.print(", transmission_val=");
@@ -310,6 +317,15 @@ void controlTransmission() {
         Serial.println(currentTransmissionOutput);
         lastTargetPrint = currentMillis;
     }
+
+    // Log for CSV: timestamp, output, feedback
+    uint16_t feedback = readFeedback();  // Make sure this function is in scope
+    Serial.print("log,");
+    Serial.print(currentMillis);
+    Serial.print(",");
+    Serial.print(currentTransmissionOutput);
+    Serial.print(",");
+    Serial.println(feedback);
 
     lastTransmissionControlRun = currentMillis;
 }
