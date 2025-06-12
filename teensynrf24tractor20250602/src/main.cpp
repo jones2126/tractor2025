@@ -170,6 +170,7 @@ void setup() {
 void debugSerial() {
     static unsigned long lastDebug = 0;
     if (currentMillis - lastDebug > 5000) {  // Every 5 seconds
+        Serial.print("info,");
         Serial.println("HEARTBEAT - Serial is working");
         Serial.flush();
         lastDebug = currentMillis;
@@ -180,6 +181,7 @@ void calcRadioCommRate() {
     if (currentMillis - lastCommRatePrint >= commRatePrintInterval) {
         float timeElapsed = (currentMillis - lastCommRatePrint) / 1000.0;
         float currentRate = shortTermAckCount / timeElapsed;
+        Serial.print("info,");
         Serial.print("Current communication rate: ");
         Serial.print(currentRate);
         Serial.println(" Hz");
@@ -194,6 +196,7 @@ void getData() {
 
         // Print received data for debugging at 1 Hz
         if (currentMillis - lastDataPrint >= dataPrintInterval) {
+            Serial.print("info,");
             Serial.print("Data: steering=");
             Serial.print(radioData.steering_val, 2);
             Serial.print(", throttle=");
@@ -235,7 +238,7 @@ void printACKRate() {
     if (currentMillis - lastRateCalc >= rateCalcInterval) {
         float timeElapsed = (currentMillis - lastRateCalc) / 1000.0;
         float rate = ackCount / timeElapsed;
-
+        Serial.print("info,");
         Serial.print("ACK Rate (Receiver): ");
         Serial.print(rate);
         Serial.print(" Hz (");
@@ -244,6 +247,7 @@ void printACKRate() {
 
         ackCount = 0;
         lastRateCalc = currentMillis;
+        Serial.print("info,");
         Serial.print("RadioControlStruct size: ");
         Serial.println(sizeof(RadioControlStruct));
     }
