@@ -25,14 +25,14 @@ void setup() {
 void loop() {
   jrkTarget = 2048; // Midpoint
   Serial.println("Moving to " + String(jrkTarget));
-  // setTarget(jrkTarget); delay(jrkPause); // Midpoint
-  setTargetCompact(jrkTarget); delay(jrkPause); // Midpoint
+  setTarget(jrkTarget); delay(jrkPause); // Midpoint
+  // setTargetCompact(jrkTarget); delay(jrkPause); // Midpoint
   jrkTarget = 4095; // Fully Extend
   Serial.println("Moving to " + String(jrkTarget));
-  // setTarget(jrkTarget); delay(jrkPause);  
-  setTargetCompact(jrkTarget); delay(jrkPause); 
+  setTarget(jrkTarget); delay(jrkPause);  
+  // setTargetCompact(jrkTarget); delay(jrkPause); 
   jrkTarget = 0; // Retract
   Serial.println("Moving to " + String(jrkTarget));
-  // setTarget(jrkTarget); delay(jrkPause);
-  setTargetCompact(jrkTarget); delay(jrkPause); 
+  setTarget(jrkTarget); delay(jrkPause);
+  // setTargetCompact(jrkTarget); delay(jrkPause); 
 }
