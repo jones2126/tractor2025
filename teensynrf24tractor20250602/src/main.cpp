@@ -2,8 +2,11 @@
 #include <RF24.h>
 #include <Adafruit_NeoPixel.h>
 
-// JRK controller serial port
+// JRK controller and transmission values
 #define JRK_BAUD 9600
+const uint16_t transmissionFullReversePos = 500;
+const uint16_t transmissionFullForwardPos = 3000;
+const uint16_t transmissionNeutralPos = 1200;
 
 // NeoPixel definitions
 #define NUM_LEDS 1
@@ -42,6 +45,8 @@ unsigned long currentMillis = 0;
 // Timing variables
 unsigned long lastRateCalc = 0;
 const unsigned long rateCalcInterval = 10000; // Print rate every 10 seconds
+const long minlastNRF24ack = 2000;
+const long lastNRF24ackTime = 0;
 unsigned long lastLedUpdate = 0;
 const unsigned long ledUpdateInterval = 500; // Update LEDs every 500ms (2 Hz)
 unsigned long lastBlinkUpdate = 0;
@@ -49,7 +54,9 @@ unsigned long ackCount = 0;
 unsigned long shortTermAckCount = 0;
 unsigned long lastCommRatePrint = 0;
 const unsigned long commRatePrintInterval = 10000; // Throttle rate prints to 10 seconds 0.1 Hz
-bool ledState = false;
+
+
+bool NRF24radioSignalGood = false;
 
 // Control how often we print received data
 unsigned long lastDataPrint = 0;
@@ -60,8 +67,8 @@ unsigned long lastTargetPrint = 0;
 const unsigned long targetPrintInterval = 2000; // 0.5 Hz
 
 // Control transmission timing
-unsigned long lastControlRun = 0;
-const unsigned long controlInterval = 100; // 10 Hz
+unsigned long lastTransmissionControlRun = 0;
+const unsigned long controlTransmissionInterval = 100; // 10 Hz
 
 // function declarations
 void setJrkTarget(uint16_t target);
@@ -206,11 +213,20 @@ void getData() {
 
         ackPayload.counter++;
         radio.writeAckPayload(1, &ackPayload, sizeof(AckPayloadStruct));
-
+        lastNRF24ackTime = currentMillis;
         ackCount++;
         shortTermAckCount++;
     }
 }
+
+void checkNRF24ack(){
+  if (currentMillis - lastNRF24ackTime < minlastNRF24ack){
+    NRF24radioSignalGood = true;
+  } else {
+    NRF24radioSignalGood = false;
+  }
+}
+
 void printACKRate() {
     if (currentMillis - lastRateCalc >= rateCalcInterval) {
         float timeElapsed = (currentMillis - lastRateCalc) / 1000.0;
@@ -236,41 +252,75 @@ void setJrkTarget(uint16_t target) {
     Serial3.write((target >> 5) & 0x7F);
 }
 
-// Apply the throttle value from the radio to the JRK at 10 Hz
 void controlTransmission() {
-    if (currentMillis - lastControlRun < controlInterval) {
+    if (currentMillis - lastTransmissionControlRun < controlTransmissionInterval) {
         return;
     }
 
-    // Map throttle_val (-1 to 1) to JRK target range 0-2500
+    if (NRF24radioSignalGood == false){
+        radioData.control_mode = 9;
+    }
+    uint16_t targetValue;
 
-    // MAX_JRK_TARGET represents the highest JRK controller value you want to send. The JRK accepts 
-    // values up to 4095, but the code may limits it for safer testing.
-    // normalized: radioData.throttle_val comes from the radio and ranges from -1 (full reverse) 
-    // to 1 (full forward). Adding 1 shifts that range to 0-2. Dividing by 2 scales it down to 0-1. 
-    // Now normalized is a percentage (0.0 to 1.0) of the throttle position.
-    // target: The code multiplies normalized by MAX_JRK_TARGET to convert that 0-1 range into 
-    // a 0 - MAX_JRK_TARGET range.  The result is cast to uint16_t (an unsigned 16-bit integer) 
-    // because JRK expects an integer target.
-    // I'm beginning to think I need to do all this math and smoothing in the radio control Teensy.
+    switch (radioData.control_mode) {
+        case 0:
+            // Pause mode
+            targetValue = transmissionNeutralPos;
+            break;
 
-    const float MAX_JRK_TARGET = 2500.0f;
-    float normalized = (radioData.throttle_val + 1.0f) / 2.0f;
-    uint16_t target = (uint16_t)(normalized * MAX_JRK_TARGET);
-    setJrkTarget(target);
+        case 1:
+            // Radio control mode
+            targetValue = map(
+                radioData.throttle_val,
+                0, 4095,
+                transmissionFullReversePos,
+                transmissionFullForwardPos
+            );
+            break;
 
-    // Print the JRK target at 2 Hz
+        case 2:
+            // Future autonomous/cmd_vel mode — for now, neutral
+            targetValue = transmissionNeutralPos;
+            break;
+
+        default:
+            // Error condition: fallback to neutral
+            targetValue = transmissionNeutralPos;
+            break;
+    }
+
+    // Smooth acceleration ramping: move toward target gradually
+    if (targetValue > currentTransmissionValue + rampStep) {
+        currentTransmissionValue += rampStep;
+    } else if (targetValue < currentTransmissionValue - rampStep) {
+        currentTransmissionValue -= rampStep;
+    } else {
+        currentTransmissionValue = targetValue;  // Close enough
+    }
+
+    // Send updated value to JRK
+    setJrkTarget(currentTransmissionValue);
+
+    // Print debug output at 2 Hz
     if (currentMillis - lastTargetPrint >= targetPrintInterval) {
-        Serial.print("target=");
-        Serial.println(target);
+        Serial.print("control_mode=");
+        Serial.print(radioData.control_mode);
+        Serial.print(", throttle_val=");
+        Serial.print(radioData.throttle_val);
+        Serial.print(", targetValue=");
+        Serial.print(targetValue);
+        Serial.print(", currentTransmissionValue=");
+        Serial.println(currentTransmissionValue);
         lastTargetPrint = currentMillis;
     }
 
-    lastControlRun = currentMillis;
+    lastTransmissionControlRun = currentMillis;
 }
+
 
 void loop() {
     currentMillis = millis();
+    checkNRF24ack();
     getData();
     controlTransmission();
     calcRadioCommRate();
