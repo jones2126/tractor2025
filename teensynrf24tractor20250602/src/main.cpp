@@ -329,6 +329,10 @@ void controlTransmission() {
     Serial.print(",");
     Serial.print(currentTransmissionOutput);
     Serial.print(",");
+    Serial.print(radioData.transmission_val);
+    Serial.print(",");
+    Serial.print(requestedTarget);      
+    Serial.print(",");
     Serial.println(feedback);
 
     lastTransmissionControlRun = currentMillis;
