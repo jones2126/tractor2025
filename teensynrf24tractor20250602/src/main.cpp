@@ -267,7 +267,7 @@ void controlTransmission() {
         case 1:
             // Radio control mode
             targetValue = map(
-                radioData.throttle_val,
+                radioData.transmission_val,
                 0, 4095,
                 transmissionFullReversePos,
                 transmissionFullForwardPos
@@ -301,8 +301,8 @@ void controlTransmission() {
     if (currentMillis - lastTargetPrint >= targetPrintInterval) {
         Serial.print("control_mode=");
         Serial.print(radioData.control_mode);
-        Serial.print(", throttle_val=");
-        Serial.print(radioData.throttle_val);
+        Serial.print(", transmission_val=");
+        Serial.print(radioData.transmission_val);
         Serial.print(", targetValue=");
         Serial.println(targetValue);
         // Serial.print(", currentTransmissionValue=");
