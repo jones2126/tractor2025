@@ -167,10 +167,28 @@ void processRadioData() {
         radio.read(&radioData, sizeof(RadioControlStruct));
         
         // Calculate bucket (0-9) from transmission_val (1-1023)
-        // transmission_val 1023 = bucket 0 (full forward)
-        // transmission_val 1 = bucket 9 (full reverse)
-        // Invert the mapping: higher transmission_val = lower bucket number
-        bucket = constrain(9 - ((radioData.transmission_val - 1) / 102), 0, 9);
+        // Use explicit ranges for more predictable behavior
+        if (radioData.transmission_val >= 920) {
+            bucket = 0; // Full forward
+        } else if (radioData.transmission_val >= 818) {
+            bucket = 1;
+        } else if (radioData.transmission_val >= 716) {
+            bucket = 2;
+        } else if (radioData.transmission_val >= 614) {
+            bucket = 3;
+        } else if (radioData.transmission_val >= 512) {
+            bucket = 4;
+        } else if (radioData.transmission_val >= 410) {
+            bucket = 5; // Neutral area
+        } else if (radioData.transmission_val >= 307) {
+            bucket = 6;
+        } else if (radioData.transmission_val >= 205) {
+            bucket = 7;
+        } else if (radioData.transmission_val >= 102) {
+            bucket = 8;
+        } else {
+            bucket = 9; // Full reverse (transmission_val 1-101)
+        }
         
         // Determine target based on control mode
         uint16_t requestedTarget;
