@@ -28,6 +28,10 @@ AckPayloadStruct ackPayload;
 const uint8_t address[][6] = {"RCTRL", "TRACT"};
 unsigned long lastDataReceived = 0;
 
+// Bucket calculation constants
+const uint16_t bucketTargets[5] = {500, 900, 1350, 1800, 2300};
+int bucket = 2;
+
 void setup() {
     Serial.begin(115200);
     while (!Serial && millis() < 5000);  // Wait up to 5 seconds for serial
@@ -89,9 +93,19 @@ void loop() {
         // Read the data
         radio.read(&radioData, sizeof(RadioControlStruct));
         
-        // Print the transmission value (main goal)
+        // Calculate bucket (0-4) from transmission_val (1-1023)
+        // Range 1-1023 = 1022 total values
+        // 1022 ÷ 5 buckets = 204.4, so we'll use 204
+        bucket = constrain((radioData.transmission_val - 1) / 204, 0, 4);
+        uint16_t requestedTarget = bucketTargets[bucket];
+        
+        // Print the transmission value and calculated bucket
         Serial.print("transmission_val: ");
-        Serial.println(radioData.transmission_val, 3);  // 3 decimal places
+        Serial.print(radioData.transmission_val, 1);
+        Serial.print(" -> bucket: ");
+        Serial.print(bucket);
+        Serial.print(" -> target: ");
+        Serial.println(requestedTarget);
         
         // Optional: Print all values for debugging
         Serial.print("  [steering: ");
