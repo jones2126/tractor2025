@@ -26,17 +26,44 @@ RadioControlStruct radioData;
 AckPayloadStruct ackPayload;
 
 const uint8_t address[][6] = {"RCTRL", "TRACT"};
-unsigned long lastDataReceived = 0;
 
-// Bucket calculation constants
+// JRK G2 constants
+#define JRK_BAUD 9600
+const uint16_t transmissionFullReversePos = 500;
+const uint16_t transmissionFullForwardPos = 3000;
+const uint16_t transmissionNeutralPos = 1200;
 const uint16_t bucketTargets[5] = {500, 900, 1350, 1800, 2300};
-int bucket = 2;
+
+// Timing variables
+unsigned long currentMillis = 0;
+unsigned long lastDataReceived = 0;
+unsigned long lastJrkUpdate = 0;
+const unsigned long jrkUpdateInterval = 100;  // 10 Hz (same as radio rate)
+unsigned long lastStatusPrint = 0;
+const unsigned long statusPrintInterval = 2000;  // Print status every 2 seconds
+
+// Control variables
+int bucket = 2;  // Start at middle bucket
+uint16_t currentJrkTarget = transmissionNeutralPos;
+bool radioSignalGood = false;
+const unsigned long radioTimeoutMs = 500;  // Consider signal lost after 500ms
+
+// Send a target position to the JRK controller
+void setJrkTarget(uint16_t target) {
+    Serial3.write(0xC0);
+    Serial3.write(target & 0x1F);
+    Serial3.write((target >> 5) & 0x7F);
+}
 
 void setup() {
     Serial.begin(115200);
     while (!Serial && millis() < 5000);  // Wait up to 5 seconds for serial
     
-    Serial.println("Simple NRF24 Receiver Starting...");
+    Serial.println("Integrated NRF24 + JRK G2 Controller Starting...");
+
+    // Initialize JRK serial communication
+    Serial3.begin(JRK_BAUD);
+    Serial.println("JRK G2 serial initialized");
 
     // Configure alternate SPI pins (if using Teensy 3.5)
     SPI.setSCK(27);   
@@ -62,7 +89,7 @@ void setup() {
     }
 
     if (!initialized) {
-        Serial.println("Radio hardware not responding!");
+        Serial.println("ERROR: Radio hardware not responding!");
         while(1) {
             delay(1000);
         }
@@ -83,53 +110,113 @@ void setup() {
         ackPayload.dummy[i] = 0xDEADBEEF;
     }
 
+    // Set initial JRK target to neutral
+    setJrkTarget(currentJrkTarget);
+    Serial.print("JRK initialized to neutral position: ");
+    Serial.println(currentJrkTarget);
+
     Serial.println("Setup complete - listening for data...");
-    Serial.println("Transmission values will be printed below:");
+    Serial.println("Format: transmission_val -> bucket -> target -> JRK_command");
 }
 
-void loop() {
+void updateRadioStatus() {
+    // Check if radio signal is good based on recent data
+    radioSignalGood = (currentMillis - lastDataReceived) < radioTimeoutMs;
+}
+
+void processRadioData() {
     // Check for incoming data
     if (radio.available()) {
         // Read the data
         radio.read(&radioData, sizeof(RadioControlStruct));
         
         // Calculate bucket (0-4) from transmission_val (1-1023)
-        // Range 1-1023 = 1022 total values
-        // 1022 ÷ 5 buckets = 204.4, so we'll use 204
         bucket = constrain((radioData.transmission_val - 1) / 204, 0, 4);
-        uint16_t requestedTarget = bucketTargets[bucket];
         
-        // Print the transmission value and calculated bucket
+        // Determine target based on control mode
+        uint16_t requestedTarget;
+        switch (radioData.control_mode) {
+            case 0:  // Emergency/Neutral mode
+                requestedTarget = transmissionNeutralPos;
+                break;
+            case 1:  // Normal bucket mode
+                requestedTarget = bucketTargets[bucket];
+                break;
+            default:
+                requestedTarget = transmissionNeutralPos;
+                break;
+        }
+        
+        // Update current target
+        currentJrkTarget = requestedTarget;
+        
+        // Print status
         Serial.print("transmission_val: ");
         Serial.print(radioData.transmission_val, 1);
         Serial.print(" -> bucket: ");
         Serial.print(bucket);
         Serial.print(" -> target: ");
-        Serial.println(requestedTarget);
-        
-        // Optional: Print all values for debugging
-        Serial.print("  [steering: ");
-        Serial.print(radioData.steering_val, 2);
-        Serial.print(", throttle: ");
-        Serial.print(radioData.throttle_val, 2);
-        Serial.print(", voltage: ");
-        Serial.print(radioData.voltage, 1);
-        Serial.print(", estop: ");
-        Serial.print(radioData.estop);
-        Serial.print(", mode: ");
+        Serial.print(requestedTarget);
+        Serial.print(" -> mode: ");
         Serial.print(radioData.control_mode);
-        Serial.println("]");
+        Serial.print(" -> estop: ");
+        Serial.println(radioData.estop);
         
         // Send acknowledgment
         ackPayload.counter++;
         radio.writeAckPayload(1, &ackPayload, sizeof(AckPayloadStruct));
         
-        lastDataReceived = millis();
+        lastDataReceived = currentMillis;
     }
+}
+
+void updateJrkController() {
+    // Send JRK commands at 10 Hz
+    if (currentMillis - lastJrkUpdate >= jrkUpdateInterval) {
+        
+        uint16_t targetToSend;
+        
+        if (!radioSignalGood) {
+            // Radio signal lost - go to neutral for safety
+            targetToSend = transmissionNeutralPos;
+            Serial.println("WARNING: Radio signal lost - sending neutral command");
+        } else if (radioData.estop == 1) {
+            // Emergency stop - go to neutral
+            targetToSend = transmissionNeutralPos;
+        } else {
+            // Normal operation
+            targetToSend = currentJrkTarget;
+        }
+        
+        // Send command to JRK controller
+        setJrkTarget(targetToSend);
+        
+        lastJrkUpdate = currentMillis;
+    }
+}
+
+void printStatus() {
+    // Print periodic status
+    if (currentMillis - lastStatusPrint >= statusPrintInterval) {
+        Serial.print("STATUS - Radio: ");
+        Serial.print(radioSignalGood ? "GOOD" : "LOST");
+        Serial.print(", Current target: ");
+        Serial.print(currentJrkTarget);
+        Serial.print(", ACK count: ");
+        Serial.println(ackPayload.counter);
+        
+        lastStatusPrint = currentMillis;
+    }
+}
+
+void loop() {
+    currentMillis = millis();
     
-    // Simple connection status check
-    if (millis() - lastDataReceived > 2000 && lastDataReceived != 0) {
-        Serial.println("Warning: No data received for 2+ seconds");
-        delay(1000);  // Prevent spam
-    }
+    updateRadioStatus();
+    processRadioData();
+    updateJrkController();
+    printStatus();
+    
+    // Small delay to prevent overwhelming the system
+    delay(1);
 }
