@@ -10,6 +10,7 @@ const uint16_t transmissionNeutralPos = 1200;
 uint16_t currentTransmissionOutput = transmissionNeutralPos;  // Start at neutral
 const uint8_t transmissionRampStep = 10;  // Max change per update (in JRK units)
 const uint16_t bucketTargets[5] = {500, 900, 1350, 1800, 2300};
+int bucket = 2
 
 // NeoPixel definitions
 #define NUM_LEDS 1
@@ -298,8 +299,8 @@ void controlTransmission() {
             // );
 
             // break;
-            int bucket = constrain(radioData.transmission_val / 819, 0, 4);
-            TramsmissionTarget = bucketTargets[bucket];
+            bucket = constrain(radioData.transmission_val / 819, 0, 4);
+            requestedTarget = bucketTargets[bucket];
             break;
         case 2:
             requestedTarget = transmissionNeutralPos;  // Placeholder for cmd_vel
