@@ -29,10 +29,24 @@ const uint8_t address[][6] = {"RCTRL", "TRACT"};
 
 // JRK G2 constants
 #define JRK_BAUD 9600
-const uint16_t transmissionFullReversePos = 500;
-const uint16_t transmissionFullForwardPos = 3000;
-const uint16_t transmissionNeutralPos = 1200;
-const uint16_t bucketTargets[5] = {500, 900, 1350, 1800, 2300};
+const uint16_t transmissionFullReversePos = 1;     // JRK position for full reverse
+const uint16_t transmissionFullForwardPos = 4095;  // JRK position for full forward
+const uint16_t transmissionNeutralPos = 2048;      // JRK position for neutral (middle)
+
+// 10 buckets for smoother control (reverse to forward)
+// transmission_val: 1023 = full reverse, 1 = full forward
+const uint16_t bucketTargets[10] = {
+    4095,  // Bucket 0: transmission_val ~1023 -> full forward
+    3686,  // Bucket 1: transmission_val ~920
+    3277,  // Bucket 2: transmission_val ~818
+    2868,  // Bucket 3: transmission_val ~716
+    2458,  // Bucket 4: transmission_val ~614
+    2048,  // Bucket 5: transmission_val ~512 -> neutral
+    1638,  // Bucket 6: transmission_val ~410
+    1229,  // Bucket 7: transmission_val ~307
+    819,   // Bucket 8: transmission_val ~205
+    1      // Bucket 9: transmission_val ~102-1 -> full reverse
+};
 
 // Timing variables
 unsigned long currentMillis = 0;
@@ -43,7 +57,7 @@ unsigned long lastStatusPrint = 0;
 const unsigned long statusPrintInterval = 2000;  // Print status every 2 seconds
 
 // Control variables
-int bucket = 2;  // Start at middle bucket
+int bucket = 5;  // Start at middle bucket (neutral)
 uint16_t currentJrkTarget = transmissionNeutralPos;
 bool radioSignalGood = false;
 const unsigned long radioTimeoutMs = 500;  // Consider signal lost after 500ms
@@ -116,7 +130,11 @@ void setup() {
     Serial.println(currentJrkTarget);
 
     Serial.println("Setup complete - listening for data...");
-    Serial.println("Format: transmission_val -> bucket -> target -> JRK_command");
+    Serial.println("Control mapping:");
+    Serial.println("  transmission_val 1023 -> bucket 0 -> JRK 4095 (FULL FORWARD)");
+    Serial.println("  transmission_val ~512 -> bucket 5 -> JRK 2048 (NEUTRAL)");
+    Serial.println("  transmission_val 1    -> bucket 9 -> JRK 1    (FULL REVERSE)");
+    Serial.println("Format: transmission_val -> bucket -> JRK_target -> direction");
 }
 
 void updateRadioStatus() {
@@ -130,8 +148,11 @@ void processRadioData() {
         // Read the data
         radio.read(&radioData, sizeof(RadioControlStruct));
         
-        // Calculate bucket (0-4) from transmission_val (1-1023)
-        bucket = constrain((radioData.transmission_val - 1) / 204, 0, 4);
+        // Calculate bucket (0-9) from transmission_val (1-1023)
+        // transmission_val 1023 = bucket 0 (full forward)
+        // transmission_val 1 = bucket 9 (full reverse)
+        // Invert the mapping: higher transmission_val = lower bucket number
+        bucket = constrain(9 - ((radioData.transmission_val - 1) / 102), 0, 9);
         
         // Determine target based on control mode
         uint16_t requestedTarget;
@@ -150,17 +171,26 @@ void processRadioData() {
         // Update current target
         currentJrkTarget = requestedTarget;
         
-        // Print status
+        // Print detailed status
         Serial.print("transmission_val: ");
         Serial.print(radioData.transmission_val, 1);
         Serial.print(" -> bucket: ");
         Serial.print(bucket);
-        Serial.print(" -> target: ");
+        Serial.print(" -> JRK_target: ");
         Serial.print(requestedTarget);
         Serial.print(" -> mode: ");
         Serial.print(radioData.control_mode);
         Serial.print(" -> estop: ");
-        Serial.println(radioData.estop);
+        Serial.print(radioData.estop);
+        
+        // Add direction indicator for clarity
+        if (requestedTarget > transmissionNeutralPos) {
+            Serial.println(" (FORWARD)");
+        } else if (requestedTarget < transmissionNeutralPos) {
+            Serial.println(" (REVERSE)");
+        } else {
+            Serial.println(" (NEUTRAL)");
+        }
         
         // Send acknowledgment
         ackPayload.counter++;
