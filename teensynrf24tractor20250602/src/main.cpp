@@ -1,6 +1,6 @@
 #include <SPI.h>
 #include <RF24.h>
-#include <Adafruit_NeoPixel.h>
+
 
 // JRK controller and transmission values
 #define JRK_BAUD 9600
@@ -15,9 +15,6 @@ int bucket = 2
 // NeoPixel definitions
 #define NUM_LEDS 1
 #define DATA_PIN 2
-Adafruit_NeoPixel strip(NUM_LEDS, DATA_PIN, NEO_GRB + NEO_KHZ800);
-
-#define BLINK_INTERVAL 500 // LED blink interval in milliseconds
 
 RF24 radio(9, 10);  // CE, CSN pins for Teensy 3.5 since JRK G2 motor controller is using 7 and 8
 
