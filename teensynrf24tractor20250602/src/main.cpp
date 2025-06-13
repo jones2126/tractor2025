@@ -10,7 +10,7 @@ const uint16_t transmissionNeutralPos = 1200;
 uint16_t currentTransmissionOutput = transmissionNeutralPos;  // Start at neutral
 const uint8_t transmissionRampStep = 10;  // Max change per update (in JRK units)
 const uint16_t bucketTargets[5] = {500, 900, 1350, 1800, 2300};
-int bucket = 2
+int bucket = 2;
 
 // NeoPixel definitions
 #define NUM_LEDS 1
@@ -122,10 +122,6 @@ void setup() {
     Serial.println("Teensy 3.5 Receiver continuing...");
 
     Serial3.begin(JRK_BAUD);
-
-    // Initialize NeoPixel
-    strip.begin();
-    strip.show(); // Turn off all LEDs initially
 
     // Configure alternate SPI pins BEFORE SPI.begin() to avoid on-board LED pin 13
     SPI.setSCK(27);   // Set SCK to pin 27
