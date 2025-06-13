@@ -22,30 +22,48 @@ struct AckPayloadStruct {
     uint32_t dummy[4];
 };
 
+// Add feedback reading function for debugging
+uint16_t readJrkFeedback() {
+    Serial3.write(0xE5);  // Command: Get variables
+    Serial3.write(0x04);  // Offset for Feedback
+    Serial3.write(0x02);  // Length = 2 bytes
+
+    unsigned long start = millis();
+    while (Serial3.available() < 2) {
+        if (millis() - start > 100) {
+            return 0xFFFF;  // Error code - don't print timeout in normal operation
+        }
+    }
+
+    uint8_t low = Serial3.read();
+    uint8_t high = Serial3.read();
+    return (high << 8) | low;
+}
+
 RadioControlStruct radioData;
 AckPayloadStruct ackPayload;
 
 const uint8_t address[][6] = {"RCTRL", "TRACT"};
 
-// JRK G2 constants
+// JRK G2 constants - Updated based on actual feedback range
 #define JRK_BAUD 9600
-const uint16_t transmissionFullReversePos = 1;     // JRK position for full reverse
-const uint16_t transmissionFullForwardPos = 4095;  // JRK position for full forward
-const uint16_t transmissionNeutralPos = 2048;      // JRK position for neutral (middle)
+const uint16_t transmissionFullReversePos = 312;   // Actual minimum feedback position
+const uint16_t transmissionFullForwardPos = 3696;  // Actual maximum feedback position  
+const uint16_t transmissionNeutralPos = 2048;      // Keep neutral in middle
 
 // 10 buckets for smoother control (reverse to forward)
 // transmission_val: 1023 = full reverse, 1 = full forward
 const uint16_t bucketTargets[10] = {
-    4095,  // Bucket 0: transmission_val ~1023 -> full forward
-    3686,  // Bucket 1: transmission_val ~920
-    3277,  // Bucket 2: transmission_val ~818
-    2868,  // Bucket 3: transmission_val ~716
-    2458,  // Bucket 4: transmission_val ~614
+    3696,  // Bucket 0: transmission_val ~1023 -> full forward
+    3358,  // Bucket 1: transmission_val ~920
+    3020,  // Bucket 2: transmission_val ~818
+    2682,  // Bucket 3: transmission_val ~716
+    2344,  // Bucket 4: transmission_val ~614
     2048,  // Bucket 5: transmission_val ~512 -> neutral
-    1638,  // Bucket 6: transmission_val ~410
-    1229,  // Bucket 7: transmission_val ~307
-    819,   // Bucket 8: transmission_val ~205
-    1      // Bucket 9: transmission_val ~102-1 -> full reverse
+    1710,  // Bucket 6: transmission_val ~410
+    1372,  // Bucket 7: transmission_val ~307
+    1034,  // Bucket 8: transmission_val ~205
+    312    // Bucket 9: transmission_val ~102-1 -> full reverse
 };
 
 // Timing variables
@@ -62,10 +80,10 @@ uint16_t currentJrkTarget = transmissionNeutralPos;
 bool radioSignalGood = false;
 const unsigned long radioTimeoutMs = 500;  // Consider signal lost after 500ms
 
-// Send a target position to the JRK controller
+// Send a target position to the JRK controller (using working compact method)
 void setJrkTarget(uint16_t target) {
-    Serial3.write(0xC0);
-    Serial3.write(target & 0x1F);
+    if (target > 4095) target = 4095;  // Safety limit
+    Serial3.write(0xC0 + (target & 0x1F));
     Serial3.write((target >> 5) & 0x7F);
 }
 
@@ -130,10 +148,10 @@ void setup() {
     Serial.println(currentJrkTarget);
 
     Serial.println("Setup complete - listening for data...");
-    Serial.println("Control mapping:");
-    Serial.println("  transmission_val 1023 -> bucket 0 -> JRK 4095 (FULL FORWARD)");
+    Serial.println("Control mapping (Updated for actual actuator range):");
+    Serial.println("  transmission_val 1023 -> bucket 0 -> JRK 3696 (FULL FORWARD)");
     Serial.println("  transmission_val ~512 -> bucket 5 -> JRK 2048 (NEUTRAL)");
-    Serial.println("  transmission_val 1    -> bucket 9 -> JRK 1    (FULL REVERSE)");
+    Serial.println("  transmission_val 1    -> bucket 9 -> JRK 312  (FULL REVERSE)");
     Serial.println("Format: transmission_val -> bucket -> JRK_target -> direction");
 }
 
@@ -171,13 +189,16 @@ void processRadioData() {
         // Update current target
         currentJrkTarget = requestedTarget;
         
-        // Print detailed status
+        // Print detailed status with feedback
+        uint16_t feedback = readJrkFeedback();
         Serial.print("transmission_val: ");
         Serial.print(radioData.transmission_val, 1);
         Serial.print(" -> bucket: ");
         Serial.print(bucket);
         Serial.print(" -> JRK_target: ");
         Serial.print(requestedTarget);
+        Serial.print(" -> feedback: ");
+        Serial.print(feedback);
         Serial.print(" -> mode: ");
         Serial.print(radioData.control_mode);
         Serial.print(" -> estop: ");
