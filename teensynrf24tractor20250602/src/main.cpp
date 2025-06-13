@@ -75,6 +75,14 @@ void setJrkTarget(uint16_t target);
 void controlTransmission();
 void debugSerial();
 
+float smoothedRadioVal = 0.0f;
+const float radioAlpha = 0.1f;  // Smaller = smoother
+
+void updateRadioSmoothing() {
+  smoothedRadioVal = radioAlpha * radioData.transmission_val +
+                     (1.0f - radioAlpha) * smoothedRadioVal;
+}
+
 uint16_t readFeedback() {
   Serial3.write(0xE5);  // Command: Get variables
   Serial3.write(0x04);  // Offset for Feedback
@@ -223,6 +231,7 @@ void getData() {
         lastNRF24ackTime = currentMillis;
         ackCount++;
         shortTermAckCount++;
+        updateRadioSmoothing();
     }
 }
 
@@ -280,11 +289,13 @@ void controlTransmission() {
 
         case 1:
             requestedTarget = map(
-                radioData.transmission_val,
+               // radioData.transmission_val,
+               (int)smoothedRadioVal,
                 0, 4095,
                 transmissionFullReversePos,
                 transmissionFullForwardPos
             );
+
             break;
 
         case 2:
