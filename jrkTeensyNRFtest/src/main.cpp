@@ -61,6 +61,9 @@ const unsigned long statusPrintInterval = 2000;  // Print status every 2 seconds
 
 // Control variables
 uint16_t currentJrkTarget = JRK_NEUTRAL;
+float smoothedTransmissionVal = 512.0;  // Start at middle
+const float SMOOTHING_FACTOR = 0.1;     // Lower = more smoothing (0.05-0.2 range)
+const uint16_t MIN_CHANGE_THRESHOLD = 10; // Only update if change is significant
 bool radioSignalGood = false;
 const unsigned long radioTimeoutMs = 500;  // Consider signal lost after 500ms
 
@@ -132,11 +135,15 @@ void setup() {
     Serial.println(currentJrkTarget);
 
     Serial.println("Setup complete - listening for data...");
-    Serial.println("Linear mapping:");
+    Serial.println("Linear mapping with smoothing:");
     Serial.println("  transmission_val 1023 -> JRK 0    (CCW - Full position A)");
     Serial.println("  transmission_val ~512 -> JRK 2048 (Middle - Neutral)");
     Serial.println("  transmission_val 1    -> JRK 4095 (CW - Full position B)");
-    Serial.println("Format: transmission_val -> JRK_target -> feedback");
+    Serial.print("  Smoothing factor: ");
+    Serial.print(SMOOTHING_FACTOR);
+    Serial.print(", Min change threshold: ");
+    Serial.println(MIN_CHANGE_THRESHOLD);
+    Serial.println("Format: raw -> smoothed -> JRK_target -> feedback");
 }
 
 void updateRadioStatus() {
@@ -150,11 +157,20 @@ void processRadioData() {
         // Read the data
         radio.read(&radioData, sizeof(RadioControlStruct));
         
-        // Direct linear mapping: transmission_val (1-1023) -> JRK target (4095-0)
+        // Apply smoothing filter to reduce noise
+        smoothedTransmissionVal = (SMOOTHING_FACTOR * radioData.transmission_val) + 
+                                 ((1.0 - SMOOTHING_FACTOR) * smoothedTransmissionVal);
+        
+        // Direct linear mapping using smoothed value
         // transmission_val 1023 (CCW) -> JRK 0
         // transmission_val 1 (CW) -> JRK 4095
-        // Invert and scale the mapping
-        uint16_t requestedTarget = map(radioData.transmission_val, 1, 1023, JRK_MAX, JRK_MIN);
+        uint16_t requestedTarget = map((int)smoothedTransmissionVal, 1, 1023, JRK_MAX, JRK_MIN);
+        
+        // Only update if the change is significant (reduces jitter)
+        if (abs((int)requestedTarget - (int)currentJrkTarget) < MIN_CHANGE_THRESHOLD && 
+            radioData.control_mode == 1) {
+            requestedTarget = currentJrkTarget; // Keep current target
+        }
         
         // Apply control mode logic
         switch (radioData.control_mode) {
@@ -172,10 +188,12 @@ void processRadioData() {
         // Update current target
         currentJrkTarget = requestedTarget;
         
-        // Print detailed status with feedback
+        // Print detailed status with smoothing info
         uint16_t feedback = readJrkFeedback();
-        Serial.print("transmission_val: ");
-        Serial.print(radioData.transmission_val, 1);
+        Serial.print("raw: ");
+        Serial.print(radioData.transmission_val, 0);
+        Serial.print(" -> smoothed: ");
+        Serial.print(smoothedTransmissionVal, 1);
         Serial.print(" -> JRK_target: ");
         Serial.print(requestedTarget);
         Serial.print(" -> feedback: ");
