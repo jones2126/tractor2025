@@ -1,16 +1,28 @@
 #include <SPI.h>
 #include <RF24.h>
 
-
-// JRK controller and transmission values
+// JRK controller and transmission values - Updated for 10-bucket system
 #define JRK_BAUD 9600
-const uint16_t transmissionFullReversePos = 500;
-const uint16_t transmissionFullForwardPos = 3000;
-const uint16_t transmissionNeutralPos = 1200;
+const uint16_t transmissionNeutralPos = 2048;      // Keep neutral in middle
+
+// 10 buckets for smoother control (reverse to forward)
+// transmission_val: 1023 = full reverse, 1 = full forward
+const uint16_t bucketTargets[10] = {
+    3696,  // Bucket 0: transmission_val ~1023 -> full forward
+    3358,  // Bucket 1: transmission_val ~920
+    3020,  // Bucket 2: transmission_val ~818
+    2682,  // Bucket 3: transmission_val ~716
+    2344,  // Bucket 4: transmission_val ~614
+    2048,  // Bucket 5: transmission_val ~512 -> neutral
+    1710,  // Bucket 6: transmission_val ~410
+    1372,  // Bucket 7: transmission_val ~307
+    1034,  // Bucket 8: transmission_val ~205
+    312    // Bucket 9: transmission_val ~102-1 -> full reverse
+};
+
 uint16_t currentTransmissionOutput = transmissionNeutralPos;  // Start at neutral
 const uint8_t transmissionRampStep = 10;  // Max change per update (in JRK units)
-const uint16_t bucketTargets[5] = {500, 900, 1350, 1800, 2300};
-int bucket = 2;
+int bucket = 5;  // Start at middle bucket (neutral)
 
 // NeoPixel definitions
 #define NUM_LEDS 1
@@ -53,7 +65,6 @@ unsigned long ackCount = 0;
 unsigned long shortTermAckCount = 0;
 unsigned long lastCommRatePrint = 0;
 const unsigned long commRatePrintInterval = 10000; // Throttle rate prints to 10 seconds 0.1 Hz
-
 
 bool NRF24radioSignalGood = false;
 
@@ -168,6 +179,10 @@ void setup() {
     lastRateCalc = millis();
 
     Serial.println("Setup complete - listening for transmissions...");
+    Serial.println("10-Bucket Control System:");
+    Serial.println("  transmission_val 1023 -> bucket 0 -> JRK 3696 (FULL FORWARD)");
+    Serial.println("  transmission_val ~512 -> bucket 5 -> JRK 2048 (NEUTRAL)");
+    Serial.println("  transmission_val 1    -> bucket 9 -> JRK 312  (FULL REVERSE)");
 }
 
 void debugSerial() {
@@ -257,10 +272,10 @@ void printACKRate() {
     }
 }
 
-// Send a target position to the JRK controller
+// Send a target position to the JRK controller (using working compact method)
 void setJrkTarget(uint16_t target) {
-    Serial3.write(0xC0);
-    Serial3.write(target & 0x1F);
+    if (target > 4095) target = 4095;  // Safety limit
+    Serial3.write(0xC0 + (target & 0x1F));
     Serial3.write((target >> 5) & 0x7F);
 }
 
@@ -269,49 +284,61 @@ void controlTransmission() {
         return;
     }
 
-    // Safety override if radio signal is lost
-    if (!NRF24radioSignalGood) {
-        radioData.control_mode = 9;
-    }
+    if (!NRF24radioSignalGood) {radioData.control_mode = 9; } // Safety override if radio signal is lost
 
-    // Determine desired target
+    // Case for mode swith
     uint16_t requestedTarget;
-
-    switch (radioData.control_mode) {
+    switch (radioData.control_mode) {   // tractor in 'pause' mode
         case 0:
             requestedTarget = transmissionNeutralPos;
             break;
 
-        case 1:
-            // requestedTarget = map(
-            //    // radioData.transmission_val,
-            //    (int)smoothedRadioVal,
-            //     0, 4095,
-            //     transmissionFullReversePos,
-            //     transmissionFullForwardPos
-            // );
+        case 1:                         // tractor in 'manual' mode
+            // Use 10-bucket system to calculate bucket (0-9) from transmission_val (1-1023)
+            // I should also put a 0.1µF ceramic capacitor between the wiper and ground on the pot to smooth the signal
+            if (radioData.transmission_val >= 920) {
+                bucket = 0; // Full forward
+            } else if (radioData.transmission_val >= 818) {
+                bucket = 1;
+            } else if (radioData.transmission_val >= 716) {
+                bucket = 2;
+            } else if (radioData.transmission_val >= 614) {
+                bucket = 3;
+            } else if (radioData.transmission_val >= 512) {
+                bucket = 4;
+            } else if (radioData.transmission_val >= 410) {
+                bucket = 5; // Neutral area
+            } else if (radioData.transmission_val >= 307) {
+                bucket = 6;
+            } else if (radioData.transmission_val >= 205) {
+                bucket = 7;
+            } else if (radioData.transmission_val >= 102) {
+                bucket = 8;
+            } else {
+                bucket = 9; // Full reverse (transmission_val 1-101)
+            }
 
-            // break;
-            bucket = constrain(radioData.transmission_val / 819, 0, 4);
             requestedTarget = bucketTargets[bucket];
             break;
-        case 2:
+            
+        case 2:                         // tractor in 'auto' mode
+        // Placeholder for until I get cmd_vel working
             requestedTarget = transmissionNeutralPos;  // Placeholder for cmd_vel
             break;
 
-        default:
+        default:                         // mode switch in error state
             requestedTarget = transmissionNeutralPos;
             break;
     }
 
-    // Smooth ramping toward requested target
-    if (requestedTarget > currentTransmissionOutput + transmissionRampStep) {
-        currentTransmissionOutput += transmissionRampStep;
-    } else if (requestedTarget < currentTransmissionOutput - transmissionRampStep) {
-        currentTransmissionOutput -= transmissionRampStep;
-    } else {
-        currentTransmissionOutput = requestedTarget;
-    }
+    // // Smooth ramping toward requested target
+    // if (requestedTarget > currentTransmissionOutput + transmissionRampStep) {
+    //     currentTransmissionOutput += transmissionRampStep;
+    // } else if (requestedTarget < currentTransmissionOutput - transmissionRampStep) {
+    //     currentTransmissionOutput -= transmissionRampStep;
+    // } else {
+    //     currentTransmissionOutput = requestedTarget;
+    // }
 
     // Send smoothed value to JRK
     setJrkTarget(currentTransmissionOutput);
@@ -323,6 +350,8 @@ void controlTransmission() {
         Serial.print(radioData.control_mode);
         Serial.print(", transmission_val=");
         Serial.print(radioData.transmission_val);
+        Serial.print(", bucket=");
+        Serial.print(bucket);
         Serial.print(", requestedTarget=");
         Serial.print(requestedTarget);
         Serial.print(", currentTransmissionOutput=");
@@ -330,8 +359,8 @@ void controlTransmission() {
         lastTargetPrint = currentMillis;
     }
 
-    // Log for CSV: timestamp, output, feedback
-    uint16_t feedback = readFeedback();  // Make sure this function is in scope
+    // Log for CSV: timestamp, output, feedback, transmission_val, requestedTarget, bucket
+    uint16_t feedback = readFeedback();
     Serial.print("log,");
     Serial.print(currentMillis);
     Serial.print(",");
@@ -347,8 +376,6 @@ void controlTransmission() {
 
     lastTransmissionControlRun = currentMillis;
 }
-
-
 
 void loop() {
     currentMillis = millis();
