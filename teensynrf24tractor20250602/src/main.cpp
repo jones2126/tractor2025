@@ -277,6 +277,9 @@ void setJrkTarget(uint16_t target) {
     if (target > 4095) target = 4095;  // Safety limit
     Serial3.write(0xC0 + (target & 0x1F));
     Serial3.write((target >> 5) & 0x7F);
+    Serial.print("info,");
+    Serial.print("setJrkTarget: ");
+    Serial.print(target);    
 }
 
 void controlTransmission() {
