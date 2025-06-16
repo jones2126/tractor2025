@@ -279,7 +279,7 @@ void setJrkTarget(uint16_t target) {
     Serial3.write((target >> 5) & 0x7F);
     Serial.print("info,");
     Serial.print("setJrkTarget: ");
-    Serial.print(target);    
+    Serial.println(target);    
 }
 
 void controlTransmission() {
@@ -344,7 +344,7 @@ void controlTransmission() {
     // }
 
     // Send smoothed value to JRK
-    setJrkTarget(currentTransmissionOutput);
+    setJrkTarget(requestedTarget);
 
     // Print debug output at 2 Hz
     if (currentMillis - lastTargetPrint >= targetPrintInterval) {
