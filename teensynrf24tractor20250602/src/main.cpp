@@ -11,7 +11,9 @@ const uint16_t bucketTargets[10] = {
     3696,  // Bucket 0: transmission_val ~1023 -> full forward
     3358,  // Bucket 1: transmission_val ~920
     3020,  // Bucket 2: transmission_val ~818
-    2682,  // Bucket 3: transmission_val ~716
+//    2682,  // Bucket 3: transmission_val ~716
+//    2851,  // Bucket 3: transmission_val ~716
+    2951,  // Bucket 3: transmission_val ~716
     2344,  // Bucket 4: transmission_val ~614
     2048,  // Bucket 5: transmission_val ~512 -> neutral
     1710,  // Bucket 6: transmission_val ~410
