@@ -3,24 +3,24 @@
 
 // JRK controller and transmission values - Updated for 10-bucket system
 #define JRK_BAUD 9600
-const uint16_t transmissionNeutralPos = 2048;      // Keep neutral in middle
+const uint16_t transmissionNeutralPos = 2985;      // Keep neutral in middle
 
 // 10 buckets for smoother control (reverse to forward)
 // transmission_val: 1023 = full reverse, 1 = full forward
 const uint16_t bucketTargets[10] = {
-    3696,  // Bucket 0: transmission_val ~1023 -> full forward
-    3358,  // Bucket 1: transmission_val ~920
-    3020,  // Bucket 2: transmission_val ~818
-//    2682,  // Bucket 3: transmission_val ~716
-//    2851,  // Bucket 3: transmission_val ~716
-    2951,  // Bucket 3: transmission_val ~716
-    2344,  // Bucket 4: transmission_val ~614
-    2048,  // Bucket 5: transmission_val ~512 -> neutral
-    1710,  // Bucket 6: transmission_val ~410
-    1372,  // Bucket 7: transmission_val ~307
-    1034,  // Bucket 8: transmission_val ~205
-    312    // Bucket 9: transmission_val ~102-1 -> full reverse
+    3696,   // Bucket 0: transmission_val ~1023 - 931 -> full reverse (CCW)
+    3554,   // Bucket 1: transmission_val ~838
+    3412,   // Bucket 2: transmission_val ~746
+    3270,   // Bucket 3: transmission_val ~654
+    3128,   // Bucket 4: transmission_val ~562
+    2985,   // Bucket 5: transmission_val ~469 -> neutral
+    2751,   // Bucket 6: transmission_val ~377
+    2517,   // Bucket 7: transmission_val ~285
+    2283,   // Bucket 8: transmission_val ~192
+    2048    // Bucket 9: transmission_val ~102-1 -> full forward (CW)
 };
+
+
 
 uint16_t currentTransmissionOutput = transmissionNeutralPos;  // Start at neutral
 const uint8_t transmissionRampStep = 10;  // Max change per update (in JRK units)
@@ -301,26 +301,26 @@ void controlTransmission() {
         case 1:                         // tractor in 'manual' mode
             // Use 10-bucket system to calculate bucket (0-9) from transmission_val (1-1023)
             // I should also put a 0.1µF ceramic capacitor between the wiper and ground on the pot to smooth the signal
-            if (radioData.transmission_val >= 920) {
-                bucket = 0; // Full forward
-            } else if (radioData.transmission_val >= 818) {
+            if (radioData.transmission_val >= 931) {
+                bucket = 0; // Full reverse (CCW) 1023-931
+            } else if (radioData.transmission_val >= 838) {
                 bucket = 1;
-            } else if (radioData.transmission_val >= 716) {
+            } else if (radioData.transmission_val >= 746) {
                 bucket = 2;
-            } else if (radioData.transmission_val >= 614) {
+            } else if (radioData.transmission_val >= 654) {
                 bucket = 3;
-            } else if (radioData.transmission_val >= 512) {
+            } else if (radioData.transmission_val >= 562) {
                 bucket = 4;
-            } else if (radioData.transmission_val >= 410) {
+            } else if (radioData.transmission_val >= 469) {
                 bucket = 5; // Neutral area
-            } else if (radioData.transmission_val >= 307) {
+            } else if (radioData.transmission_val >= 377) {
                 bucket = 6;
-            } else if (radioData.transmission_val >= 205) {
+            } else if (radioData.transmission_val >= 285) {
                 bucket = 7;
-            } else if (radioData.transmission_val >= 102) {
+            } else if (radioData.transmission_val >= 192) {
                 bucket = 8;
             } else {
-                bucket = 9; // Full reverse (transmission_val 1-101)
+                bucket = 9; // Full forward (CW) (transmission_val 1-192)
             }
 
             requestedTarget = bucketTargets[bucket];
