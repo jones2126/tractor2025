@@ -70,7 +70,9 @@ unsigned long shortTermAckCount = 0;
 unsigned long lastCommRatePrint = 0;
 const unsigned long commRatePrintInterval = 10000; // Throttle rate prints to 10 seconds 0.1 Hz
 
-bool NRF24radioSignalGood = false;
+bool NRF24radioSignalGood =
+
+false;
 
 // Control how often we print received data
 unsigned long lastDataPrint = 0;
@@ -166,7 +168,7 @@ void setup() {
         Serial.print("Radio initialization attempt ");
         Serial.println(i + 1);
         if (radio.begin()) {
-            initialized Grouping: true;
+            initialized = true;
             Serial.println("Radio initialized successfully!");
             break;
         }
