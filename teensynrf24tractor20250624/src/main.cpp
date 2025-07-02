@@ -70,9 +70,12 @@ unsigned long shortTermAckCount = 0;
 unsigned long lastCommRatePrint = 0;
 const unsigned long commRatePrintInterval = 10000; // Throttle rate prints to 10 seconds 0.1 Hz
 
-bool NRF24radioSignalGood =
+bool NRF24radioSignalGood = false;
 
-false;
+// Control e-stop timing and E-stop relay pin
+unsigned long lastEstopCheckRun = 0;
+const unsigned long estopCheckInterval = 50; // 20 Hz (50ms)
+#define ESTOP_RELAY_PIN 32
 
 // Control how often we print received data
 unsigned long lastDataPrint = 0;
@@ -194,6 +197,10 @@ void setup() {
     for (int i = 0; i < 4; i++) {
         ackPayload.dummy[i] = 0xDEADBEEF;
     }
+
+    // Initialize e-stop relay pin
+    pinMode(ESTOP_RELAY_PIN, OUTPUT);
+    digitalWrite(ESTOP_RELAY_PIN, LOW); // Start with e-stop relay off (ignition not grounded)
 
     lastRateCalc = millis();
 
@@ -473,12 +480,28 @@ void controlSteering() {
     lastSteeringControlRun = currentMillis;
 }
 
+void estopCheck() {
+    if (currentMillis - lastEstopCheckRun < estopCheckInterval) {
+        return;
+    }
+    
+    // If estop is high, activate relay (ground the ignition wire)
+    if (radioData.estop) {
+        digitalWrite(ESTOP_RELAY_PIN, HIGH); // Activate relay - grounds ignition wire
+    } else {
+        digitalWrite(ESTOP_RELAY_PIN, LOW);  // Deactivate relay - normal ignition operation
+    }
+    
+    lastEstopCheckRun = currentMillis;
+}
+
 void loop() {
     currentMillis = millis();
     checkNRF24ack();
     getData();
     controlTransmission();
     controlSteering();
+    estopCheck();
     calcRadioCommRate();
     printACKRate();
     debugSerial();
