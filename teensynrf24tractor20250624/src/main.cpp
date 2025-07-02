@@ -25,7 +25,7 @@ int RPWM_Output = 5; // Connect to IBT-2 pin 1 (RPWM)
 int LPWM_Output = 6; // Connect to IBT-2 pin 2 (LPWM)
 
 // Steering potentiometer and PID definitions
-#define STEER_POT_PIN 24  // pin for steering potentiometer
+#define STEER_POT_PIN A10  // pin 24 for steering potentiometer
 #define STEER_DEADBAND 10 // Potentiometer deadband (adjust as needed)
 
 // PID variables for steering
