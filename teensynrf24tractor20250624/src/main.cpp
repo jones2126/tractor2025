@@ -25,7 +25,7 @@ int RPWM_Output = 5; // Connect to IBT-2 pin 1 (RPWM)
 int LPWM_Output = 6; // Connect to IBT-2 pin 2 (LPWM)
 
 // Steering potentiometer and PID definitions
-#define STEER_POT_PIN A0  // Analog pin for steering potentiometer
+#define STEER_POT_PIN 24  // pin for steering potentiometer
 #define STEER_DEADBAND 10 // Potentiometer deadband (adjust as needed)
 
 // PID variables for steering
@@ -101,11 +101,11 @@ const unsigned long estopCheckInterval = 50; // 20 Hz (50ms)
 
 // Control how often we print received data
 unsigned long lastDataPrint = 0;
-const unsigned long dataPrintInterval = 2000; // 0.5 Hz
+const unsigned long dataPrintInterval = 5000; // every 5 seconds
 
 // Control how often we print JRK target
 unsigned long lastTargetPrint = 0;
-const unsigned long targetPrintInterval = 2000; // 0.5 Hz
+const unsigned long targetPrintInterval = 5000; // every 5 seconds
 
 // Control transmission timing
 unsigned long lastTransmissionControlRun = 0;
@@ -115,7 +115,7 @@ const unsigned long controlTransmissionInterval = 100; // 10 Hz
 unsigned long lastSteeringControlRun = 0;
 const unsigned long controlSteeringInterval = 100; // 10 Hz
 unsigned long lastSteeringPrint = 0;
-const unsigned long steeringPrintInterval = 500; // 2 Hz
+const unsigned long steeringPrintInterval = 2000; // every 2 seconds 
 
 // Function declarations
 void setJrkTarget(uint16_t target);
@@ -559,6 +559,20 @@ void estopCheck() {
     lastEstopCheckRun = currentMillis;
 }
 
+void debugSteerPot() {
+    static unsigned long lastPotDebug = 0;
+    if (currentMillis - lastPotDebug >= 1000) {  // Every 1 second
+        int rawPot = analogRead(STEER_POT_PIN);
+        Serial.print("debug,");
+        Serial.print("Raw pot reading: ");
+        Serial.print(rawPot);
+        Serial.print(", Voltage: ");
+        Serial.print((rawPot * 3.3) / 1023.0, 2);  // Convert to voltage (assuming 3.3V reference)
+        Serial.println("V");
+        lastPotDebug = currentMillis;
+    }
+}
+
 void loop() {
     currentMillis = millis();
     checkNRF24ack();
@@ -569,4 +583,5 @@ void loop() {
     calcRadioCommRate();
     printACKRate();
     debugSerial();
+    debugSteerPot();    
 }
