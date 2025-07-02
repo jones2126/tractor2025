@@ -38,7 +38,7 @@ float steer_current = 512;     // Current steering position from pot
 float steer_error = 0;
 float steer_error_sum = 0;
 float steer_last_error = 0;
-unsigned long steer_last_time = 0;
+unsigned long steer_last_time = 0;  // CHANGED: More specific naming
 
 // Steering limits (adjust these based on your physical setup)
 const int STEER_MIN_POT = 0;     // Minimum pot value (full left)
@@ -233,7 +233,7 @@ void setup() {
     Serial.println("  transmission_val 1    -> bucket 9 -> JRK 312  (FULL REVERSE)");
 }
 
-float calculateSteeringPID() {
+float calculateSteerPID() {  // CHANGED: Function name from calculateSteeringPID to calculateSteerPID
     unsigned long current_time = millis();
     float dt = (current_time - steer_last_time) / 1000.0; // Convert to seconds
     
@@ -474,34 +474,36 @@ void controlSteering() {
             break;
 
         case 1: // Manual mode with PID control
-            // Map radio steering value (0-1023) to pot range (0-1023)
-            steer_setpoint = radioData.steering_val;
-            
-            // Calculate PID output
-            float pid_output = calculateSteeringPID();
-            
-            // Apply deadband
-            if (abs(steer_error) <= STEER_DEADBAND) {
-                pwmValue = 0;
-                direction = "NEUTRAL";
-                analogWrite(RPWM_Output, 0);
-                analogWrite(LPWM_Output, 0);
-            } else {
-                // Convert PID output to PWM value (limit to 0-255)
-                pwmValue = constrain(abs(pid_output), 0, 255);
+            {  // NEW: Add curly braces to create scope for case 1
+                // Map radio steering value (0-1023) to pot range (0-1023)
+                steer_setpoint = radioData.steering_val;
                 
-                if (pid_output > 0) {
-                    // Need to turn right (increase pot value)
-                    analogWrite(LPWM_Output, 0);       // Turn off reverse
-                    analogWrite(RPWM_Output, pwmValue); // Set forward speed
-                    direction = "RIGHT";
+                // Calculate PID output
+                float pid_output = calculateSteeringPID();
+                
+                // Apply deadband
+                if (abs(steer_error) <= STEER_DEADBAND) {
+                    pwmValue = 0;
+                    direction = "NEUTRAL";
+                    analogWrite(RPWM_Output, 0);
+                    analogWrite(LPWM_Output, 0);
                 } else {
-                    // Need to turn left (decrease pot value)
-                    analogWrite(RPWM_Output, 0);       // Turn off forward
-                    analogWrite(LPWM_Output, pwmValue); // Set reverse speed
-                    direction = "LEFT";
+                    // Convert PID output to PWM value (limit to 0-255)
+                    pwmValue = constrain(abs(pid_output), 0, 255);
+                    
+                    if (pid_output > 0) {
+                        // Need to turn right (increase pot value)
+                        analogWrite(LPWM_Output, 0);       // Turn off reverse
+                        analogWrite(RPWM_Output, pwmValue); // Set forward speed
+                        direction = "RIGHT";
+                    } else {
+                        // Need to turn left (decrease pot value)
+                        analogWrite(RPWM_Output, 0);       // Turn off forward
+                        analogWrite(LPWM_Output, pwmValue); // Set reverse speed
+                        direction = "LEFT";
+                    }
                 }
-            }
+            }  // NEW: Close the scope for case 1
             break;
 
         case 2: // Auto mode (placeholder for ROS cmd_vel)
