@@ -473,13 +473,13 @@ void controlSteering() {
             direction = "PAUSE";
             break;
 
-        case 1: // Manual mode with PID control
-            {  // NEW: Add curly braces to create scope for case 1
+case 1: // Manual mode with PID control
+            {  // Add curly braces to create scope for case 1
                 // Map radio steering value (0-1023) to pot range (0-1023)
                 steer_setpoint = radioData.steering_val;
                 
                 // Calculate PID output
-                float pid_output = calculateSteeringPID();
+                float steer_pid_output = calculateSteerPID();  // CHANGED: Function name and variable name
                 
                 // Apply deadband
                 if (abs(steer_error) <= STEER_DEADBAND) {
@@ -489,9 +489,9 @@ void controlSteering() {
                     analogWrite(LPWM_Output, 0);
                 } else {
                     // Convert PID output to PWM value (limit to 0-255)
-                    pwmValue = constrain(abs(pid_output), 0, 255);
+                    pwmValue = constrain(abs(steer_pid_output), 0, 255);  // CHANGED: Variable name
                     
-                    if (pid_output > 0) {
+                    if (steer_pid_output > 0) {  // CHANGED: Variable name
                         // Need to turn right (increase pot value)
                         analogWrite(LPWM_Output, 0);       // Turn off reverse
                         analogWrite(RPWM_Output, pwmValue); // Set forward speed
@@ -503,7 +503,7 @@ void controlSteering() {
                         direction = "LEFT";
                     }
                 }
-            }  // NEW: Close the scope for case 1
+            }  // Close the scope for case 1
             break;
 
         case 2: // Auto mode (placeholder for ROS cmd_vel)
