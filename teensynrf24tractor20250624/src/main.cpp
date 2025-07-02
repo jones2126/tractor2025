@@ -24,6 +24,28 @@ const uint16_t bucketTargets[10] = {
 int RPWM_Output = 5; // Connect to IBT-2 pin 1 (RPWM)
 int LPWM_Output = 6; // Connect to IBT-2 pin 2 (LPWM)
 
+// Steering potentiometer and PID definitions
+#define STEER_POT_PIN A0  // Analog pin for steering potentiometer
+#define STEER_DEADBAND 10 // Potentiometer deadband (adjust as needed)
+
+// PID variables for steering
+float steer_kp = 1.0;     // Proportional gain (tune these values)
+float steer_ki = 0.0;     // Integral gain
+float steer_kd = 0.0;     // Derivative gain
+
+float steer_setpoint = 512;    // Target steering position (0-1023)
+float steer_current = 512;     // Current steering position from pot
+float steer_error = 0;
+float steer_error_sum = 0;
+float steer_last_error = 0;
+unsigned long steer_last_time = 0;
+
+// Steering limits (adjust these based on your physical setup)
+const int STEER_MIN_POT = 0;     // Minimum pot value (full left)
+const int STEER_MAX_POT = 1023;  // Maximum pot value (full right)
+const int STEER_CENTER_POT = 512; // Center position
+
+// Transmission variables
 uint16_t currentTransmissionOutput = transmissionNeutralPos;  // Start at neutral
 const uint8_t transmissionRampStep = 10;  // Max change per update (in JRK units)
 int bucket = 5;  // Start at middle bucket (neutral)
@@ -209,6 +231,27 @@ void setup() {
     Serial.println("  transmission_val 1023 -> bucket 0 -> JRK 3696 (FULL FORWARD)");
     Serial.println("  transmission_val ~512 -> bucket 5 -> JRK 2048 (NEUTRAL)");
     Serial.println("  transmission_val 1    -> bucket 9 -> JRK 312  (FULL REVERSE)");
+}
+
+float calculateSteeringPID() {
+    unsigned long current_time = millis();
+    float dt = (current_time - steer_last_time) / 1000.0; // Convert to seconds
+    
+    if (dt <= 0) dt = 0.001; // Prevent division by zero
+    
+    steer_error = steer_setpoint - steer_current;
+    steer_error_sum += steer_error * dt;
+    float error_rate = (steer_error - steer_last_error) / dt;
+    
+    // Calculate PID output
+    float output = (steer_kp * steer_error) + 
+                   (steer_ki * steer_error_sum) + 
+                   (steer_kd * error_rate);
+    
+    steer_last_error = steer_error;
+    steer_last_time = current_time;
+    
+    return output;
 }
 
 void debugSerial() {
@@ -400,15 +443,18 @@ void controlSteering() {
         return;
     }
 
+    // Read current steering position from potentiometer
+    steer_current = analogRead(STEER_POT_PIN);
+
     if (!NRF24radioSignalGood) {
         // Stop motor if radio signal is lost
         analogWrite(RPWM_Output, 0);
         analogWrite(LPWM_Output, 0);
         if (currentMillis - lastSteeringPrint >= steeringPrintInterval) {
             Serial.print("info,");
-            Serial.print("steering_val=");
-            Serial.print(radioData.steering_val);
-            Serial.println(", direction=NO_SIGNAL, pwm=0");
+            Serial.print("steering: NO_SIGNAL, pot=");
+            Serial.print(steer_current);
+            Serial.println(", pwm=0");
             lastSteeringPrint = currentMillis;
         }
         lastSteeringControlRun = currentMillis;
@@ -422,33 +468,45 @@ void controlSteering() {
         case 0: // Pause mode
             analogWrite(RPWM_Output, 0);
             analogWrite(LPWM_Output, 0);
+            steer_setpoint = steer_current; // Hold current position
             pwmValue = 0;
             direction = "PAUSE";
             break;
 
-        case 1: // Manual mode
-            if (radioData.steering_val >= 469 && radioData.steering_val <= 562) {
-                // Neutral zone
-                analogWrite(RPWM_Output, 0);
-                analogWrite(LPWM_Output, 0);
+        case 1: // Manual mode with PID control
+            // Map radio steering value (0-1023) to pot range (0-1023)
+            steer_setpoint = radioData.steering_val;
+            
+            // Calculate PID output
+            float pid_output = calculateSteeringPID();
+            
+            // Apply deadband
+            if (abs(steer_error) <= STEER_DEADBAND) {
                 pwmValue = 0;
                 direction = "NEUTRAL";
-            } else if (radioData.steering_val > 562) {
-                // CCW (563-1023) - map to PWM 1-255
-                pwmValue = map(radioData.steering_val, 563, 1023, 1, 255);
-                analogWrite(RPWM_Output, 0);       // Turn off reverse
-                analogWrite(LPWM_Output, pwmValue); // Set forward speed
-                direction = "CCW";
+                analogWrite(RPWM_Output, 0);
+                analogWrite(LPWM_Output, 0);
             } else {
-                // CW (0-468) - map to PWM 255-1
-                pwmValue = map(radioData.steering_val, 0, 468, 255, 1);
-                analogWrite(LPWM_Output, 0);       // Turn off forward
-                analogWrite(RPWM_Output, pwmValue); // Set reverse speed
-                direction = "CW";
+                // Convert PID output to PWM value (limit to 0-255)
+                pwmValue = constrain(abs(pid_output), 0, 255);
+                
+                if (pid_output > 0) {
+                    // Need to turn right (increase pot value)
+                    analogWrite(LPWM_Output, 0);       // Turn off reverse
+                    analogWrite(RPWM_Output, pwmValue); // Set forward speed
+                    direction = "RIGHT";
+                } else {
+                    // Need to turn left (decrease pot value)
+                    analogWrite(RPWM_Output, 0);       // Turn off forward
+                    analogWrite(LPWM_Output, pwmValue); // Set reverse speed
+                    direction = "LEFT";
+                }
             }
             break;
 
-        case 2: // Auto mode
+        case 2: // Auto mode (placeholder for ROS cmd_vel)
+            // For now, hold current position
+            steer_setpoint = steer_current;
             analogWrite(RPWM_Output, 0);
             analogWrite(LPWM_Output, 0);
             pwmValue = 0;
@@ -466,10 +524,14 @@ void controlSteering() {
     // Print debug output at 2 Hz
     if (currentMillis - lastSteeringPrint >= steeringPrintInterval) {
         Serial.print("info,");
-        Serial.print("control_mode=");
+        Serial.print("mode=");
         Serial.print(radioData.control_mode);
-        Serial.print(", steering_val=");
-        Serial.print(radioData.steering_val);
+        Serial.print(", setpoint=");
+        Serial.print(steer_setpoint);
+        Serial.print(", current=");
+        Serial.print(steer_current);
+        Serial.print(", error=");
+        Serial.print(steer_error);
         Serial.print(", direction=");
         Serial.print(direction);
         Serial.print(", pwm=");
