@@ -573,6 +573,34 @@ void debugSteerPot() {
     }
 }
 
+void testPin24() {
+    static unsigned long lastTest = 0;
+    if (currentMillis - lastTest >= 2000) {  // Every 2 seconds
+        // Test multiple readings
+        int reading1 = analogRead(24);
+        delay(10);
+        int reading2 = analogRead(A10);  // Same pin, different reference
+        delay(10);
+        
+        Serial.print("debug,");
+        Serial.print("Pin 24 reading: ");
+        Serial.print(reading1);
+        Serial.print(", A10 reading: ");
+        Serial.print(reading2);
+        
+        // Test if pin is floating (disconnected)
+        pinMode(24, INPUT_PULLUP);
+        delay(1);
+        int pullup_reading = analogRead(24);
+        pinMode(24, INPUT);  // Back to normal analog input
+        
+        Serial.print(", With pullup: ");
+        Serial.println(pullup_reading);
+        
+        lastTest = currentMillis;
+    }
+}
+
 void loop() {
     currentMillis = millis();
     checkNRF24ack();
@@ -583,5 +611,5 @@ void loop() {
     calcRadioCommRate();
     printACKRate();
     debugSerial();
-    debugSteerPot();    
+    testPin24();    
 }
