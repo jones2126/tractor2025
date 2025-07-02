@@ -200,7 +200,7 @@ void setup() {
 
     // Initialize e-stop relay pin
     pinMode(ESTOP_RELAY_PIN, OUTPUT);
-    digitalWrite(ESTOP_RELAY_PIN, LOW); // Start with e-stop relay off (ignition not grounded)
+    digitalWrite(ESTOP_RELAY_PIN, HIGH); // Start with e-stop relay off (ignition not grounded)
 
     lastRateCalc = millis();
 
@@ -487,9 +487,9 @@ void estopCheck() {
     
     // If estop is high, activate relay (ground the ignition wire)
     if (radioData.estop) {
-        digitalWrite(ESTOP_RELAY_PIN, HIGH); // Activate relay - grounds ignition wire
+        digitalWrite(ESTOP_RELAY_PIN, LOW); // Activate relay - grounds ignition wire
     } else {
-        digitalWrite(ESTOP_RELAY_PIN, LOW);  // Deactivate relay - normal ignition operation
+        digitalWrite(ESTOP_RELAY_PIN, HIGH);  // Deactivate relay - normal ignition operation
     }
     
     lastEstopCheckRun = currentMillis;
