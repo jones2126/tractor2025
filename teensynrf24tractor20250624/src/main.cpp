@@ -25,7 +25,7 @@ int RPWM_Output = 5; // Connect to IBT-2 pin 1 (RPWM)
 int LPWM_Output = 6; // Connect to IBT-2 pin 2 (LPWM)
 
 // Steering potentiometer and PID definitions
-#define STEER_POT_PIN A10  // pin 24 for steering potentiometer
+#define STEER_POT_PIN A9  // pin 23 for steering potentiometer
 #define STEER_DEADBAND 10 // Potentiometer deadband (adjust as needed)
 
 // PID variables for steering
@@ -561,43 +561,15 @@ void estopCheck() {
 
 void debugSteerPot() {
     static unsigned long lastPotDebug = 0;
-    if (currentMillis - lastPotDebug >= 1000) {  // Every 1 second
-        int rawPot = analogRead(STEER_POT_PIN);
+    if (currentMillis - lastPotDebug >= 1000) {  
+        int rawPot = analogRead(STEER_POT_PIN);  
         Serial.print("debug,");
         Serial.print("Raw pot reading: ");
         Serial.print(rawPot);
         Serial.print(", Voltage: ");
-        Serial.print((rawPot * 3.3) / 1023.0, 2);  // Convert to voltage (assuming 3.3V reference)
+        Serial.print((rawPot * 3.3) / 1023.0, 2);
         Serial.println("V");
         lastPotDebug = currentMillis;
-    }
-}
-
-void testPin24() {
-    static unsigned long lastTest = 0;
-    if (currentMillis - lastTest >= 2000) {  // Every 2 seconds
-        // Test multiple readings
-        int reading1 = analogRead(24);
-        delay(10);
-        int reading2 = analogRead(A10);  // Same pin, different reference
-        delay(10);
-        
-        Serial.print("debug,");
-        Serial.print("Pin 24 reading: ");
-        Serial.print(reading1);
-        Serial.print(", A10 reading: ");
-        Serial.print(reading2);
-        
-        // Test if pin is floating (disconnected)
-        pinMode(24, INPUT_PULLUP);
-        delay(1);
-        int pullup_reading = analogRead(24);
-        pinMode(24, INPUT);  // Back to normal analog input
-        
-        Serial.print(", With pullup: ");
-        Serial.println(pullup_reading);
-        
-        lastTest = currentMillis;
     }
 }
 
@@ -611,5 +583,5 @@ void loop() {
     calcRadioCommRate();
     printACKRate();
     debugSerial();
-    testPin24();    
+    debugSteerPot();    
 }
