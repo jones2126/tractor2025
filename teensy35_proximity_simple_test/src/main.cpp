@@ -13,7 +13,7 @@ void setup() {
   pinMode(LED_BUILTIN, OUTPUT);  // Onboard LED on pin 13
   pinMode(LJ18A_pin, INPUT_PULLDOWN);  // Sensor pin with internal pull-down
   attachInterrupt(LJ18A_pin, movement_detect, CHANGE);  // Interrupt on pin change
-  Serial.begin(9600);  // USB serial for debugging
+  Serial.begin(115200); 
 }
 
 void toggleLED(unsigned long currentTime) {
