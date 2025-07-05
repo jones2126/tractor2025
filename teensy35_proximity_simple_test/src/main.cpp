@@ -1,5 +1,5 @@
 #include <Arduino.h>
-int LJ18A_pin = 26;  // LJ18A sensor connected to pin 26 on Teensy 3.5
+int LJ18A_pin = A9;  // LJ18A sensor connected to pin 23 (aka pin A9) on Teensy 3.5
 volatile byte bLED = LOW;  // For sensor state tracking (optional)
 volatile int ticks = 0;  // Slot count
 unsigned long currentTime;  // Global time variable
