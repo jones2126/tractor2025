@@ -14,6 +14,7 @@ void movement_detect() {
 }
 
 void setup() {
+  delay(60000);  // 60 seconds - Added this delay to wait for the Rpi to boot up to help ensure serial comms is ready
   pinMode(LED_BUILTIN, OUTPUT);  // Onboard LED on pin 13
   pinMode(LJ18A_pin, INPUT_PULLDOWN);  // Sensor pin with internal pull-down
   attachInterrupt(LJ18A_pin, movement_detect, CHANGE);  // Interrupt on both edges
