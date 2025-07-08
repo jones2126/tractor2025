@@ -5,6 +5,7 @@
 // - Pin 3: GND
 #include <Arduino.h>
 void setup() {
+  delay(60000);  // 60 seconds, Added delay to wait for the Rpi to ensure serial comms is ready  
   Serial.begin(115200);
   while (!Serial && millis() < 5000);  // Wait up to 5 seconds for serial
   
