@@ -473,7 +473,7 @@ void controlSteering() {
             direction = "PAUSE";
             break;
 
-case 1: // Manual mode with PID control
+        case 1: // Manual mode with PID control
             {  // Add curly braces to create scope for case 1
                 // Map radio steering value (0-1023) to pot range (0-1023)
                 steer_setpoint = radioData.steering_val;
