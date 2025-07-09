@@ -34,16 +34,16 @@ void loop() {
   // Check for deadband
   if (abs(potValue - 512) < DEADBAND) {
     // Stop motor
-    PWM_R.setPWM(0.0);
-    PWM_L.setPWM(0.0);
+    PWM_R.setPWM(RPWM_PIN, 15000, 0.0);
+    PWM_L.setPWM(LPWM_PIN, 15000, 0.0);
   } else if (potValue < 512) {
     // Forward direction
-    PWM_R.setPWM(dutyCycle);  // Forward
-    PWM_L.setPWM(0.0);        // LPWM low
+    PWM_R.setPWM(RPWM_PIN, 15000, dutyCycle);  // Forward
+    PWM_L.setPWM(LPWM_PIN, 15000, 0.0);        // LPWM low
   } else {
     // Reverse direction
-    PWM_L.setPWM(dutyCycle);  // Reverse
-    PWM_R.setPWM(0.0);        // RPWM low
+    PWM_L.setPWM(LPWM_PIN, 15000, dutyCycle);  // Reverse
+    PWM_R.setPWM(RPWM_PIN, 15000, 0.0);        // RPWM low
   }
 
   delay(10); // Small delay for stability
