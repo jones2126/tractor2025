@@ -7,7 +7,7 @@ const int RPWM_PIN = 5;        // Right PWM pin connected to IBT-2 pin 1 (RPWM)
 const int LPWM_PIN = 6;        // Left PWM pin connected to IBT-2 pin 2 (LPWM)
 const int DEADBAND = 10;       // Deadband range (±10 around center 512)
 
-const int IBT_FREQUENCY = 10000;       
+const int IBT_FREQUENCY = 5000;       
 
 // Instantiate Teensy_PWM objects with initial duty cycle of 0.0
 Teensy_PWM PWM_R(RPWM_PIN, IBT_FREQUENCY, 0.0);  // 15 kHz, 0% duty for RPWM
