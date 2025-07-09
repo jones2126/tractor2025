@@ -7,9 +7,11 @@ const int RPWM_PIN = 5;        // Right PWM pin connected to IBT-2 pin 1 (RPWM)
 const int LPWM_PIN = 6;        // Left PWM pin connected to IBT-2 pin 2 (LPWM)
 const int DEADBAND = 10;       // Deadband range (±10 around center 512)
 
+const int IBT_FREQUENCY = 20000;       
+
 // Instantiate Teensy_PWM objects with initial duty cycle of 0.0
-Teensy_PWM PWM_R(RPWM_PIN, 15000, 0.0);  // 15 kHz, 0% duty for RPWM
-Teensy_PWM PWM_L(LPWM_PIN, 15000, 0.0);  // 15 kHz, 0% duty for LPWM
+Teensy_PWM PWM_R(RPWM_PIN, IBT_FREQUENCY, 0.0);  // 15 kHz, 0% duty for RPWM
+Teensy_PWM PWM_L(LPWM_PIN, IBT_FREQUENCY, 0.0);  // 15 kHz, 0% duty for LPWM
 
 // Timing for serial output (2 Hz = 500 ms)
 unsigned long lastPrintTime = 0;
@@ -27,8 +29,8 @@ void setup() {
   pinMode(LPWM_PIN, OUTPUT);
 
   // Initialize PWM with 15 kHz and 0% duty cycle
-  PWM_R.setPWM(RPWM_PIN, 15000, 0.0);
-  PWM_L.setPWM(LPWM_PIN, 15000, 0.0);
+  PWM_R.setPWM(RPWM_PIN, IBT_FREQUENCY, 0.0);
+  PWM_L.setPWM(LPWM_PIN, IBT_FREQUENCY, 0.0);
 }
 
 void loop() {
@@ -44,16 +46,16 @@ void loop() {
   // Check for deadband
   if (abs(potValue - 512) < DEADBAND) {
     // Stop motor
-    PWM_R.setPWM(RPWM_PIN, 15000, 0.0);
-    PWM_L.setPWM(LPWM_PIN, 15000, 0.0);
+    PWM_R.setPWM(RPWM_PIN, IBT_FREQUENCY, 0.0);
+    PWM_L.setPWM(LPWM_PIN, IBT_FREQUENCY, 0.0);
   } else if (potValue < 512) {
     // Forward direction
-    PWM_R.setPWM(RPWM_PIN, 15000, dutyCycle);  // Forward
-    PWM_L.setPWM(LPWM_PIN, 15000, 0.0);        // LPWM low
+    PWM_R.setPWM(RPWM_PIN, IBT_FREQUENCY, dutyCycle);  // Forward
+    PWM_L.setPWM(LPWM_PIN, IBT_FREQUENCY, 0.0);        // LPWM low
   } else {
     // Reverse direction
-    PWM_L.setPWM(LPWM_PIN, 15000, dutyCycle);  // Reverse
-    PWM_R.setPWM(RPWM_PIN, 15000, 0.0);        // RPWM low
+    PWM_L.setPWM(LPWM_PIN, IBT_FREQUENCY, dutyCycle);  // Reverse
+    PWM_R.setPWM(RPWM_PIN, IBT_FREQUENCY, 0.0);        // RPWM low
   }
 
   // Print pot value and duty cycle at 2 Hz
