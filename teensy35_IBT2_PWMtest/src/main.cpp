@@ -7,7 +7,8 @@ const int RPWM_PIN = 5;        // Right PWM pin connected to IBT-2 pin 1 (RPWM)
 const int LPWM_PIN = 6;        // Left PWM pin connected to IBT-2 pin 2 (LPWM)
 const int DEADBAND = 10;       // Deadband range (±10 around center 512)
 
-const int IBT_FREQUENCY = 5000;       
+const int IBT_FREQUENCY = 25000;
+const float IBT_POWER_CAP = 80.0;    
 
 // Instantiate Teensy_PWM objects with initial duty cycle of 0.0
 Teensy_PWM PWM_R(RPWM_PIN, IBT_FREQUENCY, 0.0);  // 15 kHz, 0% duty for RPWM
@@ -41,7 +42,8 @@ void loop() {
   int motorSpeed = map(abs(potValue - 512), 0, 512, 0, 255);
   
   // Convert to percentage for Teensy_PWM (0.0 to 100.0)
-  float dutyCycle = (motorSpeed / 255.0) * 100.0;
+  //float dutyCycle = (motorSpeed / 255.0) * 100.0;
+  float dutyCycle = min((motorSpeed / 255.0) * 100.0, IBT_POWER_CAP);
   
   // Check for deadband
   if (abs(potValue - 512) < DEADBAND) {
