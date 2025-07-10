@@ -11,34 +11,30 @@ const int IBT_FREQUENCY = 25000;
 const float IBT_POWER_CAP = 80.0;    
 
 // Instantiate Teensy_PWM objects with initial duty cycle of 0.0
-Teensy_PWM PWM_R(RPWM_PIN, IBT_FREQUENCY, 0.0);  // 15 kHz, 0% duty for RPWM
-Teensy_PWM PWM_L(LPWM_PIN, IBT_FREQUENCY, 0.0);  // 15 kHz, 0% duty for LPWM
+Teensy_PWM PWM_R(RPWM_PIN, IBT_FREQUENCY, 0.0); 
+Teensy_PWM PWM_L(LPWM_PIN, IBT_FREQUENCY, 0.0);
 
 // Timing for serial output (2 Hz = 500 ms)
 unsigned long lastPrintTime = 0;
 const unsigned long PRINT_INTERVAL = 500;  // 500 ms for 2 Hz
 
 void setup() {
-  // Delay 60 seconds for RPi serial connection
-  delay(60000);
-
-  // Initialize serial communication
+  delay(60000);  // Delay 60 seconds for RPi serial connection
   Serial.begin(115200);
 
-  // Initialize pins as outputs
+  // Initialize pins 
   pinMode(RPWM_PIN, OUTPUT);
   pinMode(LPWM_PIN, OUTPUT);
 
-  // Initialize PWM with 15 kHz and 0% duty cycle
+  // Initialize PWM 
   PWM_R.setPWM(RPWM_PIN, IBT_FREQUENCY, 0.0);
   PWM_L.setPWM(LPWM_PIN, IBT_FREQUENCY, 0.0);
 }
 
 void loop() {
-  // Read potentiometer value
   int potValue = analogRead(STEER_POT_PIN);
   
-  // Map potentiometer to motor speed (0-255)
+  // Map potentiometer to motor speed (0-255) - I want 1/2 to drive CW movement and the other half for CCW 
   int motorSpeed = map(abs(potValue - 512), 0, 512, 0, 255);
   
   // Convert to percentage for Teensy_PWM (0.0 to 100.0)
