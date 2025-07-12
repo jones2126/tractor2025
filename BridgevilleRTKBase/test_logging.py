@@ -1,53 +1,36 @@
 import serial
 import time
 
-# Serial port settings
-port = "/dev/ttyUSB0"  # COM1 on your Raspberry Pi
-baudrate = 115200
-timeout = 1  # Timeout for reading (in seconds)
+# Configure the serial port (adjust '/dev/ttyUSB0' to match your RPi's port)
+ser = serial.Serial(
+    port='/dev/tttyACM0',
+    baudrate=115200,
+    parity=serial.PARITY_NONE,
+    stopbits=serial.STOPBITS_ONE,
+    bytesize=serial.EIGHTBITS,
+    timeout=1
+)
+
+print("Listening for GPS data on /dev/ttyUSB0...")
 
 try:
-    # Open the serial port
-    ser = serial.Serial(
-        port=port,
-        baudrate=baudrate,
-        bytesize=serial.EIGHTBITS,
-        parity=serial.PARITY_NONE,
-        stopbits=serial.STOPBITS_ONE,
-        timeout=timeout,
-        xonxoff=False,  # Disable software flow control
-        rtscts=False,   # Disable hardware flow control (RTS/CTS)
-        dsrdtr=False    # Disable hardware flow control (DSR/DTR)
-    )
+    while True:
+        if ser.in_waiting > 0:
+            data = ser.read(ser.in_waiting)  # Read available data
+            for i in range(len(data)):
+                # Check for message headers
+                if data[i:i+3] == b'\xB5\x62':  # UBX header (0xB5 0x62)
+                    print(f"UBX Message detected at offset {i}")
+                elif data[i:i+1] == b'$':  # NMEA header
+                    print(f"NMEA Message detected at offset {i}")
+                elif data[i:i+1] == b'\xD3':  # RTCM3 header
+                    print(f"RTCM3 Message detected at offset {i}")
+            time.sleep(0.1)  # Small delay to prevent overwhelming the CPU
 
-    print(f"Connected to {port} at {baudrate} baud")
-
-    # Ensure the serial port is open
-    if ser.is_open:
-        # Send the LOG VERSION command (with CR+LF line ending)
-        command = "LOG VERSION\r\n"
-        ser.write(command.encode('ascii'))
-        print(f"Sent command: {command.strip()}")
-
-        # Wait briefly for the response
-        time.sleep(0.1)
-
-        # Read the response
-        response = ser.readline().decode('ascii', errors='ignore').strip()
-        if response:
-            print(f"Response: {response}")
-        else:
-            print("No response received")
-
-    else:
-        print("Failed to open serial port")
+except KeyboardInterrupt:
+    print("Stopped by user")
+    ser.close()
 
 except serial.SerialException as e:
     print(f"Serial error: {e}")
-except Exception as e:
-    print(f"Error: {e}")
-finally:
-    # Close the serial port
-    if 'ser' in locals() and ser.is_open:
-        ser.close()
-        print("Serial port closed")
+    ser.close()
