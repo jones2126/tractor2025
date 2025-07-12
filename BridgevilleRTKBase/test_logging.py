@@ -3,7 +3,7 @@ import time
 
 # Configure the serial port (adjust '/dev/ttyUSB0' to match your RPi's port)
 ser = serial.Serial(
-    port='/dev/tttyACM0',
+    port='/dev/ttyACM0',
     baudrate=115200,
     parity=serial.PARITY_NONE,
     stopbits=serial.STOPBITS_ONE,
