@@ -33,8 +33,17 @@ def parse_nmea_message_type(data, pos):
             
         # Extract the message type (first 6 characters after $)
         nmea_sentence = data[pos:end_pos].decode('ascii', errors='ignore')
-        if len(nmea_sentence) >= 6 and nmea_sentence.startswith('
-
+        if len(nmea_sentence) >= 6 and nmea_sentence.startswith('$'):
+            # Extract message type, handling potential commas
+            parts = nmea_sentence.split(',')
+            if len(parts) > 0 and len(parts[0]) >= 6:
+                message_type = parts[0][1:6]  # e.g., "GPGGA", "GPRMC", etc.
+                # Validate it's a proper NMEA message type (letters and numbers only)
+                if message_type.isalnum() and message_type.isupper():
+                    return message_type, end_pos + 1
+        return None, end_pos + 1
+    except:
+        return None, pos + 1
 def parse_ubx_message_type(data, pos):
     """
     Extract UBX message type from data starting at pos.
