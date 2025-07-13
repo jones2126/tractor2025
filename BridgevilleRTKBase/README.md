@@ -87,6 +87,7 @@ git pull origin main
 - **RTCM Scripts**: `rtcm_*.py` - Handle RTCM correction data processing and serving
 - **Configuration Scripts**: `configure_*.py`, `setup_*.sh` - Hardware and system configuration
 - **Menu/Control Scripts**: `k706_menu*.py` - User interface for RTK configuration
+- **rtcm_server_0507.py**: An RTK base station server that configures a PX1125R GNSS receiver as an RTK base station, reads RTCM correction data from the serial interface, and broadcasts it via TCP. The script  configures the base station with coordinates to a location in Pennsylvania, sets up RTCM message output (including MSM4 messages), and continuously streams the correction data. It has logging with automatic log rotation and compression, real-time message rate monitoring and CRC error detection, RTCM message parsing (with special handling for 1005 station reference messages), and multi-threaded architecture to handle multiple simultaneous client connections. The server logs all RTCM data to timestamped files, provides detailed statistics on message types and transmission rates, and includes comprehensive error handling for both serial communication and network operations for operating an RTK base station.
 
 ### Files to Ignore (already in .gitignore):
 - `logs/` - Runtime log files
