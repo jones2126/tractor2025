@@ -2,10 +2,8 @@ import serial
 import time
 import struct
 from datetime import datetime
-import asyncio
-import websockets
+import socket
 import threading
-import json
 import logging
 
 # Configure logging
@@ -22,18 +20,16 @@ ser = serial.Serial(
     timeout=1
 )
 
-# WebSocket configuration
-WEBSOCKET_HOST = "0.0.0.0"
-WEBSOCKET_PORT = 8765
-RTCM_PUBLISH_RATE = 1.0  # 1 Hz
+# TCP configuration
+TCP_HOST = "0.0.0.0"
+TCP_PORT = 6001
 
 # Message rate monitoring configuration
 RATE_REPORT_INTERVAL = 10  # Report message rates every 10 seconds
 
-# Shared variables for WebSocket
-connected_clients = set()
-rtcm_message_buffer = []
-rtcm_buffer_lock = threading.Lock()
+# Shared variables for TCP clients
+tcp_clients = []
+tcp_clients_lock = threading.Lock()
 
 def parse_nmea_message_type(data, pos):
     """
@@ -145,90 +141,74 @@ def parse_rtcm_message_type(data, pos):
         logger.error(f"Error parsing RTCM message: {e}")
         return None, pos + 1, None
 
-def add_rtcm_to_buffer(rtcm_message):
-    """Add RTCM message to buffer for WebSocket publishing."""
-    with rtcm_buffer_lock:
-        rtcm_message_buffer.append({
-            'timestamp': time.time(),
-            'data': rtcm_message.hex(),
-            'length': len(rtcm_message)
-        })
-        # Keep only the last 100 messages to prevent memory issues
-        if len(rtcm_message_buffer) > 100:
-            rtcm_message_buffer.pop(0)
-
-async def websocket_handler(websocket, path):
-    """Handle WebSocket connections."""
-    logger.info(f"WebSocket client connected from {websocket.remote_address}")
-    connected_clients.add(websocket)
+def handle_tcp_client(client_socket, address):
+    """Handle a single TCP client connection."""
+    logger.info(f"TCP client connected: {address}")
+    with tcp_clients_lock:
+        tcp_clients.append(client_socket)
+    
     try:
-        await websocket.wait_closed()
-    except websockets.exceptions.ConnectionClosed:
-        pass
+        while True:
+            # Keep the connection alive
+            time.sleep(1)
+    except Exception as e:
+        logger.info(f"TCP client {address} disconnected: {e}")
     finally:
-        connected_clients.discard(websocket)
-        logger.info(f"WebSocket client disconnected from {websocket.remote_address}")
+        with tcp_clients_lock:
+            if client_socket in tcp_clients:
+                tcp_clients.remove(client_socket)
+        try:
+            client_socket.close()
+        except:
+            pass
 
-async def publish_rtcm_messages():
-    """Publish RTCM messages to WebSocket clients at specified rate."""
-    last_publish_time = 0
+def broadcast_rtcm_data(rtcm_data):
+    """Broadcast RTCM data to all connected TCP clients."""
+    if not tcp_clients:
+        return
     
-    while True:
-        current_time = time.time()
-        
-        # Check if it's time to publish (1 Hz)
-        if current_time - last_publish_time >= (1.0 / RTCM_PUBLISH_RATE):
-            if connected_clients and rtcm_message_buffer:
-                with rtcm_buffer_lock:
-                    # Get the most recent RTCM messages
-                    messages_to_send = rtcm_message_buffer.copy()
-                    rtcm_message_buffer.clear()
-                
-                if messages_to_send:
-                    # Create WebSocket message
-                    ws_message = {
-                        'type': 'rtcm_data',
-                        'timestamp': current_time,
-                        'message_count': len(messages_to_send),
-                        'messages': messages_to_send
-                    }
-                    
-                    # Send to all connected clients
-                    disconnected_clients = set()
-                    for client in connected_clients:
-                        try:
-                            await client.send(json.dumps(ws_message))
-                        except websockets.exceptions.ConnectionClosed:
-                            disconnected_clients.add(client)
-                        except Exception as e:
-                            logger.error(f"Error sending to WebSocket client: {e}")
-                            disconnected_clients.add(client)
-                    
-                    # Remove disconnected clients
-                    connected_clients.difference_update(disconnected_clients)
-                    
-                    if connected_clients:
-                        logger.info(f"Published {len(messages_to_send)} RTCM messages to {len(connected_clients)} clients")
-                
-                last_publish_time = current_time
-        
-        await asyncio.sleep(0.1)  # Small delay to prevent busy loop
+    disconnected_clients = []
+    
+    with tcp_clients_lock:
+        for client in tcp_clients:
+            try:
+                client.sendall(rtcm_data)
+            except Exception as e:
+                logger.warning(f"Error sending to TCP client: {e}")
+                disconnected_clients.append(client)
+    
+    # Remove disconnected clients
+    if disconnected_clients:
+        with tcp_clients_lock:
+            for client in disconnected_clients:
+                if client in tcp_clients:
+                    tcp_clients.remove(client)
+                try:
+                    client.close()
+                except:
+                    pass
 
-async def start_websocket_server():
-    """Start the WebSocket server."""
-    logger.info(f"Starting WebSocket server on {WEBSOCKET_HOST}:{WEBSOCKET_PORT}")
+def start_tcp_server():
+    """Start the TCP server to accept client connections."""
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server.bind((TCP_HOST, TCP_PORT))
+    server.listen(5)
+    logger.info(f"TCP server started on {TCP_HOST}:{TCP_PORT}")
     
-    # Start the RTCM publishing task
-    publish_task = asyncio.create_task(publish_rtcm_messages())
-    
-    # Start the WebSocket server
-    async with websockets.serve(websocket_handler, WEBSOCKET_HOST, WEBSOCKET_PORT):
-        logger.info(f"WebSocket server listening on ws://{WEBSOCKET_HOST}:{WEBSOCKET_PORT}")
-        await publish_task
-
-def run_websocket_server():
-    """Run the WebSocket server in a separate thread."""
-    asyncio.run(start_websocket_server())
+    try:
+        while True:
+            client_socket, address = server.accept()
+            client_thread = threading.Thread(
+                target=handle_tcp_client, 
+                args=(client_socket, address), 
+                daemon=True
+            )
+            client_thread.start()
+    except Exception as e:
+        logger.error(f"TCP server error: {e}")
+    finally:
+        server.close()
 
 def report_message_rates(message_counts, elapsed_time):
     """Report message rates for all detected message types."""
@@ -271,17 +251,19 @@ def report_message_rates(message_counts, elapsed_time):
     else:
         print("No messages detected in this interval")
     
-    # Report WebSocket status
-    print(f"WebSocket clients connected: {len(connected_clients)}")
+    # Report TCP client status
+    with tcp_clients_lock:
+        client_count = len(tcp_clients)
+    print(f"TCP clients connected: {client_count}")
     print("=" * 50)
 
-print("Starting GPS data logger with WebSocket RTCM publishing...")
-print(f"WebSocket server will be available at ws://{WEBSOCKET_HOST}:{WEBSOCKET_PORT}")
+print("Starting GPS data logger with TCP RTCM publishing...")
+print(f"TCP server will be available at {TCP_HOST}:{TCP_PORT}")
 print("Press Ctrl+C to stop")
 
-# Start WebSocket server in a separate thread
-websocket_thread = threading.Thread(target=run_websocket_server, daemon=True)
-websocket_thread.start()
+# Start TCP server in a separate thread
+tcp_thread = threading.Thread(target=start_tcp_server, daemon=True)
+tcp_thread.start()
 
 # Message rate monitoring variables
 message_counts = {}
@@ -326,8 +308,8 @@ try:
                         msg_type, new_pos, rtcm_message = parse_rtcm_message_type(data_buffer, pos)
                         if msg_type and rtcm_message:
                             message_counts[f"RTCM_{msg_type}"] = message_counts.get(f"RTCM_{msg_type}", 0) + 1
-                            # Add RTCM message to WebSocket buffer
-                            add_rtcm_to_buffer(rtcm_message)
+                            # Broadcast RTCM message immediately to TCP clients
+                            broadcast_rtcm_data(rtcm_message)
                             pos = new_pos
                             message_detected = True
                         elif new_pos > pos:
