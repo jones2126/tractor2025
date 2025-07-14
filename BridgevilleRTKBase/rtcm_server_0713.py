@@ -4,11 +4,17 @@ import struct
 from datetime import datetime
 import socket
 import threading
-import logging
+from logger_setup import logger_setup
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+# logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# logger = logging.getLogger(__name__)
+logger = logger_setup(
+    log_filename="rtcm_server_0713.log",
+    max_file_size=5*1024*1024,  # 5MB files
+    backup_count=3,            # Keep 3 backups
+)
+
 
 # Configure the serial port
 ser = serial.Serial(
