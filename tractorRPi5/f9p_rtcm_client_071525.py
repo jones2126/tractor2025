@@ -86,11 +86,12 @@ def monitor_gngga(serial_conn):
             break
 
 def monitor_rtcm_health():
-    """Print warning if no RTCM data has arrived in the last 5 seconds."""
+    """Print warning with elapsed time since last good RTCM message."""
     while True:
         time.sleep(1)
-        if time.time() - last_rtcm_time > RTCM_TIMEOUT:
-            print(f"[WARNING] No RTCM received for > {RTCM_TIMEOUT} seconds.")
+        elapsed = time.time() - last_rtcm_time
+        if elapsed > RTCM_TIMEOUT:
+            print(f"[WARNING] No RTCM received for {elapsed:.1f} seconds.")
 
 def main():
     try:
