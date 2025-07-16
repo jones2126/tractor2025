@@ -49,8 +49,8 @@ def forward_rtcm_data_with_reconnect(serial_conn):
 
         except Exception as e:
             print(f"[RTCM Error] {e}")
-            print("[INFO] Will retry RTCM connection in 5 seconds...")
-            time.sleep(5)
+            print("[INFO] Will retry RTCM connection in 30 seconds...")
+            time.sleep(30)
 
 def log_to_csv(timestamp, fix_code, status):
     """Append fix transition to CSV log file."""
