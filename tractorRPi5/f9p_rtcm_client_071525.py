@@ -29,23 +29,28 @@ FIX_QUALITY = {
 last_rtcm_time = time.time()
 csv_lock = threading.Lock()
 
-def forward_rtcm_data(tcp_sock, serial_conn):
-    """Stream RTCM from TCP to serial (GNSS) and update last RTCM time."""
+def forward_rtcm_data_with_reconnect(serial_conn):
     global last_rtcm_time
     while True:
         try:
-            data = tcp_sock.recv(1024)
-            if not data:
-                print("[RTCM] Stream ended.")
-                break
-            total_sent = 0
-            while total_sent < len(data):
-                sent = serial_conn.write(data[total_sent:])
-                total_sent += sent
-            last_rtcm_time = time.time()
+            print(f"[INFO] Connecting to RTCM stream at {TCP_IP}:{TCP_PORT}...")
+            tcp_sock = socket.create_connection((TCP_IP, TCP_PORT), timeout=10)
+            print("[INFO] RTCM TCP connection established.")
+
+            while True:
+                data = tcp_sock.recv(1024)
+                if not data:
+                    raise ConnectionError("No data from RTCM stream (connection closed)")
+                total_sent = 0
+                while total_sent < len(data):
+                    sent = serial_conn.write(data[total_sent:])
+                    total_sent += sent
+                last_rtcm_time = time.time()
+
         except Exception as e:
             print(f"[RTCM Error] {e}")
-            break
+            print("[INFO] Will retry RTCM connection in 5 seconds...")
+            time.sleep(5)
 
 def log_to_csv(timestamp, fix_code, status):
     """Append fix transition to CSV log file."""
@@ -89,8 +94,8 @@ def monitor_rtcm_health():
 
 def main():
     try:
-        print(f"[INFO] Connecting to RTCM stream at {TCP_IP}:{TCP_PORT}...")
-        tcp_sock = socket.create_connection((TCP_IP, TCP_PORT), timeout=10)
+        # print(f"[INFO] Connecting to RTCM stream at {TCP_IP}:{TCP_PORT}...")
+        # tcp_sock = socket.create_connection((TCP_IP, TCP_PORT), timeout=10)
         print("[INFO] RTCM TCP connection established.")
 
         print(f"[INFO] Opening serial port {SERIAL_PORT} at {SERIAL_BAUDRATE}...")
@@ -114,7 +119,7 @@ def main():
             writer.writerow(['Timestamp', 'Fix Code', 'Fix Status'])
 
         # Start threads
-        threading.Thread(target=forward_rtcm_data, args=(tcp_sock, serial_conn), daemon=True).start()
+        threading.Thread(target=forward_rtcm_data_with_reconnect, args=(serial_conn,), daemon=True).start()
         threading.Thread(target=monitor_gngga, args=(serial_conn,), daemon=True).start()
         threading.Thread(target=monitor_rtcm_health, daemon=True).start()
 
