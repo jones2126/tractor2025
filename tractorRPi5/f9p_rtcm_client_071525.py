@@ -96,7 +96,7 @@ def main():
     try:
         # print(f"[INFO] Connecting to RTCM stream at {TCP_IP}:{TCP_PORT}...")
         # tcp_sock = socket.create_connection((TCP_IP, TCP_PORT), timeout=10)
-        print("[INFO] RTCM TCP connection established.")
+        # print("[INFO] RTCM TCP connection established.")
 
         print(f"[INFO] Opening serial port {SERIAL_PORT} at {SERIAL_BAUDRATE}...")
         serial_conn = serial.Serial(
