@@ -13,6 +13,8 @@ This repository contains the under development codebase for an outdoor robot pla
 - **Primary Compute**: Raspberry Pi 5 (for high-level control including navigation)
 - **Microcontroller**: Teensy 3.5 (low-level hardware control)
 - **Communication**: NRF24 radio link with custom radio controller; RPi wi-fi
+- **GPS**: Ardusimple ZED-F9P one for base link and one to calculate heading
+- **Base Station**: Custom base station to send RTCM correction data.  See https://github.com/jones2126/tractor2025/blob/main/BridgevilleRTKBase/README.md
 
 ### Key Components
 
@@ -26,7 +28,7 @@ This repository contains the under development codebase for an outdoor robot pla
 
 #### Raspberry Pi 5 (High-Level Control)
 - Navigation stack (ROS 2 + Pure Pursuit algorithm)
-- Dual RTK GNSS receivers for precision localization and heading
+- Dual ZED-F9P RTK GNSS receivers for precision localization and heading
 - OAK camera for AprilTag localization and teleoperation
 - Internet connectivity for RTK correction data
 - Interface to Teensy 3.5 for hardware control
@@ -35,7 +37,7 @@ This repository contains the under development codebase for an outdoor robot pla
 - **Primary**: Dual on-board RTK GNSS receivers
 - **Base Station**: Private RTK base station with Wi-Fi communication
 - **Secondary**: Wheel odometry from rear wheel sensors
-- **Vision**: AprilTag detection via OAK camera
+- **Vision**: OAK camera to be used for teleoperation in conjunction with wi-fi control
 
 #### Remote Control
 - Custom-built radio controller with:
@@ -49,22 +51,22 @@ This repository contains the under development codebase for an outdoor robot pla
 ## Control Systems
 
 ### Steering Control
-- **Implementation**: PID-based steering control with potentiometer feedback
+- **Implementation**: PID-based steering control with potentiometer used for steer angle data
 - **Hardware**: IBT-2 motor controller driving steering motor
 - **Feedback**: Potentiometer on pin A9 (pin 23) provides steering angle
 - **Modes**: Manual (radio control) and Auto (ROS cmd_vel integration planned)
 
 ### Transmission Control
-- **Implementation**: 10-bucket control system for smooth speed transitions
-- **Hardware**: JRK G2 motor controller with linear actuator
-- **Range**: Full reverse to full forward with neutral position
+- **Implementation**: Software defined 10-bucket speed control approach for speed transitions to mimic gear settings
+- **Hardware**: JRK G2 motor controller for linear actuator control
+- **Range**: Full reverse to full forward with neutral position on hydrostatic transmission which requires ~3" travel
 
 ### Safety Systems
-- **E-Stop**: Radio-controlled emergency stop with relay-based ignition kill
-- **Signal Loss Protection**: Automatic safe state when radio communication is lost
+- **E-Stop**: Radio-controlled emergency stop with relay able to ground ignition wire to ground
+- **Signal Loss Protection**: Automatic safe state when radio communication is lost either to radio control or wi-fi
 - **Manual Override**: Physical e-stop button on tractor
 
-## Hardware Pin Assignments (Teensy 3.5)
+## Teensy 3.5 Hardware Pin Assignments 
 
 ### Analog Inputs
 - **A9 (Pin 23)**: Steering angle potentiometer ✅
@@ -75,23 +77,18 @@ This repository contains the under development codebase for an outdoor robot pla
 - **Pin 6**: IBT-2 LPWM (steering motor control)
 - **Pin 32**: E-stop relay control
 - **Pins 9, 10**: NRF24 radio (CE, CSN)
-- **Pins 27, 28, 39**: Custom SPI pins (SCK, MOSI, MISO)
+- **Pins 27, 28, 39**: NRF24 radio SPI pins (SCK, MOSI, MISO)
 
 ### Serial Communications
 - **Serial3**: JRK G2 motor controller communication
 
-## Operating Modes
+## Radio Control Operating Modes
 
 - **Manual**: Direct radio control operation with PID steering assistance
 - **Automated**: Autonomous navigation with Pure Pursuit (in development)
 - **Paused/Standby**: System idle state
 
 ## Development Environment
-
-### Hardware Requirements
-- Raspberry Pi 5
-- Teensy 3.5
-- PlatformIO-compatible development setup
 
 ### Software Stack
 - **Languages**: C++ (Teensy), Python (RPi)
@@ -102,9 +99,9 @@ This repository contains the under development codebase for an outdoor robot pla
 ### Development Workflow
 1. Code editing on laptop using VSCode
 2. Commit changes to GitHub repository
-3. Pull updates from GitHub to Raspberry Pi 5
+3. From Raspberry Pi 5 on tractor pull updates from GitHub 
 4. Compile and upload Teensy code using PlatformIO CLI
-5. Deploy and test on robot platform
+5. Deploy and test on tractor robot platform
 
 ## Repository Structure
 
@@ -133,10 +130,9 @@ tractor2025/
 - Teensy 3.5
 
 ### Prerequisites - Radio Control Unit
-- Raspberry Pi 5 with ROS 2 installed
-- PlatformIO CLI for Teensy development
-- RTK base station configured and operational
 - Teensy 3.2
+- Custom designed PCB
+- Multiple components soldered to PCB (e.g. potentiometers, RGB LEDs, switch, pushbutton, etc.)
 
 ### Getting Started
 1. Join the Slack Group:
