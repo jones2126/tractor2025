@@ -47,6 +47,13 @@ class NavigationData:
         self.heading_valid = False
         self.position_valid = False
         
+        # Rate calculation variables
+        self.update_count = 0
+        self.rate_start_time = time.time()
+        self.current_rate_hz = 0.0
+        self.rate_history = []  # Store last 10 rate measurements
+        self.last_rate_calculation = time.time()
+        
     def update_from_csv(self, csv_line):
         """
         Update navigation data from CSV format:
@@ -71,11 +78,61 @@ class NavigationData:
             self.heading_valid = self.calculated_heading is not None
             self.position_valid = all([self.base_lat, self.base_lon])
             
+            # Update rate calculation
+            self.update_count += 1
+            self._calculate_update_rate()
+            
             return True
             
         except Exception as e:
             logger.error(f"Error parsing CSV data: {e}")
             return False
+    
+    def _calculate_update_rate(self):
+        """Calculate the GPS data update rate in Hz."""
+        current_time = time.time()
+        
+        # Calculate rate every 5 seconds
+        if current_time - self.last_rate_calculation >= 5.0:
+            elapsed_time = current_time - self.rate_start_time
+            
+            if elapsed_time > 0:
+                self.current_rate_hz = self.update_count / elapsed_time
+                
+                # Store in history (keep last 10 measurements)
+                self.rate_history.append(self.current_rate_hz)
+                if len(self.rate_history) > 10:
+                    self.rate_history.pop(0)
+                
+                # Reset counters for next measurement period
+                self.update_count = 0
+                self.rate_start_time = current_time
+                self.last_rate_calculation = current_time
+    
+    def get_average_rate_hz(self):
+        """Get the average update rate over the last 10 measurements."""
+        if not self.rate_history:
+            return 0.0
+        return sum(self.rate_history) / len(self.rate_history)
+    
+    def get_rate_stats(self):
+        """Get detailed rate statistics."""
+        if not self.rate_history:
+            return {
+                "current_hz": 0.0,
+                "average_hz": 0.0,
+                "min_hz": 0.0,
+                "max_hz": 0.0,
+                "measurements": 0
+            }
+        
+        return {
+            "current_hz": self.current_rate_hz,
+            "average_hz": self.get_average_rate_hz(),
+            "min_hz": min(self.rate_history),
+            "max_hz": max(self.rate_history),
+            "measurements": len(self.rate_history)
+        }
     
     def get_status_summary(self):
         """Get a human-readable status summary"""
@@ -97,7 +154,8 @@ class NavigationData:
             "lat": self.base_lat,
             "lon": self.base_lon,
             "heading": self.calculated_heading,
-            "altitude": self.base_altitude
+            "altitude": self.base_altitude,
+            "rate_stats": self.get_rate_stats()
         }
 
 def connect_to_gps_socket():
@@ -165,6 +223,22 @@ def navigation_control_loop(nav_data):
                 logger.info(f"Position Valid: {status['position_valid']}")
                 logger.info(f"Heading Valid: {status['heading_valid']}")
                 logger.info(f"Satellites: {status['satellites']}")
+                
+                # Report GPS data rates
+                rate_stats = status['rate_stats']
+                logger.info(f"📊 GPS Data Rate: {rate_stats['current_hz']:.2f} Hz (current)")
+                logger.info(f"📈 Average Rate: {rate_stats['average_hz']:.2f} Hz over {rate_stats['measurements']} measurements")
+                if rate_stats['measurements'] > 1:
+                    logger.info(f"📉 Rate Range: {rate_stats['min_hz']:.2f} - {rate_stats['max_hz']:.2f} Hz")
+                
+                # Rate health assessment
+                expected_rate = 5.0  # We expect 5Hz from the dual GPS client
+                if rate_stats['current_hz'] < expected_rate * 0.8:
+                    logger.warning(f"⚠️  GPS data rate is low! Expected ~{expected_rate}Hz, got {rate_stats['current_hz']:.2f}Hz")
+                elif rate_stats['current_hz'] > expected_rate * 1.2:
+                    logger.warning(f"⚠️  GPS data rate is unusually high! Expected ~{expected_rate}Hz, got {rate_stats['current_hz']:.2f}Hz")
+                else:
+                    logger.info(f"✅ GPS data rate is healthy ({rate_stats['current_hz']:.2f}Hz)")
                 
                 if status['position_valid']:
                     logger.info(f"Position: {status['lat']:.8f}, {status['lon']:.8f}")
@@ -247,9 +321,9 @@ def main():
                         if line.strip():
                             success = nav_data.update_from_csv(line.strip())
                             if success:
-                                # Optional: Log every GPS update (might be verbose)
-                                # logger.debug(f"GPS Update: {line.strip()}")
-                                pass
+                                # Optional: Log every GPS update with rate info (might be verbose)
+                                rate_stats = nav_data.get_rate_stats()
+                                logger.debug(f"GPS Update: Rate={rate_stats['current_hz']:.1f}Hz | {line.strip()}")
                             else:
                                 logger.warning(f"Failed to parse GPS data: {line.strip()}")
                                 
