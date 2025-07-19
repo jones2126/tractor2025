@@ -17,6 +17,11 @@ DeviceAddress sensor1 = {0x28, 0xFF, 0x7C, 0x65, 0x66, 0x14, 0x02, 0x0A};
 DeviceAddress sensor2 = {0x28, 0xFF, 0x21, 0x5D, 0x66, 0x14, 0x02, 0x27};
 DeviceAddress sensor3 = {0x28, 0xFF, 0xA7, 0x06, 0x66, 0x14, 0x01, 0xDE};
 
+// Function declarations
+String formatTemperatureHTML(const char* sensorName, DeviceAddress address, float offset);
+String formatTemperatureSerial(const char* sensorName, DeviceAddress address, float offset);
+
+
 OneWire oneWire(oneWireBus);
 DallasTemperature sensors(&oneWire);
 WebServer server(80);
@@ -120,6 +125,8 @@ void loop() {
     Serial.println(formatTemperatureSerial("Sensor 1", sensor1, offset1));
     Serial.println(formatTemperatureSerial("Sensor 2", sensor2, offset2));
     Serial.println(formatTemperatureSerial("Sensor 3", sensor3, offset3));
+    Serial.print("IP Address: ");
+    Serial.println(WiFi.localIP());    
     Serial.println("--------------------------");
   }
 }
