@@ -1,5 +1,3 @@
-Updated Arduino code to read temp monitors on ESP32
-
 #include <WiFi.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
