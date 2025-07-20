@@ -2,6 +2,8 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <WebServer.h>
+#include <WiFiUdp.h>
+#include <NTPClient.h>
 
 // Network credentials
 const char* ssid = "cui_bono";
@@ -19,10 +21,16 @@ DeviceAddress sensor3 = {0x28, 0xFF, 0xA7, 0x06, 0x66, 0x14, 0x01, 0xDE};
 String formatTemperatureHTML(const char* sensorName, DeviceAddress address, float offset);
 String formatTemperatureSerial(const char* sensorName, DeviceAddress address, float offset);
 String formatAverageTemperatureSerial();
+String getCurrentTime();
+String getWiFiSignalStrength();
 
 OneWire oneWire(oneWireBus);
 DallasTemperature sensors(&oneWire);
 WebServer server(80);
+
+// NTP setup
+WiFiUDP ntpUDP;
+NTPClient timeClient(ntpUDP, "pool.ntp.org", -14400, 60000); // UTC-4 (EDT) offset, update every 60 seconds
 
 // Hardcoded offsets (set to 0 for testing)
 const float offset1 = 0.0;
@@ -58,6 +66,11 @@ void setup() {
     Serial.println("\nConnected to WiFi");
     Serial.print("IP Address: ");
     Serial.println(WiFi.localIP());
+
+    // Initialize NTP client
+    timeClient.begin();
+    timeClient.update();
+    Serial.println("Time synchronized with NTP: " + getCurrentTime());
   }
 
   // Start the server
@@ -68,6 +81,8 @@ void setup() {
     readings += formatTemperatureHTML("Sensor 1", sensor1, offset1);
     readings += formatTemperatureHTML("Sensor 2", sensor2, offset2);
     readings += formatTemperatureHTML("Sensor 3", sensor3, offset3);
+    readings += "<br>Wi-Fi Signal: " + getWiFiSignalStrength() + "<br>";
+    readings += "Time: " + getCurrentTime() + "<br>";
 
     const char index_html[] PROGMEM = R"rawliteral(
       <!DOCTYPE html>
@@ -81,6 +96,7 @@ void setup() {
           p { font-size: 18px; color: #555; }
           .temp { font-weight: bold; color: #007BFF; }
           .error { color: red; }
+          .info { color: #666; }
         </style>
       </head>
       <body>
@@ -103,16 +119,18 @@ void loop() {
   server.handleClient();
 
   static unsigned long lastReadingTime = 0;
-  const unsigned long readingInterval = 5000;
+  const unsigned long readingInterval = 20000; // Set to 20 seconds to reduce NTP update frequency
 
   if (millis() - lastReadingTime >= readingInterval) {
     lastReadingTime = millis();
     sensors.requestTemperatures();
-    Serial.println("Temperature Readings (in Fahrenheit):");
+    timeClient.update(); // Update time periodically
+    Serial.println("Temperature Readings (in Fahrenheit) at " + getCurrentTime() + ":");
     Serial.println(formatTemperatureSerial("Sensor 1", sensor1, offset1));
     Serial.println(formatTemperatureSerial("Sensor 2", sensor2, offset2));
     Serial.println(formatTemperatureSerial("Sensor 3", sensor3, offset3));
     Serial.println(formatAverageTemperatureSerial());
+    Serial.println("Wi-Fi Signal: " + getWiFiSignalStrength());
     Serial.print("IP Address: ");
     Serial.println(WiFi.localIP());
     Serial.println("--------------------------");
@@ -126,7 +144,7 @@ String formatTemperatureHTML(const char* sensorName, DeviceAddress address, floa
   } else {
     float adjustedTempC = tempC + offset;
     float tempF = adjustedTempC * 9.0 / 5.0 + 32.0;
-    return String(sensorName) + ": <span class='temp'>" + String(tempF, 2) + " &deg;F</span><br>";
+    return String(sensorName) + ": <span class='temp'>" + String(tempF, 2) + " °F</span><br>";
   }
 }
 
@@ -156,5 +174,19 @@ String formatAverageTemperatureSerial() {
     return "Average: " + String(avgTempF, 2) + " °F";
   } else {
     return "Average: Error (No valid sensors)";
+  }
+}
+
+String getCurrentTime() {
+  timeClient.update(); // Ensure time is fresh
+  return timeClient.getFormattedTime(); // Returns HH:MM:SS in local time
+}
+
+String getWiFiSignalStrength() {
+  long rssi = WiFi.RSSI();
+  if (WiFi.status() == WL_CONNECTED) {
+    return String(rssi) + " dBm";
+  } else {
+    return "N/A dBm";
   }
 }
