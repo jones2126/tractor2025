@@ -6,8 +6,6 @@
 // Network credentials
 const char* ssid = "cui_bono";
 const char* password = "Andrew13";
-// const char* ssid = "ATTdyCrHey";
-// const char* password = "7rwy6zm5pxrg";
 
 // GPIO where the DS18B20 is connected
 const int oneWireBus = 16;
@@ -21,7 +19,6 @@ DeviceAddress sensor3 = {0x28, 0xFF, 0xA7, 0x06, 0x66, 0x14, 0x01, 0xDE};
 String formatTemperatureHTML(const char* sensorName, DeviceAddress address, float offset);
 String formatTemperatureSerial(const char* sensorName, DeviceAddress address, float offset);
 
-
 OneWire oneWire(oneWireBus);
 DallasTemperature sensors(&oneWire);
 WebServer server(80);
@@ -33,15 +30,20 @@ const float offset3 = -0.13;
 
 void setup() {
   Serial.begin(115200);
+  delay(1000); // Allow Serial Monitor to initialize
+  Serial.println("Starting ESP32...");
+
   sensors.begin();
+  Serial.print("Found ");
+  Serial.print(sensors.getDeviceCount());
+  Serial.println(" DS18B20 sensors");
 
-  // Set hostname
+  // Connect to WiFi
   WiFi.setHostname("ESP32-TemperatureSensor");
-
-  // Connect to WiFi with a timeout
+  Serial.println("Connecting to WiFi: " + String(ssid));
   WiFi.begin(ssid, password);
   unsigned long startAttemptTime = millis();
-  const unsigned long connectionTimeout = 30000; // 30 seconds
+  const unsigned long connectionTimeout = 30000;
 
   while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime < connectionTimeout) {
     delay(500);
@@ -49,15 +51,12 @@ void setup() {
   }
 
   if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("\nFailed to connect to WiFi. Restarting...");
-    ESP.restart(); // Restart the ESP32 to try again
+    Serial.println("\nFailed to connect to WiFi. Continuing without WiFi...");
+  } else {
+    Serial.println("\nConnected to WiFi");
+    Serial.print("IP Address: ");
+    Serial.println(WiFi.localIP());
   }
-
-  Serial.println("\nConnected to WiFi");
-
-  // Print the IP address
-  Serial.print("IP Address: ");
-  Serial.println(WiFi.localIP());
 
   // Start the server
   server.on("/", HTTP_GET, [&]() {
@@ -67,33 +66,18 @@ void setup() {
     readings += formatTemperatureHTML("Sensor 2", sensor2, offset2);
     readings += formatTemperatureHTML("Sensor 3", sensor3, offset3);
 
-    String html = R"rawliteral(
+    const char index_html[] PROGMEM = R"rawliteral(
       <!DOCTYPE html>
       <html>
       <head>
         <title>ESP32 Temperature</title>
-        <meta http-equiv="refresh" content="5"> <!-- Auto-refresh every 5 seconds -->
+        <meta http-equiv="refresh" content="5">
         <style>
-          body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            text-align: center;
-            background-color: #f7f7f7;
-          }
-          h1 {
-            color: #333;
-          }
-          p {
-            font-size: 18px;
-            color: #555;
-          }
-          .temp {
-            font-weight: bold;
-            color: #007BFF;
-          }
-          .error {
-            color: red;
-          }
+          body { font-family: Arial, sans-serif; margin: 20px; text-align: center; background-color: #f7f7f7; }
+          h1 { color: #333; }
+          p { font-size: 18px; color: #555; }
+          .temp { font-weight: bold; color: #007BFF; }
+          .error { color: red; }
         </style>
       </head>
       <body>
@@ -103,6 +87,7 @@ void setup() {
       </html>
     )rawliteral";
 
+    String html = index_html;
     html.replace("%READINGS%", readings);
     server.send(200, "text/html", html);
   });
@@ -114,7 +99,6 @@ void setup() {
 void loop() {
   server.handleClient();
 
-  // Print sensor values to Serial Monitor every 5 seconds
   static unsigned long lastReadingTime = 0;
   const unsigned long readingInterval = 5000;
 
@@ -126,12 +110,12 @@ void loop() {
     Serial.println(formatTemperatureSerial("Sensor 2", sensor2, offset2));
     Serial.println(formatTemperatureSerial("Sensor 3", sensor3, offset3));
     Serial.print("IP Address: ");
-    Serial.println(WiFi.localIP());    
+    Serial.println(WiFi.localIP());
     Serial.println("--------------------------");
   }
 }
 
-// Function to format temperature for the web (with HTML tags)
+// Function definitions remain unchanged
 String formatTemperatureHTML(const char* sensorName, DeviceAddress address, float offset) {
   float tempC = sensors.getTempC(address);
   if (tempC == DEVICE_DISCONNECTED_C) {
@@ -143,7 +127,6 @@ String formatTemperatureHTML(const char* sensorName, DeviceAddress address, floa
   }
 }
 
-// Function to format temperature for Serial Monitor (without HTML tags)
 String formatTemperatureSerial(const char* sensorName, DeviceAddress address, float offset) {
   float tempC = sensors.getTempC(address);
   if (tempC == DEVICE_DISCONNECTED_C) {
@@ -154,4 +137,3 @@ String formatTemperatureSerial(const char* sensorName, DeviceAddress address, fl
     return String(sensorName) + ": " + String(tempF, 2) + " °F";
   }
 }
-
