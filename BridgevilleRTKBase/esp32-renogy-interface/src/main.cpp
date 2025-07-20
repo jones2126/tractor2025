@@ -32,7 +32,7 @@ const float offset3 = 0.0;
 void setup() {
   Serial.begin(115200);
   Serial.flush(); // Clear serial buffer
-  delay(2000); // Allow Serial Monitor to stabilize
+  delay(10000); // Allow Serial Monitor to stabilize
   Serial.println("Starting ESP32...");
 
   sensors.begin();
