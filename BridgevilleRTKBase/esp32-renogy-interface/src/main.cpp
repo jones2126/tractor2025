@@ -18,19 +18,21 @@ DeviceAddress sensor3 = {0x28, 0xFF, 0xA7, 0x06, 0x66, 0x14, 0x01, 0xDE};
 // Function declarations
 String formatTemperatureHTML(const char* sensorName, DeviceAddress address, float offset);
 String formatTemperatureSerial(const char* sensorName, DeviceAddress address, float offset);
+String formatAverageTemperatureSerial();
 
 OneWire oneWire(oneWireBus);
 DallasTemperature sensors(&oneWire);
 WebServer server(80);
 
-// Hardcoded offsets
-const float offset1 = 0.02;
-const float offset2 = 0.11;
-const float offset3 = -0.13;
+// Hardcoded offsets (set to 0 for testing)
+const float offset1 = 0.0;
+const float offset2 = 0.0;
+const float offset3 = 0.0;
 
 void setup() {
   Serial.begin(115200);
-  delay(1000); // Allow Serial Monitor to initialize
+  Serial.flush(); // Clear serial buffer
+  delay(2000); // Allow Serial Monitor to stabilize
   Serial.println("Starting ESP32...");
 
   sensors.begin();
@@ -60,6 +62,7 @@ void setup() {
 
   // Start the server
   server.on("/", HTTP_GET, [&]() {
+    Serial.println("Received HTTP request");
     sensors.requestTemperatures();
     String readings;
     readings += formatTemperatureHTML("Sensor 1", sensor1, offset1);
@@ -109,13 +112,13 @@ void loop() {
     Serial.println(formatTemperatureSerial("Sensor 1", sensor1, offset1));
     Serial.println(formatTemperatureSerial("Sensor 2", sensor2, offset2));
     Serial.println(formatTemperatureSerial("Sensor 3", sensor3, offset3));
+    Serial.println(formatAverageTemperatureSerial());
     Serial.print("IP Address: ");
     Serial.println(WiFi.localIP());
     Serial.println("--------------------------");
   }
 }
 
-// Function definitions remain unchanged
 String formatTemperatureHTML(const char* sensorName, DeviceAddress address, float offset) {
   float tempC = sensors.getTempC(address);
   if (tempC == DEVICE_DISCONNECTED_C) {
@@ -135,5 +138,23 @@ String formatTemperatureSerial(const char* sensorName, DeviceAddress address, fl
     float adjustedTempC = tempC + offset;
     float tempF = adjustedTempC * 9.0 / 5.0 + 32.0;
     return String(sensorName) + ": " + String(tempF, 2) + " °F";
+  }
+}
+
+String formatAverageTemperatureSerial() {
+  float tempC1 = sensors.getTempC(sensor1) + offset1;
+  float tempC2 = sensors.getTempC(sensor2) + offset2;
+  float tempC3 = sensors.getTempC(sensor3) + offset3;
+  int validSensors = 0;
+  float sumTempC = 0.0;
+  if (tempC1 != DEVICE_DISCONNECTED_C) { sumTempC += tempC1; validSensors++; }
+  if (tempC2 != DEVICE_DISCONNECTED_C) { sumTempC += tempC2; validSensors++; }
+  if (tempC3 != DEVICE_DISCONNECTED_C) { sumTempC += tempC3; validSensors++; }
+  if (validSensors > 0) {
+    float avgTempC = sumTempC / validSensors;
+    float avgTempF = avgTempC * 9.0 / 5.0 + 32.0;
+    return "Average: " + String(avgTempF, 2) + " °F";
+  } else {
+    return "Average: Error (No valid sensors)";
   }
 }
