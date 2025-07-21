@@ -10,7 +10,7 @@ const char* ssid = "cui_bono";
 const char* password = "Andrew13";
 
 // GPIO where the DS18B20 is connected
-const int oneWireBus = 16;
+const int oneWireBus = 4;  // GPIO4
 
 // DS18B20 sensor addresses
 DeviceAddress sensor1 = {0x28, 0xFF, 0x7C, 0x65, 0x66, 0x14, 0x02, 0x0A};
