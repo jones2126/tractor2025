@@ -1,16 +1,20 @@
 #include <Arduino.h>
 #include <HardwareSerial.h>
 
-// RS485 Communication pins
-#define RS485_RX 17
-#define RS485_TX 16
-#define RS485_DE_RE 4  // Direction/Receive Enable (tied together)
+// RS232 Communication pins (corrected from RS485)
+#define RS232_RX 17
+#define RS232_TX 16
 
-// Renogy Modbus device address (default is usually 1)
+// Renogy device address (default is usually 1)
 #define RENOGY_ADDRESS 1
 
-// Create a hardware serial instance for RS485
-HardwareSerial rs485Serial(2); // Use UART2
+// Create a hardware serial instance
+HardwareSerial renogySerial(2); // Use UART2
+
+// Function declarations (forward declarations)
+void queryRenogyRegister(uint16_t registerAddress, const char* description);
+void sendRS232Message(uint8_t* message, int length);
+uint16_t calculateCRC16(uint8_t* data, int length);
 
 void setup() {
   // Initialize serial for debugging
@@ -18,15 +22,11 @@ void setup() {
   Serial.println("Renogy Wanderer Query Test");
   Serial.println("===========================");
   
-  // Initialize RS485 communication
-  rs485Serial.begin(9600, SERIAL_8N1, RS485_RX, RS485_TX);
-  
-  // Set up Direction/Receive Enable pin
-  pinMode(RS485_DE_RE, OUTPUT);
-  digitalWrite(RS485_DE_RE, LOW); // Start in receive mode
+  // Initialize RS232 communication
+  renogySerial.begin(9600, SERIAL_8N1, RS232_RX, RS232_TX);
   
   delay(2000);
-  Serial.println("RS485 initialized. Starting queries...");
+  Serial.println("RS232 initialized. Starting queries...");
 }
 
 void loop() {
@@ -70,21 +70,21 @@ void queryRenogyRegister(uint16_t registerAddress, const char* description) {
   query[7] = (crc >> 8) & 0xFF; // CRC high byte
   
   // Send query
-  sendRS485Message(query, 8);
+  sendRS232Message(query, 8);
   
   // Wait for response
   delay(100);
   
   // Read response
-  if (rs485Serial.available()) {
+  if (renogySerial.available()) {
     uint8_t response[8];
     int bytesRead = 0;
     
     // Read available bytes (timeout after 500ms)
     unsigned long startTime = millis();
     while (bytesRead < 7 && (millis() - startTime) < 500) {
-      if (rs485Serial.available()) {
-        response[bytesRead] = rs485Serial.read();
+      if (renogySerial.available()) {
+        response[bytesRead] = renogySerial.read();
         bytesRead++;
       }
     }
@@ -140,18 +140,10 @@ void queryRenogyRegister(uint16_t registerAddress, const char* description) {
   }
 }
 
-void sendRS485Message(uint8_t* message, int length) {
-  // Set to transmit mode
-  digitalWrite(RS485_DE_RE, HIGH);
-  delayMicroseconds(10); // Small delay for mode switching
-  
-  // Send message
-  rs485Serial.write(message, length);
-  rs485Serial.flush(); // Wait for transmission to complete
-  
-  // Set back to receive mode
-  delayMicroseconds(10);
-  digitalWrite(RS485_DE_RE, LOW);
+void sendRS232Message(uint8_t* message, int length) {
+  // Send message (no direction control needed for RS232)
+  renogySerial.write(message, length);
+  renogySerial.flush(); // Wait for transmission to complete
   
   // Debug: print sent message
   Serial.print("Sent: ");
