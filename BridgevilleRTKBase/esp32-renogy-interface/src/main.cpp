@@ -1,192 +1,181 @@
-#include <WiFi.h>
-#include <OneWire.h>
-#include <DallasTemperature.h>
-#include <WebServer.h>
-#include <WiFiUdp.h>
-#include <NTPClient.h>
+#include <Arduino.h>
+#include <HardwareSerial.h>
 
-// Network credentials
-const char* ssid = "cui_bono";
-const char* password = "Andrew13";
+// RS485 Communication pins
+#define RS485_RX 17
+#define RS485_TX 16
+#define RS485_DE_RE 4  // Direction/Receive Enable (tied together)
 
-// GPIO where the DS18B20 is connected
-const int oneWireBus = 4;  // GPIO4
+// Renogy Modbus device address (default is usually 1)
+#define RENOGY_ADDRESS 1
 
-// DS18B20 sensor addresses
-DeviceAddress sensor1 = {0x28, 0xFF, 0x7C, 0x65, 0x66, 0x14, 0x02, 0x0A};
-DeviceAddress sensor2 = {0x28, 0xFF, 0x21, 0x5D, 0x66, 0x14, 0x02, 0x27};
-DeviceAddress sensor3 = {0x28, 0xFF, 0xA7, 0x06, 0x66, 0x14, 0x01, 0xDE};
-
-// Function declarations
-String formatTemperatureHTML(const char* sensorName, DeviceAddress address, float offset);
-String formatTemperatureSerial(const char* sensorName, DeviceAddress address, float offset);
-String formatAverageTemperatureSerial();
-String getCurrentTime();
-String getWiFiSignalStrength();
-
-OneWire oneWire(oneWireBus);
-DallasTemperature sensors(&oneWire);
-WebServer server(80);
-
-// NTP setup
-WiFiUDP ntpUDP;
-NTPClient timeClient(ntpUDP, "pool.ntp.org", -14400, 60000); // UTC-4 (EDT) offset, update every 60 seconds
-
-// Hardcoded offsets (set to 0 for testing)
-const float offset1 = 0.0;
-const float offset2 = 0.0;
-const float offset3 = 0.0;
+// Create a hardware serial instance for RS485
+HardwareSerial rs485Serial(2); // Use UART2
 
 void setup() {
+  // Initialize serial for debugging
   Serial.begin(115200);
-  Serial.flush(); // Clear serial buffer
-  delay(2000); // Allow Serial Monitor to stabilize, there will still be some unprintable characters at boot.
-  Serial.println("Starting ESP32...");
-
-  sensors.begin();
-  Serial.print("Found ");
-  Serial.print(sensors.getDeviceCount());
-  Serial.println(" DS18B20 sensors");
-
-  // Connect to WiFi
-  WiFi.setHostname("ESP32-TemperatureSensor");
-  Serial.println("Connecting to WiFi: " + String(ssid));
-  WiFi.begin(ssid, password);
-  unsigned long startAttemptTime = millis();
-  const unsigned long connectionTimeout = 30000;
-
-  while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime < connectionTimeout) {
-    delay(500);
-    Serial.print(".");
-  }
-
-  if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("\nFailed to connect to WiFi. Continuing without WiFi...");
-  } else {
-    Serial.println("\nConnected to WiFi");
-    Serial.print("IP Address: ");
-    Serial.println(WiFi.localIP());
-
-    // Initialize NTP client
-    timeClient.begin();
-    timeClient.update();
-    Serial.println("Time synchronized with NTP: " + getCurrentTime());
-  }
-
-  // Start the server
-  server.on("/", HTTP_GET, [&]() {
-    Serial.println("Received HTTP request");
-    sensors.requestTemperatures();
-    String readings;
-    readings += formatTemperatureHTML("Sensor 1", sensor1, offset1);
-    readings += formatTemperatureHTML("Sensor 2", sensor2, offset2);
-    readings += formatTemperatureHTML("Sensor 3", sensor3, offset3);
-    readings += "<br>Wi-Fi Signal: " + getWiFiSignalStrength() + "<br>";
-    readings += "Time: " + getCurrentTime() + "<br>";
-
-    const char index_html[] PROGMEM = R"rawliteral(
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>ESP32 Temperature</title>
-        <meta http-equiv="refresh" content="5">
-        <style>
-          body { font-family: Arial, sans-serif; margin: 20px; text-align: center; background-color: #f7f7f7; }
-          h1 { color: #333; }
-          p { font-size: 18px; color: #555; }
-          .temp { font-weight: bold; color: #007BFF; }
-          .error { color: red; }
-          .info { color: #666; }
-        </style>
-      </head>
-      <body>
-        <h1>ESP32 Temperature Readings</h1>
-        <p>%READINGS%</p>
-      </body>
-      </html>
-    )rawliteral";
-
-    String html = index_html;
-    html.replace("%READINGS%", readings);
-    server.send(200, "text/html", html);
-  });
-
-  server.begin();
-  Serial.println("HTTP server started");
+  Serial.println("Renogy Wanderer Query Test");
+  Serial.println("===========================");
+  
+  // Initialize RS485 communication
+  rs485Serial.begin(9600, SERIAL_8N1, RS485_RX, RS485_TX);
+  
+  // Set up Direction/Receive Enable pin
+  pinMode(RS485_DE_RE, OUTPUT);
+  digitalWrite(RS485_DE_RE, LOW); // Start in receive mode
+  
+  delay(2000);
+  Serial.println("RS485 initialized. Starting queries...");
 }
 
 void loop() {
-  server.handleClient();
-
-  static unsigned long lastReadingTime = 0;
-  const unsigned long readingInterval = 20000; // Set to 20 seconds to reduce NTP update frequency
-
-  if (millis() - lastReadingTime >= readingInterval) {
-    lastReadingTime = millis();
-    sensors.requestTemperatures();
-    timeClient.update(); // Update time periodically
-    Serial.println("Temperature Readings (in Fahrenheit) at " + getCurrentTime() + ":");
-    Serial.println(formatTemperatureSerial("Sensor 1", sensor1, offset1));
-    Serial.println(formatTemperatureSerial("Sensor 2", sensor2, offset2));
-    Serial.println(formatTemperatureSerial("Sensor 3", sensor3, offset3));
-    Serial.println(formatAverageTemperatureSerial());
-    Serial.println("Wi-Fi Signal: " + getWiFiSignalStrength());
-    Serial.print("IP Address: ");
-    Serial.println(WiFi.localIP());
-    Serial.println("--------------------------");
-  }
+  // Query basic status registers
+  queryRenogyRegister(0x100A, "Battery Voltage");      // Battery voltage
+  delay(1000);
+  
+  queryRenogyRegister(0x100B, "Charging Current");     // Charging current  
+  delay(1000);
+  
+  queryRenogyRegister(0x100C, "Battery SOC");          // State of charge
+  delay(1000);
+  
+  queryRenogyRegister(0x100D, "Battery Temp");         // Battery temperature
+  delay(1000);
+  
+  queryRenogyRegister(0x1011, "Solar Voltage");        // Solar panel voltage
+  delay(1000);
+  
+  queryRenogyRegister(0x1012, "Solar Current");        // Solar panel current
+  delay(1000);
+  
+  Serial.println("------------------------");
+  delay(5000); // Wait 5 seconds before next round
 }
 
-String formatTemperatureHTML(const char* sensorName, DeviceAddress address, float offset) {
-  float tempC = sensors.getTempC(address);
-  if (tempC == DEVICE_DISCONNECTED_C) {
-    return String(sensorName) + ": <span class='error'>Error (Sensor not found)</span><br>";
+void queryRenogyRegister(uint16_t registerAddress, const char* description) {
+  uint8_t query[8];
+  
+  // Build Modbus RTU query: [Address][Function][Register High][Register Low][Count High][Count Low][CRC Low][CRC High]
+  query[0] = RENOGY_ADDRESS;    // Device address
+  query[1] = 0x03;              // Function code: Read Holding Registers
+  query[2] = (registerAddress >> 8) & 0xFF;  // Register address high byte
+  query[3] = registerAddress & 0xFF;         // Register address low byte  
+  query[4] = 0x00;              // Number of registers high byte
+  query[5] = 0x01;              // Number of registers low byte (read 1 register)
+  
+  // Calculate CRC16
+  uint16_t crc = calculateCRC16(query, 6);
+  query[6] = crc & 0xFF;        // CRC low byte
+  query[7] = (crc >> 8) & 0xFF; // CRC high byte
+  
+  // Send query
+  sendRS485Message(query, 8);
+  
+  // Wait for response
+  delay(100);
+  
+  // Read response
+  if (rs485Serial.available()) {
+    uint8_t response[8];
+    int bytesRead = 0;
+    
+    // Read available bytes (timeout after 500ms)
+    unsigned long startTime = millis();
+    while (bytesRead < 7 && (millis() - startTime) < 500) {
+      if (rs485Serial.available()) {
+        response[bytesRead] = rs485Serial.read();
+        bytesRead++;
+      }
+    }
+    
+    if (bytesRead >= 7) {
+      // Parse response: [Address][Function][Byte Count][Data High][Data Low][CRC Low][CRC High]
+      if (response[0] == RENOGY_ADDRESS && response[1] == 0x03) {
+        uint16_t value = (response[3] << 8) | response[4];
+        
+        Serial.print(description);
+        Serial.print(": ");
+        
+        // Convert raw value based on register type
+        if (strstr(description, "Voltage")) {
+          Serial.print(value / 10.0, 1);
+          Serial.println(" V");
+        } else if (strstr(description, "Current")) {
+          Serial.print(value / 100.0, 2);
+          Serial.println(" A");
+        } else if (strstr(description, "SOC")) {
+          Serial.print(value);
+          Serial.println(" %");
+        } else if (strstr(description, "Temp")) {
+          // Temperature might be in different format, adjust as needed
+          Serial.print(value);
+          Serial.println(" (raw)");
+        } else {
+          Serial.print(value);
+          Serial.println(" (raw)");
+        }
+      } else {
+        Serial.print(description);
+        Serial.println(": Invalid response");
+      }
+    } else {
+      Serial.print(description);
+      Serial.println(": No response or timeout");
+    }
+    
+    // Print raw response for debugging
+    Serial.print("Raw response: ");
+    for (int i = 0; i < bytesRead; i++) {
+      Serial.print("0x");
+      if (response[i] < 0x10) Serial.print("0");
+      Serial.print(response[i], HEX);
+      Serial.print(" ");
+    }
+    Serial.println();
+    
   } else {
-    float adjustedTempC = tempC + offset;
-    float tempF = adjustedTempC * 9.0 / 5.0 + 32.0;
-    return String(sensorName) + ": <span class='temp'>" + String(tempF, 2) + " °F</span><br>";
+    Serial.print(description);
+    Serial.println(": No data received");
   }
 }
 
-String formatTemperatureSerial(const char* sensorName, DeviceAddress address, float offset) {
-  float tempC = sensors.getTempC(address);
-  if (tempC == DEVICE_DISCONNECTED_C) {
-    return String(sensorName) + ": Error (Sensor not found)";
-  } else {
-    float adjustedTempC = tempC + offset;
-    float tempF = adjustedTempC * 9.0 / 5.0 + 32.0;
-    return String(sensorName) + ": " + String(tempF, 2) + " °F";
+void sendRS485Message(uint8_t* message, int length) {
+  // Set to transmit mode
+  digitalWrite(RS485_DE_RE, HIGH);
+  delayMicroseconds(10); // Small delay for mode switching
+  
+  // Send message
+  rs485Serial.write(message, length);
+  rs485Serial.flush(); // Wait for transmission to complete
+  
+  // Set back to receive mode
+  delayMicroseconds(10);
+  digitalWrite(RS485_DE_RE, LOW);
+  
+  // Debug: print sent message
+  Serial.print("Sent: ");
+  for (int i = 0; i < length; i++) {
+    Serial.print("0x");
+    if (message[i] < 0x10) Serial.print("0");
+    Serial.print(message[i], HEX);
+    Serial.print(" ");
   }
+  Serial.println();
 }
 
-String formatAverageTemperatureSerial() {
-  float tempC1 = sensors.getTempC(sensor1) + offset1;
-  float tempC2 = sensors.getTempC(sensor2) + offset2;
-  float tempC3 = sensors.getTempC(sensor3) + offset3;
-  int validSensors = 0;
-  float sumTempC = 0.0;
-  if (tempC1 != DEVICE_DISCONNECTED_C) { sumTempC += tempC1; validSensors++; }
-  if (tempC2 != DEVICE_DISCONNECTED_C) { sumTempC += tempC2; validSensors++; }
-  if (tempC3 != DEVICE_DISCONNECTED_C) { sumTempC += tempC3; validSensors++; }
-  if (validSensors > 0) {
-    float avgTempC = sumTempC / validSensors;
-    float avgTempF = avgTempC * 9.0 / 5.0 + 32.0;
-    return "Average: " + String(avgTempF, 2) + " °F";
-  } else {
-    return "Average: Error (No valid sensors)";
+uint16_t calculateCRC16(uint8_t* data, int length) {
+  uint16_t crc = 0xFFFF;
+  
+  for (int i = 0; i < length; i++) {
+    crc ^= data[i];
+    for (int j = 0; j < 8; j++) {
+      if (crc & 0x0001) {
+        crc = (crc >> 1) ^ 0xA001;
+      } else {
+        crc = crc >> 1;
+      }
+    }
   }
-}
-
-String getCurrentTime() {
-  timeClient.update(); // Ensure time is fresh
-  return timeClient.getFormattedTime(); // Returns HH:MM:SS in local time
-}
-
-String getWiFiSignalStrength() {
-  long rssi = WiFi.RSSI();
-  if (WiFi.status() == WL_CONNECTED) {
-    return String(rssi) + " dBm";
-  } else {
-    return "N/A dBm";
-  }
+  return crc;
 }
