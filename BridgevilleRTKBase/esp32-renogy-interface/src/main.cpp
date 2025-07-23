@@ -1,46 +1,56 @@
 #include <Arduino.h>
+#include <ModbusMaster.h>
 
-// RS232 Communication pins
-#define RS232_RX 17
-#define RS232_TX 16
+// RS232 Communication pins (matching your setup)
+#define RXD2 17
+#define TXD2 16
 
-// Create a hardware serial instance
-HardwareSerial renogySerial(2); // Use UART2
+// Modbus address (try 255 as per GitHub script, fallback to 1)
+#define MODBUS_ADDRESS 255
+
+// Create Modbus instance
+ModbusMaster node;
+
+// Create a second serial interface for Modbus
+HardwareSerial Serial2(2); // Use UART2
 
 void setup() {
   delay(1000); // Wait for serial monitor to connect
   Serial.begin(115200);
-  Serial.println("ESP32 Test: Starting...");
+  Serial.println("ESP32 Renogy Test: Starting...");
 
-  // Clear any residual data in the serial buffer
+  // Clear residual data in Serial buffer
   while (Serial.available()) {
     Serial.read();
   }
 
-  Serial.println("after Serial.available...");
+  // Initialize Modbus serial
+  Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2);
+  Serial.println("Serial2 initialized for Modbus...");
 
-  // Attempt to initialize RS232 communication
-  renogySerial.begin(9600, SERIAL_8N1, RS232_RX, RS232_TX);
-
-  Serial.println("renogySerial...");  
-  // // Test if renogySerial is operational
-  // renogySerial.write("Test"); // Attempt to write to renogySerial
-  // renogySerial.flush();      // Wait for transmission to complete
-  // delay(100);                // Short delay to allow any response
-
-  // Check if renogySerial is receiving any unexpected data (indicating a wiring or device issue)
-  if (renogySerial.available()) {
-    Serial.println("Error: Unexpected data on renogySerial. Check RS232 wiring or device.");
-    while (renogySerial.available()) {
-      Serial.print((char)renogySerial.read()); // Print unexpected data for debugging
-    }
-    Serial.println();
-  } else {
-    Serial.println("renogySerial initialized successfully.");
-  }
+  // Initialize Modbus communication
+  node.begin(MODBUS_ADDRESS, Serial2);
+  Serial.println("Modbus initialized with address: " + String(MODBUS_ADDRESS));
 }
 
 void loop() {
-  Serial.println("ESP32 Test: Loop running...");
-  delay(1000);
+  // Read battery voltage register (0x101, single register)
+  uint8_t result = node.readHoldingRegisters(0x101, 1);
+
+  if (result == node.ku8MBSuccess) {
+    uint16_t raw_value = node.getResponseBuffer(0);
+    float battery_voltage = raw_value * 0.1; // Convert to volts (per GitHub script scaling)
+    Serial.println("Battery Voltage: " + String(battery_voltage, 1) + " V");
+  } else {
+    Serial.print("Failed to read battery voltage. Error code: 0x");
+    Serial.println(result, HEX);
+    if (result == 0xE2) {
+      Serial.println("Error: Modbus timeout. Check RS232 wiring or device power.");
+    } else if (result == 0xE1) {
+      Serial.println("Error: Invalid response. Check Modbus address or device compatibility.");
+    }
+  }
+
+  Serial.println("---");
+  delay(2000); // Wait 2 seconds before next read
 }
