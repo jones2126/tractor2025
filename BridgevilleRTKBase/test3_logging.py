@@ -1,6 +1,6 @@
 from pymodbus.client.serial import ModbusSerialClient
 
-# Create the RTU client (no 'method' argument in pymodbus ≥ 3.x)
+# Create Modbus RTU client
 client = ModbusSerialClient(
     port="/dev/ttyUSB0",
     baudrate=9600,
@@ -17,8 +17,8 @@ if not client.connect():
 
 print("Connected to Renogy controller.")
 
-# Attempt to read 1 holding register starting at address 0
-response = client.read_holding_registers(address=0, count=1, unit=1)
+# Try reading 1 register at address 0 (usually battery voltage)
+response = client.read_holding_registers(address=0, count=1, slave=1)
 
 if response.isError():
     print("Modbus error:", response)
