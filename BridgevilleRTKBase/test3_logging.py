@@ -1,30 +1,30 @@
 from pymodbus.client.serial import ModbusSerialClient
 
-# Create Modbus RTU client
+# Create Modbus client with correct serial settings
 client = ModbusSerialClient(
-    port="/dev/ttyUSB0",
+    port="/dev/ttyUSB0",  # your FTDI adapter
     baudrate=9600,
+    parity='N',
     stopbits=1,
     bytesize=8,
-    parity="N",
-    timeout=1
+    timeout=2
 )
 
-# Connect
-if not client.connect():
-    print("Failed to connect to /dev/ttyUSB0")
-    exit(1)
+# Connect to the controller
+if client.connect():
+    print("Connected to Renogy controller.")
 
-print("Connected to Renogy controller.")
+    try:
+        # Use slave ID 255
+        response = client.read_holding_registers(address=0, count=1, slave=255)
 
-# Try reading 1 register at address 0 (usually battery voltage)
-response = client.read_holding_registers(address=0, count=1, slave=1)
-
-if response.isError():
-    print("Modbus error:", response)
+        if response.isError():
+            print(f"Modbus Error: {response}")
+        else:
+            print(f"Registers: {response.registers}")
+    except Exception as e:
+        print(f"Exception: {e}")
+    finally:
+        client.close()
 else:
-    value = response.registers[0]
-    print("Raw value:", value)
-    print("Battery voltage:", value / 100.0, "V")
-
-client.close()
+    print("Failed to connect to controller.")
