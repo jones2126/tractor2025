@@ -11,9 +11,6 @@
 // Create Modbus instance
 ModbusMaster node;
 
-// Create a second serial interface for Modbus
-HardwareSerial Serial2(2); // Use UART2
-
 void setup() {
   delay(1000); // Wait for serial monitor to connect
   Serial.begin(115200);
@@ -24,7 +21,7 @@ void setup() {
     Serial.read();
   }
 
-  // Initialize Modbus serial
+  // Initialize Modbus serial using pre-defined Serial2
   Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2);
   Serial.println("Serial2 initialized for Modbus...");
 
