@@ -1,30 +1,28 @@
 from pymodbus.client.serial import ModbusSerialClient
 
-# Create Modbus client with correct serial settings
+# Setup serial connection
 client = ModbusSerialClient(
-    port="/dev/ttyUSB0",  # your FTDI adapter
+    port="/dev/ttyUSB0",  # Adjust if needed
     baudrate=9600,
     parity='N',
     stopbits=1,
     bytesize=8,
-    timeout=2
+    timeout=1
 )
 
-# Connect to the controller
+print("Scanning Modbus slave IDs...")
 if client.connect():
-    print("Connected to Renogy controller.")
-
-    try:
-        # Use slave ID 255
-        response = client.read_holding_registers(address=0, count=1, slave=255)
-
-        if response.isError():
-            print(f"Modbus Error: {response}")
-        else:
-            print(f"Registers: {response.registers}")
-    except Exception as e:
-        print(f"Exception: {e}")
-    finally:
-        client.close()
+    for slave_id in range(1, 256):
+        print(f"Trying ID {slave_id}...", end="")
+        try:
+            response = client.read_holding_registers(address=0, count=1, slave=slave_id)
+            if not response.isError():
+                print(f" SUCCESS — Got response: {response.registers}")
+                break
+            else:
+                print(" no response.")
+        except Exception as e:
+            print(f" error: {e}")
+    client.close()
 else:
-    print("Failed to connect to controller.")
+    print("Failed to open serial connection.")
