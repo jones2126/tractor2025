@@ -5,6 +5,10 @@
 #define RXD2 17
 #define TXD2 16
 
+// Default Modbus addresses to try for reading controller address
+#define DEFAULT_ADDRESS_1 1   // From Node.js example
+#define DEFAULT_ADDRESS_2 255 // From GitHub Arduino example
+
 // Create Modbus instance
 ModbusMaster node;
 
@@ -47,27 +51,45 @@ void loop() {
   static bool addressFound = false;
   static uint8_t workingAddress = 0;
 
-  // Scan addresses if none found
+  // Try reading controller's Modbus address from register 0x01A
   if (!addressFound) {
-    Serial.println("Scanning Modbus addresses 1 to 247...");
+    Serial.println("Attempting to read controller Modbus address from 0x01A...");
+    for (uint8_t addr : {DEFAULT_ADDRESS_1, DEFAULT_ADDRESS_2}) {
+      Serial.println("Trying default address: " + String(addr));
+      node.begin(addr, Serial2);
+      uint8_t result = node.readHoldingRegisters(0x01A, 1);
+      if (result == node.ku8MBSuccess) {
+        workingAddress = node.getResponseBuffer(0);
+        addressFound = true;
+        Serial.println("Success! Controller Modbus address: " + String(workingAddress));
+        break;
+      } else {
+        Serial.println("Failed to read 0x01A at address " + String(addr) + ". Error code: 0x" + String(result, HEX));
+      }
+      delay(500);
+    }
+  }
+
+  // If address found, use it; otherwise, scan 1 to 247
+  if (addressFound) {
+    Serial.println("Using Modbus address: " + String(workingAddress));
+    node.begin(workingAddress, Serial2);
+    testModbusRead(workingAddress, addressFound, workingAddress);
+    delay(2000);
+  } else {
+    Serial.println("No controller address found. Scanning Modbus addresses 1 to 247...");
     for (uint8_t address = 1; address <= 247 && !addressFound; address++) {
       Serial.print("Testing Modbus address: ");
       Serial.println(address);
       node.begin(address, Serial2);
       testModbusRead(address, addressFound, workingAddress);
-      delay(500); // Short delay between addresses
+      delay(250); // Short delay for faster scanning
     }
     if (!addressFound) {
       Serial.println("No working address found. Retrying in 5 seconds...");
       Serial.println("---");
       delay(5000);
     }
-  } else {
-    // Use working address to repeatedly query
-    Serial.println("Using working Modbus address: " + String(workingAddress));
-    node.begin(workingAddress, Serial2);
-    testModbusRead(workingAddress, addressFound, workingAddress);
-    delay(2000); // Query every 2 seconds
   }
 }
 
@@ -90,17 +112,12 @@ void testModbusRead(uint8_t address, bool& found, uint8_t& workingAddress) {
     uint16_t raw_value = node.getResponseBuffer(0);
     float battery_voltage = raw_value * 0.1; // Convert to volts
     Serial.println("Success! Battery Voltage: " + String(battery_voltage, 1) + " V at address " + String(address));
-    found = true; // Stop scanning
-    workingAddress = address; // Store working address
+    found = true;
+    workingAddress = address;
   } else {
     Serial.print("Failed at address ");
     Serial.print(address);
     Serial.print(". Error code: 0x");
     Serial.println(result, HEX);
-    if (result == 0xE2) {
-      Serial.println("Error: Modbus timeout. Check RS232 wiring, device power, or address.");
-    } else if (result == 0xE1) {
-      Serial.println("Error: Invalid response. Possible device mismatch.");
-    }
   }
 }
