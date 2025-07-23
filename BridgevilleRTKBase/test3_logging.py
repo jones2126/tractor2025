@@ -1,28 +1,26 @@
 from pymodbus.client.serial import ModbusSerialClient
 
-# Setup serial connection
 client = ModbusSerialClient(
-    port="/dev/ttyUSB0",  # Adjust if needed
+    port='/dev/ttyUSB0',
     baudrate=9600,
-    parity='N',
     stopbits=1,
     bytesize=8,
+    parity='N',
     timeout=1
 )
 
-print("Scanning Modbus slave IDs...")
 if client.connect():
-    for slave_id in range(1, 256):
-        print(f"Trying ID {slave_id}...", end="")
-        try:
-            response = client.read_holding_registers(address=0, count=1, slave=slave_id)
-            if not response.isError():
-                print(f" SUCCESS — Got response: {response.registers}")
-                break
-            else:
-                print(" no response.")
-        except Exception as e:
-            print(f" error: {e}")
-    client.close()
+    print("Connected to Renogy controller.")
+    result = client.read_holding_registers(address=0x100, count=35, slave=255)
+    if result.isError():
+        print(f"Modbus error: {result}")
+    else:
+        registers = result.registers
+        battery_soc = registers[0]
+        battery_voltage = registers[1] * 0.1
+        battery_charging_amps = registers[2] * 0.1
+        print(f"Battery Voltage: {battery_voltage:.2f} V")
+        print(f"Battery SOC: {battery_soc} %")
+        print(f"Battery Charging Amps: {battery_charging_amps:.2f} A")
 else:
-    print("Failed to open serial connection.")
+    print("Failed to connect")
