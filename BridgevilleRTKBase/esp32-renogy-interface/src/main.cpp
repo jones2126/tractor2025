@@ -7,10 +7,13 @@
 
 // Modbus addresses to test
 #define MODBUS_ADDRESS_1 255
-#define MODBUS_ADDRESS_2 1 
+#define MODBUS_ADDRESS_2 1
 
 // Create Modbus instance
 ModbusMaster node;
+
+// Function prototype
+void testModbusRead(uint8_t address);
 
 void setup() {
   delay(1000); // Wait for serial monitor to connect
