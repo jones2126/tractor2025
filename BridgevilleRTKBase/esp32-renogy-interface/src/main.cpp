@@ -7,7 +7,7 @@
 
 // Modbus addresses to test
 #define MODBUS_ADDRESS_1 255
-#define MODBUS_ADDRESS_2 1
+#define MODBUS_ADDRESS_2 1 
 
 // Create Modbus instance
 ModbusMaster node;
