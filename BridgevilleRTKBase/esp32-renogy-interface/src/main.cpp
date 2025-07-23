@@ -5,31 +5,32 @@
 #define RXD2 17
 #define TXD2 16
 
-// Default Modbus addresses to try for reading controller address
-#define DEFAULT_ADDRESS_1 1   // From Node.js example
-#define DEFAULT_ADDRESS_2 255 // From GitHub Arduino example
+// Modbus settings
+#define MODBUS_ADDRESS 1  // Default from Node.js example
+#define BAUD_RATE_1 9600  // Standard for Renogy
+#define BAUD_RATE_2 19200 // Alternative to test
 
 // Create Modbus instance
 ModbusMaster node;
 
 // Function prototype
-void testModbusRead(uint8_t address, bool& found, uint8_t& workingAddress);
+void testModbusRead(uint8_t address, uint16_t reg, const char* regName, uint32_t baudRate);
 
 void setup() {
-  // Early serial output to confirm execution
+  // Early serial output
   Serial.begin(115200);
-  delay(500); // Short delay for monitor sync
+  delay(500);
   Serial.println("ESP32 Renogy Test: Initializing...");
 
-  // Clear residual data in Serial buffer
+  // Clear Serial buffer
   while (Serial.available()) {
     Serial.read();
   }
   Serial.println("Serial buffer cleared.");
 
-  // Test UART2 with loopback (optional, requires TX-RX shorted)
+  // Test UART2 loopback
   Serial.println("Testing UART2 loopback...");
-  Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2);
+  Serial2.begin(BAUD_RATE_1, SERIAL_8N1, RXD2, TXD2);
   Serial2.write("TEST", 4);
   Serial2.flush();
   delay(100);
@@ -48,55 +49,30 @@ void setup() {
 }
 
 void loop() {
-  static bool addressFound = false;
-  static uint8_t workingAddress = 0;
+  // Test with baud rate 9600
+  Serial.println("Testing with baud rate: " + String(BAUD_RATE_1));
+  Serial2.begin(BAUD_RATE_1, SERIAL_8N1, RXD2, TXD2);
+  node.begin(MODBUS_ADDRESS, Serial2);
+  testModbusRead(MODBUS_ADDRESS, 0x01A, "Controller Address (0x01A)", BAUD_RATE_1);
+  testModbusRead(MODBUS_ADDRESS, 0x0101, "Battery Voltage (0x0101)", BAUD_RATE_1);
 
-  // Try reading controller's Modbus address from register 0x01A
-  if (!addressFound) {
-    Serial.println("Attempting to read controller Modbus address from 0x01A...");
-    for (uint8_t addr : {DEFAULT_ADDRESS_1, DEFAULT_ADDRESS_2}) {
-      Serial.println("Trying default address: " + String(addr));
-      node.begin(addr, Serial2);
-      uint8_t result = node.readHoldingRegisters(0x01A, 1);
-      if (result == node.ku8MBSuccess) {
-        workingAddress = node.getResponseBuffer(0);
-        addressFound = true;
-        Serial.println("Success! Controller Modbus address: " + String(workingAddress));
-        break;
-      } else {
-        Serial.println("Failed to read 0x01A at address " + String(addr) + ". Error code: 0x" + String(result, HEX));
-      }
-      delay(500);
-    }
-  }
+  delay(2000);
 
-  // If address found, use it; otherwise, scan 1 to 247
-  if (addressFound) {
-    Serial.println("Using Modbus address: " + String(workingAddress));
-    node.begin(workingAddress, Serial2);
-    testModbusRead(workingAddress, addressFound, workingAddress);
-    delay(2000);
-  } else {
-    Serial.println("No controller address found. Scanning Modbus addresses 1 to 247...");
-    for (uint8_t address = 1; address <= 247 && !addressFound; address++) {
-      Serial.print("Testing Modbus address: ");
-      Serial.println(address);
-      node.begin(address, Serial2);
-      testModbusRead(address, addressFound, workingAddress);
-      delay(250); // Short delay for faster scanning
-    }
-    if (!addressFound) {
-      Serial.println("No working address found. Retrying in 5 seconds...");
-      Serial.println("---");
-      delay(5000);
-    }
-  }
+  // Test with baud rate 19200
+  Serial.println("Testing with baud rate: " + String(BAUD_RATE_2));
+  Serial2.begin(BAUD_RATE_2, SERIAL_8N1, RXD2, TXD2);
+  node.begin(MODBUS_ADDRESS, Serial2);
+  testModbusRead(MODBUS_ADDRESS, 0x01A, "Controller Address (0x01A)", BAUD_RATE_2);
+  testModbusRead(MODBUS_ADDRESS, 0x0101, "Battery Voltage (0x0101)", BAUD_RATE_2);
+
+  Serial.println("---");
+  delay(5000);
 }
 
-void testModbusRead(uint8_t address, bool& found, uint8_t& workingAddress) {
+void testModbusRead(uint8_t address, uint16_t reg, const char* regName, uint32_t baudRate) {
   // Check for unexpected data
   if (Serial2.available()) {
-    Serial.println("Unexpected data before Modbus request:");
+    Serial.println("Unexpected data before Modbus request (baud " + String(baudRate) + "):");
     while (Serial2.available()) {
       Serial.print("0x");
       Serial.print(Serial2.read(), HEX);
@@ -105,19 +81,39 @@ void testModbusRead(uint8_t address, bool& found, uint8_t& workingAddress) {
     Serial.println();
   }
 
-  // Read battery voltage register (0x0101)
-  uint8_t result = node.readHoldingRegisters(0x0101, 1);
+  // Send Modbus request
+  uint8_t result = node.readHoldingRegisters(reg, 1);
 
   if (result == node.ku8MBSuccess) {
     uint16_t raw_value = node.getResponseBuffer(0);
-    float battery_voltage = raw_value * 0.1; // Convert to volts
-    Serial.println("Success! Battery Voltage: " + String(battery_voltage, 1) + " V at address " + String(address));
-    found = true;
-    workingAddress = address;
+    if (reg == 0x0101) {
+      float battery_voltage = raw_value * 0.1;
+      Serial.println(String(regName) + ": " + String(battery_voltage, 1) + " V at address " + String(address));
+    } else {
+      Serial.println(String(regName) + ": " + String(raw_value) + " at address " + String(address));
+    }
   } else {
-    Serial.print("Failed at address ");
+    Serial.print("Failed to read " + String(regName) + " at address ");
     Serial.print(address);
-    Serial.print(". Error code: 0x");
+    Serial.print(" (baud ");
+    Serial.print(baudRate);
+    Serial.print("). Error code: 0x");
     Serial.println(result, HEX);
+    if (result == 0xE2) {
+      Serial.println("Error: Modbus timeout. Check RS232 wiring, device power, or configuration.");
+    } else if (result == 0xE1) {
+      Serial.println("Error: Invalid response. Check address or device compatibility.");
+    }
+  }
+
+  // Check for response data
+  if (Serial2.available()) {
+    Serial.println("Data received after Modbus request (baud " + String(baudRate) + "):");
+    while (Serial2.available()) {
+      Serial.print("0x");
+      Serial.print(Serial2.read(), HEX);
+      Serial.print(" ");
+    }
+    Serial.println();
   }
 }
