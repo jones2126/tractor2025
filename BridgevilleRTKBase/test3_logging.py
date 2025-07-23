@@ -1,16 +1,31 @@
-import serial
+from pymodbus.client.serial import ModbusSerialClient as ModbusClient
 
-# Open the FTDI serial port at 9600 baud
-ser = serial.Serial("/dev/ttyUSB0", baudrate=9600, timeout=1)
+# Setup Modbus RTU client on /dev/ttyUSB0 at 9600 baud
+client = ModbusClient(
+    method='rtu',
+    port='/dev/ttyUSB0',
+    baudrate=9600,
+    stopbits=1,
+    bytesize=8,
+    parity='N',
+    timeout=1
+)
 
-# Send a raw Modbus RTU query to read the first input register (battery voltage)
-# Format: [slave_id, function_code, address_hi, address_lo, count_hi, count_lo, CRC_lo, CRC_hi]
-query = bytes.fromhex("010300000001840A")
+# Connect to the serial port
+if not client.connect():
+    print("Failed to connect to /dev/ttyUSB0")
+    exit(1)
 
-print("Sending query to Renogy controller...")
-ser.write(query)
+print("Connected to Renogy controller.")
 
-# Read up to 16 bytes of response
-response = ser.read(16)
-print("Response (raw bytes):", response)
-print("Response (hex):", response.hex())
+# Try reading 1 register starting at address 0 (battery voltage, often)
+response = client.read_holding_registers(address=0, count=1, unit=1)
+
+if response.isError():
+    print("Modbus error:", response)
+else:
+    value = response.registers[0]
+    print("Raw value:", value)
+    print("Interpreted battery voltage:", value / 100.0, "V")
+
+client.close()
