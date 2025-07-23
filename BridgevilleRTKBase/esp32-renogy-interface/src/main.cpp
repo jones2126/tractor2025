@@ -10,3 +10,7 @@ void setup() {
   RenogySerial.begin(9600, SERIAL_8N1, 16, 17);
   Serial.println("=== RS232 test beginning ===");
 }
+
+void loop() {
+  // Keep it empty or insert your test logic here
+}
