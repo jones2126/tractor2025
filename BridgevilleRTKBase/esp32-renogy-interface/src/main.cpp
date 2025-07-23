@@ -18,13 +18,14 @@ void testModbusRead(uint8_t address);
 void setup() {
   // Early serial output to confirm execution
   Serial.begin(115200);
-  delay(2000); // Wait for serial monitor to connect
+  delay(500); // Shortened delay to catch early output
   Serial.println("ESP32 Renogy Test: Initializing...");
 
   // Clear residual data in Serial buffer
   while (Serial.available()) {
     Serial.read();
   }
+  Serial.println("Serial buffer cleared.");
 
   // Test UART2 with loopback (requires TX and RX shorted on MAX3232)
   Serial.println("Testing UART2 loopback...");
@@ -45,11 +46,11 @@ void setup() {
   // Initialize Modbus
   Serial.println("Serial2 initialized for Modbus...");
   node.begin(MODBUS_ADDRESS_1, Serial2);
-  node.setTimeout(1000); // Set 1000ms timeout (from Node.js example)
   Serial.println("Modbus initialized with address: " + String(MODBUS_ADDRESS_1));
 }
 
 void loop() {
+  Serial.println("Loop running...");
   // Test with Modbus address 1
   Serial.println("Testing with Modbus address: " + String(MODBUS_ADDRESS_1));
   node.begin(MODBUS_ADDRESS_1, Serial2);
