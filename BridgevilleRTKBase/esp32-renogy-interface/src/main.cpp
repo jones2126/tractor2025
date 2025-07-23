@@ -7,14 +7,15 @@
 
 // Modbus settings
 #define MODBUS_ADDRESS 1  // Default from Node.js example
-#define BAUD_RATE_1 9600  // Standard for Renogy
-#define BAUD_RATE_2 19200 // Alternative to test
+#define BAUD_RATE_1 9600  // Standard
+#define BAUD_RATE_2 19200 // Alternative
+#define BAUD_RATE_3 38400 // Rare case
 
 // Create Modbus instance
 ModbusMaster node;
 
 // Function prototype
-void testModbusRead(uint8_t address, uint16_t reg, const char* regName, uint32_t baudRate);
+void testModbusRead(uint8_t address, uint16_t reg, const char* regName, uint32_t baudRate, uint32_t config);
 
 void setup() {
   // Early serial output
@@ -49,30 +50,32 @@ void setup() {
 }
 
 void loop() {
-  // Test with baud rate 9600
-  Serial.println("Testing with baud rate: " + String(BAUD_RATE_1));
-  Serial2.begin(BAUD_RATE_1, SERIAL_8N1, RXD2, TXD2);
-  node.begin(MODBUS_ADDRESS, Serial2);
-  testModbusRead(MODBUS_ADDRESS, 0x01A, "Controller Address (0x01A)", BAUD_RATE_1);
-  testModbusRead(MODBUS_ADDRESS, 0x0101, "Battery Voltage (0x0101)", BAUD_RATE_1);
+  // Test configurations
+  const uint32_t baudRates[] = {BAUD_RATE_1, BAUD_RATE_2, BAUD_RATE_3};
+  const uint32_t configs[] = {SERIAL_8N1, SERIAL_8E1};
+  const uint16_t registers[] = {0x01A, 0x0101, 0x00A};
+  const char* regNames[] = {"Controller Address (0x01A)", "Battery Voltage (0x0101)", "Operating Parameters (0x00A)"};
 
-  delay(2000);
-
-  // Test with baud rate 19200
-  Serial.println("Testing with baud rate: " + String(BAUD_RATE_2));
-  Serial2.begin(BAUD_RATE_2, SERIAL_8N1, RXD2, TXD2);
-  node.begin(MODBUS_ADDRESS, Serial2);
-  testModbusRead(MODBUS_ADDRESS, 0x01A, "Controller Address (0x01A)", BAUD_RATE_2);
-  testModbusRead(MODBUS_ADDRESS, 0x0101, "Battery Voltage (0x0101)", BAUD_RATE_2);
+  for (uint8_t b = 0; b < 3; b++) {
+    for (uint8_t c = 0; c < 2; c++) {
+      Serial.println("Testing with baud rate: " + String(baudRates[b]) + ", config: " + (configs[c] == SERIAL_8N1 ? "8N1" : "8E1"));
+      Serial2.begin(baudRates[b], configs[c], RXD2, TXD2);
+      node.begin(MODBUS_ADDRESS, Serial2);
+      for (uint8_t r = 0; r < 3; r++) {
+        testModbusRead(MODBUS_ADDRESS, registers[r], regNames[r], baudRates[b], configs[c]);
+        delay(250);
+      }
+    }
+  }
 
   Serial.println("---");
   delay(5000);
 }
 
-void testModbusRead(uint8_t address, uint16_t reg, const char* regName, uint32_t baudRate) {
+void testModbusRead(uint8_t address, uint16_t reg, const char* regName, uint32_t baudRate, uint32_t config) {
   // Check for unexpected data
   if (Serial2.available()) {
-    Serial.println("Unexpected data before Modbus request (baud " + String(baudRate) + "):");
+    Serial.println("Unexpected data before Modbus request (baud " + String(baudRate) + ", config " + (config == SERIAL_8N1 ? "8N1" : "8E1") + "):");
     while (Serial2.available()) {
       Serial.print("0x");
       Serial.print(Serial2.read(), HEX);
@@ -97,6 +100,8 @@ void testModbusRead(uint8_t address, uint16_t reg, const char* regName, uint32_t
     Serial.print(address);
     Serial.print(" (baud ");
     Serial.print(baudRate);
+    Serial.print(", config ");
+    Serial.print(config == SERIAL_8N1 ? "8N1" : "8E1");
     Serial.print("). Error code: 0x");
     Serial.println(result, HEX);
     if (result == 0xE2) {
@@ -108,7 +113,7 @@ void testModbusRead(uint8_t address, uint16_t reg, const char* regName, uint32_t
 
   // Check for response data
   if (Serial2.available()) {
-    Serial.println("Data received after Modbus request (baud " + String(baudRate) + "):");
+    Serial.println("Data received after Modbus request (baud " + String(baudRate) + ", config " + (config == SERIAL_8N1 ? "8N1" : "8E1") + "):");
     while (Serial2.available()) {
       Serial.print("0x");
       Serial.print(Serial2.read(), HEX);
