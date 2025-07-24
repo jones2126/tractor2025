@@ -23,6 +23,10 @@ ModbusMaster node;
 #define RXD2 17
 #define TXD2 16
 
+void renogy_read_data_registers();
+void renogy_read_info_registers();
+void renogy_control_load(bool state);
+
 /*
 Number of registers to check. I think all Renogy controllers have 35
 data registers (not all of which are used) and 17 info registers.
@@ -30,16 +34,8 @@ data registers (not all of which are used) and 17 info registers.
 const uint32_t num_data_registers = 35;
 const uint32_t num_info_registers = 17;
 
-
 // if you don't have a charge controller to test with, can set this to true to get non 0 voltage readings
 bool simulator_mode = false;
-
-
-
-
-
-
-
 
 // A struct to hold the controller data
 struct Controller_data {
@@ -96,11 +92,6 @@ struct Controller_info {
   long last_update_time;           // millis() of last update time
 };
 Controller_info renogy_info;
-
-
-
-
-
 
 void setup()
 {
