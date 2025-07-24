@@ -20,8 +20,8 @@ To do:
 #include <ModbusMaster.h>
 ModbusMaster node;
 
-#define RXD2 17
-#define TXD2 16
+#define RXD2 16
+#define TXD2 17
 
 void renogy_read_data_registers();
 void renogy_read_info_registers();
