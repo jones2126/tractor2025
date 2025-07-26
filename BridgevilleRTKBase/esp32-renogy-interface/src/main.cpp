@@ -1,6 +1,6 @@
 /*
 
-Reads the data from the Renogy charge controller via it's RS232 port using an ESP32 or similar. Tested with Wanderer 30A (CTRL-WND30-LI) and Wanderer 10A
+Reads the data from the Renogy charge controller via its RS232 port using an ESP32 or similar. Tested with Wanderer 30A (CTRL-WND30-LI) and Wanderer 10A
 
 See my Github repo for notes on building the cable:
 https://github.com/wrybread/ESP32ArduinoRenogy
@@ -93,6 +93,7 @@ Controller_info renogy_info;
 void setup()
 {
   Serial.begin(115200);
+  delay(2000); // Allow USB to stabilize
   
   // Wait for user input, printing message every 5 seconds
   unsigned long lastPrintTime = 0;
@@ -125,6 +126,18 @@ void setup()
   Serial.println("Initializing Modbus with address: " + String(modbus_address));
   node.begin(modbus_address, Serial2);
   Serial.println("Modbus initialized");
+
+  // Test single register read
+  Serial.println("Testing single register read (address 0x100)...");
+  uint8_t result = node.readHoldingRegisters(0x100, 1);
+  if (result == node.ku8MBSuccess) {
+    Serial.println("Single register read successful! Value: " + String(node.getResponseBuffer(0)));
+  } else if (result == 0xE2) {
+    Serial.println("Single register read timed out!");
+  } else {
+    Serial.print("Single register read failed, error code: ");
+    Serial.println(result, HEX);
+  }
 }
 
 void loop()
@@ -147,11 +160,6 @@ void loop()
   Serial.println("battery_temperatureF=" + String(renogy_data.battery_temperatureF));
   Serial.println("---");
 
-  // turn the load on for 10 seconds
-  //renogy_control_load(1)
-  //delay(10000);
-  //renogy_control_load(0)
-  
   delay(1000); 
 }
 
@@ -178,13 +186,13 @@ void renogy_read_data_registers()
     }
 
     renogy_data.battery_soc = data_registers[0]; 
-    renogy_data.battery_voltage = data_registers[1] * .1; // will it crash if data_registers[1] doesn't exist?
+    renogy_data.battery_voltage = data_registers[1] * .1;
     renogy_data.battery_charging_amps = data_registers[2] * .1;
 
     renogy_data.battery_charging_watts = renogy_data.battery_voltage * renogy_data.battery_charging_amps;
     
     //0x103 returns two bytes, one for battery and one for controller temp in c
-    uint16_t raw_data = data_registers[3]; // eg 5913
+    uint16_t raw_data = data_registers[3];
     renogy_data.controller_temperature = raw_data/256;
     renogy_data.battery_temperature = raw_data%256; 
     // for convenience, fahrenheit versions of the temperatures
@@ -213,14 +221,6 @@ void renogy_read_data_registers()
     renogy_data.total_battery_fullcharges = data_registers[23];
     renogy_data.last_update_time = millis();
 
-    // Add these registers:
-    //Registers 0x118 to 0x119- Total Charging Amp-Hours - 24/25    
-    //Registers 0x11A to 0x11B- Total Discharging Amp-Hours - 26/27    
-    //Registers 0x11C to 0x11D- Total Cumulative power generation (kWH) - 28/29    
-    //Registers 0x11E to 0x11F- Total Cumulative power consumption (kWH) - 30/31    
-    //Register 0x120 - Load Status, Load Brightness, Charging State - 32    
-    //Registers 0x121 to 0x122 - Controller fault codes - 33/34
-
     if (print_data) Serial.println("---");
   }
   else 
@@ -232,7 +232,7 @@ void renogy_read_data_registers()
     else 
     {
       Serial.print("Failed to read the data registers, error code: ");
-      Serial.println(result, HEX); // E2 is timeout
+      Serial.println(result, HEX);
     }
     // Reset some values if we don't get a reading
     renogy_data.controller_connected = false;
@@ -274,70 +274,23 @@ void renogy_read_info_registers()
     }
 
     // read and process each value
-    //Register 0x0A - Controller voltage and Current Rating - 0
-    // Not sure if this is correct. I get the correct amp rating for my Wanderer 30 (30 amps), but I get a voltage rating of 0 (should be 12v)
     raw_data = info_registers[0]; 
     renogy_info.voltage_rating = raw_data/256; 
     renogy_info.amp_rating = raw_data%256;
     renogy_info.wattage_rating = renogy_info.voltage_rating * renogy_info.amp_rating;
 
-    //Register 0x0B - Controller discharge current and type - 1
     raw_data = info_registers[1]; 
-    renogy_info.discharge_amp_rating = raw_data/256; // not sure if this should be /256 or /100
-    renogy_info.type = raw_data%256; // not sure if this should be /256 or /100
+    renogy_info.discharge_amp_rating = raw_data/256;
+    renogy_info.type = raw_data%256;
 
-    //Registers 0x0C to 0x13 - Product Model String - 2-9
-    // Here's how the nodeJS project handled this:
-    /*
-    let modelString = '';
-    for (let i = 0; i <= 7; i++) {  
-        rawData[i+2].toString(16).match(/.{1,2}/g).forEach( x => {
-            modelString += String.fromCharCode(parseInt(x, 16));
-        });
-    }
-    this.controllerModel = modelString.replace(' ','');
-    */
-
-    //Registers 0x014 to 0x015 - Software Version - 10-11
     itoa(info_registers[10],buffer1,10); 
     itoa(info_registers[11],buffer2,10);
-    strcat(buffer1, buffer2); // should put a divider between the two strings?
+    strcat(buffer1, buffer2);
     strcpy(renogy_info.software_version, buffer1); 
 
-    //Registers 0x016 to 0x017 - Hardware Version - 12-13
     itoa(info_registers[12],buffer1,10); 
     itoa(info_registers[13],buffer2,10);
-    strcat(buffer1, buffer2); // should put a divider between the two strings?
+    strcat(buffer1, buffer2);
     strcpy(renogy_info.hardware_version, buffer1);
 
-    //Registers 0x018 to 0x019 - Product Serial Number - 14-15
-    // I don't think this is correct... Doesn't match serial number printed on my controller
-    itoa(info_registers[14],buffer1,10); 
-    itoa(info_registers[15],buffer2,10);
-    strcat(buffer1, buffer2); // should put a divider between the two strings?
-    strcpy(renogy_info.serial_number, buffer1);
-
-    renogy_info.modbus_address = info_registers[16];
-    renogy_info.last_update_time = millis();
-  
-    if (print_data) Serial.println("---");
-  }
-  else
-  {
-    if (result == 0xE2) 
-    {
-      Serial.println("Timed out reading the info registers!");
-    }
-    else 
-    {
-      Serial.print("Failed to read the info registers, error code: ");
-      Serial.println(result, HEX); // E2 is timeout
-    }
-  }
-}
-
-// control the load pins on Renogy charge controllers that have them
-void renogy_control_load(bool state) {
-  if (state==1) node.writeSingleRegister(0x010A, 1);  // turn on load
-  else node.writeSingleRegister(0x010A, 0);  // turn off load
-}
+    itoa(info_registers[14],buffer1,10);
