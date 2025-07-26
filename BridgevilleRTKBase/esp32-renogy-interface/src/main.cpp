@@ -157,10 +157,12 @@ void loop()
   Serial.println("Battery charge level: " + String(renogy_data.battery_soc) + "%");
   Serial.println("Panel wattage: " + String(renogy_data.solar_panel_watts));
   Serial.println("controller_temperatureF=" + String(renogy_data.controller_temperatureF)); 
-  Serial.println("battery_temperatureF=" + String(renogy_data.battery_temperatureF));
+  // Serial.println("battery_temperatureF=" + String(renogy_data.battery_temperatureF));
+  //  float solar_panel_voltage;         // volts
+  Serial.println("Panel voltage: " + String(renogy_data.solar_panel_voltage));  
   Serial.println("---");
 
-  delay(1000); 
+  delay(5000); 
 }
 
 void renogy_read_data_registers() 
