@@ -96,6 +96,7 @@ Controller_info renogy_info;
 void setup()
 {
   Serial.begin(115200);
+  delay(3000); // to give serial a chance to settle
   Serial.println("Started!");
 
   // create a second serial interface for modbus
