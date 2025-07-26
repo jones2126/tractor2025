@@ -49,24 +49,24 @@ struct Controller_data {
   float solar_panel_voltage;         // volts
   float solar_panel_amps;            // amps
   uint8_t solar_panel_watts;         // watts
-  float min_battery_voltage_today;   // volts
-  float max_battery_voltage_today;   // volts
+  float min_voltage_today;           // volts
+  float max_voltage_today;          // volts
   float max_charging_amps_today;     // amps
   float max_discharging_amps_today;  // amps
   uint8_t max_charge_watts_today;    // watts
   uint8_t max_discharge_watts_today; // watts
-  uint8_t charge_amphours_today;     // amp hours
-  uint8_t discharge_amphours_today;  // amp hours
-  uint8_t charge_watthours_today;    // watt hours
-  uint8_t discharge_watthours_today; // watt hours
-  uint8_t controller_uptime_days;    // days
-  uint8_t total_battery_overcharges; // count
-  uint8_t total_battery_fullcharges; // count
+  uint16_t charge_amphours_today;     // amp hours
+  uint16_t discharge_amphours_today;  // amp hours
+  uint16_t charge_watthours_today;    // watt hours
+  uint16_t discharge_watthours_today; // watt hours
+  uint16_t controller_uptime_days;    // days
+  uint16_t total_battery_overcharges; // count
+  uint16_t total_battery_fullcharges; // count
 
   // convenience values
   float battery_temperatureF;        // fahrenheit
   float controller_temperatureF;     // fahrenheit
-  float battery_charging_watts;      // watts. necessary? Does it ever differ from solar_panel_watts?
+  float battery_charging_watts;       // watts
   long last_update_time;             // millis() of last update time
   bool controller_connected;         // bool if we successfully read data from the controller
 };
@@ -205,9 +205,8 @@ void renogy_read_data_registers()
     renogy_data.solar_panel_voltage = data_registers[7] * .1;
     renogy_data.solar_panel_amps = data_registers[8] * .01;
     renogy_data.solar_panel_watts = data_registers[9];
-    //Register 0x10A - Turn on load, write register, unsupported in wanderer - 10
-    renogy_data.min_battery_voltage_today = data_registers[11] * .1;
-    renogy_data.max_battery_voltage_today = data_registers[12] * .1; 
+    renogy_data.min_voltage_today = data_registers[11] * .1;
+    renogy_data.max_voltage_today = data_registers[12] * .1; 
     renogy_data.max_charging_amps_today = data_registers[13] * .01;
     renogy_data.max_discharging_amps_today = data_registers[14] * .1;
     renogy_data.max_charge_watts_today = data_registers[15];
@@ -293,4 +292,31 @@ void renogy_read_info_registers()
     strcat(buffer1, buffer2);
     strcpy(renogy_info.hardware_version, buffer1);
 
-    itoa(info_registers[14],buffer1,10);
+    itoa(info_registers[14],buffer1,10); 
+    itoa(info_registers[15],buffer2,10);
+    strcat(buffer1, buffer2);
+    strcpy(renogy_info.serial_number, buffer1);
+
+    renogy_info.modbus_address = info_registers[16];
+    renogy_info.last_update_time = millis();
+  
+    if (print_data) Serial.println("---");
+  }
+  else
+  {
+    if (result == 0xE2) 
+    {
+      Serial.println("Timed out reading the info registers!");
+    }
+    else 
+    {
+      Serial.print("Failed to read the info registers, error code: ");
+      Serial.println(result, HEX);
+    }
+  }
+}
+
+void renogy_control_load(bool state) {
+  if (state==1) node.writeSingleRegister(0x010A, 1);
+  else node.writeSingleRegister(0x010A, 0);
+}
