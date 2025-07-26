@@ -8,11 +8,9 @@ https://github.com/wrybread/ESP32ArduinoRenogy
 Notes: 
 - I don't think can power the ESP32 from the Renogy's USB port.. Maybe it's so low power that it shuts off?
 
-
 To do:
 - find out how much of a load the load port can handle... 
 - test with an Arduino
-
 
 */
 
@@ -74,7 +72,6 @@ struct Controller_data {
 };
 Controller_data renogy_data;
 
-
 // A struct to hold the controller info params
 struct Controller_info {
   
@@ -117,16 +114,18 @@ void setup()
   delay(1000); // Brief delay for monitor to catch up
   
   Serial.println("Starting!");
-
-  // create a second serial interface for modbus
-  Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2); 
-
-  // my Renogy Wanderer has an (slave) address of 255! Not in docs??? 
-  // Do all Renogy charge controllers use this address?
-  int modbus_address = 255; 
-  node.begin(modbus_address, Serial2); 
+  
+  // Initialize Serial2 for Modbus
+  Serial.println("Initializing Serial2 for Modbus...");
+  Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2);
+  Serial.println("Serial2 initialized");
+  
+  // Initialize Modbus
+  int modbus_address = 255;
+  Serial.println("Initializing Modbus with address: " + String(modbus_address));
+  node.begin(modbus_address, Serial2);
+  Serial.println("Modbus initialized");
 }
-
 
 void loop()
 {
@@ -148,18 +147,13 @@ void loop()
   Serial.println("battery_temperatureF=" + String(renogy_data.battery_temperatureF));
   Serial.println("---");
 
-
   // turn the load on for 10 seconds
   //renogy_control_load(1)
   //delay(10000);
   //renogy_control_load(0)
   
-    
   delay(1000); 
-
 }
-
-
 
 void renogy_read_data_registers() 
 {
@@ -169,12 +163,13 @@ void renogy_read_data_registers()
   uint8_t raw_data;
 
   // prints data about each read to the console
-  bool print_data=0; 
+  bool print_data = 0; 
   
+  Serial.println("Attempting to read data registers...");
   result = node.readHoldingRegisters(0x100, num_data_registers);
   if (result == node.ku8MBSuccess)
   {
-    if (print_data) Serial.println("Successfully read the data registers!");
+    Serial.println("Successfully read the data registers!");
     renogy_data.controller_connected = true;
     for (j = 0; j < num_data_registers; j++)
     {
@@ -202,7 +197,7 @@ void renogy_read_data_registers()
     renogy_data.solar_panel_voltage = data_registers[7] * .1;
     renogy_data.solar_panel_amps = data_registers[8] * .01;
     renogy_data.solar_panel_watts = data_registers[9];
-     //Register 0x10A - Turn on load, write register, unsupported in wanderer - 10
+    //Register 0x10A - Turn on load, write register, unsupported in wanderer - 10
     renogy_data.min_battery_voltage_today = data_registers[11] * .1;
     renogy_data.max_battery_voltage_today = data_registers[12] * .1; 
     renogy_data.max_charging_amps_today = data_registers[13] * .01;
@@ -232,11 +227,11 @@ void renogy_read_data_registers()
   {
     if (result == 0xE2) 
     {
-    Serial.println("Timed out reading the data registers!");
+      Serial.println("Timed out reading the data registers!");
     }
     else 
     {
-      Serial.print("Failed to read the data registers... ");
+      Serial.print("Failed to read the data registers, error code: ");
       Serial.println(result, HEX); // E2 is timeout
     }
     // Reset some values if we don't get a reading
@@ -255,10 +250,7 @@ void renogy_read_data_registers()
       renogy_data.battery_soc = 55; 
     }
   }
-
-
 }
-
 
 void renogy_read_info_registers() 
 {
@@ -268,12 +260,13 @@ void renogy_read_info_registers()
   uint8_t raw_data;
 
   // prints data about the read to the console
-  bool print_data=0;
+  bool print_data = 0;
   
+  Serial.println("Attempting to read info registers...");
   result = node.readHoldingRegisters(0x00A, num_info_registers);
   if (result == node.ku8MBSuccess)
   {
-    if (print_data) Serial.println("Successfully read the info registers!");
+    Serial.println("Successfully read the info registers!");
     for (j = 0; j < num_info_registers; j++)
     {
       info_registers[j] = node.getResponseBuffer(j);
@@ -287,10 +280,6 @@ void renogy_read_info_registers()
     renogy_info.voltage_rating = raw_data/256; 
     renogy_info.amp_rating = raw_data%256;
     renogy_info.wattage_rating = renogy_info.voltage_rating * renogy_info.amp_rating;
-    //Serial.println("raw ratings = " + String(raw_data));
-    //Serial.println("Voltage rating: " + String(renogy_info.voltage_rating));
-    //Serial.println("amp rating: " + String(renogy_info.amp_rating));
-
 
     //Register 0x0B - Controller discharge current and type - 1
     raw_data = info_registers[1]; 
@@ -314,14 +303,12 @@ void renogy_read_info_registers()
     itoa(info_registers[11],buffer2,10);
     strcat(buffer1, buffer2); // should put a divider between the two strings?
     strcpy(renogy_info.software_version, buffer1); 
-    //Serial.println("Software version: " + String(renogy_info.software_version));
 
     //Registers 0x016 to 0x017 - Hardware Version - 12-13
     itoa(info_registers[12],buffer1,10); 
     itoa(info_registers[13],buffer2,10);
     strcat(buffer1, buffer2); // should put a divider between the two strings?
     strcpy(renogy_info.hardware_version, buffer1);
-    //Serial.println("Hardware version: " + String(renogy_info.hardware_version));
 
     //Registers 0x018 to 0x019 - Product Serial Number - 14-15
     // I don't think this is correct... Doesn't match serial number printed on my controller
@@ -329,7 +316,6 @@ void renogy_read_info_registers()
     itoa(info_registers[15],buffer2,10);
     strcat(buffer1, buffer2); // should put a divider between the two strings?
     strcpy(renogy_info.serial_number, buffer1);
-    //Serial.println("Serial number: " + String(renogy_info.serial_number)); // (I don't think this is correct)
 
     renogy_info.modbus_address = info_registers[16];
     renogy_info.last_update_time = millis();
@@ -344,13 +330,11 @@ void renogy_read_info_registers()
     }
     else 
     {
-      Serial.print("Failed to read the info registers... ");
+      Serial.print("Failed to read the info registers, error code: ");
       Serial.println(result, HEX); // E2 is timeout
     }
-    // anything else to do if we fail to read the info reisters?
   }
 }
-
 
 // control the load pins on Renogy charge controllers that have them
 void renogy_control_load(bool state) {
