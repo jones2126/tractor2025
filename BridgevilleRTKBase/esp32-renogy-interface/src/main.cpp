@@ -96,8 +96,27 @@ Controller_info renogy_info;
 void setup()
 {
   Serial.begin(115200);
-  delay(3000); // to give serial a chance to settle
-  Serial.println("Started!");
+  
+  // Wait for user input, printing message every 5 seconds
+  unsigned long lastPrintTime = 0;
+  const unsigned long printInterval = 5000; // 5 seconds
+  while (Serial.available() == 0) {
+    if (millis() - lastPrintTime >= printInterval) {
+      Serial.println("Waiting for user input... Send any character to continue.");
+      lastPrintTime = millis();
+    }
+    delay(100); // Small delay to prevent excessive CPU usage
+  }
+  
+  // Clear the input buffer
+  while (Serial.available()) {
+    Serial.read(); // Read and discard any input
+  }
+  
+  Serial.println("User input received! Starting setup...");
+  delay(1000); // Brief delay for monitor to catch up
+  
+  Serial.println("Starting!");
 
   // create a second serial interface for modbus
   Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2); 
