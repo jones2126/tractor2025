@@ -207,29 +207,36 @@ void postResults() {
 void handleSerialCommands() {
   if (Serial.available()) {
     processingCommand = true;  // Stop normal output
-    delay(100);  // Allow any pending output to finish
     
-    // Clear any remaining data in serial buffer
+    // Read the command
+    String command = Serial.readStringUntil('\n');
+    command.trim();
+    command.toUpperCase();
+    
+    // Clear any remaining serial buffer
     while (Serial.available()) {
-      String command = Serial.readStringUntil('\n');
-      command.trim();
-      command.toUpperCase();
-      
-      if (command == "DOWNLOAD") {
-        downloadCSVData();
-      } else if (command == "STATUS") {
-        showFileStatus();
-      } else if (command == "CLEAR") {
-        clearCSVFile();
-      } else if (command == "HELP") {
-        showHelp();
-      } else if (command.length() > 0) {
-        Serial.println("Unknown command: " + command + ". Type HELP for available commands.");
-      }
-      
-      // Only process one command at a time
-      break;
+      Serial.read();
     }
+    
+    // Add a small delay to let any pending output finish
+    delay(200);
+    
+    // Process the command
+    if (command == "DOWNLOAD") {
+      downloadCSVData();
+    } else if (command == "STATUS") {
+      showFileStatus();
+    } else if (command == "CLEAR") {
+      clearCSVFile();
+    } else if (command == "HELP") {
+      showHelp();
+    } else if (command.length() > 0) {
+      Serial.println("Unknown command: " + command + ". Type HELP for available commands.");
+    }
+    
+    // Add end marker for command completion
+    Serial.println("COMMAND_COMPLETE");
+    Serial.flush();
     
     processingCommand = false;  // Resume normal output
   }
