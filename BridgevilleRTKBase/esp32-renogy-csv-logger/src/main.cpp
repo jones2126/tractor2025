@@ -23,6 +23,9 @@ const unsigned long tempInterval = 15000;    // 15 seconds
 const unsigned long renogyInterval = 20000;  // 20 seconds
 const unsigned long csvInterval = 60000;     // 60 seconds (1 minute)
 
+// Command processing flag
+bool processingCommand = false;
+
 // Temperature averaging
 float tempSum = 0;
 int tempCount = 0;
@@ -149,9 +152,13 @@ void readTemperature() {
       avgTemperatureC = tempSum / tempCount;
       avgTemperatureF = (avgTemperatureC * 9.0 / 5.0) + 32.0;
       
-      Serial.println("Temperature reading: " + String(currentTemp) + "°C (Avg: " + String(avgTemperatureC) + "°C)");
+      if (!processingCommand) {
+        Serial.println("Temperature reading: " + String(currentTemp) + "°C (Avg: " + String(avgTemperatureC) + "°C)");
+      }
     } else {
-      Serial.println("Error reading temperature sensor");
+      if (!processingCommand) {
+        Serial.println("Error reading temperature sensor");
+      }
     }
     
     lastTempRead = currentTime;
@@ -162,15 +169,21 @@ void readRenogy() {
   unsigned long currentTime = millis();
   
   if (currentTime - lastRenogyRead >= renogyInterval) {
-    Serial.println("Reading Renogy data...");
+    if (!processingCommand) {
+      Serial.println("Reading Renogy data...");
+    }
     renogy_read_data_registers();
     
     if (renogy_data.controller_connected) {
-      Serial.println("Renogy - Battery: " + String(renogy_data.battery_voltage) + "V (" + 
-                     String(renogy_data.battery_soc) + "%), Solar: " + 
-                     String(renogy_data.solar_panel_watts) + "W");
+      if (!processingCommand) {
+        Serial.println("Renogy - Battery: " + String(renogy_data.battery_voltage) + "V (" + 
+                       String(renogy_data.battery_soc) + "%), Solar: " + 
+                       String(renogy_data.solar_panel_watts) + "W");
+      }
     } else {
-      Serial.println("Renogy controller not connected");
+      if (!processingCommand) {
+        Serial.println("Renogy controller not connected");
+      }
     }
     
     lastRenogyRead = currentTime;
@@ -193,21 +206,32 @@ void postResults() {
 
 void handleSerialCommands() {
   if (Serial.available()) {
-    String command = Serial.readStringUntil('\n');
-    command.trim();
-    command.toUpperCase();
+    processingCommand = true;  // Stop normal output
+    delay(100);  // Allow any pending output to finish
     
-    if (command == "DOWNLOAD") {
-      downloadCSVData();
-    } else if (command == "STATUS") {
-      showFileStatus();
-    } else if (command == "CLEAR") {
-      clearCSVFile();
-    } else if (command == "HELP") {
-      showHelp();
-    } else if (command.length() > 0) {
-      Serial.println("Unknown command: " + command + ". Type HELP for available commands.");
+    // Clear any remaining data in serial buffer
+    while (Serial.available()) {
+      String command = Serial.readStringUntil('\n');
+      command.trim();
+      command.toUpperCase();
+      
+      if (command == "DOWNLOAD") {
+        downloadCSVData();
+      } else if (command == "STATUS") {
+        showFileStatus();
+      } else if (command == "CLEAR") {
+        clearCSVFile();
+      } else if (command == "HELP") {
+        showHelp();
+      } else if (command.length() > 0) {
+        Serial.println("Unknown command: " + command + ". Type HELP for available commands.");
+      }
+      
+      // Only process one command at a time
+      break;
     }
+    
+    processingCommand = false;  // Resume normal output
   }
 }
 
@@ -227,7 +251,9 @@ void initializeCSVFile() {
 void writeToCSV() {
   File file = SPIFFS.open("/data_log.csv", FILE_APPEND);
   if (!file) {
-    Serial.println("Failed to open CSV file for writing");
+    if (!processingCommand) {
+      Serial.println("Failed to open CSV file for writing");
+    }
     return;
   }
   
@@ -265,8 +291,10 @@ void writeToCSV() {
   
   file.close();
   
-  Serial.println("Data written to CSV - Temp: " + String(avgTemperatureC) + "°C, Battery: " + 
-                 String(renogy_data.battery_voltage) + "V (" + String(renogy_data.battery_soc) + "%)");
+  if (!processingCommand) {
+    Serial.println("Data written to CSV - Temp: " + String(avgTemperatureC) + "°C, Battery: " + 
+                   String(renogy_data.battery_voltage) + "V (" + String(renogy_data.battery_soc) + "%)");
+  }
 }
 
 void renogy_read_data_registers() {
