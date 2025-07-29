@@ -67,6 +67,19 @@ struct Controller_data {
 };
 Controller_data renogy_data;
 
+// Function declarations
+void readTemperature();
+void readRenogy();
+void postResults();
+void handleSerialCommands();
+void initializeCSVFile();
+void writeToCSV();
+void renogy_read_data_registers();
+void downloadCSVData();
+void showFileStatus();
+void clearCSVFile();
+void showHelp();
+
 void setup() {
   Serial.begin(115200);
   delay(2000);
@@ -116,6 +129,7 @@ void loop() {
   readTemperature();
   readRenogy();
   postResults();
+  handleSerialCommands();
   
   delay(100); // Small delay to prevent excessive CPU usage
 }
@@ -174,6 +188,26 @@ void postResults() {
     tempCount = 0;
     
     lastCSVWrite = currentTime;
+  }
+}
+
+void handleSerialCommands() {
+  if (Serial.available()) {
+    String command = Serial.readStringUntil('\n');
+    command.trim();
+    command.toUpperCase();
+    
+    if (command == "DOWNLOAD") {
+      downloadCSVData();
+    } else if (command == "STATUS") {
+      showFileStatus();
+    } else if (command == "CLEAR") {
+      clearCSVFile();
+    } else if (command == "HELP") {
+      showHelp();
+    } else if (command.length() > 0) {
+      Serial.println("Unknown command: " + command + ". Type HELP for available commands.");
+    }
   }
 }
 
@@ -294,4 +328,65 @@ void renogy_read_data_registers() {
       renogy_data.battery_soc = 55;
     }
   }
+}
+
+void downloadCSVData() {
+  Serial.println("DOWNLOAD_START");
+  
+  File file = SPIFFS.open("/data_log.csv", "r");
+  if (!file) {
+    Serial.println("ERROR: Could not open CSV file");
+    Serial.println("DOWNLOAD_END");
+    return;
+  }
+  
+  Serial.println("FILE_SIZE:" + String(file.size()));
+  
+  while (file.available()) {
+    Serial.write(file.read());
+  }
+  
+  file.close();
+  Serial.println("\nDOWNLOAD_END");
+}
+
+void showFileStatus() {
+  File file = SPIFFS.open("/data_log.csv", "r");
+  if (file) {
+    Serial.println("CSV file exists");
+    Serial.println("File size: " + String(file.size()) + " bytes");
+    
+    // Count lines
+    int lineCount = 0;
+    while (file.available()) {
+      if (file.read() == '\n') lineCount++;
+    }
+    Serial.println("Number of lines: " + String(lineCount));
+    file.close();
+  } else {
+    Serial.println("CSV file not found");
+  }
+  
+  // Show SPIFFS info
+  Serial.println("SPIFFS total: " + String(SPIFFS.totalBytes()) + " bytes");
+  Serial.println("SPIFFS used: " + String(SPIFFS.usedBytes()) + " bytes");
+  Serial.println("SPIFFS free: " + String(SPIFFS.totalBytes() - SPIFFS.usedBytes()) + " bytes");
+}
+
+void clearCSVFile() {
+  if (SPIFFS.remove("/data_log.csv")) {
+    Serial.println("CSV file deleted successfully");
+    initializeCSVFile(); // Recreate with headers
+    Serial.println("New CSV file created with headers");
+  } else {
+    Serial.println("Failed to delete CSV file");
+  }
+}
+
+void showHelp() {
+  Serial.println("Available commands:");
+  Serial.println("  DOWNLOAD - Download the CSV data file");
+  Serial.println("  STATUS   - Show file size and storage info");
+  Serial.println("  CLEAR    - Delete CSV file and start fresh");
+  Serial.println("  HELP     - Show this help message");
 }
