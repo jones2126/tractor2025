@@ -162,7 +162,7 @@ void loop()
   Serial.println("Panel voltage: " + String(renogy_data.solar_panel_voltage));  
   Serial.println("---");
 
-  delay(5000); 
+  delay(30000); 
 }
 
 void renogy_read_data_registers() 
@@ -261,7 +261,7 @@ void renogy_read_info_registers()
   uint8_t raw_data;
 
   // prints data about the read to the console
-  bool print_data = 0;
+  bool print_data = 1;
   
   Serial.println("Attempting to read info registers...");
   result = node.readHoldingRegisters(0x00A, num_info_registers);
