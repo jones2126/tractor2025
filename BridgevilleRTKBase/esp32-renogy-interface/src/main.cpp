@@ -261,7 +261,7 @@ void renogy_read_info_registers()
   uint8_t raw_data;
 
   // prints data about the read to the console
-  bool print_data = 1;
+  bool print_data = 0;
   
   Serial.println("Attempting to read info registers...");
   result = node.readHoldingRegisters(0x00A, num_info_registers);
