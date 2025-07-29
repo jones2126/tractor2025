@@ -58,11 +58,25 @@ void loop() {
   
   // Check for TTL response
   if (Serial2.available()) {
-    Serial.print("TTL Received: ");
+    String receivedData = "";
     while (Serial2.available()) {
-      Serial.write(Serial2.read());
+      char c = Serial2.read();
+      if (c == '\n' || c == '\r') {
+        if (receivedData.length() > 0) {
+          Serial.print("TTL Received: ");
+          Serial.println(receivedData);
+          receivedData = "";
+        }
+      } else {
+        receivedData += c;
+      }
+      delay(1); // Small delay to allow more data to arrive
     }
-    Serial.println();
+    // Print any remaining data that didn't end with newline
+    if (receivedData.length() > 0) {
+      Serial.print("TTL Received: ");
+      Serial.println(receivedData);
+    }
   }
   
   // Temperature sensor reading
