@@ -26,6 +26,10 @@ const unsigned long csvInterval = 60000;     // 60 seconds (1 minute)
 // Command processing flag
 bool processingCommand = false;
 
+// File management
+const size_t maxFileSize = 500000;  // 500KB max file size
+int fileCounter = 1;
+
 // Temperature averaging
 float tempSum = 0;
 int tempCount = 0;
@@ -79,9 +83,12 @@ void initializeCSVFile();
 void writeToCSV();
 void renogy_read_data_registers();
 void downloadCSVData();
+void downloadAndDeleteCSVData();
 void showFileStatus();
 void clearCSVFile();
 void showHelp();
+String getCurrentCSVFilename();
+void createNewCSVFile();
 
 void setup() {
   Serial.begin(115200);
@@ -224,6 +231,8 @@ void handleSerialCommands() {
     // Process the command
     if (command == "DOWNLOAD") {
       downloadCSVData();
+    } else if (command == "DOWNLOAD_DELETE") {
+      downloadAndDeleteCSVData();
     } else if (command == "STATUS") {
       showFileStatus();
     } else if (command == "CLEAR") {
@@ -243,23 +252,36 @@ void handleSerialCommands() {
 }
 
 void initializeCSVFile() {
-  File file = SPIFFS.open("/data_log.csv", FILE_WRITE);
+  String filename = getCurrentCSVFilename();
+  File file = SPIFFS.open(filename, FILE_WRITE);
   if (!file) {
-    Serial.println("Failed to create CSV file");
+    Serial.println("Failed to create CSV file: " + filename);
     return;
   }
   
   // Write CSV headers
   file.println("Timestamp,Avg_Temp_C,Avg_Temp_F,Battery_Voltage,Battery_SOC,Battery_Charging_Amps,Solar_Panel_Voltage,Solar_Panel_Amps,Solar_Panel_Watts,Controller_Temp_C,Battery_Temp_C,Load_Voltage,Load_Amps,Load_Watts");
   file.close();
-  Serial.println("CSV file initialized with headers");
+  Serial.println("CSV file initialized: " + filename);
 }
 
 void writeToCSV() {
-  File file = SPIFFS.open("/data_log.csv", FILE_APPEND);
+  String filename = getCurrentCSVFilename();
+  
+  // Check if current file exists and its size
+  File checkFile = SPIFFS.open(filename, "r");
+  if (checkFile && checkFile.size() > maxFileSize) {
+    checkFile.close();
+    createNewCSVFile();
+    filename = getCurrentCSVFilename();
+  } else if (checkFile) {
+    checkFile.close();
+  }
+  
+  File file = SPIFFS.open(filename, FILE_APPEND);
   if (!file) {
     if (!processingCommand) {
-      Serial.println("Failed to open CSV file for writing");
+      Serial.println("Failed to open CSV file for writing: " + filename);
     }
     return;
   }
@@ -299,7 +321,7 @@ void writeToCSV() {
   file.close();
   
   if (!processingCommand) {
-    Serial.println("Data written to CSV - Temp: " + String(avgTemperatureC) + "°C, Battery: " + 
+    Serial.println("Data written to " + filename + " - Temp: " + String(avgTemperatureC) + "°C, Battery: " + 
                    String(renogy_data.battery_voltage) + "V (" + String(renogy_data.battery_soc) + "%)");
   }
 }
@@ -366,15 +388,17 @@ void renogy_read_data_registers() {
 }
 
 void downloadCSVData() {
+  String filename = getCurrentCSVFilename();
   Serial.println("DOWNLOAD_START");
   
-  File file = SPIFFS.open("/data_log.csv", "r");
+  File file = SPIFFS.open(filename, "r");
   if (!file) {
-    Serial.println("ERROR: Could not open CSV file");
+    Serial.println("ERROR: Could not open CSV file: " + filename);
     Serial.println("DOWNLOAD_END");
     return;
   }
   
+  Serial.println("FILE_NAME:" + filename);
   Serial.println("FILE_SIZE:" + String(file.size()));
   
   while (file.available()) {
@@ -385,11 +409,46 @@ void downloadCSVData() {
   Serial.println("\nDOWNLOAD_END");
 }
 
+void downloadAndDeleteCSVData() {
+  String filename = getCurrentCSVFilename();
+  Serial.println("DOWNLOAD_DELETE_START");
+  
+  File file = SPIFFS.open(filename, "r");
+  if (!file) {
+    Serial.println("ERROR: Could not open CSV file: " + filename);
+    Serial.println("DOWNLOAD_DELETE_END");
+    return;
+  }
+  
+  Serial.println("FILE_NAME:" + filename);
+  Serial.println("FILE_SIZE:" + String(file.size()));
+  
+  while (file.available()) {
+    Serial.write(file.read());
+  }
+  
+  file.close();
+  
+  // Delete the file after successful download
+  if (SPIFFS.remove(filename)) {
+    Serial.println("\nFILE_DELETED:" + filename);
+    // Create a new file with headers
+    initializeCSVFile();
+    Serial.println("NEW_FILE_CREATED:" + getCurrentCSVFilename());
+  } else {
+    Serial.println("\nERROR: Failed to delete file: " + filename);
+  }
+  
+  Serial.println("DOWNLOAD_DELETE_END");
+}
+
 void showFileStatus() {
-  File file = SPIFFS.open("/data_log.csv", "r");
+  String filename = getCurrentCSVFilename();
+  File file = SPIFFS.open(filename, "r");
   if (file) {
-    Serial.println("CSV file exists");
+    Serial.println("Current CSV file: " + filename);
     Serial.println("File size: " + String(file.size()) + " bytes");
+    Serial.println("Max file size: " + String(maxFileSize) + " bytes");
     
     // Count lines
     int lineCount = 0;
@@ -399,7 +458,19 @@ void showFileStatus() {
     Serial.println("Number of lines: " + String(lineCount));
     file.close();
   } else {
-    Serial.println("CSV file not found");
+    Serial.println("Current CSV file not found: " + filename);
+  }
+  
+  // Show all CSV files
+  File root = SPIFFS.open("/");
+  File foundFile = root.openNextFile();
+  Serial.println("All CSV files on SPIFFS:");
+  while (foundFile) {
+    String fname = foundFile.name();
+    if (fname.endsWith(".csv")) {
+      Serial.println("  " + fname + " (" + String(foundFile.size()) + " bytes)");
+    }
+    foundFile = root.openNextFile();
   }
   
   // Show SPIFFS info
@@ -409,19 +480,33 @@ void showFileStatus() {
 }
 
 void clearCSVFile() {
-  if (SPIFFS.remove("/data_log.csv")) {
-    Serial.println("CSV file deleted successfully");
+  String filename = getCurrentCSVFilename();
+  if (SPIFFS.remove(filename)) {
+    Serial.println("CSV file deleted successfully: " + filename);
     initializeCSVFile(); // Recreate with headers
-    Serial.println("New CSV file created with headers");
+    Serial.println("New CSV file created: " + getCurrentCSVFilename());
   } else {
-    Serial.println("Failed to delete CSV file");
+    Serial.println("Failed to delete CSV file: " + filename);
   }
 }
 
 void showHelp() {
   Serial.println("Available commands:");
-  Serial.println("  DOWNLOAD - Download the CSV data file");
-  Serial.println("  STATUS   - Show file size and storage info");
-  Serial.println("  CLEAR    - Delete CSV file and start fresh");
-  Serial.println("  HELP     - Show this help message");
+  Serial.println("  DOWNLOAD        - Download the current CSV data file");
+  Serial.println("  DOWNLOAD_DELETE - Download CSV file and delete it from ESP32");
+  Serial.println("  STATUS          - Show file size and storage info");
+  Serial.println("  CLEAR           - Delete current CSV file and start fresh");
+  Serial.println("  HELP            - Show this help message");
+}
+
+String getCurrentCSVFilename() {
+  return "/data_log_" + String(fileCounter) + ".csv";
+}
+
+void createNewCSVFile() {
+  fileCounter++;
+  initializeCSVFile();
+  if (!processingCommand) {
+    Serial.println("Created new CSV file: " + getCurrentCSVFilename() + " (File #" + String(fileCounter) + ")");
+  }
 }
