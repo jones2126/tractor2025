@@ -15,4 +15,4 @@ RTK Base Station project with ESP32 data logging and Raspberry Pi RTCM server.
 
 ## Quick Start
 
-See `shared/docs/README.md` for detailed setup instructions.
+See [shared/docs/README.md](shared/docs/README.md) for detailed setup instructions.
