@@ -1,20 +1,21 @@
 # ESP32 Renogy Data Logger
 
-A comprehensive data logging system that monitors temperature and Renogy charge controller data using an ESP32, with automated data collection and management.
+A data logging system that monitors a solar powered GPS RTK base station.  Current data includes temperature and Renogy charge controller status.  A Renogy Wanderer 10A controllers, an ESP32, and a Raspberry Pi 3 B are components in the system.
 
 ## System Overview
 
-This system consists of three main components:
-1. **ESP32 Data Logger** - Collects temperature and Renogy charge controller data
-2. **Python Download Script** - Retrieves data from ESP32 via USB serial
-3. **Automated Cron Job** - Daily data collection and management
+Logical components:
+1. **ESP32 Logger** - Collects temperature and charge controller data to SPIFFS
+2. **Python Download Script** - Retrieves data daily from ESP32 via USB serial
+3. **Automated Cron Job** - Controls the collection frequency
 
 ## Hardware Requirements
 
-- **ESP32 Development Board**
+- **ESP32 Development Board** (ESP32-DevKitM-1 30-pin)
 - **DS18B20 Temperature Sensor** (connected to GPIO32)
-- **Renogy Charge Controller** with RS232/Modbus capability
-- **RS232 to TTL Converter** (for Renogy communication)
+- **4.7K resistor** (connects between VCC and GPIO32)
+- **Renogy 10 amp Charge Controller** with RS232/Modbus capability
+- **RS232 to TTL Converter** (for RJ12 connection to Renogy controller)
 - **USB Cable** (ESP32 to Raspberry Pi connection)
 
 ### Pin Connections
@@ -27,21 +28,21 @@ GPIO17 (TX2) | RS232 TTL TX       | Renogy communication transmit
 USB          | Raspberry Pi       | Data download and monitoring
 ```
 
-## ESP32 Firmware Features
+## ESP32 Script
 
 ### Data Collection Timing
 - **Temperature**: Read every 15 seconds, averaged over 1-minute periods
 - **Renogy Data**: Read every 20 seconds  
-- **CSV Logging**: Write averaged data every 60 seconds
+- **CSV Logging**: Write averaged data every 60 seconds to ESP32 SPIFFS
 
-### Automatic File Management
+### ESP32 Storage Management
 - **File Size Limit**: 500KB per CSV file
 - **Auto-Rotation**: Creates new files when size limit reached
 - **Naming Convention**: `/data_log_1.csv`, `/data_log_2.csv`, etc.
 
 ### Data Collected
 Each CSV row contains:
-- Timestamp (milliseconds since boot)
+- Timestamp (milliseconds since boot) - need to add code to get actual date/time
 - Average temperature (°C and °F)
 - Battery voltage, SOC, charging amps
 - Solar panel voltage, amps, watts
@@ -61,18 +62,9 @@ The ESP32 responds to these commands via USB serial:
 
 ## Python Download Script
 
-### Installation
-```bash
-# Install required Python package
-pip3 install pyserial
-
-# Make script executable
-chmod +x esp32_downloader.py
-```
-
 ### Usage
 
-**Command Line Options:**
+**Typical Commands:**
 ```bash
 # Check ESP32 status
 python3 esp32_downloader.py status
@@ -83,7 +75,7 @@ python3 esp32_downloader.py download [optional_filename]
 # Download and delete (for daily automation)
 python3 esp32_downloader.py download_delete [optional_filename]
 
-# Interactive mode
+# Interactive mode (i.e. direct control in terminal window)
 python3 esp32_downloader.py
 ```
 
@@ -105,9 +97,13 @@ esp32_data_20250729_141500.csv
 
 ### Cron Job Setup
 
-1. **Create data directory:**
+1. **Create data directory and script file:**
 ```bash
 mkdir -p /home/al/esp32_data
+mkdir -p /home/al/logs
+mkdir -p /home/al/scripts
+nano /home/al/scripts/daily_esp32_download.sh
+Copy and paste script below
 ```
 
 2. **Create daily download script:**
@@ -144,7 +140,7 @@ Add this line for daily 6 AM collection:
 0 6 * * * /home/al/scripts/daily_esp32_download.sh >> /home/al/logs/esp32_cron.log 2>&1
 ```
 
-### Cron Job Features
+### Cron Job Description
 - **Daily automated download** at 6 AM
 - **Automatic file deletion** from ESP32 after successful download
 - **Timestamped filenames** for easy organization
@@ -157,7 +153,7 @@ Add this line for daily 6 AM collection:
 ```
 /home/al/
 ├── python/
-│   ├── esp32_downloader.py          # Main download script
+│   ├── esp32-downloader.py          # Main download script
 │   └── requirements.txt             # Python dependencies
 ├── scripts/
 │   └── daily_esp32_download.sh      # Daily cron script
@@ -176,11 +172,11 @@ Add this line for daily 6 AM collection:
 # View recent cron job logs
 tail -f /home/al/logs/esp32_cron.log
 
-# Test manual download
-python3 esp32_downloader.py status
-
 # Check ESP32 files
-python3 esp32_downloader.py status
+python3 /home/al/python/esp32-downloader.py status
+
+# Test manual download
+python3 /home/al/python/esp32-downloader.py download 
 ```
 
 ### Common Issues
@@ -199,56 +195,15 @@ python3 esp32_downloader.py status
 - Verify crontab entry: `crontab -l`
 - Check log file for errors
 
-## Data Analysis
-
-The CSV files can be imported into various tools:
-
-**Python/Pandas:**
-```python
-import pandas as pd
-df = pd.read_csv('esp32_data_20250729.csv')
-```
-
-**Excel/LibreOffice:**
-- Direct CSV import with comma delimiter
-
-**InfluxDB/Grafana:**
-- For time-series visualization and monitoring
-
 ## Storage Capacity
 
 - **ESP32 SPIFFS**: ~1.26 MB total storage
 - **File rotation**: At 500KB per file (≈5-7 days per file)
-- **Daily downloads**: Prevents storage overflow
-- **Raspberry Pi**: Virtually unlimited storage for historical data
 
 ## Development Notes
 
-### ESP32 Code Structure
-- `platformio.ini` - Library dependencies
-- `src/main.cpp` - Main firmware code
-- Libraries: OneWire, DallasTemperature, ModbusMaster
-
-### Python Dependencies
-```txt
-pyserial>=3.4
-```
-
-### Future Enhancements
-- WiFi connectivity for remote downloads
-- Web dashboard for real-time monitoring  
-- Database integration (SQLite/PostgreSQL)
+### Future Potential Enhancements
+- Use WiFi connectivity for control and status  
+- Database integration (SQLite/PostgreSQL) for data analysis
 - Email alerts for system issues
-- Additional sensor support
-
-## License
-
-This project is released under the MIT License. Feel free to modify and distribute as needed.
-
-## Support
-
-For issues or questions:
-1. Check the troubleshooting section above
-2. Review log files for error messages
-3. Test components individually (ESP32, Python script, cron job)
-4. Ensure all hardware connections are secure
+- Additional sensor support (e.g. light diode)
