@@ -1,0 +1,6 @@
+# Python dependencies for RTK Base Station
+# Add your specific dependencies here, for example:
+# pyserial
+# requests
+# numpy
+# etc.
