@@ -401,22 +401,21 @@ void downloadCSVData() {
   Serial.println("FILE_NAME:" + filename);
   Serial.println("FILE_SIZE:" + String(file.size()));
   
-  // Check if file already has headers by reading first line
-  String firstLine = file.readStringUntil('\n');
-  file.seek(0); // Reset to beginning
+  // Always send headers first to ensure CSV compatibility
+  Serial.println("Timestamp,Avg_Temp_C,Avg_Temp_F,Battery_Voltage,Battery_SOC,Battery_Charging_Amps,Solar_Panel_Voltage,Solar_Panel_Amps,Solar_Panel_Watts,Controller_Temp_C,Battery_Temp_C,Load_Voltage,Load_Amps,Load_Watts");
   
-  // If no headers, send them first
-  if (!firstLine.startsWith("Timestamp,")) {
-    Serial.println("Timestamp,Avg_Temp_C,Avg_Temp_F,Battery_Voltage,Battery_SOC,Battery_Charging_Amps,Solar_Panel_Voltage,Solar_Panel_Amps,Solar_Panel_Watts,Controller_Temp_C,Battery_Temp_C,Load_Voltage,Load_Amps,Load_Watts");
-  }
-  
-  // Send the file content
+  // Send file content, skipping header line if it exists
   while (file.available()) {
-    Serial.write(file.read());
+    String line = file.readStringUntil('\n');
+    line.trim();
+    // Skip empty lines and header lines
+    if (line.length() > 0 && !line.startsWith("Timestamp,")) {
+      Serial.println(line);
+    }
   }
   
   file.close();
-  Serial.println("\nDOWNLOAD_END");
+  Serial.println("DOWNLOAD_END");
 }
 
 void downloadAndDeleteCSVData() {
@@ -433,30 +432,29 @@ void downloadAndDeleteCSVData() {
   Serial.println("FILE_NAME:" + filename);
   Serial.println("FILE_SIZE:" + String(file.size()));
   
-  // Check if file already has headers by reading first line
-  String firstLine = file.readStringUntil('\n');
-  file.seek(0); // Reset to beginning
+  // Always send headers first to ensure CSV compatibility
+  Serial.println("Timestamp,Avg_Temp_C,Avg_Temp_F,Battery_Voltage,Battery_SOC,Battery_Charging_Amps,Solar_Panel_Voltage,Solar_Panel_Amps,Solar_Panel_Watts,Controller_Temp_C,Battery_Temp_C,Load_Voltage,Load_Amps,Load_Watts");
   
-  // If no headers, send them first
-  if (!firstLine.startsWith("Timestamp,")) {
-    Serial.println("Timestamp,Avg_Temp_C,Avg_Temp_F,Battery_Voltage,Battery_SOC,Battery_Charging_Amps,Solar_Panel_Voltage,Solar_Panel_Amps,Solar_Panel_Watts,Controller_Temp_C,Battery_Temp_C,Load_Voltage,Load_Amps,Load_Watts");
-  }
-  
-  // Send the file content
+  // Send file content, skipping header line if it exists
   while (file.available()) {
-    Serial.write(file.read());
+    String line = file.readStringUntil('\n');
+    line.trim();
+    // Skip empty lines and header lines
+    if (line.length() > 0 && !line.startsWith("Timestamp,")) {
+      Serial.println(line);
+    }
   }
   
   file.close();
   
   // Delete the file after successful download
   if (SPIFFS.remove(filename)) {
-    Serial.println("\nFILE_DELETED:" + filename);
+    Serial.println("FILE_DELETED:" + filename);
     // Create a new file with headers
     initializeCSVFile();
     Serial.println("NEW_FILE_CREATED:" + getCurrentCSVFilename());
   } else {
-    Serial.println("\nERROR: Failed to delete file: " + filename);
+    Serial.println("ERROR: Failed to delete file: " + filename);
   }
   
   Serial.println("DOWNLOAD_DELETE_END");
