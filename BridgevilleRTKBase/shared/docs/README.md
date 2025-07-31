@@ -2,18 +2,19 @@
 
 ## Overview
 
-This document describes a self-contained, solar-powered RTK (Real-Time Kinematic) base station that broadcasts RTCM (Radio Technical Commission for Maritime Services) correction data via TCP socket to a local network. The system is designed use an F9P with minimal configuration changes, extract the RTCM messages and publish those to the network at 1Hz to prevent network congestion.
+This document describes a self-contained, solar-powered RTK (Real-Time Kinematic) base station that broadcasts RTCM (Radio Technical Commission for Maritime Services) correction data via TCP socket to a local network. The system is designed to use an F9P with minimal configuration changes, extract the RTCM messages and publish those to the network at 1Hz to prevent network congestion.
 
 ## System Components
 
 ### Power System
 - **Solar Panel**: 100W photovoltaic panel for primary power generation
-- **Charge Controller**: Renogy Wanderer solar charge controller for battery management
+- **Charge Controller**: Renogy Wanderer 10 amp solar charge controller for battery management
 - **Battery**: 12V lead-acid battery for energy storage and night/cloudy weather operation
 - **DC-DC Converter**: TOBSUN EA15-5V 15W converter (12V to 5V) for Raspberry Pi power supply
+- **ESP32 with TTL RS232 adapter**: Provides ability to interface and pull data from RJ12 port on Renogy controller
 
 ### Computing and GPS
-- **Main Computer**: Raspberry Pi 3B running the base station python script
+- **Main Computer**: Raspberry Pi 3B running the base station python script publishing RTCM correction data
 - **GPS Receiver**: ArduSimple F9P high-precision GNSS module
 - **Network Connection**: WiFi for local network connectivity
 
@@ -48,21 +49,22 @@ GPS Satellites → F9P GPS Module → Raspberry Pi 3B → TCP Server → Local N
 
 ## Rate Limiting and Network Optimization
 
-The python script posts to port 6001 **RTCM messages at 1Hz** to avoid network congestion:
+The python script, rtcm_server_0714.py, (aka RTCM server) posts to port 6001 **RTCM messages at 1Hz** to avoid network congestion:
 
 - **F9P Output**: Generates RTCM messages at ~10 Hz per message type
-- **Buffering System**: Latest message of each type is stored in memory
-- **Broadcast Rate**: Buffered messages are transmitted at **1 Hz** to all connected clients
+- **Buffering System**: Latest message of each type is stored in memory buffer
+- **Broadcast Thread**: Dedicated thread manages rate-limited transmission
+- **Broadcast Rate**: Buffered messages are transmitted at **1 Hz** to connected clients
 - **Data Rate**: Approximately 467 B/s (vs. 5.6 KB/s without rate limiting)
 
 ## Development and Deployment
 
 ### Git Sparse Checkout Configuration
 
-This RTK base station is configured with **Git Sparse Checkout** to only synchronize the `BridgevilleRTKBase/` folder from the main repository. This keeps the Pi's storage usage minimal and focuses only on the RTK base station functionality.
+This RPi 3, RTK base station, is configured with **Git Sparse Checkout** to only synchronize the `BridgevilleRTKBase/` folder from the main repository. This keeps the Pi's storage usage minimal and focuses only on the RTK base station functionality.
 
 **Repository**: `https://github.com/jones2126/tractor2025`  
-**Local Path**: `/home/al/python/`  
+**Local Path**: `/home/al/python/tractor2025/BridgevilleRTKBase`  
 **Sparse Checkout Pattern**: `BridgevilleRTKBase/*`  
 **Active Branch**: `main`
 
@@ -75,26 +77,34 @@ cd /home/al/python
 git pull origin main
 ```
 
-**Run scripts**:
+**Run python scripts**:
 ```bash
 cd /home/al/python/BridgevilleRTKBase
 python3 script_name.py
 ```
 
+**Compile scripts for ESP32**:
+```bash
+cd /home/al/python/tractor2025/BridgevilleRTKBase/esp32/production/esp32-renogy-csv-logger
+pio run --target upload
+```
 ### Software Components
 
 The system includes several Python scripts for different functionalities:
 
 #### Core RTCM Server
-- **rtcm_server_0713.py**: Main RTK base station server with:
-  - RTCM message parsing and validation (CRC checking)
-  - Rate-limited TCP broadcasting (1 Hz output from ~10 Hz input)
-  - Multi-threaded client handling
-  - Comprehensive logging with file rotation
-  - Real-time message rate monitoring
-  - Support for GPS, GLONASS, and Galileo constellations
+- **rtcm_server_0714.py**: Latest RTK base station server with:
+  - **Advanced Rate Limiting**: Sophisticated RTCM buffering system with 1Hz broadcast rate
+  - **Multi-threaded Architecture**: Separate threads for data reception, broadcasting, and client handling
+  - **Enhanced Statistics**: Tracks both received and broadcast message rates
+  - **RTCM Message Validation**: CRC checking and complete message parsing
+  - **TCP Client Management**: Robust handling of multiple simultaneous connections
+  - **Comprehensive Logging**: File rotation with configurable log levels
+  - **Real-time Monitoring**: Live message rate reporting and client status
+  - **Multi-constellation Support**: GPS, GLONASS, and Galileo systems
+  - **Performance Optimization**: Buffered broadcasting prevents network congestion
 
-#### Supporting Scripts
+#### Archived Scripts
 - **Communication Scripts**: `com2_*.py` - Handle serial communication with RTK hardware
 - **Logging Scripts**: `test*_logging.py` - Various logging implementations and tests  
 - **RTCM Scripts**: `rtcm_*.py` - Handle RTCM correction data processing and serving
@@ -102,8 +112,11 @@ The system includes several Python scripts for different functionalities:
 - **Menu/Control Scripts**: `k706_menu*.py` - User interface for RTK configuration
 - **logger_setup.py**: Reusable logging configuration module with file rotation
 
-#### Monitoring and Testing
-- **rtcm_monitor.py**: Utility to run on a separate, network attached computer to check RTCM message rates, and connection status
+#### For Testing RTCM Messages - simple
+- **rtcm_monitor_first_check.py**: Run this on a different computer that is also connected to your local network to confirm RTCM message rates, and connection status
+
+#### For Testing if RTK Fix is Achieve
+- **f9pGetRTCM.py**: Run this on a different computer that has an F9P GPS connected.  This will pass the RTCM messages to it and track if you are getting an RTK Fix status.
 
 ### GPS Hardware Evolution
 
@@ -120,50 +133,128 @@ The `k706_menu.py` script provides a menu-driven interface for configuring the K
 - Fixed position setting for RTK base
 - Custom command sending
 
-## System Features
+## Systemd Service Setup
 
-- **Autonomous Operation**: Solar-powered system requires no external power source
-- **Weather Resilient**: Battery backup ensures operation during low-light conditions
-- **High Precision**: F9P module provides centimeter-level accuracy for RTK corrections
-- **Network Integration**: TCP server enables real-time data distribution with rate limiting
-- **Multi-Constellation**: Supports GPS, GLONASS, and Galileo satellite systems
-- **Traffic Optimization**: Intelligent buffering prevents network congestion
-- **Real-time Monitoring**: Comprehensive logging and rate reporting
+To ensure the RTCM server starts automatically at boot and runs continuously, set up a systemd service:
 
-## Technical Specifications
+### 1. Create the Service File
 
-- **Power Consumption**: Approximately 10-15W continuous operation
-- **Solar Generation**: Up to 100W peak power generation
-- **GPS Accuracy**: <2cm horizontal, <3cm vertical (typical RTK base performance)
-- **RTCM Update Rate**: 1 Hz broadcast rate (rate-limited from 10 Hz input)
-- **Network Protocol**: TCP sockets (port 6001)
-- **Operating Temperature**: -20°C to +70°C (component dependent)
-- **Data Rate**: ~467 B/s (optimized for network efficiency)
+Create the service configuration file:
 
-## Installation Requirements
-
-1. **Location**: Clear sky view with minimal obstructions (>15° elevation mask)
-2. **Mounting**: Stable platform for GPS antenna and solar panel
-3. **Network Access**: WiFi connection to local network
-4. **Grounding**: Proper electrical grounding for lightning protection
-
-## Network Configuration
-
-The system creates a TCP server accessible on the local network, broadcasting rate-limited RTCM correction data in real-time. Client devices (rovers) can connect to this server to receive high-precision positioning corrections.
-
-**Default Configuration:**
-- **Port**: 6001
-- **Protocol**: TCP sockets
-- **Host**: 0.0.0.0 (all interfaces)
-- **Data Format**: RTCM 3.x binary messages
-- **Rate Limiting**: 1 Hz per message type
-- **Authentication**: None (local network only)
-
-**Connection Example:**
 ```bash
-# From rover or monitoring device
-telnet 192.168.1.233 6001
+sudo nano /etc/systemd/system/rtcm_server.service
 ```
+
+Add the following content:
+
+```ini
+[Unit]
+Description=RTCM Base Station Server
+After=network-online.target
+Wants=network-online.target
+StartLimitBurst=5
+StartLimitIntervalSec=300
+
+[Service]
+Type=simple
+User=al
+Group=al
+WorkingDirectory=/home/al/python/tractor2025/BridgevilleRTKBase/raspberry-pi/production
+ExecStart=/usr/bin/python3 /home/al/python/tractor2025/BridgevilleRTKBase/raspberry-pi/production/rtcm_server_0714.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+Environment=PYTHONPATH=/home/al/python/tractor2025/BridgevilleRTKBase/raspberry-pi/production
+
+[Install]
+WantedBy=multi-user.target
+```
+
+### 2. Enable and Start the Service
+
+```bash
+# Reload systemd to recognize the new service
+sudo systemctl daemon-reload
+
+# Enable the service to start at boot
+sudo systemctl enable rtcm_server.service
+
+# Start the service immediately
+sudo systemctl start rtcm_server.service
+
+# Check service status
+sudo systemctl status rtcm_server.service
+```
+
+### 3. Setup UDEV for ESP32 and F9P
+
+Create the udev file:
+
+```bash
+sudo nano /etc/udev/rules.d/99-rtk-devices.rules
+```
+
+Add the following content:
+
+```ini
+# UDEV rules for RTK Base Station devices
+# Place this file in /etc/udev/rules.d/99-rtk-devices.rules
+
+# ESP32 with CH341 USB-to-Serial converter
+# Creates /dev/esp32 symlink for the ESP32 device
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", SYMLINK+="esp32", TAG+="systemd", ENV{SYSTEMD_WANTS}="esp32-ready.service"
+
+# u-blox F9P GNSS receiver  
+# Creates /dev/f9p symlink for the F9P GPS device
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1546", ATTRS{idProduct}=="01a9", SYMLINK+="f9p", TAG+="systemd", ENV{SYSTEMD_WANTS}="f9p-ready.service"
+
+# Alternative: Create more descriptive names
+# SUBSYSTEM=="tty", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", SYMLINK+="rtk-esp32", GROUP="dialout", MODE="0664"
+# SUBSYSTEM=="tty", ATTRS{idVendor}=="1546", ATTRS{idProduct}=="01a9", SYMLINK+="rtk-f9p", GROUP="dialout", MODE="0664"
+```
+
+Reload UDEV rules:
+```bash
+bashsudo udevadm control --reload-rules
+sudo udevadm trigger
+```
+
+Test by unplugging and reconnecting your devices
+
+What These Rules Do:
+
+ESP32: Creates /dev/esp32 symlink (instead of /dev/ttyUSB0)
+F9P GPS: Creates /dev/f9p symlink (instead of /dev/ttyACM0)
+
+### 3. Useful Commands
+
+```bash
+# Check service status
+sudo systemctl status rtcm_server
+
+# View service logs
+sudo journalctl -u rtcm_server -f
+
+# View recent logs
+sudo journalctl -u rtcm_server --since "1 hour ago"
+
+# Stop the service
+sudo systemctl stop rtcm_server
+
+# Restart the service
+sudo systemctl restart rtcm_server
+
+# Disable auto-start
+sudo systemctl disable rtcm_server
+
+# Check if the serial port is accessible
+ls -la /dev/ttyACM0
+
+# Verify user permissions
+sudo usermod -a -G dialout al
+```
+
 
 ## System Information
 
@@ -171,8 +262,9 @@ telnet 192.168.1.233 6001
 - **OS**: Ubuntu 24.04 
 - **Python Version**: Python 3.x
 - **Primary Function**: RTK base station for precision GPS corrections
-- **Network**: WiFi connected (IP: 192.168.1.233)
+- **Network**: WiFi connected (IP: 192.168.1.233 - confirm - use ZeroTier VPN?)
 - **Server Status**: TCP server on port 6001
+- **Service Status**: Managed by /etc/systemd/system/rtcm_server.service
 
 ## Remote Access Tools
 
@@ -184,14 +276,15 @@ telnet 192.168.1.233 6001
 ## Logging and Monitoring
 
 ### Log Files
-- **Application Logs**: `logs/rtcm_server_0713.log` (with rotation)
+- **Application Logs**: `logs/rtcm_server_0714.log` (with rotation)
 - **GPS Raw Data**: `gps_log.txt` (binary format)
+- **System Service Logs**: `sudo journalctl -u rtcm_server` (systemd journal)
 - **Log Rotation**: 5MB files, 3 backups retained
 
 ### Real-time Monitoring
-The system provides comprehensive real-time monitoring:
+The system provides comprehensive real-time monitoring with enhanced statistics:
 
-**Example Server Output:**
+**Example Server Output (0714 version):**
 ```
 === Message Rates Report (over 10.0s) ===
 RTCM Messages (Received from F9P):
@@ -200,8 +293,10 @@ RTCM Messages (Received from F9P):
   Type 1084: 9.20 Hz (92 messages)
   Type 1094: 9.20 Hz (92 messages)
   Type 1230: 9.20 Hz (92 messages)
-TCP clients connected: 1
+Total: 47.99 Hz (480 messages)
+TCP clients connected: 2
 RTCM broadcasts: 5.00 Hz (50 message types sent)
+==================================================
 ```
 
 **Example Client Monitoring (using rtcm_monitor.py):**
@@ -217,6 +312,19 @@ RTCM broadcasts: 5.00 Hz (50 message types sent)
    🔄 Total: 5.00 Hz (50 messages)
 ```
 
+### Service Monitoring
+```bash
+# Monitor service in real-time
+sudo journalctl -u rtcm_server -f
+
+# Check service health
+sudo systemctl is-active rtcm_server
+sudo systemctl is-enabled rtcm_server
+
+# View service restart history
+sudo systemctl status rtcm_server
+```
+
 ## Maintenance
 
 - **Monthly**: Check battery voltage and connections
@@ -224,6 +332,7 @@ RTCM broadcasts: 5.00 Hz (50 message types sent)
 - **Annually**: Replace battery (lead-acid typical lifespan 3-5 years)
 - **As Needed**: Software updates and log file management
 - **Disk Space**: Monitor `/home/al/python/BridgevilleRTKBase/logs/` directory
+- **Service Health**: Check `sudo systemctl status rtcm_server` periodically
 
 ## Project Repository GitHub Notes
 
@@ -244,16 +353,33 @@ git config core.sparseCheckout  # Should show 'true'
 cat .git/info/sparse-checkout    # Should show 'BridgevilleRTKBase/*'
 ```
 
+### Service Issues
+```bash
+# Check if service is running
+sudo systemctl status rtcm_server
+
+# View service logs for errors
+sudo journalctl -u rtcm_server --since "10 minutes ago"
+
+# Restart the service
+sudo systemctl restart rtcm_server
+
+# Check serial port permissions
+ls -la /dev/ttyACM0
+sudo usermod -a -G dialout al
+```
+
 ### Network Issues
-1. **Check server status**: Look for "TCP server started on 0.0.0.0:6001" message
+1. **Check server status**: Look for "TCP server started on 0.0.0.0:6001" message in logs
 2. **Test local connection**: `telnet localhost 6001` on the Pi
-3. **Check firewall**: `sudo ufw status` and `sudo ufw allow 6001` if needed
-4. **Verify IP address**: `ip addr show wlan0` to confirm Pi's IP
+3. **firewall NOTE**: I chose not to setup ufw.  I did not feel the complexity offered any benefit
+4. **Verify IP address**: `ip addr show wlan0` to confirm Pi's IP.  You can also logon to ZeroTier and see if an IP is assigned.
 
 ### System Performance
-1. **Monitor RTCM rates**: Should see ~1 Hz output, ~10 Hz input
+1. **Monitor RTCM rates**: Should see ~1 Hz output at the client end
 2. **Check client connections**: Look for "TCP clients connected: X" in reports
 3. **Verify GPS signals**: NMEA messages should show good satellite counts
+4. **Service health**: `sudo systemctl is-active rtcm_server`
 
 ### If Git Operations Fail:
 1. **Check disk space**: `df -h` (Pi storage fills up quickly)
@@ -263,6 +389,17 @@ cat .git/info/sparse-checkout    # Should show 'BridgevilleRTKBase/*'
    sudo journalctl --vacuum-time=7d
    rm -f /home/al/python/BridgevilleRTKBase/gps_log.txt  # If very large
    ```
+
+### RTCM Python Script Service Reset:
+```bash
+# If service is completely broken
+sudo systemctl stop rtcm_server
+sudo systemctl disable rtcm_server
+sudo systemctl daemon-reload
+sudo systemctl enable rtcm_server
+sudo systemctl start rtcm_server
+```
+
 
 **Repository**: https://github.com/jones2126/tractor2025  
 **Maintainer**: AL (aej2126 at protonmail dot com)  
