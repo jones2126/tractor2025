@@ -92,17 +92,12 @@ pio run --target upload
 
 The system includes several Python scripts for different functionalities:
 
-#### Core RTCM Server
-- **rtcm_server_0714.py**: Latest RTK base station server with:
-  - **Advanced Rate Limiting**: Sophisticated RTCM buffering system with 1Hz broadcast rate
-  - **Multi-threaded Architecture**: Separate threads for data reception, broadcasting, and client handling
-  - **Enhanced Statistics**: Tracks both received and broadcast message rates
-  - **RTCM Message Validation**: CRC checking and complete message parsing
-  - **TCP Client Management**: Robust handling of multiple simultaneous connections
-  - **Comprehensive Logging**: File rotation with configurable log levels
-  - **Real-time Monitoring**: Live message rate reporting and client status
-  - **Multi-constellation Support**: GPS, GLONASS, and Galileo systems
-  - **Performance Optimization**: Buffered broadcasting prevents network congestion
+#### "RTCM Server" (rtcm_server_0714.py)
+  - **Sets Broadcast Rate**: Sets RTCM publishing at 1Hz broadcast rate to limit network load
+  - **Uses threading**: Separate threads for data receiving, broadcasting, and client handling instead of the main loop.  I had issues when I did not use threading.
+  - **Reporting**: Tracks received and broadcast message rates
+  - **RTCM Validation**: Uses CRC checking
+  - **Logging**: Trying file rotation logic to manage space.  Early attempt.
 
 #### Archived Scripts
 - **Communication Scripts**: `com2_*.py` - Handle serial communication with RTK hardware
@@ -198,20 +193,14 @@ sudo nano /etc/udev/rules.d/99-rtk-devices.rules
 Add the following content:
 
 ```ini
-# UDEV rules for RTK Base Station devices
-# Place this file in /etc/udev/rules.d/99-rtk-devices.rules
+# UDEV rules for RTK Base Station devices /etc/udev/rules.d/99-rtk-devices.rules
 
-# ESP32 with CH341 USB-to-Serial converter
-# Creates /dev/esp32 symlink for the ESP32 device
-SUBSYSTEM=="tty", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", SYMLINK+="esp32", TAG+="systemd", ENV{SYSTEMD_WANTS}="esp32-ready.service"
+# Creates /dev/esp32 symlink for the ESP32 with CH341 USB-to-Serial converter
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", SYMLINK+="esp32", GROUP="dialout", MODE="0664"
 
-# u-blox F9P GNSS receiver  
-# Creates /dev/f9p symlink for the F9P GPS device
-SUBSYSTEM=="tty", ATTRS{idVendor}=="1546", ATTRS{idProduct}=="01a9", SYMLINK+="f9p", TAG+="systemd", ENV{SYSTEMD_WANTS}="f9p-ready.service"
+# Creates /dev/f9p symlink for the u-blox F9P GNSS receiver
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1546", ATTRS{idProduct}=="01a9", SYMLINK+="f9p", GROUP="dialout", MODE="0664"
 
-# Alternative: Create more descriptive names
-# SUBSYSTEM=="tty", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", SYMLINK+="rtk-esp32", GROUP="dialout", MODE="0664"
-# SUBSYSTEM=="tty", ATTRS{idVendor}=="1546", ATTRS{idProduct}=="01a9", SYMLINK+="rtk-f9p", GROUP="dialout", MODE="0664"
 ```
 
 Reload UDEV rules:
