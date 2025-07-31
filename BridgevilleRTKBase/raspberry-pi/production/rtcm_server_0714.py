@@ -15,7 +15,7 @@ logger = logger_setup(
 
 # Configure the serial port
 ser = serial.Serial(
-    port='/dev/ttyACM0',
+    port='/dev/f9p',             # see udev rule at /etc/udev/rules.d/99-rtk-devices.rules
     baudrate=115200,
     parity=serial.PARITY_NONE,
     stopbits=serial.STOPBITS_ONE,
