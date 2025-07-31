@@ -205,18 +205,13 @@ SUBSYSTEM=="tty", ATTRS{idVendor}=="1546", ATTRS{idProduct}=="01a9", SYMLINK+="f
 
 Reload UDEV rules:
 ```bash
-bashsudo udevadm control --reload-rules
+sudo udevadm control --reload-rules
 sudo udevadm trigger
 ```
 
-Test by unplugging and reconnecting your devices
+Test by unplugging and reconnecting your devices; Then $ ls /dev and look for 'esp32' and 'f9p'
 
-What These Rules Do:
-
-ESP32: Creates /dev/esp32 symlink (instead of /dev/ttyUSB0)
-F9P GPS: Creates /dev/f9p symlink (instead of /dev/ttyACM0)
-
-### 3. Useful Commands
+### 4. Other useful commands
 
 ```bash
 # Check service status
