@@ -1,0 +1,3 @@
+arduino-libraries/NTPClient@^3.2.1
+OneWire
+milesburton/DallasTemperature@^3.9.1
