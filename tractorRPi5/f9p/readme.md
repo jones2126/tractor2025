@@ -26,9 +26,9 @@ RTK Base Station → Pi 5 ←USB─ Base Link F9P ─UART1─ Heading F9P ─USB
 Connect the two F9P units with 3-wire cable plus IOREF to 3V3 connections:
 ```
 Base F9P            Heading F9P
-UART1 TX       →    UART1 RX (Heading F9P)
-UART1 RX       →    UART1 TX (Heading F9P)  
-GND            →    GND (Heading F9P)
+UART1 TX       →    UART1 RX
+UART1 RX       →    UART1 TX  
+GND            →    GND
 3V3 → IOREF    →    3V3 → IOREF 
 
 ```
