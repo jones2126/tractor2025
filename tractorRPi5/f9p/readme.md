@@ -29,8 +29,9 @@ Base F9P Pin       →    Heading F9P Pin
 UART1 TX           →    UART1 RX
 UART1 RX           →    UART1 TX  
 GND                →    GND
-3V3                →    IOREF (Base F9P)
-                        3V3 → IOREF (Heading F9P)
+3V3 (Base F9P)     →    IOREF (Base F9P)
+3V3 (Heading F9P)  →    IOREF (Heading F9P)
+
 ```
 
 **IOREF Configuration:**
