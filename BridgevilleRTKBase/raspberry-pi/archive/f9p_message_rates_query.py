@@ -161,8 +161,8 @@ PORT_NAMES = ['UART1', 'UART2', 'USB', 'SPI', 'I2C', 'Reserved']
 def query_f9p_message_config():
     """Query F9P message configuration."""
     try:
-        ser = serial.Serial('/dev/ttyACM0', 115200, timeout=5)
-        print("Connected to F9P on /dev/ttyACM0")
+        ser = serial.Serial('/dev/ttyACM2', 115200, timeout=5)
+        print("Connected to F9P on /dev/ttyACM2")
         print("\nQuerying message configurations...\n")
         
         active_messages = []
@@ -254,7 +254,7 @@ if __name__ == "__main__":
     
     if not success:
         print("\nTroubleshooting tips:")
-        print("1. Check that F9P is connected to /dev/ttyACM0")
+        print("1. Check that F9P is connected to /dev/ttyACM?")
         print("2. Ensure no other processes are using the serial port")
         print("3. Verify the F9P is powered on and responding")
         print("4. Some message queries may timeout - this is normal")

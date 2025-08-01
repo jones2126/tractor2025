@@ -10,7 +10,7 @@ from datetime import datetime
 TCP_IP = '192.168.1.233'
 TCP_PORT = 6001
 # SERIAL_PORT = 'COM41'  # Change to '/dev/ttyUSB0' on Raspberry Pi
-SERIAL_PORT = '/dev/ttyACM1'  # Raspberry Pi
+SERIAL_PORT = '/dev/ttyACM2'  # Raspberry Pi
 SERIAL_BAUDRATE = 115200
 RTCM_TIMEOUT = 5  # seconds without RTCM = warning
 CSV_LOGFILE = 'fix_status_log.csv'

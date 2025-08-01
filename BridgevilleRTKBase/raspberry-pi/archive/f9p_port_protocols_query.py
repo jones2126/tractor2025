@@ -113,8 +113,8 @@ def parse_port_config(payload):
 def investigate_f9p_ports():
     """Investigate F9P port configurations."""
     try:
-        ser = serial.Serial('/dev/ttyACM0', 115200, timeout=5)
-        print("Connected to F9P on /dev/ttyACM0")
+        ser = serial.Serial('/dev/ttyACM2', 115200, timeout=5)
+        print("Connected to F9P on /dev/ttyACM2")
         print("\nInvestigating port configurations...\n")
         
         # Port definitions
