@@ -2,26 +2,8 @@
 
 ## Objectives and Goals
 
-This guide configures two u-blox ZED-F9P GPS receivers for **Moving Baseline RTK** to provide high-precision positioning and heading for autonomous navigation on an outdoor robot platform.
+This guide helps configure two u-blox ZED-F9P GPS receivers for **Moving Baseline RTK** to provide both RTK Fix position (i.e. 2-5cm position accuracy) and heading for tractor navigation (e.g. Pure Pursuit path following).  The base link position will be updated at 10Hz.  The base link F9P will pull RTCM correction using a TCP socket via a USB connection and will output UBX messages to the heading F9P using UART connections between the two devices.  The distance between the two units will be ~1 meter. One goal is for heading accuracy to be +/- 0.5°.
 
-### **Primary Objectives:**
-1. **High-Precision Navigation**: Achieve 2-5cm position accuracy for Pure Pursuit path following
-2. **Accurate Heading**: Obtain sub-degree heading accuracy using 1-meter baseline between GPS units
-3. **Fast Updates**: 10Hz navigation data for responsive steering control
-4. **Reliable RTK**: Consistent RTK Fixed status for autonomous operation
-5. **Clean Architecture**: Direct UART communication between F9P units to minimize Pi CPU load
-
-### **System Overview:**
-- **Base Link F9P** (rear): Receives RTCM corrections, provides navigation data, sends raw measurements
-- **Heading F9P** (front): Receives raw data via UART, calculates relative position/heading
-- **Physical Setup**: 1-meter baseline, heading GPS mounted directly forward of base link GPS
-- **Update Rate**: 10Hz (100ms intervals) for real-time navigation
-
-### **Expected Performance:**
-- **Position Accuracy**: 2-5cm RTK Fixed
-- **Heading Accuracy**: 0.1-0.5° at 1m baseline
-- **RTK Convergence**: <30 seconds typical
-- **Data Rate**: 10Hz continuous operation
 
 ---
 
@@ -37,21 +19,27 @@ RTK Base Station → Pi 5 ←USB─ Base Link F9P ─UART1─ Heading F9P ─USB
 ### **Physical Wiring:**
 - **Base Link F9P**: USB to Pi 5 (NMEA navigation data + RTCM input)
 - **Heading F9P**: USB to Pi 5 (UBX heading messages)
-- **UART1 Connection**: 4-wire cable between F9P units
-  - Base F9P UART1 TX → Heading F9P UART1 RX
-  - Base F9P UART1 RX → Heading F9P UART1 TX
-  - GND → GND
-  - VCC not required (both powered via USB)
 
 ---
 
-## Configuration Procedure
+### Wire UART1 Connection
+Connect the two F9P units with 5-wire cable:
+```
+Base F9P Pin       →    Heading F9P Pin
+UART1 TX           →    UART1 RX
+UART1 RX           →    UART1 TX  
+GND                →    GND
+3V3                →    IOREF (Base F9P)
+                        3V3 → IOREF (Heading F9P)
+```
 
-### Prerequisites
-- Two u-blox ZED-F9P receivers
-- u-center software installed
-- USB cables for both F9P units
-- 4-wire cable for UART1 connection
+**IOREF Configuration:**
+- Connect each F9P's **3V3 pin to its own IOREF pin**
+- **Do not cross-connect** IOREF between units
+
+
+
+## Configuration Procedure
 
 ---
 
