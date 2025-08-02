@@ -29,7 +29,7 @@ Base F9P            Heading F9P
 UART1 TX       →    UART1 RX
 UART1 RX       →    UART1 TX  
 GND            →    GND
-3V3 → IOREF    →    3V3 → IOREF 
+3V3 → IOREF   and   3V3 → IOREF 
 
 ```
 
@@ -51,30 +51,105 @@ GND            →    GND
 3. **Receiver → Connection** → Select F9P COM port
 4. Verify NMEA messages are flowing
 5. **Factory Reset**:
-   - **UBX → CFG → CFG**
+   - **new**
+   - **View → Configuration View**   
+   - **CFG → Choose 'Revert to default configuration'**
+The items listed (0-BBR, 1-FLASH, 2-I2C EEPROM, 3-SPI FLASH) are just showing you what storage devices are available You don't need to select/highlight any of them   
+   - **press SEND in lower left**
+   - **old**
+   - **UBX → CFG → CFG**    
    - **Clear to**: BBR, Flash, EEPROM
    - **Devices**: All devices
    - **Send**
    - **Receiver → Action → Reset Receiver** (warm start)
 
 ### Step 2: Set Navigation Rate to 10Hz
-1. **UBX → CFG → RATE**
-2. **Measurement Rate**: 100 ms (10Hz)
-3. **Navigation Rate**: 1 (every measurement)
-4. **Time Reference**: GPS
-5. **Send**
+1. **View → Configuration View**
+2. **RATES → CFG → RATE**
+**Time Source:**: 1 - GPS time
+**Measurement Period:**: 100 ms
+**Measurement Frequency:**: 10 Hz
+**Navigation Rate:**: 1
+**Navigation Frequency:**: 10 Hz
 
-### Step 3: Configure NMEA Output on USB
-Navigate to **UBX → CFG → MSG** for each message:
+### Step 3: Limit NMEA output to reduce load
 
-**Enable GGA on USB (navigation data):**
-- **Message Class**: 0xF0, **Message ID**: 0x00 (GGA)
-- **I/O Target**: Check **USB**, set rate to **1**
-- **Send**
+**Current Status**: Factory default F9P outputs all NMEA messages (GGA, GLL, GSA, GSV, RMC, VTG, TXT). I only want GGA and RMC messages to start.
 
-**Disable unnecessary NMEA messages on USB:**
-- Disable GLL, GSA, GSV, RMC, VTG, TXT (set rate to 0 on USB)
-- This reduces USB traffic and Pi processing load
+#### **Access Message Configuration**
+1. **View** → **Configuration View** (or press CTRL + F9)
+2. In the left panel, scroll down and click **"MSG (Messages)"**
+3. This opens the message configuration interface
+4. Scroll down to the messages that begin with 'F0-xx NMEA'
+
+#### **Disable Unnecessary NMEA Messages**
+
+For each unwanted NMEA message, set the USB output rate to **0** or uncheck the boxes.  Both work to disable.:
+
+**Messages to Disable:**
+- **NMEA-GLL** (Geographic position - Lat/Lon): Redundant with GGA
+- **NMEA-GSA** (DOP and active satellites): Not needed for Pure Pursuit
+- **NMEA-GSV** (Satellites in view): Not needed for Pure Pursuit
+- **NMEA-RMC** (Recommended minimum): Redundant with GGA
+- **NMEA-VTG** (Track made good/speed): Not needed for Pure Pursuit
+- **NMEA-TXT** (Text transmission): Not needed for navigation
+
+**Message to Keep Enabled:**
+- **NMEA-GGA** (Global positioning fix): **Rate: 1** (keep enabled)
+- **NMEA-RMC** (Recommended minimum): Redundant with GGA
+  - Can be adjusted later.  I want just enough data for the Pure Pursuit algorithm, to know RTK Fix status and to compare heading and speed with other data sources.
+
+#### **Configuration Steps**
+
+For each message to disable:
+
+1. **Select the NMEA message** (e.g., NMEA-GLL)
+2. **Find the USB output rate setting**
+3. **Set rate to 0** (disables output on USB)
+4. **Click "Send"** to apply the change
+5. **Repeat for all unwanted messages**
+
+#### **Verify Configuration**
+
+After disabling unwanted messages, your packet console should show:
+- **Only NMEA GGA and RMC messages** flowing at 10Hz.  Copy and paste the screen.  Then count the number of lines in a one second interval.
+
+
+#### **GGA Message Content (What You Get)**
+
+```
+$GPGGA,hhmmss.ss,ddmm.mmmm,N,dddmm.mmmm,W,q,ss,h.h,a.a,M,g.g,M,t.t,iii*hh
+
+Where:
+- hhmmss.ss: Time (UTC)
+- ddmm.mmmm,N: Latitude 
+- dddmm.mmmm,W: Longitude
+- q: Fix quality (0=Invalid, 1=GPS, 2=DGPS, 4=RTK Fixed (best accuracy, ~2-5cm), 5=RTK Float (good accuracy, ~10-20cm))
+- ss: Number of satellites
+- h.h: HDOP (horizontal dilution of precision)
+- a.a: Altitude above mean sea level
+- g.g: Height of geoid above WGS84 ellipsoid
+- t.t: Time since last DGPS update
+- iii: DGPS station ID
+```
+
+```
+$GNRMC,hhmmss.ss,A,ddmm.mmmm,N,dddmm.mmmm,W,s.s,c.c,ddmmyy,m.m,E,mode*hh
+
+Where:
+- hhmmss.ss: Time (UTC) - hours, minutes, seconds with decimal
+- A: Status (A=Active/Valid, V=Void/Invalid)
+- ddmm.mmmm,N: Latitude (degrees + decimal minutes, North/South)
+- dddmm.mmmm,W: Longitude (degrees + decimal minutes, East/West)
+- s.s: Speed over ground (knots)
+- c.c: Course over ground (degrees true north)
+- ddmmyy: Date (day, month, year)
+- m.m: Magnetic variation (degrees)
+- E: Magnetic variation direction (E=East, W=West)
+- mode: Mode indicator (A=Autonomous, D=DGPS, R=RTK, F=RTK Float, E=Dead Reckoning)
+- hh: Checksum
+```
+
 
 ### Step 4: Configure UBX Output on UART1
 Navigate to **UBX → CFG → MSG** for each message:
