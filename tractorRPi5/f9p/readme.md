@@ -151,26 +151,71 @@ Where:
 ```
 
 
-### Step 4: Configure UBX Output on UART1
-Navigate to **UBX → CFG → MSG** for each message:
+### Step 4: Configure UBX output on UART1 for moving baseline RTK
 
-**Enable Raw Measurement Data on UART1:**
-```
-UBX-RXM-RAWX (Raw measurements):
-- Message Class: 0x02, Message ID: 0x15
-- I/O Target: Check UART1, set rate to 1
-- Send
+#### **Access Message Configuration**
 
-UBX-RXM-SFRBX (Subframe buffer):
-- Message Class: 0x02, Message ID: 0x13  
-- I/O Target: Check UART1, set rate to 1
-- Send
+1. **Open Configuration View**: Press **CTRL + F9**
+2. **Navigate to Messages**: Click **"MSG (Messages)"** in the left panel
+3. **This opens the UBX message configuration interface** Scroll down until you start to see 02-15 RXM-RAWX.  For me, they were after the '29-12 NAV2-VELNED' message.
 
-UBX-NAV-PVT (Position/Velocity/Time):
-- Message Class: 0x01, Message ID: 0x07
-- I/O Target: Check UART1, set rate to 1
-- Send
-```
+#### **Configure Raw Measurement Messages**
+
+You will configure three critical UBX messages to output on UART1 at 10Hz:
+
+##### **UBX-RXM-RAWX (Raw Measurements)**
+
+**What it contains**: Raw carrier phase and pseudorange measurements from all visible satellites
+
+1. **Message dropdown**: Select **"02-15 RXM-RAWX"**
+2. **I2C checkbox**: **Uncheck** ❌ (reduces Pi CPU load)
+3. **UART1 checkbox**: **Check it** ✅
+4. **UART1 rate**: Set to **1** (Will trigger 10Hz output, because the overall message rate is 10 Hz)
+5. **UART2 checkbox**: **Uncheck** ❌ (reduces Pi CPU load)
+6. **USB checkbox**: **Uncheck** ❌ (reduces Pi CPU load)
+7. **SPI checkbox**: **Uncheck** ❌ (reduces Pi CPU load)
+8. **Click "Send"**
+
+##### **UBX-RXM-SFRBX (Subframe Buffer)**
+
+**What it contains**: Navigation message subframes (ephemeris, almanac, ionospheric data)
+
+1. **Message dropdown**: Select **"02-13 RXM-SFRBX"**
+2. **I2C checkbox**: **Uncheck** ❌ (reduces Pi CPU load)
+3. **UART1 checkbox**: **Check it** ✅
+4. **UART1 rate**: Set to **1** (Will trigger 10Hz output, because the overall message rate is 10 Hz)
+5. **UART2 checkbox**: **Uncheck** ❌ (reduces Pi CPU load)
+6. **USB checkbox**: **Uncheck** ❌ (reduces Pi CPU load)
+7. **SPI checkbox**: **Uncheck** ❌ (reduces Pi CPU load)
+8. **Click "Send"**
+
+##### **UBX-NAV-PVT (Position/Velocity/Time)**
+
+**What it contains**: Navigation solution, time, and status information
+
+1. **Message dropdown**: Select **"01-07 NAV-PVT"**
+2. **I2C checkbox**: **Uncheck** ❌ (reduces Pi CPU load)
+3. **UART1 checkbox**: **Check it** ✅
+4. **UART1 rate**: Set to **1** (Will trigger 10Hz output, because the overall message rate is 10 Hz)
+5. **UART2 checkbox**: **Uncheck** ❌ (reduces Pi CPU load)
+6. **USB checkbox**: **Uncheck** ❌ (reduces Pi CPU load)
+7. **SPI checkbox**: **Uncheck** ❌ (reduces Pi CPU load)
+8. **Click "Send"**
+
+#### **Configuration Summary**
+
+After completing these steps, your Base Link F9P will output:
+
+**On UART1 (to Heading F9P):**
+- ✅ **RXM-RAWX**: Raw satellite measurements (10Hz)
+- ✅ **RXM-SFRBX**: Navigation subframes (10Hz)
+- ✅ **NAV-PVT**: Position/velocity/time (10Hz)
+
+**On USB (to Raspberry Pi):**
+- ✅ **NMEA GGA**: Position and RTK status (10Hz)
+- ✅ **NMEA RMC**: Speed and course (10Hz)
+
+
 
 ### Step 5: Configure UART1 Port Settings
 1. **UBX → CFG → PRT (Ports)**
