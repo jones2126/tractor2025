@@ -257,7 +257,9 @@ After optimization, only these interfaces remain active:
 
 ### Step 6: Configure Dynamic Model and RTK Settings
 
-**Objective**: Set the Base Link F9P's Navigation engine settings (Message UBX-CFG-NAV5) for '11 = mower' hoping to help RTK behavior for tractor navigation.  What I was able to find on this model suggested, "Intended for small, low-speed autonomous ground vehicles like lawn mowers, golf carts, and slow UGVs. Optimized for low speed (<10 m/s), frequent stops and starts, tight turns, and higher vibration. Assumes higher yaw rates than automotive."
+**Objective**: 
+
+Set the Base Link F9P's Navigation engine settings (Message UBX-CFG-NAV5) for '11 = mower' hoping to help RTK behavior for tractor navigation.  What I was able to find on this model suggested, "Intended for small, low-speed autonomous ground vehicles like lawn mowers, golf carts, and slow UGVs. Optimized for low speed (<10 m/s), frequent stops and starts, tight turns, and higher vibration. Assumes higher yaw rates than automotive."
 ---
 
 #### **Configuration Steps**
