@@ -51,17 +51,10 @@ GND            →    GND
 3. **Receiver → Connection** → Select F9P COM port
 4. Verify NMEA messages are flowing
 5. **Factory Reset**:
-   - **new**
    - **View → Configuration View**   
    - **CFG → Choose 'Revert to default configuration'**
 The items listed (0-BBR, 1-FLASH, 2-I2C EEPROM, 3-SPI FLASH) are just showing you what storage devices are available You don't need to select/highlight any of them   
    - **press SEND in lower left**
-   - **old**
-   - **UBX → CFG → CFG**    
-   - **Clear to**: BBR, Flash, EEPROM
-   - **Devices**: All devices
-   - **Send**
-   - **Receiver → Action → Reset Receiver** (warm start)
 
 ### Step 2: Set Navigation Rate to 10Hz
 1. **View → Configuration View**
@@ -215,16 +208,72 @@ After completing these steps, your Base Link F9P will output:
 - ✅ **NMEA GGA**: Position and RTK status (10Hz)
 - ✅ **NMEA RMC**: Speed and course (10Hz)
 
-
-
-### Step 5: Configure UART1 Port Settings
-1. **UBX → CFG → PRT (Ports)**
+### Step 5: Configure Port Settings (UART1 for UBX, others to reduce CPU load)
+1. **Open Configuration View**: View -> Configuration View or CTRL + F9 
 2. **Port**: 1 (UART1)
-3. **Protocol Out**: Check **UBX only** (uncheck NMEA)
-4. **Protocol In**: Check **UBX** (for potential feedback)
-5. **Baudrate**: 115200
-6. **Data bits**: 8, **Stop bits**: 1, **Parity**: None
+3. **Protocol In**: Select **0 - UBX** (for potential feedback)
+4. **Protocol Out**: Select **0 - UBX** (uncheck NMEA)
+5. **Baudrate**: Select **115200** (should be good for 10 Hz)
+6. **Data bits**: 8, **Stop bits**: 1, **Parity**: None, **Bit Order**: LSB First
 7. **Send**
+---
+
+#### **Part B: CPU Load Optimization - Disable Unused Interfaces**
+
+**Objective**: Reduce F9P CPU load by disabling unused communication interfaces (I2C, UART2, SPI) to improve RTK performance and reliability.
+
+##### **Performance Benefits**
+Disabling unused interfaces provides:
+- **Reduced CPU overhead** - more processing power for RTK calculations
+- **Better RTK convergence** - fewer background tasks competing for resources
+- **More reliable 10Hz output** - consistent timing with less processing load
+- **Lower power consumption** - inactive interfaces consume less power
+- **Cleaner operation** - eliminates potential interference from unused ports
+
+##### **Interface Optimization Settings**
+
+**Disable I2C Interface:**
+1. **Target dropdown**: Select **"0 - I2C"**
+2. **Protocol In**: Change to **"7 - NONE"**
+3. **Protocol Out**: Change to **"7 - NONE"**
+4. **Click "Send"**
+
+**Disable UART2 Interface:**
+1. **Target dropdown**: Select **"2 - UART2"**
+2. **Protocol In**: Change to **"7 - NONE"**
+3. **Protocol Out**: Change to **"7 - NONE"**
+4. **Click "Send"**
+
+**Disable SPI Interface:**
+1. **Target dropdown**: Select **"4 - SPI"**
+2. **Protocol In**: Change to **"7 - NONE"**
+3. **Protocol Out**: Change to **"7 - NONE"**
+4. **Click "Send"**
+
+##### **Interfaces to Keep Active**
+
+**USB Port (Keep Current Settings):**
+- **Essential for**: NMEA navigation data output and RTCM correction input
+- **Do not modify**: USB configuration remains as-is
+- **Purpose**: Communication with Raspberry Pi navigation system
+
+**UART1 (Already Configured Above):**
+- **Essential for**: UBX raw data output to Heading F9P
+- **Configuration**: UBX protocol only at 115200 baud
+- **Purpose**: Moving baseline RTK data transmission
+
+##### **Final Active Port Summary**
+After optimization, only these interfaces remain active:
+
+| Port | Protocol In | Protocol Out | Purpose |
+|------|-------------|--------------|---------|
+| **USB** | UBX+NMEA+RTCM3 | NMEA | Pi navigation + RTCM input |
+| **UART1** | UBX | UBX | Raw data to Heading F9P |
+| **I2C** | NONE | NONE | Disabled (CPU optimization) |
+| **UART2** | NONE | NONE | Disabled (CPU optimization) |
+| **SPI** | NONE | NONE | Disabled (CPU optimization) |
+
+---
 
 ### Step 6: Set Dynamic Model and RTK Settings
 1. **UBX → CFG → NAV5**
