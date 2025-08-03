@@ -255,11 +255,42 @@ After optimization, only these interfaces remain active:
 
 ---
 
-### Step 6: Set Dynamic Model and RTK Settings
-1. **UBX → CFG → NAV5**
-2. **Dynamic Model**: Automotive (suitable for ground vehicles)
-3. **Fix Mode**: 3D only
-4. **Send**
+### Step 6: Configure Dynamic Model and RTK Settings
+
+**Objective**: Set the Base Link F9P's Navigation engine settings (Message UBX-CFG-NAV5) for '11 = mower' hoping to help RTK behavior for tractor navigation.
+
+#### **Purpose of Dynamic Model Configuration**
+What I was able to find on this model suggested, "Intended for small, low-speed autonomous ground vehicles like lawn mowers, golf carts, and slow UGVs. Optimized for low speed (<10 m/s), frequent stops and starts, tight turns, and higher vibration. Assumes higher yaw rates than automotive."
+---
+
+#### **Configuration Steps**
+
+##### **Access Navigation Configuration**
+1. **CTRL + F9** (Configuration View)
+2. **Click "NAV5 (Navigation 5)"** in the left panel
+3. **This opens the navigation engine settings**
+
+##### **Dynamic Model Settings**
+
+- **Dynamic Platform Model**: Select **"11-Mower"**
+- **Fix Mode**: Select **"3 – Auto 2D/3D"**
+- **UTC Standard**: Select **"0 – Automatic"**
+- **Min SV Elevation**: leave as is **"10"**
+- **C/N0 Thresholdd**: leave as is **"0"**
+- **DR Timeout**: leave as is **"0"**
+- **PDOP Mask**: leave as is **"25"**
+- **TDOP Mask**: leave as is **"25"**
+- **P Acc Mask**: Change **"0"** RTK Fix is usually < 0.02 m. Setting it to 0 m essentially disables this filter and lets the F9P output positions even in degraded conditions (useful if RTCM link drops temporarily).
+- **P Acc ADR Mask**: leave as is **"0"**
+- **T Acc Mask**: leave as is **"350"**
+- **Static Hold Threshold**: leave as is **"0"**
+- **Static Hold Exit Dist**: leave as is **"0"**
+- **DGNSS Timeout**: leave as is **"60"**
+
+##### **Apply Configuration**
+**Click "Send"** to apply the navigation settings.
+
+---
 
 ### Step 7: Configure Survey-In Mode (Recommended)
 1. **UBX → CFG → TMODE3**
