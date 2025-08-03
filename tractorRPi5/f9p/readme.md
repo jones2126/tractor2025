@@ -263,7 +263,7 @@ After optimization, only these interfaces remain active:
 #### **Configuration Steps**
 
 ##### **Access Navigation Configuration**
-1. **CTRL + F9** (Configuration View); **Click "NAV5 (Navigation 5)"** in the left panel; 
+**CTRL + F9** (Configuration View); **Click "NAV5 (Navigation 5)"** in the left panel; 
 
 ##### **UBX-CFG-NAV5 Model Settings**
 
@@ -282,78 +282,266 @@ After optimization, only these interfaces remain active:
 - **Static Hold Exit Dist**: leave as is **"0"**
 - **DGNSS Timeout**: leave as is **"60"**
 
-##### **Apply Configuration**
-**Click "Send"** to apply the navigation settings.
+##### **Apply Configuration**; **Click "Send"** to apply the navigation settings.
 
 ---
 
-### Step 7: Configure Survey-In Mode (Recommended)
-1. **UBX → CFG → TMODE3**
-2. **Mode**: Survey-In (1)
-3. **Survey-in Min Duration**: 300 seconds
-4. **Survey-in Position Accuracy**: 2.0 meters
-5. **Send**
-
-*Note: Survey-in establishes a more accurate local reference position for the base F9P*
-
-### Step 8: Save Base Link Configuration
-1. **UBX → CFG → CFG**
-2. **Save to**: BBR (battery backed RAM) and Flash
-3. **Devices**: All devices
-4. **Send**
+### Step 7: Save Configuration Settings for Base Link GPS
+1. **View -> Configuration View -> CFG → Select Save Current Configuration**
+2. **Devices**: All devices
+3. **Send**
 
 ---
 
 ## Part 2: Heading F9P Configuration (Front Unit)
 
 ### Step 1: Connect and Reset Heading F9P
-1. Connect Heading F9P to PC (different USB port)
-2. Open **second instance** of u-center or switch connection
-3. Select Heading F9P COM port
-4. **Factory Reset** (same procedure as Step 1 above)
-
 ### Step 2: Set Navigation Rate to 10Hz
-Same as Base Link Step 2:
-1. **UBX → CFG → RATE**
-2. **Measurement Rate**: 100 ms (10Hz)
-3. **Send**
-
 ### Step 3: Configure UART1 for Input from Base
-1. **UBX → CFG → PRT**
-2. **Port**: 1 (UART1)
-3. **Protocol In**: Check **UBX only** (receive from Base F9P)
-4. **Protocol Out**: None (no output needed on UART1)
-5. **Baudrate**: 115200
-6. **Send**
-
 ### Step 4: Enable Relative Positioning Output on USB
-1. **UBX → CFG → MSG**
-2. **Message Class**: 0x01, **Message ID**: 0x3C (NAV-RELPOSNED)
-3. **I/O Target**: Check **USB**, set rate to **1**
-4. **Send**
-
-*This is the key message containing heading and relative position data!*
-
 ### Step 5: Disable Unnecessary Messages on USB
-Disable standard NMEA messages to reduce USB traffic:
-- Set all NMEA messages (GGA, GLL, GSA, GSV, RMC, VTG) to rate **0** on USB
-- Keep only UBX-NAV-RELPOSNED enabled
-
 ### Step 6: Configure as Moving Base Rover
-1. **UBX → CFG → TMODE3**
-2. **Mode**: Rover (0)
-3. **Send**
-
-### Step 7: Verify High-Precision Settings
-Check **UBX → CFG → NAVHPG**:
-- **dgnssMode**: Should be RTK (3)
-- If not set, configure and **Send**
-
+### Step 7: Verify High-Precision Settings - Check **UBX → CFG → NAVHPG**:- **dgnssMode**: Should be RTK
 ### Step 8: Save Heading F9P Configuration
-1. **UBX → CFG → CFG**
-2. **Save to**: BBR and Flash
-3. **Devices**: All devices
-4. **Send**
+
+# Heading F9P Configuration Guide - Moving Baseline RTK
+
+**Objective**: Configure the Heading F9P (front GPS unit) to receive raw measurement data from the Base Link F9P via UART1 in order to calculate heading using moving baseline RTK. Output UBX-NAV-RELPOSNED messages with heading data via USB to be fed into navigation algorithm.
+
+---
+
+## Step 1: Factory Reset Heading F9P
+
+### **Connect and Reset**
+1. **Connect Heading F9P** to PC via USB (different port than Base Link)
+2. **CTRL + F9** (Configuration View)
+3. **Click "CFG (Configuration)"** in left panel
+4. **Select "Revert to default configuration"** radio button
+5. **Click "Send"**
+6. **Wait for reset completion** (~10 seconds)
+
+### **Verification**
+After reset, verify:
+- **All NMEA messages** returning (GGA, GLL, GSA, GSV, RMC, VTG)
+- **1Hz update rate** (default)
+- **Clean factory state** established
+
+---
+
+## Step 2: Set Navigation Rate to 10Hz
+
+### **Configure Update Rate**
+1. **CTRL + F9** (Configuration View)
+2. **Click "RATE (Rates)"** in left panel
+3. **Set parameters**:
+   - **Time Source**: 1 - GPS time
+   - **Measurement Period**: 100 ms
+   - **Measurement Frequency**: 10.00 Hz
+   - **Navigation Rate**: 1
+   - **Navigation Frequency**: 10.00 Hz
+4. **Click "Send"**
+
+---
+
+## Step 3: Remove Unnecessary NMEA Messages
+
+### **Disable All NMEA Messages on USB**
+Since the Heading F9P will output UBX-NAV-RELPOSNED only, disable all NMEA:
+
+1. **CTRL + F9** (Configuration View)
+2. **Click "MSG (Messages)"** in left panel
+3. **For each NMEA message, set USB rate to 0**:
+
+**Messages to Disable (set rate to 0 on USB):**
+- **NMEA-GGA** (Global positioning) → Rate: 0
+- **NMEA-GLL** (Geographic position) → Rate: 0
+- **NMEA-GSA** (DOP and active satellites) → Rate: 0
+- **NMEA-GSV** (Satellites in view) → Rate: 0
+- **NMEA-RMC** (Recommended minimum) → Rate: 0
+- **NMEA-VTG** (Track made good) → Rate: 0
+
+**For each message:**
+1. **Select message** from dropdown (e.g., F0 00 GGA)
+2. **USB checkbox**: **Uncheck** or set rate to **0**
+3. **Click "Send"**
+4. **Repeat for all NMEA messages**
+
+### **Verification**
+After disabling NMEA messages:
+- **Packet console should show minimal traffic**
+- **Only system messages** (like GNTXT) may remain
+- **Clean data stream** prepared for UBX output
+
+---
+
+## Step 4: Configure UART1 to Receive UBX Data from Base Link
+
+### **Set UART1 as Input Port**
+1. **CTRL + F9** (Configuration View)
+2. **Click "PRT (Ports)"** in left panel
+3. **Select "1 - UART1"** from Target dropdown
+
+### **UART1 Configuration**
+Configure UART1 to receive raw data from Base Link F9P:
+
+- **Target**: 1 - UART1
+- **Protocol In**: **0 - UBX** (receive UBX from Base Link)
+- **Protocol Out**: **7 - NONE** (no output needed on UART1)
+- **Baudrate**: **115200** (match Base Link output)
+- **Databits**: 8
+- **Stopbits**: 1
+- **Parity**: None
+- **Bit Order**: LSB First
+
+4. **Click "Send"**
+
+### **Purpose**
+This configures UART1 to receive:
+- **UBX-RXM-RAWX**: Raw measurement data from Base Link
+- **UBX-RXM-SFRBX**: Subframe buffer data from Base Link  
+- **UBX-NAV-PVT**: Position/velocity/time from Base Link
+
+---
+
+## Step 5: Enable UBX-NAV-RELPOSNED Output on USB
+
+### **Configure Relative Position Output**
+1. **CTRL + F9** (Configuration View)
+2. **Click "MSG (Messages)"** in left panel
+3. **Select "01 3C NAV-RELPOSNED"** from message dropdown
+
+**If NAV-RELPOSNED not visible in dropdown:**
+- Look for **"01 3C"** entries
+- Try scrolling through entire dropdown list
+- May be listed as **"NAV-RELPOSNED"** or **"RELPOSNED"**
+
+### **NAV-RELPOSNED Configuration**
+- **Message**: 01 3C NAV-RELPOSNED
+- **I2C**: Unchecked (rate 0)
+- **UART1**: Unchecked (rate 0) 
+- **UART2**: Unchecked (rate 0)
+- **USB**: **Checked** (rate **1**) ← **Key setting**
+- **SPI**: Unchecked (rate 0)
+
+4. **Click "Send"**
+
+### **NAV-RELPOSNED Message Content**
+This message provides the heading and relative position data:
+```
+Key fields in UBX-NAV-RELPOSNED:
+- relPosN: Relative North position (cm)
+- relPosE: Relative East position (cm)  
+- relPosD: Relative Down position (cm)
+- relPosHeading: Heading (0.01° units)
+- flags: Solution status (RTK Fixed/Float)
+- accHeading: Heading accuracy (0.01°)
+```
+
+---
+
+## Step 6: Set Moving Baseline Rover Mode
+
+### **Configure Time Mode**
+1. **CTRL + F9** (Configuration View)
+2. **Click "TMODE3 (Time Mode 3)"** in left panel
+3. **Set configuration**:
+   - **Mode**: **0 - Disabled** (Rover mode for moving baseline)
+   - Leave other settings at default
+
+4. **Click "Send"**
+
+### **Purpose**
+This configures the Heading F9P as a moving baseline rover that:
+- **Processes raw data** from Base Link F9P
+- **Calculates relative position** to Base Link
+- **Outputs heading information** in real-time
+
+---
+
+## Step 7: Disable Unused Interfaces (CPU Optimization)
+
+### **Disable I2C Interface**
+1. **Select "0 - I2C"** from Target dropdown
+2. **Protocol In**: **7 - NONE**
+3. **Protocol Out**: **7 - NONE**
+4. **Click "Send"**
+
+### **Disable UART2 Interface**
+1. **Select "2 - UART2"** from Target dropdown
+2. **Protocol In**: **7 - NONE**
+3. **Protocol Out**: **7 - NONE**
+4. **Click "Send"**
+
+### **Disable SPI Interface**
+1. **Select "4 - SPI"** from Target dropdown
+2. **Protocol In**: **7 - NONE**
+3. **Protocol Out**: **7 - NONE**
+4. **Click "Send"**
+
+### **Final Port Configuration Summary**
+| Port | Protocol In | Protocol Out | Purpose |
+|------|-------------|--------------|---------|
+| **USB** | UBX | UBX | NAV-RELPOSNED output to Pi |
+| **UART1** | UBX | NONE | Raw data input from Base Link |
+| **I2C** | NONE | NONE | Disabled (CPU optimization) |
+| **UART2** | NONE | NONE | Disabled (CPU optimization) |
+| **SPI** | NONE | NONE | Disabled (CPU optimization) |
+
+---
+
+## Step 8: Save Configuration
+
+### **Save to Non-Volatile Memory**
+1. **CTRL + F9** (Configuration View)
+2. **Click "CFG (Configuration)"** in left panel
+3. **Select "Save current configuration"** radio button
+4. **Ensure all device types are selected**:
+   - BBR (battery backed RAM)
+   - Flash
+   - EEPROM
+5. **Click "Send"**
+
+### **Verification**
+- **Configuration saved** message should appear
+- **Settings persist** after power cycle
+- **Ready for physical connection** to Base Link F9P
+
+---
+
+## Expected Results After Configuration
+
+### **Data Flow Verification**
+**From Base Link F9P (UART1) → Heading F9P:**
+- UBX-RXM-RAWX messages at 10Hz
+- UBX-RXM-SFRBX messages at 10Hz  
+- UBX-NAV-PVT messages at 10Hz
+
+**From Heading F9P (USB) → Raspberry Pi:**
+- UBX-NAV-RELPOSNED messages at 10Hz
+- Contains heading and relative position data
+- Clean binary UBX format
+
+### **Moving Baseline Performance**
+Once physically connected and receiving RTCM corrections:
+- **RTK convergence**: 15-60 seconds for both units
+- **Heading accuracy**: 0.1-0.5° with 1-meter baseline
+- **Update rate**: 10Hz heading data
+- **Relative position**: Centimeter-level accuracy
+
+---
+
+## Next Steps
+
+After completing Heading F9P configuration:
+
+1. **Physical UART1 connection** between Base Link and Heading F9P
+2. **Power up both units** and verify data flow
+3. **Connect RTCM corrections** to Base Link F9P
+4. **Monitor NAV-RELPOSNED** messages for heading data
+5. **Integration with navigation system** using UBX message parsing
+
+The Heading F9P is now configured to receive raw measurements from the Base Link F9P and calculate precise heading using moving baseline RTK algorithms.
+
 
 ---
 
