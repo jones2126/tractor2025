@@ -263,9 +263,7 @@ After optimization, only these interfaces remain active:
 #### **Configuration Steps**
 
 ##### **Access Navigation Configuration**
-1. **CTRL + F9** (Configuration View)
-2. **Click "NAV5 (Navigation 5)"** in the left panel
-3. **This opens the navigation engine settings**
+1. **CTRL + F9** (Configuration View); **Click "NAV5 (Navigation 5)"** in the left panel; 
 
 ##### **UBX-CFG-NAV5 Model Settings**
 
