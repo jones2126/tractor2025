@@ -218,49 +218,29 @@ After completing these steps, your Base Link F9P will output:
 7. **Send**
 ---
 
-#### **Part B: CPU Load Optimization - Disable Unused Interfaces**
+#### **CPU Load Optimization - Just guessing at this point this helps**
 
-**Objective**: Reduce F9P CPU load by disabling unused communication interfaces (I2C, UART2, SPI) to improve RTK performance and reliability.
-
-##### **Performance Benefits**
-Disabling unused interfaces provides:
-- **Reduced CPU overhead** - more processing power for RTK calculations
-- **Better RTK convergence** - fewer background tasks competing for resources
-- **More reliable 10Hz output** - consistent timing with less processing load
-- **Lower power consumption** - inactive interfaces consume less power
-- **Cleaner operation** - eliminates potential interference from unused ports
+**Objective**: Reduce F9P CPU load by disabling unused interfaces (I2C, UART2, SPI) 
 
 ##### **Interface Optimization Settings**
 
 **Disable I2C Interface:**
-1. **Target dropdown**: Select **"0 - I2C"**
-2. **Protocol In**: Change to **"7 - NONE"**
-3. **Protocol Out**: Change to **"7 - NONE"**
+1. **Target**: Select **"0 - I2C"**
+2. **Protocol In**: Change to **"none"**
+3. **Protocol Out**: Change to **"none"**
 4. **Click "Send"**
 
 **Disable UART2 Interface:**
-1. **Target dropdown**: Select **"2 - UART2"**
-2. **Protocol In**: Change to **"7 - NONE"**
-3. **Protocol Out**: Change to **"7 - NONE"**
+1. **Target**: Select **"2 - UART2"**
+2. **Protocol In**: Change to **"none"**
+3. **Protocol Out**: Change to **"none"**
 4. **Click "Send"**
 
 **Disable SPI Interface:**
 1. **Target dropdown**: Select **"4 - SPI"**
-2. **Protocol In**: Change to **"7 - NONE"**
-3. **Protocol Out**: Change to **"7 - NONE"**
+2. **Protocol In**: Change to **"none"**
+3. **Protocol Out**: Change to **"none"**
 4. **Click "Send"**
-
-##### **Interfaces to Keep Active**
-
-**USB Port (Keep Current Settings):**
-- **Essential for**: NMEA navigation data output and RTCM correction input
-- **Do not modify**: USB configuration remains as-is
-- **Purpose**: Communication with Raspberry Pi navigation system
-
-**UART1 (Already Configured Above):**
-- **Essential for**: UBX raw data output to Heading F9P
-- **Configuration**: UBX protocol only at 115200 baud
-- **Purpose**: Moving baseline RTK data transmission
 
 ##### **Final Active Port Summary**
 After optimization, only these interfaces remain active:
@@ -269,9 +249,9 @@ After optimization, only these interfaces remain active:
 |------|-------------|--------------|---------|
 | **USB** | UBX+NMEA+RTCM3 | NMEA | Pi navigation + RTCM input |
 | **UART1** | UBX | UBX | Raw data to Heading F9P |
-| **I2C** | NONE | NONE | Disabled (CPU optimization) |
-| **UART2** | NONE | NONE | Disabled (CPU optimization) |
-| **SPI** | NONE | NONE | Disabled (CPU optimization) |
+| **I2C** | NONE | NONE | Disabled to reduce load |
+| **UART2** | NONE | NONE | Disabled to reduce load |
+| **SPI** | NONE | NONE | Disabled to reduce load |
 
 ---
 
