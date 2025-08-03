@@ -210,10 +210,10 @@ After completing these steps, your Base Link F9P will output:
 
 ### Step 5: Configure Port Settings (UART1 for UBX, others to reduce CPU load)
 1. **Open Configuration View**: View -> Configuration View or CTRL + F9 
-2. **Port**: 1 (UART1)
-3. **Protocol In**: Select **0 - UBX** (for potential feedback)
-4. **Protocol Out**: Select **0 - UBX** (uncheck NMEA)
-5. **Baudrate**: Select **115200** (should be good for 10 Hz)
+2. **Targe**: Select **"1 - UART1"**
+3. **Protocol In**: Select **"0 - UBX"** (for any potential feedback)
+4. **Protocol Out**: Select **"0 - UBX"** (for moving baseline messages)
+5. **Baudrate**: Select **115200** (hopefully good for 10 Hz)
 6. **Data bits**: 8, **Stop bits**: 1, **Parity**: None, **Bit Order**: LSB First
 7. **Send**
 ---
