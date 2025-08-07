@@ -54,7 +54,7 @@ int bucket = 5;  // Start at middle bucket (neutral)
 #define NUM_LEDS 1
 #define DATA_PIN 2
 
-RF24 radio(9, 10);  // CE, CSN pins for Teensy 3.5 since JRK G2 motor controller is using 7 and 8
+RF24 radio(9, 10);  // CE, CSN pins for Teensy 4.1; Reminder JRK G2 motor controller is using 7 and 8
 
 // Data structure for receiving
 struct RadioControlStruct {
@@ -178,10 +178,10 @@ void setup() {
 
     Serial3.begin(JRK_BAUD);
 
-    // Configure alternate SPI pins BEFORE SPI.begin() to avoid on-board LED pin 13
-    SPI.setSCK(27);   // Set SCK to pin 27
-    SPI.setMOSI(28);  // Set MOSI to pin 28  
-    SPI.setMISO(39);  // Set MISO to pin 39
+    // Configure SPI pins
+    SPI.setSCK(13);  
+    SPI.setMOSI(11);   
+    SPI.setMISO(12);
 
     // Initialize SPI
     SPI.begin();
