@@ -2,7 +2,7 @@
 
 ## Objectives and Goals
 
-This guide helps configure two u-blox ZED-F9P GPS receivers for **Moving Baseline RTK** to provide both RTK Fix position (i.e. 2-5cm position accuracy) and heading for tractor navigation (e.g. Pure Pursuit path following).  The base link position will be updated at 10Hz.  The base link F9P will pull RTCM correction using a TCP socket via a USB connection and will output UBX messages to the heading F9P using UART connections between the two devices.  The distance between the two units will be ~1 meter. One goal is for heading accuracy to be +/- 0.5°.
+This guide helps configure two u-blox ZED-F9P GPS receivers for **Moving Baseline RTK** to provide both RTK Fix position (i.e. 2-5cm position accuracy) and heading for tractor navigation (e.g. Pure Pursuit path following).  The base link position will be updated at 10Hz.  The "base" link" F9P will pull RTCM correction using a TCP socket via a USB connection and will output UBX messages to the "heading" F9P via the UART1 connections between the two devices.  The distance between the two GPS antennaes will be ~1 meter. One goal is for heading accuracy to be +/- 0.5°, hopefully!
 
 
 ---
@@ -439,7 +439,7 @@ Key fields in UBX-NAV-RELPOSNED:
 
 ---
 
-## Step 6: Set Moving Baseline Rover Mode
+## Step 6: Configure Time Mode
 
 ### **Configure Time Mode**
 1. **CTRL + F9** (Configuration View)
@@ -508,31 +508,8 @@ This configures the Heading F9P as a moving baseline rover that:
 
 ---
 
-## Expected Results After Configuration
-
-### **Data Flow Verification**
-**From Base Link F9P (UART1) → Heading F9P:**
-- UBX-RXM-RAWX messages at 10Hz
-- UBX-RXM-SFRBX messages at 10Hz  
-- UBX-NAV-PVT messages at 10Hz
-
-**From Heading F9P (USB) → Raspberry Pi:**
-- UBX-NAV-RELPOSNED messages at 10Hz
-- Contains heading and relative position data
-- Clean binary UBX format
-
-### **Moving Baseline Performance**
-Once physically connected and receiving RTCM corrections:
-- **RTK convergence**: 15-60 seconds for both units
-- **Heading accuracy**: 0.1-0.5° with 1-meter baseline
-- **Update rate**: 10Hz heading data
-- **Relative position**: Centimeter-level accuracy
-
----
 
 ## Next Steps
-
-After completing Heading F9P configuration:
 
 1. **Physical UART1 connection** between Base Link and Heading F9P
 2. **Power up both units** and verify data flow
@@ -540,145 +517,8 @@ After completing Heading F9P configuration:
 4. **Monitor NAV-RELPOSNED** messages for heading data
 5. **Integration with navigation system** using UBX message parsing
 
-The Heading F9P is now configured to receive raw measurements from the Base Link F9P and calculate precise heading using moving baseline RTK algorithms.
-
-
 ---
 
-## Part 3: Physical Connection and Testing
-
-### Step 1: Wire UART1 Connection
-Connect the two F9P units with 4-wire cable:
-```
-Base F9P Pin    →    Heading F9P Pin
-UART1 TX        →    UART1 RX
-UART1 RX        →    UART1 TX  
-GND             →    GND
-(VCC not needed - both powered via USB)
-```
-
-### Step 2: Power Up and Verify
-1. Connect both F9Ps to your Pi 5 via USB
-2. Power up the system
-3. Send RTCM corrections to Base F9P via USB
-4. Monitor both units in u-center
-
-### Step 3: Verify Operation
-**Base Link F9P should show:**
-- NMEA GGA messages on USB at 10Hz
-- RTK Fixed status in GGA messages
-- UART1 activity (raw data transmission)
-
-**Heading F9P should show:**
-- UBX-NAV-RELPOSNED messages on USB at 10Hz
-- Relative position and heading data
-- RTK status in RELPOSNED flags
-
----
-
-## Expected Message Formats
-
-### Base Link F9P Output (NMEA GGA):
-```
-$GPGGA,123456.00,4028.12345,N,08019.67890,W,4,12,1.2,123.4,M,-32.1,M,1.0,0*7F
-                                              ↑
-                                         RTK Fixed (4)
-```
-
-### Heading F9P Output (UBX-NAV-RELPOSNED):
-```python
-# Key fields in UBX-NAV-RELPOSNED:
-relPosN: int32        # Relative North position (cm)
-relPosE: int32        # Relative East position (cm)  
-relPosD: int32        # Relative Down position (cm)
-relPosHeading: uint32 # Heading (0.01° units)
-flags: uint32         # Solution status flags
-accHeading: uint32    # Heading accuracy (0.01°)
-```
-
----
-
-## Troubleshooting
-
-### No RTK Fix on Base Link:
-- Verify RTCM corrections are being received
-- Check antenna placement and sky view
-- Monitor survey-in progress in u-center
-
-### No Heading Data from Front Unit:
-- Verify UART1 wiring between F9P units
-- Check UART1 configuration on both units
-- Ensure raw data messages (RAWX, SFRBX) are enabled on Base Link UART1
-
-### Low Update Rate:
-- Verify CFG-RATE is set to 100ms on both units
-- Check message rates are set to 1 (not 0)
-- Monitor USB traffic to ensure no bottlenecks
-
-### Poor Heading Accuracy:
-- Verify 1-meter baseline distance
-- Check antenna ground planes
-- Ensure both units have clear sky view
-- Verify RTK Fixed status on both units
-
----
-
-## Integration with Navigation System
-
-### NMEA Parser for Base Link (Python):
-```python
-import pynmea2
-
-def parse_gga(nmea_sentence):
-    msg = pynmea2.parse(nmea_sentence)
-    if msg.sentence_type == 'GGA':
-        return {
-            'lat': msg.latitude,
-            'lon': msg.longitude,
-            'fix_quality': msg.gps_qual,  # 4 = RTK Fixed
-            'num_sats': msg.num_sats,
-            'altitude': msg.altitude
-        }
-```
-
-### UBX Parser for Heading (Python):
-```python
-def parse_relposned(ubx_data):
-    # Parse UBX-NAV-RELPOSNED (0x01 0x3C)
-    # Returns heading in degrees, relative position in meters
-    # Implementation depends on UBX parsing library
-    pass
-```
-
----
-
-## Performance Specifications
-
-### Achieved Performance:
-- **Position Update Rate**: 10Hz
-- **Heading Update Rate**: 10Hz  
-- **Position Accuracy**: 2-5cm (RTK Fixed)
-- **Heading Accuracy**: 0.1-0.5° (1m baseline)
-- **RTK Convergence Time**: 15-60 seconds
-- **CPU Load**: Minimal Pi 5 processing (direct UART)
-
-### System Requirements:
-- **RTK Base Station**: Active with RTCM corrections
-- **Antenna Separation**: 1 meter baseline minimum
-- **Clear Sky View**: Both antennas need GPS signal reception
-- **Stable Mounting**: Antennas must maintain fixed relative positions
-
----
-
-## File Locations
-
-Configuration backup files should be saved to:
-```
-/path/to/your/repo/docs/gps_configs/
-├── base_link_f9p_config.txt    # u-center config export
-├── heading_f9p_config.txt      # u-center config export  
-└── moving_baseline_setup.md    # This documentation
-```
 
 ## References
 
@@ -689,4 +529,4 @@ Configuration backup files should be saved to:
 ---
  
 **Last updated**: August 2025  
-**Version**: 1.0
+
