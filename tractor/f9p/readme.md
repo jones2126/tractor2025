@@ -48,24 +48,15 @@ GND            →    GND
 ### Step 1: Factory Reset and Connection
 1. Connect Base Link F9P to PC via USB
 2. Open u-center
-3. **Receiver → Connection** → Select F9P COM port
-4. Verify NMEA messages are flowing
+3. **Receiver → Baudrate → 115,200** - Set baudrate
+4. **Receiver → Connection → COMxx** - Make connection
 5. **Factory Reset**:
    - **View → Configuration View**   
    - **CFG → Choose 'Revert to default configuration'**
 The items listed (0-BBR, 1-FLASH, 2-I2C EEPROM, 3-SPI FLASH) are just showing you what storage devices are available You don't need to select/highlight any of them   
    - **press SEND in lower left**
 
-### Step 2: Set Navigation Rate to 10Hz
-1. **View → Configuration View**
-2. **RATES → CFG → RATE**
-**Time Source:**: 1 - GPS time
-**Measurement Period:**: 100 ms
-**Measurement Frequency:**: 10 Hz
-**Navigation Rate:**: 1
-**Navigation Frequency:**: 10 Hz
-
-### Step 3: Limit NMEA output to reduce load
+### Step 2: Limit NMEA output to reduce load
 
 **Current Status**: Factory default F9P outputs all NMEA messages (GGA, GLL, GSA, GSV, RMC, VTG, TXT). I only want GGA and RMC messages to start.
 
@@ -87,7 +78,7 @@ For each unwanted NMEA message, set the USB output rate to **0** or uncheck the 
 - **NMEA-VTG** (Track made good/speed): Not needed for Pure Pursuit
 - **NMEA-TXT** (Text transmission): Not needed for navigation
 
-**Message to Keep Enabled:**
+**Message to Keep / Enable, Only USB port:**
 - **NMEA-GGA** (Global positioning fix): **Rate: 1** (keep enabled)
 - **NMEA-RMC** (Recommended minimum): Redundant with GGA
   - Can be adjusted later.  I want just enough data for the Pure Pursuit algorithm, to know RTK Fix status and to compare heading and speed with other data sources.
@@ -103,9 +94,9 @@ For each message to disable:
 5. **Repeat for all unwanted messages**
 
 #### **Verify Configuration**
-
+**View → Packet Console**
 After disabling unwanted messages, your packet console should show:
-- **Only NMEA GGA and RMC messages** flowing at 10Hz.  Copy and paste the screen.  Then count the number of lines in a one second interval.
+- **Only NMEA GGA and RMC messages** flowing at 1Hz.  Now we need to change the output rate to be 10Hz.
 
 
 #### **GGA Message Content (What You Get)**
@@ -142,7 +133,14 @@ Where:
 - mode: Mode indicator (A=Autonomous, D=DGPS, R=RTK, F=RTK Float, E=Dead Reckoning)
 - hh: Checksum
 ```
-
+### Step 3: Set Navigation Rate to 10Hz
+1. **View → Configuration View**
+2. **RATES → CFG → RATE**
+**Time Source:**: 1 - GPS time
+**Measurement Period:**: 100 ms (reduced from 1000 ms)
+**Measurement Frequency:**: 10 Hz (should change automatically)
+**Navigation Rate:**: 1
+**Navigation Frequency:**: 10 Hz (should change automatically)
 
 ### Step 4: Configure UBX output on UART1 for moving baseline RTK
 
@@ -208,9 +206,12 @@ After completing these steps, your Base Link F9P will output:
 - ✅ **NMEA GGA**: Position and RTK status (10Hz)
 - ✅ **NMEA RMC**: Speed and course (10Hz)
 
+
+
 ### Step 5: Configure Port Settings (UART1 for UBX, others to reduce CPU load)
 1. **Open Configuration View**: View -> Configuration View or CTRL + F9 
-2. **Targe**: Select **"1 - UART1"**
+2. **Navigate to Ports**: Click **"PRT (Ports)"** in the left panel
+2. **Target**: Select **"1 - UART1"**
 3. **Protocol In**: Select **"0 - UBX"** (for any potential feedback)
 4. **Protocol Out**: Select **"0 - UBX"** (for moving baseline messages)
 5. **Baudrate**: Select **115200** (hopefully good for 10 Hz)
@@ -321,7 +322,7 @@ After optimization, only these interfaces remain active:
 6. **Wait for reset completion** (~10 seconds)
 
 ### **Verification**
-After reset, verify:
+After reset, verify - go to View -> Packet Console:
 - **All NMEA messages** returning (GGA, GLL, GSA, GSV, RMC, VTG)
 - **1Hz update rate** (default)
 - **Clean factory state** established
@@ -353,12 +354,12 @@ Since the Heading F9P will output UBX-NAV-RELPOSNED only, disable all NMEA:
 3. **For each NMEA message, set USB rate to 0**:
 
 **Messages to Disable (set rate to 0 on USB):**
-- **NMEA-GGA** (Global positioning) → Rate: 0
-- **NMEA-GLL** (Geographic position) → Rate: 0
-- **NMEA-GSA** (DOP and active satellites) → Rate: 0
-- **NMEA-GSV** (Satellites in view) → Rate: 0
-- **NMEA-RMC** (Recommended minimum) → Rate: 0
-- **NMEA-VTG** (Track made good) → Rate: 0
+- **F0-00 NMEA-GGA** (Global positioning) → Rate: 0
+- **F0-01 NMEA-GLL** (Geographic position) → Rate: 0
+- **F0-02 NMEA-GSA** (DOP and active satellites) → Rate: 0
+- **F0-03 NMEA-GSV** (Satellites in view) → Rate: 0
+- **F0-04 NMEA-RMC** (Recommended minimum) → Rate: 0
+- **F0-05 NMEA-VTG** (Track made good) → Rate: 0
 
 **For each message:**
 1. **Select message** from dropdown (e.g., F0 00 GGA)
@@ -368,7 +369,7 @@ Since the Heading F9P will output UBX-NAV-RELPOSNED only, disable all NMEA:
 
 ### **Verification**
 After disabling NMEA messages:
-- **Packet console should show minimal traffic**
+- **Packet console should show ZERO traffic**
 - **Only system messages** (like GNTXT) may remain
 - **Clean data stream** prepared for UBX output
 
