@@ -12,7 +12,7 @@ TCP_IP = '192.168.1.180'
 # 192.168.193.88 - ZeroTier IP address for RTK Base
 TCP_PORT = 6001
 # SERIAL_PORT = 'COM41'  # Change to '/dev/ttyUSB0' on Raspberry Pi
-SERIAL_PORT = '/dev/ttyACM2'  # Raspberry Pi
+SERIAL_PORT = '/dev/gps-base-link'  # Raspberry Pi
 SERIAL_BAUDRATE = 115200
 RTCM_TIMEOUT = 5  # seconds without RTCM = warning
 CSV_LOGFILE = 'fix_status_log.csv'
