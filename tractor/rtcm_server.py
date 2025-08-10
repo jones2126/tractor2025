@@ -15,7 +15,10 @@ broadcast runs at a fixed rate and contains the following fields:
         "lat": decimal degrees,
         "lon": decimal degrees,
         "fix_quality": string,            # e.g. "RTK Fixed"
-        "heading_deg": degrees from north
+        "heading_deg": degrees from north,
+        "headValid": bool,
+        "carrier": string,                # e.g. "float"/"fixed"
+        "expectedErrDeg": float          # expected heading error (1-sigma)
     }
 
 Adjust the configuration section below to match your hardware setup.
@@ -67,6 +70,9 @@ state = {
     "lon": None,
     "fix_quality": "Unknown",
     "heading_deg": None,
+    "headValid": None,
+    "carrier": None,
+    "expectedErrDeg": None,
     "timestamp": None,
 }
 state_lock = threading.Lock()
@@ -95,28 +101,54 @@ def parse_relposned(payload: bytes):
     relPosLen = relPosHead = None
     if len(payload) == 64:
         relPosLen, relPosHead = struct.unpack_from("<ii", payload, off)
-        off += 12
+        off += 8
+        off += 4  # reserved
     relPosHPN, relPosHPE, relPosHPD = struct.unpack_from("<bbb", payload, off)
-    off += 4
+    off += 3
+    relPosHPLen = None
     if len(payload) == 64:
         relPosHPLen = struct.unpack_from("<b", payload, off)[0]
         off += 1
     else:
-        relPosHPLen = 0
-    off += 0
-    N = cm_hp_to_m(relPosN, relPosHPN)
-    E = cm_hp_to_m(relPosE, relPosHPE)
+        off += 1
+    accN_0p1mm, accE_0p1mm, accD_0p1mm = struct.unpack_from("<III", payload, off)
+    off += 12
+    accLen_0p1mm = accHead_1e5deg = None
+    if len(payload) == 64:
+        accLen_0p1mm, accHead_1e5deg = struct.unpack_from("<II", payload, off)
+        off += 8
+        off += 4  # reserved3
+    flags = struct.unpack_from("<I", payload, off)[0]
+
+    # Convert to metric units where needed
     length = cm_hp_to_m(relPosLen, relPosHPLen) if relPosLen is not None else None
     heading = (relPosHead * 1e-5) if relPosHead is not None else None
-    flags = struct.unpack_from("<I", payload, -4)[0]
+
+    accN_m, accE_m = accN_0p1mm/10000.0, accE_0p1mm/10000.0
+    accHead_d = (accHead_1e5deg*1e-5) if accHead_1e5deg is not None else None
+
     carrier = {0: "none", 1: "float", 2: "fixed"}.get((flags >> 3) & 0x3, "unknown")
     headValid = bool(flags & (1 << 8))
     return {
         "length_m": length,
         "heading_deg": heading,
+        "accN_m": accN_m,
+        "accE_m": accE_m,
+        "accHead_deg": accHead_d,
         "carrier": carrier,
         "headValid": headValid,
     }
+
+
+def expected_heading_error_deg(d):
+    """Return expected 1-sigma heading error in degrees."""
+    if d["accHead_deg"] is not None and d["headValid"]:
+        return d["accHead_deg"]
+    L = d["length_m"] or 0.0
+    if L <= 1e-6:
+        return float("nan")
+    sigma_perp = math.hypot(d["accN_m"] or 0.0, d["accE_m"] or 0.0)
+    return math.degrees(math.atan2(sigma_perp, L))
 
 # ---------------------------------------------------------------------------
 # Threads
@@ -204,9 +236,14 @@ def monitor_relposned(serial_conn):
         buf.clear()
         if cls_ == CLS_NAV and id_ == ID_RELPOSNED:
             d = parse_relposned(payload)
-            if d and d["headValid"]:
+            if d:
+                err_deg = expected_heading_error_deg(d)
                 with state_lock:
-                    state["heading_deg"] = d["heading_deg"]
+                    state["headValid"] = d["headValid"]
+                    state["carrier"] = d["carrier"]
+                    state["expectedErrDeg"] = err_deg
+                    if d["headValid"]:
+                        state["heading_deg"] = d["heading_deg"]
                     state["timestamp"] = datetime.utcnow().isoformat()
 
 
