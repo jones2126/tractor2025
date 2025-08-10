@@ -2,7 +2,7 @@
 import serial, struct, sys, math
 from datetime import datetime
 
-PORT = "COM41"
+PORT = '/dev/gps-heading'
 BAUD = 115200
 
 # Output toggles
