@@ -7,7 +7,9 @@ import csv
 from datetime import datetime
 
 # --- Configuration ---
-TCP_IP = '192.168.1.233'
+TCP_IP = '192.168.1.180'
+# 192.168.1.180 - local network IP address for RTK Base
+# 192.168.193.88 - ZeroTier IP address for RTK Base
 TCP_PORT = 6001
 # SERIAL_PORT = 'COM41'  # Change to '/dev/ttyUSB0' on Raspberry Pi
 SERIAL_PORT = '/dev/ttyACM2'  # Raspberry Pi
