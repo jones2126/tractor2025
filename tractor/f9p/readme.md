@@ -221,6 +221,6 @@ Disable **I2C**, **UART2**, **SPI** (Protocol in/out = None).
 
 ---
 
-## 7) u-blox references:
-`u‑blox ZED‑F9P Integration Manual:     https://www.u-blox.com/docs/UBX-18010802`
-`u‑blox Moving Base Applications Note:  https://www.u-blox.com/docs/UBX-19009093`
+## 6) u-blox references:
+- u‑blox ZED‑F9P Integration Manual:     https://www.u-blox.com/docs/UBX-18010802
+- u‑blox Moving Base Applications Note:  https://www.u-blox.com/docs/UBX-19009093
