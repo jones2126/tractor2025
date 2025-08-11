@@ -1,17 +1,15 @@
-# Moving-Baseline RTK (Dual ZED‑F9P) — Minimal Output & Ports, RTCM‑Based
+# Moving-Baseline RTK Using Dual ArduSimple ZED‑F9P's
 _Last updated: Aug 2025_
 
-This guide helps configure two u-blox ZED-F9P GPS receivers for **Moving Baseline RTK** to provide RTK Fix position (i.e. 2-5cm position accuracy) and heading for tractor navigation (e.g. Pure Pursuit path following).  The configuration settings are set to minimize the CPU load by limiting the messages to the select messages required and no more based on a starting point of a factory default reset. The base link position and heading will be updated at 10Hz.  The "base" link" F9P will pull RTCM correction using TCP socket 6001 over Wi-Fi. The u‑blox **ZED‑F9P** will publish lat, lon, RTK status and **moving‑baseline RTK heading** data via a UDP socket 4243. The distance between the two GPS antennaes will be ~1 meter. One goal is for heading accuracy to be +/- 0.5°, hopefully!
+This guide helps configure two u-blox ZED-F9P GPS receivers for Moving Baseline RTK to provide RTK Fix position (i.e. 2-5cm position accuracy) and heading for tractor navigation (e.g. Pure Pursuit path following).  The configuration settings are set to minimize the CPU load by limiting the messages to the select messages required and no more based on a starting point of a factory default reset. The base link position and heading will be updated at 10Hz.  The "base" link" F9P will pull RTCM correction using TCP socket 6001 over Wi-Fi. The F9P will publish lat, lon, RTK status and moving‑baseline RTK heading data via a UDP socket 4243. The distance between the two GPS antennaes will be ~1 meter. One goal is for heading accuracy to be +/- 0.5°, hopefully!
 
 
-- **Base Link F9P** (rear, over base_link): acts as the **moving base**, is physically connected to the 'tractor' RPi 5 as /dev/gps-base-link, receives RTCM corrections via a TCP socket on the local network and **sends RTCM** to the front unit over UART1. Also streams **only NMEA GGA+RMC** to the 'tractor' RPi 5 over USB for navigation and status.  The key script used to accomplish this is /home/al/tractor2025/tractor/rtcm_server.py.
-- **Heading F9P** (front, ~1–2 m forward): **receives RTCM** from Base Link F9P via UART1 and outputs **UBX‑NAV‑RELPOSNED** (heading + baseline) to the RPi over USB /dev/gps-heading.  For testing, the script /home/al/tractor2025/tractor/testing/gps_udp_listener.py is an example of reading the data published UDP_PORT = 4242 from rtcm_server.py.
-
-Baseline target: ~1.0–1.2 m. Final update rate: **10 Hz** (after verifying at **1 Hz**).
+- **Base Link F9P** (rear, over base_link): acts as the moving base, is physically connected to the 'tractor' RPi 5 as /dev/gps-base-link, receives RTCM corrections via a TCP socket on the local network and sends RTCM to the front unit over UART1. Also streams NMEA GGA & RMC sentences to the 'tractor' RPi 5 over USB for navigation and status.  The script used to accomplish this is /home/al/tractor2025/tractor/rtcm_server.py.
+- **Heading F9P** (front, ~1–2 m forward): receives RTCM from Base Link F9P via UART1 and outputs UBX‑NAV‑RELPOSNED (heading + baseline) to the 'tractor' RPi 5 over USB /dev/gps-heading.  For testing, the script /home/al/tractor2025/tractor/testing/gps_udp_listener.py is an example of reading the data published UDP_PORT 4242 from rtcm_server.py.
 
 ---
 
-## 1) Wire both units
+## 1. Wire both units
 ```
 Base Link F9P UART1 TX  --->  Heading F9P UART1 RX (Optionally wire RX<->TX, but TX->RX is enough for now.)
 Base Link F9P GND       --->  Heading F9P GND
@@ -27,27 +25,24 @@ Heading F9P 3.3V        --->  Heading F9P IOREF
 2. **Limit output messages first** (reduce load), verify on **Packet Console**.
 3. **Enable only required ports/protocols**.
 4. **Raise message rates to 10 Hz**.
-5. **Save configuration** to BBR/Flash.
+5. **Save configuration** .
 
 ---
 
-## 2) Base Link F9P (rear unit) — Configuration
-This unit must **send RTCM3** to the Heading F9P on **UART1**, and send **NMEA GGA+RMC only** to the Pi on **USB**. It also **receives network RTCM** on USB (from your NTRIP client).
+## 2 Base Link F9P (rear unit) — Configuration
+This unit sends RTCM3 corrections to the Heading F9P via UART1, and output NMEA GGA & RMC sentences to the RPi 5 via USB. This F9P also receives RTCM corrections via TCP port 6001.
 
-### A) Factory reset
+### A. Factory reset
 `View → Configuration View (Ctrl+F9) → CFG → Revert to default configuration → Send`
 
-### B) Configure messages starting at 1 Hz
+### B. Configure messages starting at 1 Hz
 `View → Configuration View → MSG (Messages)`  
 Factory defaults enable a few NMEA sentences; disable all but **GGA** and **RMC** on **USB**:
-- **Disable** all NMEA F0‑xx except:
-  - **F0‑00 NMEA‑GGA** → USB rate = **1**; Deselect all other ports
-  - **F0‑04 NMEA‑RMC** → USB rate = **1**; Deselect all other ports
+- **Update** **F0‑00 NMEA‑GGA** → USB rate = **1**; Deselect all other ports
+- **Update** **F0‑04 NMEA‑RMC** → USB rate = **1**; Deselect all other ports
 - **Disable** all other messages.
 
 **Verify** (View → Packet Console): you should see only `$GxGGA` and `$GxRMC` at **1 Hz**.  Disable any that are still showing.
-
-
 
 #### **GGA Message Content (What You Get)**
 
@@ -85,7 +80,7 @@ Where:
 ```
 
 
-Enable these **RTCM3** messages on **UART1** (rate = **1** initially):
+Enable these **RTCM3** messages on **UART1** (rate = **1**):
 
 - **F5-4D RTCM3.3 1077** (GPS MSM7)
 - **F5-57 RTCM3.3 1087** (GLONASS MSM7) — only if GLONASS enabled
@@ -95,23 +90,23 @@ Enable these **RTCM3** messages on **UART1** (rate = **1** initially):
 - **F5-FE RTCM3.3 4072.0** (u‑blox Ref‑Station PVT for moving base - drives RELPOSNED)
 - **F5-FD RTCM3.3 4072.1** (u‑blox Additional Info for moving base - drives RELPOSNED)
 
-### C) Configure UART1 to **output RTCM3** *(start at 1 Hz)*
+### C. Configure UART1 to **output RTCM3** *(start at 1 Hz)*
 `View → Configuration View → PRT (Ports)` → **Target: UART1**
 - **Protocol in**: **None**
 - **Protocol out**: **5 - RTCM3**
 - **Baud**: **115200** → **Send**
 
-### D) Configure USB to **receive RTCM3** (and optionally UBX) from the Pi
+### D. Configure USB to **receive RTCM3** (and optionally UBX) from the Pi
 `View → Configuration View → PRT (Ports)` → **Target: USB**
 - **Protocol in**: **RTCM3** (from NTRIP client) **(+ UBX optional for future config)**
 - **Protocol out**: **NMEA** (only GGA+RMC as set above)  
 → **Send**
 
-### E) Disable unused interfaces (optional CPU/IO savings)
+### E. Disable unused interfaces (optional CPU/IO savings)
 `PRT (Ports)`: set **I2C**, **UART2**, **SPI** → **Protocol in/out = None** → **Send**
 
 
-### F) **Access Navigation Configuration**
+### F. **Access Navigation Configuration**
 **Click "NAV5 (Navigation 5)"** in the left panel; 
 
 ##### **UBX-CFG-NAV5 Model Settings**
