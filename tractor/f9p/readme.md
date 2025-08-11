@@ -168,7 +168,8 @@ This unit **receives RTCM3** on **UART1** from Base Link and outputs **UBX‑NAV
 **Verify** (Binary Console): only `UBX‑NAV‑RELPOSNED` at **1 Hz**.
 
 ### C. Configure UART1 to **receive RTCM3**
-`PRT (Ports)` → **Target: UART1**
+`PRT (Ports)`
+- **Target: UART1**
 - **Protocol in**: **RTCM3**
 - **Protocol out**: **None**
 - **Baud**: **115200** → **Send**
@@ -217,16 +218,9 @@ Disable **I2C**, **UART2**, **SPI** (Protocol in/out = None).
 
 **ENU yaw** (CCW from East) = `yaw_enu = wrap(90° − heading_deg)`.
 
----
-
-## 6) Troubleshooting quick list
-- **No RELPOSNED / empty** → Heading UART1 not receiving RTCM (check `PRT(UART1)` and `MON‑COMMS`).
-- **headValid=False** or **carrier≠fixed** → RTCM stream incomplete: ensure **4072.0/4072.1** are enabled on Base UART1; keep MSM7 and (if used) **1230**.
-- **Packet Console too chatty** → Re‑disable all but GGA/RMC (Base USB) and RELPOSNED (Heading USB).
-- **Overflow** → Lower MSM rates to 5 Hz, keep 4072.x at 10 Hz; verify UART1 baud (115200).
 
 ---
 
 ## 7) u-blox references:
-u‑blox ZED‑F9P Integration Manual:     https://www.u-blox.com/docs/UBX-18010802
-u‑blox Moving Base Applications Note:  https://www.u-blox.com/docs/UBX-19009093
+`u‑blox ZED‑F9P Integration Manual:     https://www.u-blox.com/docs/UBX-18010802`
+`u‑blox Moving Base Applications Note:  https://www.u-blox.com/docs/UBX-19009093`
