@@ -31,8 +31,7 @@ import socket
 import struct
 import threading
 import time
-from datetime import datetime
-
+from datetime import datetime, timezone
 import serial
 
 # ---------------------------------------------------------------------------
@@ -189,9 +188,15 @@ def monitor_gga(serial_conn):
                             "lat": lat,
                             "lon": lon,
                             "fix_quality": fix,
-                            "timestamp": datetime.utcnow().isoformat(),
+                            "timestamp": datetime.now(timezone.utc).isoformat(),
                         })
             buffer = b""
+
+'''
+2. Change both `datetime.utcnow().isoformat()` calls (lines 192 and 247) to\
+   `datetime.now(timezone.utc).isoformat()`.
+'''
+
 
 def _parse_deg(raw: str, direction: str) -> float:
     """Convert NMEA latitude/longitude component to decimal degrees."""
@@ -244,8 +249,7 @@ def monitor_relposned(serial_conn):
                     state["expectedErrDeg"] = err_deg
                     if d["headValid"]:
                         state["heading_deg"] = d["heading_deg"]
-                    state["timestamp"] = datetime.utcnow().isoformat()
-
+                    state["timestamp"] = datetime.now(timezone.utc).isoformat()
 
 def udp_publisher():
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
