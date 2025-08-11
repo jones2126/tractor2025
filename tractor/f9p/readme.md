@@ -91,16 +91,19 @@ Enable these **RTCM3** messages on **UART1** (rate = **1**):
 - **F5-FD RTCM3.3 4072.1** (u‑blox Additional Info for moving base - drives RELPOSNED)
 
 ### C. Configure UART1 to **output RTCM3** *(start at 1 Hz)*
-`View → Configuration View → PRT (Ports)` → **Target: UART1**
+`View → Configuration View → PRT (Ports)`
+- **Target: UART1**
 - **Protocol in**: **None**
 - **Protocol out**: **5 - RTCM3**
-- **Baud**: **115200** → **Send**
+- **Baud**: **115200**
+- **Send**
 
 ### D. Configure USB to **receive RTCM3** (and optionally UBX) from the Pi
-`View → Configuration View → PRT (Ports)` → **Target: USB**
+`View → Configuration View → PRT (Ports)`
+- **Target: USB**
 - **Protocol in**: **RTCM3** (from NTRIP client) **(+ UBX optional for future config)**
 - **Protocol out**: **NMEA** (only GGA+RMC as set above)  
-→ **Send**
+- **Send**
 
 ### E. Disable unused interfaces (optional CPU/IO savings)
 `PRT (Ports)`: set **I2C**, **UART2**, **SPI** → **Protocol in/out = None** → **Send**
@@ -130,26 +133,26 @@ Enable these **RTCM3** messages on **UART1** (rate = **1**):
 
 
 
-### E) Raise rates to **10 Hz** *(after verification)*
-- `RATE (Rates)`:
+### E. Raise rates to **10 Hz** *(after verification)*
+- `RATE (Rates):`
   - **Time Source**: → **1 - GPS Time**
   - **Measurement Period**: **100 ms** (10 Hz) - down from 1000
   - **Other items**: leave along
   - **Send**
 
-### G) Save
-`CFG → Save current configuration` to **BBR + Flash + I2C + SPI-FLASH**.
+### G. Save
+`CFG → Save current configuration to **BBR + Flash + I2C + SPI-FLASH**.`
 
 ---
 
-## 3) Heading F9P (front unit) — Configuration
+## 3. Heading F9P (front unit) — Configuration
 This unit **receives RTCM3** on **UART1** from Base Link and outputs **UBX‑NAV‑RELPOSNED** on **USB** to the Pi.
 
-### A) Factory reset
+### A. Factory reset
 `CFG → Revert to default configuration → Send`
 
-### B) Limit USB output to **only UBX‑NAV‑RELPOSNED** *(start at 1 Hz)*
-`MSG (Messages)`:
+### B. Limit USB output to **only UBX‑NAV‑RELPOSNED** *(start at 1 Hz)*
+`MSG (Messages):`
 - **Disable all NMEA F0‑xx** on **USB** (USB rate = 0).
 **Messages to Disable (set rate to 0 on USB):**
 - **F0-00 NMEA-GGA** (Global positioning) → Rate: 0
@@ -164,24 +167,24 @@ This unit **receives RTCM3** on **UART1** from Base Link and outputs **UBX‑NAV
 **Verify** (Packet Console): There should be no messages present.
 **Verify** (Binary Console): only `UBX‑NAV‑RELPOSNED` at **1 Hz**.
 
-### C) Configure UART1 to **receive RTCM3**
+### C. Configure UART1 to **receive RTCM3**
 `PRT (Ports)` → **Target: UART1**
 - **Protocol in**: **RTCM3**
 - **Protocol out**: **None**
 - **Baud**: **115200** → **Send**
 
-### D) Time/Mode
+### D. Time/Mode
 `TMODE3 (Time Mode 3)` → **Mode = Disabled** (this is a rover in a moving‑baseline pair).
 
-### E) Raise rates to **10 Hz** *(after verification)*
+### E. Raise rates to **10 Hz** *(after verification)*
 - `MSG`: set **UBX‑NAV‑RELPOSNED** on **USB** → **rate 10**.
 - `RATE`: **100 ms** period, **10 Hz** navigation → **Send**.
 
-### F) Disable unused interfaces (optional)
+### F. Disable unused interfaces (optional)
 Disable **I2C**, **UART2**, **SPI** (Protocol in/out = None).
 
-### G) Save
-`CFG → Save current configuration` to **BBR + Flash**.
+### G. Save
+`CFG → Save current configuration to **BBR + Flash + I2C + SPI-FLASH**.`
 
 ---
 
