@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """Example client for rtcm_server UDP output.
 
-Listens on UDP port 4242 and prints received JSON messages.  This is useful for
+Listens on UDP port 6002 and prints received JSON messages.  This is useful for
 verifying that ``rtcm_server.py`` is publishing navigation data.
 """
 
 import json
 import socket
 
-UDP_PORT = 4242
+UDP_PORT = 6002
 
 def main():
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
