@@ -189,7 +189,7 @@ Disable **I2C**, **UART2**, **SPI** (Protocol in/out = None).
 
 ---
 
-## 4) Minimal Port/Message Settings (summary)
+## 4. Minimal Port/Message Settings (summary)
 
 ### Base Link F9P
 | Port  | Protocol In            | Protocol Out | Messages Enabled (rates)                                                |
@@ -211,7 +211,7 @@ Disable **I2C**, **UART2**, **SPI** (Protocol in/out = None).
 
 ---
 
-## 5) What to look for (Heading F9P → RELPOSNED)
+## 5. What to look for (Heading F9P → RELPOSNED)
 - Flags should show: `fixOK=True`, `diff=True`, `relValid=True`, `carrier=fixed`, `moving=True`, `headValid=True`.
 - **Length** ≈ your measured antenna separation.
 - **Heading** stable (σHead < ~0.5° for ~1 m baseline in good sky).
@@ -221,6 +221,6 @@ Disable **I2C**, **UART2**, **SPI** (Protocol in/out = None).
 
 ---
 
-## 6) u-blox references:
+## 6. u-blox references:
 - u‑blox ZED‑F9P Integration Manual:     https://www.u-blox.com/docs/UBX-18010802
 - u‑blox Moving Base Applications Note:  https://www.u-blox.com/docs/UBX-19009093

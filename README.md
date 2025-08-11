@@ -8,17 +8,10 @@ This repository contains the under development codebase for an outdoor robot pla
 
 ## System Architecture
 
-### Hardware Platform
-- **Main Chassis**: Cub Cadet XT1 LT42 with EFI riding mower tractor-based outdoor robot platform
-- **Primary Compute**: Raspberry Pi 5 (for high-level control including navigation)
-- **Microcontroller**: Teensy 3.5 (low-level hardware control)
-- **Communication**: NRF24 radio link with custom radio controller; RPi wi-fi
-- **GPS**: Ardusimple ZED-F9P one for base link and one to calculate heading
-- **Base Station**: Custom base station to send RTCM correction data.  See https://github.com/jones2126/tractor2025/blob/main/BridgevilleRTKBase/README.md
-
 ### Key Components
+- **Tractor and Main Chassis**: Cub Cadet XT1 LT42 with EFI riding mower tractor-based outdoor robot platform
 
-#### Teensy 3.5 (Low-Level Control)
+#### Microcontroller Teensy 4.1 (Low-Level Control)
 - JRK G2 motor controller → Linear actuator → Hydrostatic transmission
 - IBT-2 motor controller for steering control with PID feedback
 - Steering angle sensor (potentiometer on pin A9/pin 23)
@@ -26,16 +19,20 @@ This repository contains the under development codebase for an outdoor robot pla
 - NRF24 radio communication with remote control unit
 - 4 Unit Relay GPIO board for safety systems
 
-#### Raspberry Pi 5 (High-Level Control)
+#### Primary Compute Raspberry Pi 5 (High-Level Control)
 - Navigation stack (ROS 2 + Pure Pursuit algorithm)
 - Dual ZED-F9P RTK GNSS receivers for precision localization and heading
 - OAK camera for AprilTag localization and teleoperation
 - Internet connectivity for RTK correction data
 - Interface to Teensy 3.5 for hardware control
 
+- **GPS**: RTK GNSS receivers Ardusimple ZED-F9P one for base link and one to calculate heading
+
+- **Communication**: NRF24 radio link with custom radio controller; RPi wi-fi
+
+- **Base Station**: Custom base station to send RTCM correction data.  See https://github.com/jones2126/tractor2025/blob/main/BridgevilleRTKBase/README.md
+
 #### Localization System
-- **Primary**: Dual on-board RTK GNSS receivers
-- **Base Station**: Private RTK base station with Wi-Fi communication
 - **Secondary**: Wheel odometry from rear wheel sensors
 - **Vision**: OAK camera to be used for teleoperation in conjunction with wi-fi control
 
@@ -51,36 +48,34 @@ This repository contains the under development codebase for an outdoor robot pla
 ## Control Systems
 
 ### Steering Control
-- **Implementation**: PID-based steering control with potentiometer used for steer angle data
+- **Implementation**: PID-based steering control with potentiometer used for steer angle data on pin A9 (pin 23) which provides steering angle
 - **Hardware**: IBT-2 motor controller driving steering motor
-- **Feedback**: Potentiometer on pin A9 (pin 23) provides steering angle
 - **Modes**: Manual (radio control) and Auto (ROS cmd_vel integration planned)
 
 ### Transmission Control
 - **Implementation**: Software defined 10-bucket speed control approach for speed transitions to mimic gear settings
 - **Hardware**: JRK G2 motor controller for linear actuator control
-- **Range**: Full reverse to full forward with neutral position on hydrostatic transmission which requires ~3" travel
+- **Range**: Actuator is physically connected hydrostatic transmission which requires ~3" travel for full reverse to full forward. 
 
 ### Safety Systems
 - **E-Stop**: Radio-controlled emergency stop with relay able to ground ignition wire to ground
 - **Signal Loss Protection**: Automatic safe state when radio communication is lost either to radio control or wi-fi
 - **Manual Override**: Physical e-stop button on tractor
 
-## Teensy 3.5 Hardware Pin Assignments 
+## Teensy 4.1 Hardware Pin Assignments 
 
 ### Analog Inputs
-- **A9 (Pin 23)**: Steering angle potentiometer ✅
-- **Pin 24**: ⚠️ **AVOID** - Not analog-capable despite some documentation
+- **A9 (Pin 23)**: Steering angle potentiometer
 
 ### Digital I/O
-- **Pin 5**: IBT-2 RPWM (steering motor control)
-- **Pin 6**: IBT-2 LPWM (steering motor control)
+- **Pin 5**: IBT-2 steering motor control - Connect to IBT-2 pin 1 (RPWM)
+- **Pin 6**: IBT-2 steering motor control - Connect to IBT-2 pin 2 (LPWM)
 - **Pin 32**: E-stop relay control
 - **Pins 9, 10**: NRF24 radio (CE, CSN)
-- **Pins 27, 28, 39**: NRF24 radio SPI pins (SCK, MOSI, MISO)
+- **Pins 13, 11, 12**: NRF24 radio SPI pins (SCK, MOSI, MISO)
 
 ### Serial Communications
-- **Serial3**: JRK G2 motor controller communication
+- **Serial3**: JRK G2 motor controller communication - pins 7 and 8
 
 ## Radio Control Operating Modes
 
@@ -127,11 +122,11 @@ tractor2025/
 - PlatformIO CLI for Teensy development
 - RTK base station configured and operational
 - GPS units, JRK G2, IBT-2, 4 port relay
-- Teensy 3.5
+- Teensy 4.1
 
 ### Prerequisites - Radio Control Unit
 - Teensy 3.2
-- Custom designed PCB
+- Custom designed PCB using EasyEDA - available for sharing
 - Multiple components soldered to PCB (e.g. potentiometers, RGB LEDs, switch, pushbutton, etc.)
 
 ### Getting Started
@@ -155,17 +150,10 @@ tractor2025/
     Miro board: https://miro.com/app/board/uXjVM1yzdFo=/
    ```
 
-## Hardware Notes & Troubleshooting
-
-### Teensy 3.5 Pin Considerations
-- **Pin 24 Issue**: pin 24 is NOT analog-capable. Always refer to the official pinout diagram.
-
-
 ## Safety Features
 - Emergency stop via radio controller with relay-based ignition kill
 - Manual e-stop on tractor
 - Automatic safe state on radio signal loss
-- PID-controlled steering with deadband for stability
 
 ## Contact
 [aej2126 _at_ protonmail !dot! com]
