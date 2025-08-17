@@ -74,7 +74,7 @@
   ON for 10 seconds, OFF for 10 seconds, with 1Hz status messages
 */
 
-const int relayPin = 31;
+const int relayPin = 32;
 
 void setup() {
   // Initialize serial communication
@@ -86,6 +86,12 @@ void setup() {
   // Initialize relay pin as output and turn it off
   pinMode(relayPin, OUTPUT);
   digitalWrite(relayPin, LOW);
+  pinMode(29, OUTPUT);
+  digitalWrite(29, LOW);
+  pinMode(30, OUTPUT);
+  digitalWrite(30, LOW);
+  pinMode(31, OUTPUT);
+  digitalWrite(31, LOW);
   
   Serial.println("Teensy 4.1 - Single Relay Test (Pin xx)");
   Serial.println("Testing for latching behavior...");
@@ -103,7 +109,10 @@ void loop() {
   Serial.println(" ===");
   
   // Turn relay OFF for 10 seconds (LED dark)
-  digitalWrite(relayPin, HIGH);
+  digitalWrite(29, HIGH);
+  digitalWrite(30, HIGH);
+  digitalWrite(31, HIGH);
+  digitalWrite(relayPin, HIGH);  
   Serial.println("Relay TURNED OFF (LED dark)");
   
   for (int i = 1; i <= 10; i++) {
@@ -114,7 +123,10 @@ void loop() {
   }
   
   // Turn relay ON for 10 seconds (LED illuminated)
-  digitalWrite(relayPin, LOW);
+  digitalWrite(29, LOW);
+  digitalWrite(30, LOW);
+  digitalWrite(31, LOW);
+  digitalWrite(relayPin, LOW);    
   Serial.println("Relay TURNED ON (LED illuminated)");
   
   for (int i = 1; i <= 10; i++) {
