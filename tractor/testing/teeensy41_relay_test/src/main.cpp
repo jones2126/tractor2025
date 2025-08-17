@@ -74,11 +74,11 @@
   ON for 10 seconds, OFF for 10 seconds, with 1Hz status messages
 */
 
-const int relayPin = 30;
+const int relayPin = 32;
 
 void setup() {
   // Initialize serial communication
-  Serial.begin(9600);
+  Serial.begin(115200);
   while (!Serial && millis() < 3000) {
     // Wait for serial connection or timeout after 3 seconds
   }
@@ -87,7 +87,7 @@ void setup() {
   pinMode(relayPin, OUTPUT);
   digitalWrite(relayPin, LOW);
   
-  Serial.println("Teensy 4.1 - Single Relay Test (Pin 29)");
+  Serial.println("Teensy 4.1 - Single Relay Test (Pin xx)");
   Serial.println("Testing for latching behavior...");
   Serial.println("ON for 10 seconds, OFF for 10 seconds");
   Serial.println();
