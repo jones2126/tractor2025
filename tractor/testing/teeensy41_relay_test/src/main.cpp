@@ -74,7 +74,7 @@
   ON for 10 seconds, OFF for 10 seconds, with 1Hz status messages
 */
 
-const int relayPin = 29;
+const int relayPin = 30;
 
 void setup() {
   // Initialize serial communication
@@ -102,7 +102,7 @@ void loop() {
   Serial.print(cycle);
   Serial.println(" ===");
   
-  // Turn relay OFF for 10 seconds (LED illuminated)
+  // Turn relay OFF for 10 seconds (LED dark)
   digitalWrite(relayPin, HIGH);
   Serial.println("Relay TURNED OFF (LED dark)");
   
@@ -113,7 +113,7 @@ void loop() {
     delay(1000);  // 1 second delay = 1Hz
   }
   
-  // Turn relay OFN for 10 seconds (LED not illuminated)
+  // Turn relay ON for 10 seconds (LED illuminated)
   digitalWrite(relayPin, LOW);
   Serial.println("Relay TURNED ON (LED illuminated)");
   
