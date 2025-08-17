@@ -74,7 +74,7 @@
   ON for 10 seconds, OFF for 10 seconds, with 1Hz status messages
 */
 
-const int relayPin = 32;
+const int relayPin = 31;
 
 void setup() {
   // Initialize serial communication
