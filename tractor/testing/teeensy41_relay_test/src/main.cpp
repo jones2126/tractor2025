@@ -102,9 +102,9 @@ void loop() {
   Serial.print(cycle);
   Serial.println(" ===");
   
-  // Turn relay ON for 10 seconds
+  // Turn relay ON for 10 seconds (LED illuminated)
   digitalWrite(relayPin, HIGH);
-  Serial.println("Relay TURNED ON");
+  Serial.println("Relay TURNED ON (LED illuminated)");
   
   for (int i = 1; i <= 10; i++) {
     Serial.print("ON - Second ");
@@ -113,9 +113,9 @@ void loop() {
     delay(1000);  // 1 second delay = 1Hz
   }
   
-  // Turn relay OFF for 10 seconds
+  // Turn relay OFF for 10 seconds (LED not illuminated)
   digitalWrite(relayPin, LOW);
-  Serial.println("Relay TURNED OFF");
+  Serial.println("Relay TURNED OFF (LED not illuminated)");
   
   for (int i = 1; i <= 10; i++) {
     Serial.print("OFF - Second ");
