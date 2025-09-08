@@ -77,6 +77,8 @@ The ESP32 responds to these commands via USB serial:
 
 ## Python Download Script
 
+Source: [`esp32_downloader.py`](https://github.com/jones2126/tractor2025/blob/main/BridgevilleRTKBase/raspberry-pi/production/esp32-downloader.py)
+
 ### Usage
 
 **Typical Commands:**
