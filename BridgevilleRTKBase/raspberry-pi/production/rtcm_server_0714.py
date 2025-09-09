@@ -1,9 +1,11 @@
 import serial
 import time
 import struct
-from datetime import datetime
+from datetime import datetime, timedelta
 import socket
 import threading
+import csv
+import os
 from logger_setup import logger_setup
 
 # Configure logging
@@ -40,20 +42,73 @@ rtcm_buffer = {}  # Dictionary to store latest RTCM message by type
 rtcm_buffer_lock = threading.Lock()
 rtcm_broadcast_stats = {'messages_sent': 0, 'clients_served': 0}
 
+# Daily position averaging
+position_stats = {'lat_sum': 0.0, 'lon_sum': 0.0, 'alt_sum': 0.0, 'count': 0}
+csv_log_path = os.path.join(os.path.dirname(__file__), 'daily_position_log.csv')
+
+def get_next_log_time(now=None):
+    """Return the next 10:00 AM time from ``now`` (local time)."""
+    if now is None:
+        now = datetime.now()
+    next_time = now.replace(hour=10, minute=0, second=0, microsecond=0)
+    if now >= next_time:
+        next_time += timedelta(days=1)
+    return next_time
+
+next_log_time = get_next_log_time()
+
+def update_position_average(lat, lon, alt):
+    """Update running totals for position averaging."""
+    if None in (lat, lon, alt):
+        return
+    position_stats['lat_sum'] += lat
+    position_stats['lon_sum'] += lon
+    position_stats['alt_sum'] += alt
+    position_stats['count'] += 1
+
+def log_daily_average(now=None):
+    """Write the current averaged position to the CSV log and reset stats."""
+    global position_stats
+    if now is None:
+        now = datetime.now()
+    if position_stats['count'] == 0:
+        avg_lat = avg_lon = avg_alt = ''
+    else:
+        avg_lat = position_stats['lat_sum'] / position_stats['count']
+        avg_lon = position_stats['lon_sum'] / position_stats['count']
+        avg_alt = position_stats['alt_sum'] / position_stats['count']
+
+    file_exists = os.path.isfile(csv_log_path)
+    with open(csv_log_path, 'a', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        if not file_exists:
+            writer.writerow(['date', 'avg_lat', 'avg_lon', 'avg_alt'])
+        writer.writerow([now.strftime('%Y-%m-%d'), avg_lat, avg_lon, avg_alt])
+
+    position_stats = {'lat_sum': 0.0, 'lon_sum': 0.0, 'alt_sum': 0.0, 'count': 0}
+
+def check_and_log_daily_average():
+    """Check if it's time to log the daily average and reset stats."""
+    global next_log_time
+    if datetime.now() >= next_log_time:
+        log_daily_average()
+        next_log_time += timedelta(days=1)
+
 def parse_nmea_message_type(data, pos):
-    """
-    Extract NMEA message type from data starting at pos.
-    Returns (message_type, message_end_pos) or (None, pos)
+    """Extract NMEA message type and sentence starting at ``pos``.
+
+    Returns ``(message_type, message_end_pos, nmea_sentence)`` or
+    ``(None, pos, None)`` if a complete sentence is not available.
     """
     try:
         # Find the end of the NMEA sentence (CR/LF)
         end_pos = pos
-        while end_pos < len(data) and data[end_pos:end_pos+1] not in [b'\r', b'\n']:
+        while end_pos < len(data) and data[end_pos:end_pos + 1] not in [b'\r', b'\n']:
             end_pos += 1
-        
+
         if end_pos >= len(data):
-            return None, pos  # Incomplete message
-            
+            return None, pos, None  # Incomplete message
+
         # Extract the message type (first 6 characters after $)
         nmea_sentence = data[pos:end_pos].decode('ascii', errors='ignore')
         if len(nmea_sentence) >= 6 and nmea_sentence.startswith('$'):
@@ -63,10 +118,10 @@ def parse_nmea_message_type(data, pos):
                 message_type = parts[0][1:6]  # e.g., "GPGGA", "GPRMC", etc.
                 # Validate it's a proper NMEA message type (letters and numbers only)
                 if message_type.isalnum() and message_type.isupper():
-                    return message_type, end_pos + 1
-        return None, end_pos + 1
+                    return message_type, end_pos + 1, nmea_sentence
+        return None, end_pos + 1, nmea_sentence
     except:
-        return None, pos + 1
+        return None, pos + 1, None
 
 def parse_ubx_message_type(data, pos):
     """
@@ -158,6 +213,35 @@ def add_rtcm_to_buffer(msg_type, rtcm_message):
             'timestamp': time.time(),
             'length': len(rtcm_message)
         }
+
+def nmea_deg_min_to_decimal(value, direction):
+    """Convert NMEA latitude/longitude format to decimal degrees."""
+    if not value or not direction:
+        return None
+    try:
+        # Latitude has two degree digits, longitude has three
+        deg_len = 2 if direction in ['N', 'S'] else 3
+        degrees = float(value[:deg_len])
+        minutes = float(value[deg_len:])
+        decimal = degrees + minutes / 60.0
+        if direction in ['S', 'W']:
+            decimal *= -1
+        return decimal
+    except ValueError:
+        return None
+
+def parse_gga_sentence(sentence):
+    """Parse a GGA NMEA sentence and return (lat, lon, alt)."""
+    try:
+        parts = sentence.split(',')
+        if len(parts) < 10:
+            return None, None, None
+        lat = nmea_deg_min_to_decimal(parts[2], parts[3])
+        lon = nmea_deg_min_to_decimal(parts[4], parts[5])
+        alt = float(parts[9]) if parts[9] else None
+        return lat, lon, alt
+    except Exception:
+        return None, None, None
 
 def rtcm_broadcast_thread():
     """Thread that broadcasts buffered RTCM messages at the specified rate."""
@@ -357,11 +441,14 @@ try:
                     
                     # Check for NMEA message
                     if pos < len(data_buffer) and data_buffer[pos:pos+1] == b'$':
-                        msg_type, new_pos = parse_nmea_message_type(data_buffer, pos)
+                        msg_type, new_pos, sentence = parse_nmea_message_type(data_buffer, pos)
                         if msg_type:
                             message_counts[f"NMEA_{msg_type}"] = message_counts.get(f"NMEA_{msg_type}", 0) + 1
                             pos = new_pos
                             message_detected = True
+                            if msg_type.endswith("GGA"):
+                                lat, lon, alt = parse_gga_sentence(sentence)
+                                update_position_average(lat, lon, alt)
                     
                     # Check for UBX message
                     elif pos < len(data_buffer) - 1 and data_buffer[pos:pos+2] == b'\xB5\x62':
@@ -402,7 +489,8 @@ try:
                     report_message_rates(message_counts, elapsed)
                     message_counts.clear()
                     last_rate_check = current_time
-                
+
+                check_and_log_daily_average()
                 time.sleep(0.01)  # Small delay to prevent excessive CPU usage
 
 except KeyboardInterrupt:
