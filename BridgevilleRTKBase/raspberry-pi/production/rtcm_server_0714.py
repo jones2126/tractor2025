@@ -422,76 +422,91 @@ message_counts = {}
 last_rate_check = time.time()
 data_buffer = b''
 
-try:
-    with open('gps_log.txt', 'wb') as log_file:
-        while True:
-            if ser.in_waiting > 0:
-                new_data = ser.read(ser.in_waiting)
-                log_file.write(new_data)
-                log_file.flush()
-                
-                # Add new data to buffer for parsing
-                data_buffer += new_data
-                
-                # Parse messages from the buffer
-                pos = 0
-                while pos < len(data_buffer):
-                    original_pos = pos
-                    message_detected = False
-                    
-                    # Check for NMEA message
-                    if pos < len(data_buffer) and data_buffer[pos:pos+1] == b'$':
-                        msg_type, new_pos, sentence = parse_nmea_message_type(data_buffer, pos)
-                        if msg_type:
-                            message_counts[f"NMEA_{msg_type}"] = message_counts.get(f"NMEA_{msg_type}", 0) + 1
-                            pos = new_pos
-                            message_detected = True
-                            if msg_type.endswith("GGA"):
-                                lat, lon, alt = parse_gga_sentence(sentence)
-                                update_position_average(lat, lon, alt)
-                    
-                    # Check for UBX message
-                    elif pos < len(data_buffer) - 1 and data_buffer[pos:pos+2] == b'\xB5\x62':
-                        msg_type, new_pos = parse_ubx_message_type(data_buffer, pos)
-                        if msg_type:
-                            message_counts[f"UBX_{msg_type}"] = message_counts.get(f"UBX_{msg_type}", 0) + 1
-                            pos = new_pos
-                            message_detected = True
-                    
-                    # Check for RTCM message
-                    elif pos < len(data_buffer) and data_buffer[pos:pos+1] == b'\xD3':
-                        msg_type, new_pos, rtcm_message = parse_rtcm_message_type(data_buffer, pos)
-                        if msg_type and rtcm_message:
-                            message_counts[f"RTCM_{msg_type}"] = message_counts.get(f"RTCM_{msg_type}", 0) + 1
-                            # Add RTCM message to buffer for rate-limited broadcasting
-                            add_rtcm_to_buffer(msg_type, rtcm_message)
-                            pos = new_pos
-                            message_detected = True
-                        elif new_pos > pos:
-                            pos = new_pos
-                    
-                    # If no message detected, advance by 1 byte
-                    if not message_detected:
-                        pos += 1
-                    
-                    # Prevent infinite loops
-                    if pos <= original_pos:
-                        pos = original_pos + 1
-                
-                # Keep only the last 10KB in buffer to prevent memory issues
-                if len(data_buffer) > 10240:
-                    data_buffer = data_buffer[-5120:]  # Keep last 5KB
-                
-                # Report message rates periodically
-                current_time = time.time()
-                if current_time - last_rate_check >= RATE_REPORT_INTERVAL:
-                    elapsed = current_time - last_rate_check
-                    report_message_rates(message_counts, elapsed)
-                    message_counts.clear()
-                    last_rate_check = current_time
+# Global GPS log file and rotation state
+log_file = open('gps_log.txt', 'wb')
+log_start_time = datetime.now()
 
-                check_and_log_daily_average()
-                time.sleep(0.01)  # Small delay to prevent excessive CPU usage
+
+def rotate_gps_log():
+    """Rotate the GPS log file at the start of a new day."""
+    global log_file, log_start_time
+    if datetime.now().date() != log_start_time.date():
+        log_file.close()
+        new_name = f"gps_log_{log_start_time.strftime('%Y%m%d_%H%M%S')}.txt"
+        os.rename('gps_log.txt', new_name)
+        log_file = open('gps_log.txt', 'wb')
+        log_start_time = datetime.now()
+
+try:
+    while True:
+        if ser.in_waiting > 0:
+            rotate_gps_log()
+            new_data = ser.read(ser.in_waiting)
+            log_file.write(new_data)
+            log_file.flush()
+
+            # Add new data to buffer for parsing
+            data_buffer += new_data
+
+            # Parse messages from the buffer
+            pos = 0
+            while pos < len(data_buffer):
+                original_pos = pos
+                message_detected = False
+
+                # Check for NMEA message
+                if pos < len(data_buffer) and data_buffer[pos:pos+1] == b'$':
+                    msg_type, new_pos, sentence = parse_nmea_message_type(data_buffer, pos)
+                    if msg_type:
+                        message_counts[f"NMEA_{msg_type}"] = message_counts.get(f"NMEA_{msg_type}", 0) + 1
+                        pos = new_pos
+                        message_detected = True
+                        if msg_type.endswith("GGA"):
+                            lat, lon, alt = parse_gga_sentence(sentence)
+                            update_position_average(lat, lon, alt)
+
+                # Check for UBX message
+                elif pos < len(data_buffer) - 1 and data_buffer[pos:pos+2] == b'\xB5\x62':
+                    msg_type, new_pos = parse_ubx_message_type(data_buffer, pos)
+                    if msg_type:
+                        message_counts[f"UBX_{msg_type}"] = message_counts.get(f"UBX_{msg_type}", 0) + 1
+                        pos = new_pos
+                        message_detected = True
+
+                # Check for RTCM message
+                elif pos < len(data_buffer) and data_buffer[pos:pos+1] == b'\xD3':
+                    msg_type, new_pos, rtcm_message = parse_rtcm_message_type(data_buffer, pos)
+                    if msg_type and rtcm_message:
+                        message_counts[f"RTCM_{msg_type}"] = message_counts.get(f"RTCM_{msg_type}", 0) + 1
+                        # Add RTCM message to buffer for rate-limited broadcasting
+                        add_rtcm_to_buffer(msg_type, rtcm_message)
+                        pos = new_pos
+                        message_detected = True
+                    elif new_pos > pos:
+                        pos = new_pos
+
+                # If no message detected, advance by 1 byte
+                if not message_detected:
+                    pos += 1
+
+                # Prevent infinite loops
+                if pos <= original_pos:
+                    pos = original_pos + 1
+
+            # Keep only the last 10KB in buffer to prevent memory issues
+            if len(data_buffer) > 10240:
+                data_buffer = data_buffer[-5120:]  # Keep last 5KB
+
+            # Report message rates periodically
+            current_time = time.time()
+            if current_time - last_rate_check >= RATE_REPORT_INTERVAL:
+                elapsed = current_time - last_rate_check
+                report_message_rates(message_counts, elapsed)
+                message_counts.clear()
+                last_rate_check = current_time
+
+            check_and_log_daily_average()
+            time.sleep(0.01)  # Small delay to prevent excessive CPU usage
 
 except KeyboardInterrupt:
     print("\nStopped by user")
@@ -503,8 +518,10 @@ except KeyboardInterrupt:
         print("\nFinal message rates:")
         report_message_rates(message_counts, elapsed)
     
+    log_file.close()
     ser.close()
 
 except serial.SerialException as e:
     print(f"Serial error: {e}")
+    log_file.close()
     ser.close()
