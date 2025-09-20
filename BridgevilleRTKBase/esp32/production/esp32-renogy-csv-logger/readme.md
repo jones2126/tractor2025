@@ -1,6 +1,6 @@
 # ESP32 Renogy Data Logger
 
-A data logging system that monitors a solar powered GPS RTK base station.  Current data includes temperature and Renogy charge controller status.  A Renogy Wanderer 10A controllers, an ESP32, and a Raspberry Pi 3 B are components in the system.
+A data logging system that monitors a solar powered GPS RTK base station using an **ESP32** to connect to a **Renogy Rover charge controller** via RS232.  Current data includes temperature and Renogy charge controller status.  A Renogy Wanderer 10A controllers, an ESP32, and a Raspberry Pi 3 B are components in the system.  The data is logged from solar/charging data to onboard ESP32 SPIFFS in CSV format, and donwloaded to the **Raspberry Pi (RPi)** via cron job.z
 
 ## System Overview
 
@@ -28,7 +28,22 @@ GPIO17 (TX2) | RS232 TTL TX       | Renogy communication transmit
 USB          | Raspberry Pi       | Data download and monitoring
 ```
 
-## ESP32 Script
+## 🔧 ESP32 Setup
+
+Source: [`main.cpp`](https://github.com/jones2126/tractor2025/blob/main/BridgevilleRTKBase/esp32/production/esp32-renogy-csv-logger/src/main.cpp)
+
+### Data Collected
+
+| Field | Example | Description |
+|-------|---------|-------------|
+| Timestamp | 59235547 | Epoch seconds |
+| Avg_Temp | 7.06 | Battery temperature (°C) |
+| Battery_Vc | 12.6 | Battery voltage |
+| Solar_Pan | 0 | Solar panel current |
+| Controller | 14 | Charge controller state |
+| Load_Volt | 12.6 | Load voltage |
+| Load_Amp | 0.33 | Load current |
+| Load_Watts | 4 | Load wattage |
 
 ### Data Collection Timing
 - **Temperature**: Read every 15 seconds, averaged over 1-minute periods
@@ -61,6 +76,8 @@ The ESP32 responds to these commands via USB serial:
 | `HELP` | Show available commands |
 
 ## Python Download Script
+
+Source: [`esp32_downloader.py`](https://github.com/jones2126/tractor2025/blob/main/BridgevilleRTKBase/raspberry-pi/production/esp32-downloader.py)
 
 ### Usage
 
@@ -178,6 +195,40 @@ python3 /home/al/python/esp32-downloader.py status
 # Test manual download
 python3 /home/al/python/esp32-downloader.py download 
 ```
+
+## 🔍 Debugging & Troubleshooting
+
+### On RPi
+
+- Check if data downloaded today:
+  ```bash
+  ls -lh /home/al/esp32_data/*.csv
+  ```
+
+- Check ESP32 connection:
+  ```bash
+  python3 esp32-downloader.py status
+  ```
+
+- Check cron log:
+  ```bash
+  tail -n 20 /home/al/logs/esp32_cron.log
+  ```
+
+### On ESP32
+
+- Monitor serial via PlatformIO:
+  ```bash
+  pio device monitor -b 115200
+  ```
+
+- Upload firmware via:
+  ```bash
+  pio run --target upload
+  ```
+
+---
+
 
 ### Common Issues
 
