@@ -26,3 +26,4 @@ Thumbs.db
 
 # Local configuration
 *.local
+BridgevilleRTKBase/raspberry-pi/production/gps_log_*.txt
