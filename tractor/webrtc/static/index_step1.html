@@ -1,0 +1,31 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>WebRTC Robot - Step 1</title>
+  <style>
+    body{font-family:system-ui,Arial;margin:0;padding:1rem;background:#111;color:#eee}
+    video{width:100%;max-width:960px;background:#000}
+  </style>
+</head>
+<body>
+  <h2>WebRTC Robot - Video Only</h2>
+  <video id="remoteVideo" playsinline autoplay></video>
+  <script>
+    const ws = new WebSocket(`ws://${location.host}/ws`);
+    const pc = new RTCPeerConnection({ iceServers: [{urls: "stun:stun.l.google.com:19302"}] });
+    pc.ontrack = e => { document.getElementById('remoteVideo').srcObject = e.streams[0]; };
+    ws.onopen = async () => {
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      ws.send(JSON.stringify({type: offer.type, sdp: offer.sdp}));
+    };
+    ws.onmessage = async (evt) => {
+      const data = JSON.parse(evt.data);
+      if (data.type === "answer") {
+        await pc.setRemoteDescription({type: "answer", sdp: data.sdp});
+      }
+    };
+  </script>
+</body>
+</html>
