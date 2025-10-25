@@ -261,8 +261,13 @@ void setup() {
     radio.setPALevel(RF24_PA_HIGH);
     radio.setDataRate(RF24_250KBPS);
     radio.setChannel(124);
+    
     radio.openWritingPipe(address[0]);    // "RCTRL" = send ACKs back to control unit
     radio.openReadingPipe(1, address[1]); // "TRACT" = listen for data sent TO tractor
+
+    // radio.openWritingPipe(address[1]);    // "TRACT" ← did not work
+    // radio.openReadingPipe(1, address[0]); // "RCTRL" ← did not work
+
     radio.enableAckPayload(); 
     radio.startListening();
     radio.printDetails();
