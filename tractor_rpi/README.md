@@ -1,25 +1,19 @@
-# Tractor Python Utilities
+# Tractor RPi 5 Main Code
 
 This folder contains Python scripts used on the Raspberry Pi side of the
-tractor project.
+tractor.
 
 ## RTCM and Heading Server
 
 `rtcm_server.py` forwards RTCM correction data to the base F9P receiver while
-reading position and heading information from both receivers.  The latest
-latitude, longitude, fix quality and heading are broadcast as JSON over UDP on
-port `4242`.
+reading position and heading information from both receivers.  See the Miro Board for more details.
 
-Example usage:
+## teensy_serial_bridge.py
 
-```bash
-python3 rtcm_server.py
-```
+`teensy_serial_bridge.py` This bridge reads serial data from the Teensy microcontroller and broadcasts key system status via UDP at 5 Hz for monitoring and control.  See the Miro Board for more details.
 
-Any program that needs navigation data can subscribe to the UDP stream.  The
-script `testing/gps_udp_listener.py` demonstrates how to receive and display
-these messages.
+## led_status_controller.py
 
-```bash
-python3 testing/gps_udp_listener.py
-```
+`led_status_controller.py` This script uses the I2C port on the RPi to communicate with the 16-channel PWM controller.  That PWM controller controls 5 LED drivers that are used to control the Red, Green, Blue and Yellow LED light tower to provide various status signals. See the Miro Board for more details.
+
+
