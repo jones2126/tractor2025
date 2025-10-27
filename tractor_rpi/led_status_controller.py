@@ -196,7 +196,7 @@ class LEDStatusController:
         if (current_time - self.last_led_log < log_threshold) and pct_change < 20:
             self.last_led_log = current_time  # Update timer anyway
         else:
-            logger.info(f"LED {color.upper()}: {brightness_pct}%")
+            # logger.info(f"LED {color.upper()}: {brightness_pct}%")   # too much data for SD card
             self.last_led_log = current_time
         
         # Set hardware
