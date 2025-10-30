@@ -1,69 +1,67 @@
 #!/usr/bin/env python3
 """
-teensy_serial_bridge.py
-=======================
-Bridges Teensy serial data to UDP broadcasts for monitoring and control.
-
-Input Data:
-1. Teensy data from Serial.print commands (Type 1 and Type 2 messages)
-2. (FUTURE) Navigation instructions from Pure Pursuit module
-
-Data Published:
-1. UDP Broadcast @ 5 Hz on Port 6003 - Steering, Transmission, and NRF24 Status
-2. (FUTURE) Write cmd_vel (linear_x, angular_z) to Teensy for autonomous commands
+teensy_serial_bridge.py v2.1
+=============================
+Bidirectional bridge between Teensy and ROS/monitoring systems.
 """
 
 import serial
 import socket
 import json
 import time
+import threading
 from collections import defaultdict
 from datetime import datetime
 import logging
 
-# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger('TeensyBridge')
 
-# Configuration
-# SERIAL_PORT = '/dev/ttyACM0'
 SERIAL_PORT = '/dev/teensy'
 BAUD_RATE = 115200
 UDP_BROADCAST_IP = '255.255.255.255'
-UDP_PORT = 6003
-BROADCAST_RATE = 5  # Hz
+UDP_STATUS_PORT = 6003
+UDP_COMMAND_PORT = 6004
+BROADCAST_RATE = 5
 
 class TeensySerialBridge:
     def __init__(self, serial_port=SERIAL_PORT, baud_rate=BAUD_RATE):
-        """Initialize the Teensy serial bridge"""
         self.serial_port = serial_port
         self.baud_rate = baud_rate
         self.ser = None
-        self.sock = None
+        self.status_sock = None
+        self.command_sock = None
         
-        # Store latest data from each subsystem
         self.latest_data = defaultdict(dict)
         
-        # Timing
+        self.last_cmd_vel = {'linear_x': 0.0, 'angular_z': 0.0, 'timestamp': 0}
+        self.cmd_vel_received_count = 0
+        self.cmd_vel_sent_count = 0
+        self.cmd_vel_echo_count = 0
+        
         self.last_broadcast = 0
         self.broadcast_interval = 1.0 / BROADCAST_RATE
         
-        # Statistics
+        self.running = True
+        
         self.stats = {
             'messages_received': 0,
             'messages_parsed': 0,
             'broadcasts_sent': 0,
+            'broadcasts_failed': 0,
+            'commands_received': 0,
+            'commands_sent': 0,
+            'command_bursts': 0,
+            'max_burst_size': 0,
             'errors': 0
         }
         
         self.setup()
     
     def setup(self):
-        """Setup serial and UDP connections"""
-        # Setup serial connection
         try:
             self.ser = serial.Serial(self.serial_port, self.baud_rate, timeout=1)
             logger.info(f"Serial connected to {self.serial_port} at {self.baud_rate} baud")
@@ -71,21 +69,28 @@ class TeensySerialBridge:
             logger.error(f"Failed to open serial port: {e}")
             raise
         
-        # Setup UDP socket
         try:
-            self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-            logger.info(f"UDP broadcast configured on port {UDP_PORT}")
+            self.status_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            self.status_sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+            self.status_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.status_sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 65536)
+            logger.info(f"UDP status broadcast configured on port {UDP_STATUS_PORT}")
         except socket.error as e:
-            logger.error(f"Failed to create UDP socket: {e}")
+            logger.error(f"Failed to create status UDP socket: {e}")
+            raise
+        
+        try:
+            self.command_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            self.command_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.command_sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 65536)
+            self.command_sock.bind(('', UDP_COMMAND_PORT))
+            self.command_sock.setblocking(False)
+            logger.info(f"UDP command listener configured on port {UDP_COMMAND_PORT}")
+        except socket.error as e:
+            logger.error(f"Failed to create command UDP socket: {e}")
             raise
     
     def parse_message(self, line):
-        """
-        Parse Teensy message format: <msg_type>,<timestamp>,<subsystem>,<data>
-        
-        Returns dict with parsed data or None if parse fails
-        """
         try:
             parts = line.strip().split(',', 3)
             
@@ -98,24 +103,19 @@ class TeensySerialBridge:
             
             data = {'msg_type': msg_type, 'timestamp': timestamp}
             
-            # Parse data section (key=value pairs or simple text)
             if len(parts) > 3:
                 data_str = parts[3]
                 
                 if '=' in data_str:
-                    # Parse key=value pairs
                     pairs = data_str.split(',')
                     for pair in pairs:
                         if '=' in pair:
                             key, value = pair.split('=', 1)
                             try:
-                                # Try to convert to float
                                 data[key] = float(value)
                             except ValueError:
-                                # Keep as string
                                 data[key] = value
                 else:
-                    # Simple text message
                     data['message'] = data_str
             
             return {
@@ -128,40 +128,99 @@ class TeensySerialBridge:
             return None
     
     def update_latest_data(self, parsed):
-        """Update latest data for each subsystem"""
         if not parsed:
             return
         
         subsystem = parsed['subsystem']
         data = parsed['data']
         
-        # Store latest data for this subsystem
+        if subsystem == 'CMD_ECHO':
+            self.cmd_vel_echo_count += 1
+            logger.info(f"CMD ECHO #{self.cmd_vel_echo_count}: "
+                       f"linear_x={data.get('linear_x', 0):.3f}, "
+                       f"angular_z={data.get('angular_z', 0):.3f}")
+        
         self.latest_data[subsystem].update(data)
         self.latest_data[subsystem]['last_update'] = time.time()
     
-    def create_broadcast_message(self):
-        """
-        Create UDP broadcast message with key system data
+    def send_cmd_vel_to_teensy(self, linear_x, angular_z):
+        try:
+            if self.ser.out_waiting < 256:
+                command = f"CMD,{linear_x:.4f},{angular_z:.4f}\n"
+                self.ser.write(command.encode('utf-8'))
+                self.ser.flush()
+                
+                self.cmd_vel_sent_count += 1
+                self.stats['commands_sent'] += 1
+                
+                self.last_cmd_vel = {
+                    'linear_x': linear_x,
+                    'angular_z': angular_z,
+                    'timestamp': time.time()
+                }
+                
+                if self.cmd_vel_sent_count % 100 == 0:
+                    logger.info(f"Sent CMD #{self.cmd_vel_sent_count}: "
+                               f"linear_x={linear_x:.3f}, angular_z={angular_z:.3f}")
+                return True
+            else:
+                logger.warning("Serial output buffer full - skipping command")
+                return False
+        except Exception as e:
+            logger.error(f"Failed to send cmd_vel: {e}")
+            self.stats['errors'] += 1
+            return False
+    
+    def listen_for_commands(self):
+        import select
+        logger.info("Command listener thread started")
         
-        Message contains:
-        - RADIO: signal status, ack rate
-        - STEER: mode, setpoint, current, error, pwm
-        - TRANS: mode, bucket, target
-        - SYSTEM: heartbeat timestamp
-        """
+        while self.running:
+            try:
+                ready = select.select([self.command_sock], [], [], 0.1)
+                if ready[0]:
+                    packets_read = 0
+                    while packets_read < 100:
+                        try:
+                            data, addr = self.command_sock.recvfrom(1024)
+                            packets_read += 1
+                            command = json.loads(data.decode())
+                            linear_x = command.get('linear_x', 0.0)
+                            angular_z = command.get('angular_z', 0.0)
+                            self.cmd_vel_received_count += 1
+                            self.stats['commands_received'] += 1
+                            self.send_cmd_vel_to_teensy(linear_x, angular_z)
+                        except socket.error:
+                            break
+                        except json.JSONDecodeError as e:
+                            logger.error(f"Invalid JSON command: {e}")
+                            self.stats['errors'] += 1
+                    if packets_read > 0:
+                        self.stats['command_bursts'] += 1
+                        if packets_read > self.stats['max_burst_size']:
+                            self.stats['max_burst_size'] = packets_read
+                        if packets_read > 10:
+                            logger.debug(f"Burst: Read {packets_read} packets")
+            except Exception as e:
+                if self.running:
+                    logger.error(f"Command listener error: {e}")
+                    self.stats['errors'] += 1
+        logger.info("Command listener thread stopped")
+    
+    def create_broadcast_message(self):
         current_time = time.time()
         
-        # Build message with latest data from key subsystems
         message = {
             'timestamp': current_time,
             'source': 'teensy_bridge',
+            'version': '2.1',
             'radio': {},
             'steering': {},
             'transmission': {},
-            'system': {}
+            'system': {},
+            'cmd_vel': {}
         }
         
-        # Add RADIO data
         if 'RADIO' in self.latest_data:
             radio_data = self.latest_data['RADIO']
             message['radio'] = {
@@ -171,7 +230,6 @@ class TeensySerialBridge:
                 'age': current_time - radio_data.get('last_update', current_time)
             }
         
-        # Add STEER data
         if 'STEER' in self.latest_data:
             steer_data = self.latest_data['STEER']
             message['steering'] = {
@@ -184,7 +242,6 @@ class TeensySerialBridge:
                 'age': current_time - steer_data.get('last_update', current_time)
             }
         
-        # Add TRANS data
         if 'TRANS' in self.latest_data:
             trans_data = self.latest_data['TRANS']
             message['transmission'] = {
@@ -195,17 +252,26 @@ class TeensySerialBridge:
                 'age': current_time - trans_data.get('last_update', current_time)
             }
         
-        # Add SYSTEM data
         if 'SYSTEM' in self.latest_data:
             sys_data = self.latest_data['SYSTEM']
             message['system'] = {
                 'heartbeat_age': current_time - sys_data.get('last_update', current_time)
             }
         
+        message['cmd_vel'] = {
+            'last_linear_x': self.last_cmd_vel['linear_x'],
+            'last_angular_z': self.last_cmd_vel['angular_z'],
+            'commands_received': self.cmd_vel_received_count,
+            'commands_sent': self.cmd_vel_sent_count,
+            'commands_echoed': self.cmd_vel_echo_count,
+            'pending_echoes': self.cmd_vel_sent_count - self.cmd_vel_echo_count,
+            'age': current_time - self.last_cmd_vel['timestamp'],
+            'active': (current_time - self.last_cmd_vel['timestamp']) < 2.0
+        }
+        
         return message
     
     def broadcast_status(self):
-        """Broadcast system status via UDP at specified rate"""
         current_time = time.time()
         
         if current_time - self.last_broadcast < self.broadcast_interval:
@@ -215,61 +281,71 @@ class TeensySerialBridge:
             message = self.create_broadcast_message()
             json_data = json.dumps(message)
             
-            self.sock.sendto(json_data.encode(), (UDP_BROADCAST_IP, UDP_PORT))
+            bytes_sent = self.status_sock.sendto(
+                json_data.encode(), 
+                (UDP_BROADCAST_IP, UDP_STATUS_PORT)
+            )
             
-            self.stats['broadcasts_sent'] += 1
+            if bytes_sent != len(json_data):
+                logger.warning(f"Incomplete broadcast: sent {bytes_sent}/{len(json_data)} bytes")
+                self.stats['broadcasts_failed'] += 1
+            else:
+                self.stats['broadcasts_sent'] += 1
+            
             self.last_broadcast = current_time
             
-            # Log occasional broadcasts for monitoring
-            if self.stats['broadcasts_sent'] % 25 == 0:  # Every 5 seconds at 5Hz
+            if self.stats['broadcasts_sent'] % 25 == 0:
                 logger.info(f"Broadcast #{self.stats['broadcasts_sent']}: "
                           f"Radio={message['radio'].get('signal', 'N/A')}, "
                           f"Steer_mode={message['steering'].get('mode', 'N/A')}, "
-                          f"Trans_mode={message['transmission'].get('mode', 'N/A')}")
+                          f"Trans_mode={message['transmission'].get('mode', 'N/A')}, "
+                          f"CMD_echoes={message['cmd_vel']['commands_echoed']}, "
+                          f"Size={len(json_data)} bytes")
         
         except Exception as e:
             logger.error(f"Broadcast error: {e}")
             self.stats['errors'] += 1
+            self.stats['broadcasts_failed'] += 1
     
     def process_serial_line(self, line):
-        """Process one line of serial data"""
         self.stats['messages_received'] += 1
         
-        # Parse the message
         parsed = self.parse_message(line)
-
-        # log the first 10 messages for debugging
-        if self.stats['messages_received'] <= 10:  # Log first 10 only
-            logger.info(f"Raw received line: '{line}'")        
         
         if parsed:
             self.stats['messages_parsed'] += 1
-            
-            # Update latest data storage
             self.update_latest_data(parsed)
             
-            # Log Type 1 messages occasionally
             if parsed['data'].get('msg_type') == 1 and self.stats['messages_parsed'] % 100 == 0:
                 logger.debug(f"Parsed: {parsed['subsystem']}: {parsed['data']}")
     
     def print_statistics(self):
-        """Print statistics periodically"""
         logger.info(f"Statistics - Received: {self.stats['messages_received']}, "
                    f"Parsed: {self.stats['messages_parsed']}, "
-                   f"Broadcasts: {self.stats['broadcasts_sent']}, "
+                   f"Broadcasts: {self.stats['broadcasts_sent']} "
+                   f"({self.stats['broadcasts_failed']} failed), "
                    f"Errors: {self.stats['errors']}")
+        logger.info(f"Commands - Received: {self.stats['commands_received']}, "
+                   f"Sent: {self.stats['commands_sent']}, "
+                   f"Echoed: {self.cmd_vel_echo_count}, "
+                   f"Pending: {self.cmd_vel_sent_count - self.cmd_vel_echo_count}")
+        logger.info(f"Command Bursts - Total: {self.stats['command_bursts']}, "
+                   f"Max Size: {self.stats['max_burst_size']}, "
+                   f"Avg Size: {self.stats['commands_received'] / max(1, self.stats['command_bursts']):.1f}")
     
     def run(self):
-        """Main loop"""
-        logger.info("Teensy Serial Bridge starting...")
-        logger.info(f"Broadcasting on UDP port {UDP_PORT} at {BROADCAST_RATE} Hz")
+        logger.info("Teensy Serial Bridge v2.1 starting...")
+        logger.info(f"Status broadcasts on UDP port {UDP_STATUS_PORT} at {BROADCAST_RATE} Hz")
+        logger.info(f"Command listener on UDP port {UDP_COMMAND_PORT}")
+        
+        command_thread = threading.Thread(target=self.listen_for_commands, daemon=True)
+        command_thread.start()
         
         last_stats_print = time.time()
-        stats_interval = 30.0  # Print stats every 30 seconds
+        stats_interval = 30.0
         
         try:
             while True:
-                # Read serial data
                 if self.ser.in_waiting:
                     try:
                         line = self.ser.readline().decode('utf-8').strip()
@@ -277,46 +353,45 @@ class TeensySerialBridge:
                             self.process_serial_line(line)
                     except UnicodeDecodeError:
                         self.stats['errors'] += 1
-                        pass  # Skip malformed data
+                        pass
                 
-                # Broadcast status at specified rate
                 self.broadcast_status()
                 
-                # Print statistics periodically
                 if time.time() - last_stats_print >= stats_interval:
                     self.print_statistics()
                     last_stats_print = time.time()
                 
-                # Small sleep to prevent CPU spinning
-                time.sleep(0.001)  # 1ms
+                time.sleep(0.001)
         
         except KeyboardInterrupt:
             logger.info("Shutting down...")
         finally:
+            self.running = False
+            command_thread.join(timeout=2)
             self.cleanup()
     
     def cleanup(self):
-        """Cleanup resources"""
         if self.ser and self.ser.is_open:
             self.ser.close()
             logger.info("Serial port closed")
         
-        if self.sock:
-            self.sock.close()
-            logger.info("UDP socket closed")
+        if self.status_sock:
+            self.status_sock.close()
+            logger.info("Status UDP socket closed")
+        
+        if self.command_sock:
+            self.command_sock.close()
+            logger.info("Command UDP socket closed")
         
         self.print_statistics()
 
-
 def main():
-    """Main entry point"""
     try:
         bridge = TeensySerialBridge()
         bridge.run()
     except Exception as e:
         logger.error(f"Fatal error: {e}")
         raise
-
 
 if __name__ == "__main__":
     main()
