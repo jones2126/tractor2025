@@ -1,13 +1,17 @@
 /*********************************************************************
-  teensy_main_20251028.cpp
+  teensy_main_20251105.cpp
   --------------------------------------------------------------
+  * Integrated NRF24 improvements from testing (20251104)
   * Binary steering packet (5 B) every control cycle
   * Human logs ≤ 1 line / 2 s
   * Serial @ 921600 baud
+  * Updated structs/ACK for controller compatibility (channel 76, button03, GPS echo)
+  * FIXED: NRF24 addresses to new explicit const arrays
 *********************************************************************/
 
 #include <SPI.h>
 #include <RF24.h>
+#include <string.h>  // For memset
 
 // -------------------------------------------------------------------
 // JRK controller
@@ -52,35 +56,41 @@ int bucket = 5;
 #define NUM_LEDS 1
 #define DATA_PIN 2
 
+// Radio pins
 RF24 radio(9, 10);
 
 // -------------------------------------------------------------------
-// Radio structures
-struct RadioControlStruct {
-    float steering_val;
-    float throttle_val;
+// Radio structures (UPDATED: Match controller/testing - ints for analogs, button03, packed)
+struct __attribute__((packed)) RadioControlStruct {
+    int steering_val;
+    int throttle_val;
     float voltage;
-    float transmission_val;
-    float pot4_val;
+    int transmission_val;
+    int pot4_val;
     byte estop;
     byte control_mode;
-    byte button01;
     byte button02;
+    byte button03;
 };
 
 struct __attribute__((packed)) AckPayloadStruct {
-    unsigned long counter;
-    uint32_t dummy[4];
+    byte gps_status;         // 1=no NMEA, 2=GPS no RTK, 3=RTK Fix (0=unset)
+    byte button02_status;    // Echo of received button02
+    byte button03_status;    // Echo of received button03
+    byte padding[21];        // Pad to 24 bytes total
 };
 
 RadioControlStruct radioData;
 AckPayloadStruct ackPayload;
 
-const uint8_t address[][6] = {"TRACT", "RCTRL"};
+// FIXED: NRF24 addresses to new explicit const arrays (preferred)
+const uint8_t NRF24_ADDRESS_TRACTOR[6]       = "TRACT";
+const uint8_t NRF24_ADDRESS_RADIO_CONTROL[6] = "RCTRL";
+
 unsigned long currentMillis = 0;
 
 // -------------------------------------------------------------------
-// Radio stats
+// Radio stats (MERGED: Old signalGood + new received/ACK counts)
 struct RadioStats {
     unsigned long lastAckTime = 0;
     unsigned long ackCount = 0;
@@ -88,21 +98,32 @@ struct RadioStats {
     unsigned long lastRateReport = 0;
     unsigned long lastDataPrint = 0;
     bool signalGood = false;
+    unsigned long packets_received_total = 0;
+    unsigned long acks_sent_total = 0;
+    unsigned long packets_received_20s = 0;
+    unsigned long acks_sent_20s = 0;
+    unsigned long lastStatsTime = 0;
 
     const unsigned long signalTimeout = 2000;
     const unsigned long rateReportInterval = 10000;
     const unsigned long dataPrintInterval = 5000;
+    const unsigned long statsInterval = 20000;  // New: 20s stats
 } radioStats;
-
 
 float smoothedRadioVal = 0.0f;
 const float radioAlpha = 0.1f;
 
 void updateRadioSmoothing() {
-    smoothedRadioVal = radioAlpha * radioData.transmission_val +
+    smoothedRadioVal = radioAlpha * (float)radioData.transmission_val / 1024.0f +  // Scale int to 0-1 for smoothing
                       (1.0f - radioAlpha) * smoothedRadioVal;
 }
 
+// Placeholder GPS status (implement via Serial1 ) - an addition message type will have to be added to
+// the function parseSerialCommand to bring over the GPS status.  Upstream the GPS data will have to be 
+// pull from one of the UDP ports with GPS data and the teensy_bridge will have to write it to /dev/teensy serial port
+byte getGpsStatus() {
+    return 1;  // GPS but no fix (safe default)
+}
 
 // E-stop
 unsigned long lastEstopCheckRun = 0;
@@ -307,7 +328,7 @@ void monitorSerialBuffer() {
 }
 
 // -------------------------------------------------------------------
-// Transmission control (10 Hz)
+// Transmission control (10 Hz) - UPDATED: transmission_val now int
 void controlTransmission() {
     if (currentMillis - lastTransmissionControlRun < controlTransmissionInterval) return;
 
@@ -323,7 +344,7 @@ void controlTransmission() {
 
         case 1:  // Manual bucket
             {
-                float tv = radioData.transmission_val;
+                int tv = radioData.transmission_val;  // Now int
                 if (tv >= 931) bucketTmp = 0;
                 else if (tv >= 838) bucketTmp = 1;
                 else if (tv >= 746) bucketTmp = 2;
@@ -341,15 +362,16 @@ void controlTransmission() {
         case 2:  // Auto (cmd_vel)
             if (cmdVel.received) {
                 float scaled = (cmdVel.linear_x + 1.0f) * 511.5f;
-                if (scaled >= 931) bucketTmp = 0;
-                else if (scaled >= 838) bucketTmp = 1;
-                else if (scaled >= 746) bucketTmp = 2;
-                else if (scaled >= 654) bucketTmp = 3;
-                else if (scaled >= 562) bucketTmp = 4;
-                else if (scaled >= 469) bucketTmp = 5;
-                else if (scaled >= 377) bucketTmp = 6;
-                else if (scaled >= 285) bucketTmp = 7;
-                else if (scaled >= 192) bucketTmp = 8;
+                int bucketScaled = (int)scaled;  // Cast to int for thresholds
+                if (bucketScaled >= 931) bucketTmp = 0;
+                else if (bucketScaled >= 838) bucketTmp = 1;
+                else if (bucketScaled >= 746) bucketTmp = 2;
+                else if (bucketScaled >= 654) bucketTmp = 3;
+                else if (bucketScaled >= 562) bucketTmp = 4;
+                else if (bucketScaled >= 469) bucketTmp = 5;
+                else if (bucketScaled >= 377) bucketTmp = 6;
+                else if (bucketScaled >= 285) bucketTmp = 7;
+                else if (bucketScaled >= 192) bucketTmp = 8;
                 else bucketTmp = 9;
                 requestedTarget = bucketTargets[bucketTmp];
             } else {
@@ -383,7 +405,7 @@ void controlTransmission() {
         uint16_t fb = readFeedback();
         char buf[96];
         snprintf(buf, sizeof(buf),
-                 "1,%lu,TL,o=%u,tv=%.0f,t=%u,b=%d,fb=%u,hz=%.1f,x=%.2f",
+                 "1,%lu,TL,o=%u,tv=%d,t=%u,b=%d,fb=%u,hz=%.1f,x=%.2f",
                  currentMillis, currentTransmissionOutput,
                  radioData.transmission_val, requestedTarget,
                  bucket, fb, cmdVel.current_hz, cmdVel.linear_x);
@@ -395,7 +417,7 @@ void controlTransmission() {
 }
 
 // -------------------------------------------------------------------
-// Steering control (10 Hz → 20 Hz safe)
+// Steering control (10 Hz → 20 Hz safe) - UPDATED: steering_val now int
 float calculateSteerPID() {
     unsigned long now = millis();
     float dt = (now - steer_last_time) / 1000.0f;
@@ -447,7 +469,7 @@ void controlSteering() {
             break;
 
         case 1:  // Manual PID
-            steer_setpoint = radioData.steering_val;
+            steer_setpoint = (float)radioData.steering_val;  // Cast int to float
             {
                 float out = calculateSteerPID();
                 if (abs(steer_error) <= STEER_DEADBAND) {
@@ -523,7 +545,7 @@ void controlSteering() {
                      dir, pwmValue);
         }
         safeTextLog(buf);
-            lastSteeringPrint = currentMillis;
+        lastSteeringPrint = currentMillis;
     }
 
     lastSteeringControlRun = currentMillis;
@@ -539,39 +561,55 @@ void estopCheck() {
 }
 
 // -------------------------------------------------------------------
-// Radio handling 
+// Radio handling (MERGED: Old smoothing/prints/signal + new ACK echoes/stats)
 void handleRadio() {
     if (radio.available()) {
+        radioStats.packets_received_total++;
+        radioStats.packets_received_20s++;
+
         radio.read(&radioData, sizeof(RadioControlStruct));
         
-        // CHANGED: Compact format with single println (was 7 separate prints)
+        // CHANGED: Compact format with single println (was 7 separate prints) - UPDATED for new fields
         if (currentMillis - radioStats.lastDataPrint >= radioStats.dataPrintInterval) {
             char buf[80];
-            snprintf(buf, sizeof(buf), "1,%lu,RADIO,s=%.2f,t=%.2f,x=%.0f,v=%.1f,e=%d,m=%d",
+            snprintf(buf, sizeof(buf), "1,%lu,RADIO,s=%d,t=%d,x=%d,v=%.1f,e=%d,m=%d,b2=%d,b3=%d",
                      currentMillis,
                      radioData.steering_val,
                      radioData.throttle_val,
                      radioData.transmission_val,
                      radioData.voltage,
                      radioData.estop,
-                     radioData.control_mode);
+                     radioData.control_mode,
+                     radioData.button02,
+                     radioData.button03);
             Serial.println(buf);
             radioStats.lastDataPrint = currentMillis;
         }
         
-        ackPayload.counter++;
-        radio.writeAckPayload(1, &ackPayload, sizeof(AckPayloadStruct));
+        // NEW: Echo buttons and set GPS in ACK
+        ackPayload.button02_status = radioData.button02;
+        ackPayload.button03_status = radioData.button03;
+        ackPayload.gps_status = getGpsStatus();
+        memset(ackPayload.padding, 0, sizeof(ackPayload.padding));  // Ensure padding zeroed
+        
+        bool ackWriteOk = radio.writeAckPayload(1, &ackPayload, sizeof(AckPayloadStruct));
+        if (ackWriteOk) {
+            radioStats.ackCount++;
+            radioStats.shortTermAckCount++;
+            radioStats.acks_sent_total++;
+            radioStats.acks_sent_20s++;
+        } else {
+            safeTextLog("1,0,RADIO,ack_send_fail");
+        }
         
         radioStats.lastAckTime = currentMillis;
-        radioStats.ackCount++;
-        radioStats.shortTermAckCount++;
         
         updateRadioSmoothing();
     }
     
     radioStats.signalGood = (currentMillis - radioStats.lastAckTime < radioStats.signalTimeout);
     
-    // CHANGED: Compact statistics format
+    // OLD: Compact statistics format (10s rate)
     if (currentMillis - radioStats.lastRateReport >= radioStats.rateReportInterval) {
         float timeElapsed = (currentMillis - radioStats.lastRateReport) / 1000.0;
         float ackRate = radioStats.ackCount / timeElapsed;
@@ -588,6 +626,22 @@ void handleRadio() {
         radioStats.lastRateReport = currentMillis;
     }
     
+    // NEW: 20s stats print (from testing)
+    if (currentMillis - radioStats.lastStatsTime >= radioStats.statsInterval) {
+        unsigned long received_delta = radioStats.packets_received_20s;
+        unsigned long acks_delta = radioStats.acks_sent_20s;
+
+        char buf[128];
+        snprintf(buf, sizeof(buf), "1,%lu,RADIO,20s_stats: rx=%lu/%lu, ack=%lu/%lu",
+                 currentMillis, radioStats.packets_received_total, received_delta,
+                 radioStats.acks_sent_total, acks_delta);
+        Serial.println(buf);
+
+        radioStats.packets_received_20s = 0;
+        radioStats.acks_sent_20s = 0;
+        radioStats.lastStatsTime = currentMillis;
+    }
+    
     // Heartbeat every 5 seconds
     static unsigned long lastHeartbeat = 0;
     if (currentMillis - lastHeartbeat >= 5000) {
@@ -595,7 +649,6 @@ void handleRadio() {
         lastHeartbeat = currentMillis;
     }
 }
-
 
 // -------------------------------------------------------------------
 void setup() {
@@ -610,11 +663,10 @@ void setup() {
     analogWrite(RPWM_Output, 0);
     analogWrite(LPWM_Output, 0);
 
-
     pinMode(ESTOP_RELAY_PIN, OUTPUT);
     digitalWrite(ESTOP_RELAY_PIN, HIGH);
 
-    // === SPI & RADIO SETUP ===
+    // === SPI & RADIO SETUP (UPDATED: Channel 76, payload size) ===
     SPI.begin();  // REQUIRED: initializes SPI0
     delay(100);
     if (!radio.begin()) {
@@ -624,13 +676,17 @@ void setup() {
 
     radio.setPALevel(RF24_PA_HIGH);
     radio.setDataRate(RF24_250KBPS);
-    radio.setChannel(124);
+    radio.setChannel(76);  // UPDATED: Match controller
     radio.enableAckPayload();
+    radio.setPayloadSize(24);  // NEW: Explicit for compatibility
 
-    radio.openWritingPipe(address[1]);    //  "RCTRL" 
-    radio.openReadingPipe(1, address[0]); // "TRACT"
+    // FIXED: Use new explicit addresses
+    radio.openWritingPipe(NRF24_ADDRESS_RADIO_CONTROL);    // Send ACKs to control unit
+    radio.openReadingPipe(1, NRF24_ADDRESS_TRACTOR);       // Listen for commands
     radio.startListening();
 
+    // Init ACK (zero padding)
+    memset(&ackPayload, 0, sizeof(AckPayloadStruct));
 
     safeTextLog("1,0,SYS,start");
 }

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-teensy_serial_bridge.py v2.1
+grok_teensy_serial_bridge.py v2.1
 =============================
 Bidirectional bridge between Teensy and ROS/monitoring systems.
 """
@@ -21,7 +21,7 @@ logging.basicConfig(
 logger = logging.getLogger('TeensyBridge')
 
 SERIAL_PORT = '/dev/teensy'
-BAUD_RATE = 115200
+BAUD_RATE = 921600
 UDP_BROADCAST_IP = '255.255.255.255'
 UDP_STATUS_PORT = 6003
 UDP_COMMAND_PORT = 6004
@@ -102,29 +102,66 @@ class TeensySerialBridge:
             subsystem = parts[2]
             
             data = {'msg_type': msg_type, 'timestamp': timestamp}
-            
+
+            # === ADD THIS BLOCK: CMD_ECHO PARSING ===
+            if msg_type == 3 and subsystem == "CMD_ECHO" and len(parts) > 3:
+                echo_data = {}
+                for kv in parts[3].split(","):
+                    if "=" in kv:
+                        k, v = kv.split("=", 1)
+                        try:
+                            echo_data[k] = float(v)
+                        except ValueError:
+                            echo_data[k] = v
+                self.cmd_vel_echo_count += 1
+                logger.info(f"CMD ECHO #{self.cmd_vel_echo_count}: "
+                            f"linear_x={echo_data.get('linear_x'):.3f}, "
+                            f"angular_z={echo_data.get('angular_z'):.3f}")
+                data['cmd_echo'] = echo_data
+                return {'subsystem': 'CMD_ECHO', 'data': data}
+            # === END NEW BLOCK ===
+
             if len(parts) > 3:
-                data_str = parts[3]
-                
-                if '=' in data_str:
-                    pairs = data_str.split(',')
-                    for pair in pairs:
-                        if '=' in pair:
-                            key, value = pair.split('=', 1)
-                            try:
-                                data[key] = float(value)
-                            except ValueError:
-                                data[key] = value
-                else:
-                    data['message'] = data_str
+                payload = parts[3]
+                if msg_type == 1:
+                    # 1,<ts>,SYS,<msg>
+                    if subsystem == "SYS":
+                        data['message'] = payload
+                    # 1,<ts>,RADIO,<k=v,...>
+                    elif subsystem == "RADIO":
+                        for kv in payload.split(","):
+                            if "=" in kv:
+                                k, v = kv.split("=", 1)
+                                try:
+                                    data[k] = float(v)
+                                except:
+                                    data[k] = v
+                    # 1,<ts>,STEER,<k=v,...>
+                    elif subsystem == "STEER":
+                        for kv in payload.split(","):
+                            if "=" in kv:
+                                k, v = kv.split("=", 1)
+                                try:
+                                    data[k] = float(v)
+                                except:
+                                    data[k] = v
+                    # 1,<ts>,JRK,<k=v,...>
+                    elif subsystem == "JRK":
+                        for kv in payload.split(","):
+                            if "=" in kv:
+                                k, v = kv.split("=", 1)
+                                try:
+                                    data[k] = float(v)
+                                except:
+                                    data[k] = v
+                elif msg_type == 2:
+                    # 2,<ts>,WARN,<msg>
+                    data['warning'] = payload
+
+            return {'subsystem': subsystem, 'data': data}
             
-            return {
-                'subsystem': subsystem,
-                'data': data
-            }
-            
-        except (ValueError, IndexError) as e:
-            logger.debug(f"Parse error: {e} for line: {line}")
+        except Exception as e:
+            logger.warning(f"Failed to parse line: {line} | {e}")
             return None
     
     def update_latest_data(self, parsed):
@@ -270,54 +307,55 @@ class TeensySerialBridge:
         }
         
         return message
-    
+
     def broadcast_status(self):
-        current_time = time.time()
-        
-        if current_time - self.last_broadcast < self.broadcast_interval:
+        now = time.time()
+        if now - self.last_broadcast < self.broadcast_interval:
             return
         
-        try:
-            message = self.create_broadcast_message()
-            json_data = json.dumps(message)
-            
-            bytes_sent = self.status_sock.sendto(
-                json_data.encode(), 
-                (UDP_BROADCAST_IP, UDP_STATUS_PORT)
-            )
-            
-            if bytes_sent != len(json_data):
-                logger.warning(f"Incomplete broadcast: sent {bytes_sent}/{len(json_data)} bytes")
-                self.stats['broadcasts_failed'] += 1
-            else:
-                self.stats['broadcasts_sent'] += 1
-            
-            self.last_broadcast = current_time
-            
-            if self.stats['broadcasts_sent'] % 25 == 0:
-                logger.info(f"Broadcast #{self.stats['broadcasts_sent']}: "
-                          f"Radio={message['radio'].get('signal', 'N/A')}, "
-                          f"Steer_mode={message['steering'].get('mode', 'N/A')}, "
-                          f"Trans_mode={message['transmission'].get('mode', 'N/A')}, "
-                          f"CMD_echoes={message['cmd_vel']['commands_echoed']}, "
-                          f"Size={len(json_data)} bytes")
+        status = {
+            'timestamp': now,
+            'radio': self.latest_data.get('RADIO', {}),
+            'steer': self.latest_data.get('STEER', {}),
+            'trans': self.latest_data.get('JRK', {}),
+            'sys': self.latest_data.get('SYS', {}),
+            'cmd_vel': {
+                'last_sent': self.last_cmd_vel,
+                'commands_received': self.cmd_vel_received_count,
+                'commands_sent': self.cmd_vel_sent_count,
+                'commands_echoed': self.cmd_vel_echo_count,  # ← THIS LINE ADDED
+                'pending': self.cmd_vel_sent_count - self.cmd_vel_echo_count
+            }
+        }
         
+        try:
+            data = json.dumps(status).encode('utf-8')
+            self.status_sock.sendto(data, (UDP_BROADCAST_IP, UDP_STATUS_PORT))
+            self.stats['broadcasts_sent'] += 1
+            logger.debug(f"Broadcast #{self.stats['broadcasts_sent']}: "
+                        f"Radio={'present' if status['radio'] else 'N/A'}, "
+                        f"Steer_mode={status['steer'].get('st', 'N/A')}, "
+                        f"Trans_mode={status['trans'].get('tgt', 'N/A')}, "
+                        f"CMD_echoes={status['cmd_vel']['commands_echoed']}, "
+                        f"Size={len(data)} bytes")
         except Exception as e:
             logger.error(f"Broadcast error: {e}")
             self.stats['errors'] += 1
             self.stats['broadcasts_failed'] += 1
-    
+        
+        self.last_broadcast = now
+
     def process_serial_line(self, line):
         self.stats['messages_received'] += 1
-        
         parsed = self.parse_message(line)
-        
         if parsed:
             self.stats['messages_parsed'] += 1
-            self.update_latest_data(parsed)
-            
-            if parsed['data'].get('msg_type') == 1 and self.stats['messages_parsed'] % 100 == 0:
-                logger.debug(f"Parsed: {parsed['subsystem']}: {parsed['data']}")
+            subsystem = parsed['subsystem']
+            data = parsed['data']
+            if subsystem == 'CMD_ECHO':
+                self.latest_data['CMD_ECHO'] = data
+            else:
+                self.latest_data[subsystem] = data
     
     def print_statistics(self):
         logger.info(f"Statistics - Received: {self.stats['messages_received']}, "
@@ -333,16 +371,45 @@ class TeensySerialBridge:
                    f"Max Size: {self.stats['max_burst_size']}, "
                    f"Avg Size: {self.stats['commands_received'] / max(1, self.stats['command_bursts']):.1f}")
     
+    # def run(self):
+    #     logger.info("Teensy Serial Bridge v2.1 starting...")
+    #     logger.info(f"Status broadcasts on UDP port {UDP_STATUS_PORT} at {BROADCAST_RATE} Hz")
+    #     logger.info(f"Command listener on UDP port {UDP_COMMAND_PORT}")
+        
+    #     command_thread = threading.Thread(target=self.listen_for_commands, daemon=True)
+    #     command_thread.start()
+        
+    #     last_stats_print = time.time()
+    #     stats_interval = 30.0
+        
+    #     try:
+    #         while True:
+    #             if self.ser.in_waiting:
+    #                 try:
+    #                     line = self.ser.readline().decode('utf-8').strip()
+    #                     if line:
+    #                         self.process_serial_line(line)
+    #                 except UnicodeDecodeError:
+    #                     self.stats['errors'] += 1
+    #                     pass
+                
+    #             self.broadcast_status()
+                
+    #             if time.time() - last_stats_print >= stats_interval:
+    #                 self.print_statistics()
+    #                 last_stats_print = time.time()
+                
+    #             time.sleep(0.001)
+        
+    #     except KeyboardInterrupt:
+    #         logger.info("Shutting down...")
+    #     finally:
+    #         self.running = False
+    #         command_thread.join(timeout=2)
+    #         self.cleanup()
+
     def run(self):
-        logger.info("Teensy Serial Bridge v2.1 starting...")
-        logger.info(f"Status broadcasts on UDP port {UDP_STATUS_PORT} at {BROADCAST_RATE} Hz")
-        logger.info(f"Command listener on UDP port {UDP_COMMAND_PORT}")
-        
-        command_thread = threading.Thread(target=self.listen_for_commands, daemon=True)
-        command_thread.start()
-        
-        last_stats_print = time.time()
-        stats_interval = 30.0
+        logger.info("=== NUCLEAR SERIAL TEST STARTED ===")
         
         try:
             while True:
@@ -350,26 +417,18 @@ class TeensySerialBridge:
                     try:
                         line = self.ser.readline().decode('utf-8').strip()
                         if line:
-                            self.process_serial_line(line)
-                    except UnicodeDecodeError:
-                        self.stats['errors'] += 1
+                            print(f"<<< TEENSY SAYS: [{line}]")  # Print to console
+                            logger.info(f"RAW FROM TEENSY: {line}")
+                    except:
                         pass
-                
-                self.broadcast_status()
-                
-                if time.time() - last_stats_print >= stats_interval:
-                    self.print_statistics()
-                    last_stats_print = time.time()
-                
                 time.sleep(0.001)
         
         except KeyboardInterrupt:
             logger.info("Shutting down...")
         finally:
             self.running = False
-            command_thread.join(timeout=2)
             self.cleanup()
-    
+
     def cleanup(self):
         if self.ser and self.ser.is_open:
             self.ser.close()

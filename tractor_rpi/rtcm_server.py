@@ -47,7 +47,7 @@ SERIAL_BAUD = 115200
 # same machine can listen on UDP_PORT.
 UDP_TARGET_IP = "127.0.0.1"
 UDP_TARGET_PORT = 6002
-UDP_PUBLISH_HZ = 5                 # broadcast rate
+UDP_PUBLISH_HZ = 20                 # broadcast rate
 
 # Regex to extract fields from GNGGA
 GGA_PATTERN = re.compile(
