@@ -1,5 +1,6 @@
 #!/bin/bash
 # check_services.sh - Check status of all tractor services
+# to run from any directory: /home/al/tractor2025/tractor_rpi/check_services.sh
 
 echo "========================================="
 echo "Tractor Robot Service Status"

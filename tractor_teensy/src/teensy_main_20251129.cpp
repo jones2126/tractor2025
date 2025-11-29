@@ -1,12 +1,8 @@
 /*********************************************************************
-  teensy_main_20251105.cpp
+  teensy_main_20251129.cpp
   --------------------------------------------------------------
-  * Integrated NRF24 improvements from testing (20251104)
-  * Binary steering packet (5 B) every control cycle
-  * Human logs ≤ 1 line / 2 s
-  * Serial @ 921600 baud
-  * Updated structs/ACK for controller compatibility (channel 76, button03, GPS echo)
-  * FIXED: NRF24 addresses to new explicit const arrays
+  * Date: November 28, 2025
+  * FIXED: Moved GPS functions after dependencies (GpsStatus struct and safeTextLog)
 *********************************************************************/
 
 #include <SPI.h>
@@ -49,7 +45,6 @@ const int STEER_CENTER_POT = 512;
 
 // Transmission vars
 uint16_t currentTransmissionOutput = transmissionNeutralPos;
-const uint8_t transmissionRampStep = 10;
 int bucket = 5;
 
 // NeoPixel (not used)
@@ -60,32 +55,36 @@ int bucket = 5;
 RF24 radio(9, 10);
 
 // -------------------------------------------------------------------
-// Radio structures (UPDATED: Match controller/testing - ints for analogs, button03, packed)
 struct __attribute__((packed)) RadioControlStruct {
-    int steering_val;
-    int throttle_val;
-    float voltage;
-    int transmission_val;
-    int pot4_val;
-    byte estop;
-    byte control_mode;
-    byte button02;
-    byte button03;
+    int16_t steering_val;      // 2B: Pin 15 (was 4B int)
+    int16_t throttle_val;      // 2B: Pin 14 (was 4B int)
+    int16_t transmission_val;  // 2B: Pin 16 (was 4B int)
+    uint16_t voltage_mv;       // 2B: Voltage in millivolts (was 4B float)
+    int16_t pot4_val;          // 2B: Pin 17 (was 4B int)
+    byte estop;                // 1B: Pin 10
+    byte control_mode;         // 1B: Pin 3 & 4  From mode switch
+    byte button02;             // 1B: Pin 9
+    byte button03;             // 1B: Pin 6
+    // Total: 14 bytes 
 };
+
 
 struct __attribute__((packed)) AckPayloadStruct {
     byte gps_status;         // 1=no NMEA, 2=GPS no RTK, 3=RTK Fix (0=unset)
     byte button02_status;    // Echo of received button02
     byte button03_status;    // Echo of received button03
-    byte padding[21];        // Pad to 24 bytes total
+    byte padding[11];        // 11B: Pad to 14 bytes total
 };
 
 RadioControlStruct radioData;
 AckPayloadStruct ackPayload;
 
-// FIXED: NRF24 addresses to new explicit const arrays (preferred)
-const uint8_t NRF24_ADDRESS_TRACTOR[6]       = "TRACT";
-const uint8_t NRF24_ADDRESS_RADIO_CONTROL[6] = "RCTRL";
+// NRF24 addresses to explicit const arrays
+// const uint8_t NRF24_ADDRESS_TRACTOR[6]       = "TRACT";
+// const uint8_t NRF24_ADDRESS_RADIO_CONTROL[6] = "RCTRL";
+
+const uint8_t NRF24_ADDRESS_TRACTOR[6]       = "1Node";
+const uint8_t NRF24_ADDRESS_RADIO_CONTROL[6] = "2Node";
 
 unsigned long currentMillis = 0;
 
@@ -114,15 +113,8 @@ float smoothedRadioVal = 0.0f;
 const float radioAlpha = 0.1f;
 
 void updateRadioSmoothing() {
-    smoothedRadioVal = radioAlpha * (float)radioData.transmission_val / 1024.0f +  // Scale int to 0-1 for smoothing
+    smoothedRadioVal = radioAlpha * (float)radioData.transmission_val / 1024.0f +
                       (1.0f - radioAlpha) * smoothedRadioVal;
-}
-
-// Placeholder GPS status (implement via Serial1 ) - an addition message type will have to be added to
-// the function parseSerialCommand to bring over the GPS status.  Upstream the GPS data will have to be 
-// pull from one of the UDP ports with GPS data and the teensy_bridge will have to write it to /dev/teensy serial port
-byte getGpsStatus() {
-    return 1;  // GPS but no fix (safe default)
 }
 
 // E-stop
@@ -157,6 +149,15 @@ unsigned long cmd_vel_count = 0;
 unsigned long last_cmd_vel_time = 0;
 const unsigned long CMD_VEL_TIMEOUT = 500;
 
+// GPS status tracking (received from bridge via serial)
+struct GpsStatus {
+    byte status = 1;                    // 0=unset, 1=noNMEA, 2=noRTK, 3=RTK Fix
+    unsigned long last_update = 0;
+    unsigned long messages_received = 0;
+    unsigned long last_log = 0;
+} gpsStatus;
+
+
 // -------------------------------------------------------------------
 // Serial processing rate limiting
 unsigned long lastSerialProcessTime = 0;
@@ -173,6 +174,10 @@ struct SerialStats {
 unsigned long lastTransLogPrint = 0;
 const unsigned long transLogInterval = 5000;   // 0.2 Hz
 
+// CSV Logging Toggle (if you enable this now you will have to update the teensy serial bridge 
+// to know what to do with 'log' statements)  (set to 0 at 3:42pm on 11/28/25)
+#define CSV_LOG_ENABLED 0
+
 // -------------------------------------------------------------------
 // TEXT LOG RATE LIMITER (human readable)
 #define TEXT_LOG_INTERVAL 2000UL
@@ -186,20 +191,52 @@ void safeTextLog(const char* msg) {
 }
 
 // -------------------------------------------------------------------
-// BINARY STEERING PACKET (5 bytes, every steering cycle)
-void sendSteeringBinary(int pwmValue) {
-    int16_t pot = (int16_t)steer_current;
-    int16_t err = (int16_t)constrain((int)steer_error, -512, 511);
-    uint8_t pwm = (uint8_t)pwmValue;
+// GPS FUNCTIONS (MOVED HERE - after GpsStatus struct and safeTextLog)
+byte getGpsStatus() {
+    // Return cached GPS status from bridge
+    // Timeout to safe default after 5 seconds of no updates
+    unsigned long age = currentMillis - gpsStatus.last_update;
+    if (age > 5000) {
+        // Add debug for timeout
+        static unsigned long lastTimeoutLog = 0;
+        if (currentMillis - lastTimeoutLog > 5000) {
+            char buf[64];
+            snprintf(buf, sizeof(buf), "1,%lu,GPS_TIMEOUT,age=%lu,st=%d",
+                     currentMillis, age, gpsStatus.status);
+            Serial.println(buf);
+            lastTimeoutLog = currentMillis;
+        }
+        return 1;  // Default to "no fix" on timeout
+    }
+    return gpsStatus.status;
+}
 
-    uint8_t pkt[5] = {
-        0xAA,                     // start byte
-        (uint8_t)(pot >> 8),
-        (uint8_t)(pot & 0xFF),
-        (uint8_t)err,
-        pwm
-    };
-    Serial.write(pkt, sizeof(pkt));   // no flush – keep streaming
+void updateGpsStatus(byte newStatus) {
+    gpsStatus.status = newStatus;
+    gpsStatus.last_update = currentMillis;  // Use currentMillis for consistency
+    gpsStatus.messages_received++;
+    
+    // Log status changes immediately (not just every 10s)
+    static byte lastLoggedStatus = 0;
+    if (newStatus != lastLoggedStatus) {
+        char buf[64];
+        snprintf(buf, sizeof(buf), "1,%lu,GPS_UPDATE,st=%d->%d,cnt=%lu",
+                 currentMillis, lastLoggedStatus, newStatus,
+                 gpsStatus.messages_received);
+        Serial.println(buf);
+        lastLoggedStatus = newStatus;
+    }
+    
+    // Periodic log (every 10s)
+    if (currentMillis - gpsStatus.last_log >= 10000) {
+        char buf[64];
+        snprintf(buf, sizeof(buf), "1,%lu,GPS,st=%d,age=%lu,cnt=%lu",
+                 currentMillis, gpsStatus.status,
+                 currentMillis - gpsStatus.last_update,
+                 gpsStatus.messages_received);
+        Serial.println(buf);  // Changed from safeTextLog to Serial.println
+        gpsStatus.last_log = currentMillis;
+    }
 }
 
 // -------------------------------------------------------------------
@@ -235,7 +272,7 @@ void setJrkTarget(uint16_t target) {
 }
 
 // -------------------------------------------------------------------
-// Serial command parsing (CMD,<x>,<z>\n)
+// Serial command parsing (CMD,<x>,<z>\n and GPS,<status>\n)
 void parseSerialCommand() {
     if (currentMillis - lastSerialProcessTime < serialProcessInterval) return;
 
@@ -257,6 +294,8 @@ void parseSerialCommand() {
 
         if (c == '\n') {
             buffer[idx] = '\0';
+            
+            // CMD parsing
             if (idx >= 4 && memcmp(buffer, "CMD,", 4) == 0) {
                 float lx, az;
                 if (sscanf(buffer + 4, "%f,%f", &lx, &az) == 2) {
@@ -275,6 +314,28 @@ void parseSerialCommand() {
                                  "3,%lu,CE,x=%.2f,z=%.2f,hz=%.1f",
                                  millis(), lx, az, cmdVel.current_hz);
                         Serial.println(echo);
+                    }
+                }
+            }
+            // GPS parsing (ADDED)
+            else if (idx >= 4 && memcmp(buffer, "GPS,", 4) == 0) {
+                int status;
+                if (sscanf(buffer + 4, "%d", &status) == 1) {
+                    if (status >= 0 && status <= 3) {  // Validate range
+                        updateGpsStatus((byte)status);
+                        
+                        // Echo every 20th GPS message for monitoring
+                        if (gpsStatus.messages_received % 20 == 0) {
+                            char echo[48];
+                            snprintf(echo, sizeof(echo), "3,%lu,GPS_ECHO,s=%d,cnt=%lu",
+                                     millis(), status, gpsStatus.messages_received);
+                            Serial.println(echo);
+                        }
+                    } else {
+                        char warn[48];
+                        snprintf(warn, sizeof(warn), "2,%lu,GPS,invalid_status=%d",
+                                 millis(), status);
+                        safeTextLog(warn);
                     }
                 }
             }
@@ -344,7 +405,7 @@ void controlTransmission() {
 
         case 1:  // Manual bucket
             {
-                int tv = radioData.transmission_val;  // Now int
+                int tv = (int)radioData.transmission_val;  // CHANGED: Cast int16_t to int
                 if (tv >= 931) bucketTmp = 0;
                 else if (tv >= 838) bucketTmp = 1;
                 else if (tv >= 746) bucketTmp = 2;
@@ -407,11 +468,23 @@ void controlTransmission() {
         snprintf(buf, sizeof(buf),
                  "1,%lu,TL,o=%u,tv=%d,t=%u,b=%d,fb=%u,hz=%.1f,x=%.2f",
                  currentMillis, currentTransmissionOutput,
-                 radioData.transmission_val, requestedTarget,
+                 (int)radioData.transmission_val,  // CHANGED: Explicit cast for clarity
+                 requestedTarget,
                  bucket, fb, cmdVel.current_hz, cmdVel.linear_x);
         safeTextLog(buf);
         lastTransLogPrint = currentMillis;
     }
+
+    // MERGED FROM OLDER: CSV Logging for data analysis (toggle with CSV_LOG_ENABLED)
+    #if CSV_LOG_ENABLED
+        uint16_t feedback = readFeedback();
+        char csvBuf[128];
+        snprintf(csvBuf, sizeof(csvBuf), "log,%lu,%u,%d,%u,%d,%u",
+                 currentMillis, currentTransmissionOutput, 
+                 (int)radioData.transmission_val,  // CHANGED: Cast int16_t
+                 requestedTarget, bucket, feedback);
+        Serial.println(csvBuf);
+    #endif
 
     lastTransmissionControlRun = currentMillis;
 }
@@ -453,7 +526,7 @@ void controlSteering() {
             lastSteeringPrint = currentMillis;
         }
         lastSteeringControlRun = currentMillis;
-        sendSteeringBinary(0);
+        //sendSteeringBinary(0);
         return;
     }
 
@@ -470,6 +543,7 @@ void controlSteering() {
 
         case 1:  // Manual PID
             steer_setpoint = (float)radioData.steering_val;  // Cast int to float
+
             {
                 float out = calculateSteerPID();
                 if (abs(steer_error) <= STEER_DEADBAND) {
@@ -494,7 +568,7 @@ void controlSteering() {
 
         case 2:  // Auto (cmd_vel)
             if (cmdVel.received) {
-                steer_setpoint = cmdVel.angular_z;
+                steer_setpoint = cmdVel.angular_z;  // angular_z contains PWM value (0-1023) from Pure Pursuit
                 float out = calculateSteerPID();
                 if (abs(steer_error) <= STEER_DEADBAND) {
                     pwmValue = 0;
@@ -549,7 +623,7 @@ void controlSteering() {
     }
 
     lastSteeringControlRun = currentMillis;
-    sendSteeringBinary(pwmValue);          // <<< BINARY PACKET
+    //sendSteeringBinary(pwmValue);          // <<< BINARY PACKET
 }
 
 // -------------------------------------------------------------------
@@ -561,6 +635,19 @@ void estopCheck() {
 }
 
 // -------------------------------------------------------------------
+// MERGED FROM OLDER: Raw pot monitoring (1s interval)
+void debugSteerPot() {
+    static unsigned long lastPotDebug = 0;
+    if (currentMillis - lastPotDebug >= 1000) {
+        int rawPot = analogRead(STEER_POT_PIN);
+        char buf[64];
+        snprintf(buf, sizeof(buf), "debug,Raw pot: %d, V: %.2f", rawPot, (rawPot * 3.3)/1023.0);
+        safeTextLog(buf);  // Use newer's rate-limiter
+        lastPotDebug = currentMillis;
+    }
+}
+
+// -------------------------------------------------------------------
 // Radio handling (MERGED: Old smoothing/prints/signal + new ACK echoes/stats)
 void handleRadio() {
     if (radio.available()) {
@@ -569,15 +656,14 @@ void handleRadio() {
 
         radio.read(&radioData, sizeof(RadioControlStruct));
         
-        // CHANGED: Compact format with single println (was 7 separate prints) - UPDATED for new fields
         if (currentMillis - radioStats.lastDataPrint >= radioStats.dataPrintInterval) {
             char buf[80];
-            snprintf(buf, sizeof(buf), "1,%lu,RADIO,s=%d,t=%d,x=%d,v=%.1f,e=%d,m=%d,b2=%d,b3=%d",
+            snprintf(buf, sizeof(buf), "1,%lu,RADIO,s=%d,t=%d,x=%d,v=%.2f,e=%d,m=%d,b2=%d,b3=%d",
                      currentMillis,
-                     radioData.steering_val,
-                     radioData.throttle_val,
-                     radioData.transmission_val,
-                     radioData.voltage,
+                     (int)radioData.steering_val,      
+                     (int)radioData.throttle_val,      
+                     (int)radioData.transmission_val,  
+                     radioData.voltage_mv / 1000.0f,   
                      radioData.estop,
                      radioData.control_mode,
                      radioData.button02,
@@ -591,6 +677,24 @@ void handleRadio() {
         ackPayload.button03_status = radioData.button03;
         ackPayload.gps_status = getGpsStatus();
         memset(ackPayload.padding, 0, sizeof(ackPayload.padding));  // Ensure padding zeroed
+
+        // new debug
+        // ========== ADD ACK WRITE DEBUG ==========
+        static unsigned long lastAckWriteDebug = 0;
+        if (currentMillis - lastAckWriteDebug >= 5000) {
+            char buf[80];
+            snprintf(buf, sizeof(buf), 
+                     "1,%lu,ACK_PREP,gps=%d,b2=%d,b3=%d,size=%d",
+                     currentMillis, 
+                     ackPayload.gps_status,
+                     ackPayload.button02_status, 
+                     ackPayload.button03_status,
+                     sizeof(AckPayloadStruct));
+            Serial.println(buf);
+            lastAckWriteDebug = currentMillis;
+        }
+        // ========== END DEBUG ==========
+        // end of debug        
         
         bool ackWriteOk = radio.writeAckPayload(1, &ackPayload, sizeof(AckPayloadStruct));
         if (ackWriteOk) {
@@ -653,8 +757,27 @@ void handleRadio() {
 // -------------------------------------------------------------------
 void setup() {
     delay(45000);  // waiting for the RPi to boot so the serial connection is made
+    
+    // MERGED FROM OLDER: Verbose serial init for reliability
     Serial.begin(921600);
-    Serial.println("1,0,SYS,starting");    
+    while (!Serial && millis() < 10000);  // wait up to 10 seconds for USB serial to initialize 
+    Serial.println("Teensy Receiver Starting...");
+    Serial.flush();
+
+    // Print multiple times to ensure we see something
+    for(int i = 0; i < 4; i++) {
+        Serial.print("Debug message #");
+        Serial.println(i);
+        Serial.flush();
+        delay(100);
+    }
+    
+    Serial.println("If you see this, serial is working!");
+    Serial.flush();
+    
+    Serial.println("*** NEW BUILD: CSV_LOG_ENABLED=0 - No more logs! Timestamp: " __TIMESTAMP__);
+    Serial.flush();
+    
     Serial3.begin(JRK_BAUD);
 
     // === IBT-2 Steering controller SETUP ===
@@ -666,29 +789,92 @@ void setup() {
     pinMode(ESTOP_RELAY_PIN, OUTPUT);
     digitalWrite(ESTOP_RELAY_PIN, HIGH);
 
+    // MERGED FROM OLDER: Explicit SPI pins (redundancy)
+    SPI.setSCK(13);  
+    SPI.setMOSI(11);   
+    SPI.setMISO(12);
+
     // === SPI & RADIO SETUP (UPDATED: Channel 76, payload size) ===
     SPI.begin();  // REQUIRED: initializes SPI0
     delay(100);
-    if (!radio.begin()) {
-        safeTextLog("1,0,RADIO,init_fail");
-        while (1) delay(1000);
-    }    
+    
+    // MERGED FROM OLDER: Radio init retries for robustness
+    bool initialized = false;
+    for (int i = 0; i < 5; i++) {
+        Serial.print("Radio init attempt ");
+        Serial.println(i + 1);
+        Serial.flush();
+        if (radio.begin()) {
+            initialized = true;
+            Serial.println("Radio initialized successfully!");
+            Serial.flush();
+            break;
+        }
+        Serial.println("Radio init failed, retrying...");
+        Serial.flush();
+        delay(1000);
+    }
 
+    if (!initialized) {
+        Serial.println("Radio hardware not responding!");
+        Serial.flush();
+        // Note: Continue anyway, but monitor logs
+    }
+    
     radio.setPALevel(RF24_PA_HIGH);
     radio.setDataRate(RF24_250KBPS);
-    radio.setChannel(76);  // UPDATED: Match controller
+    radio.setChannel(76);  
     radio.enableAckPayload();
-    radio.setPayloadSize(24);  // NEW: Explicit for compatibility
+    radio.setPayloadSize(14);  
 
-    // FIXED: Use new explicit addresses
     radio.openWritingPipe(NRF24_ADDRESS_RADIO_CONTROL);    // Send ACKs to control unit
     radio.openReadingPipe(1, NRF24_ADDRESS_TRACTOR);       // Listen for commands
     radio.startListening();
 
+    // ========== ADD THESE DEBUG LINES ==========
+    Serial.println("=== RADIO CONFIGURATION ===");
+    Serial.print("Channel: "); Serial.println(radio.getChannel());
+    Serial.print("Payload Size: "); Serial.println(radio.getPayloadSize());
+    Serial.print("Data Rate: ");
+    uint8_t dr = radio.getDataRate();
+    if (dr == RF24_250KBPS) Serial.println("250KBPS");
+    else if (dr == RF24_1MBPS) Serial.println("1MBPS");
+    else Serial.println("2MBPS");
+    Serial.print("PA Level: ");
+    uint8_t pa = radio.getPALevel();
+    if (pa == RF24_PA_MIN) Serial.println("MIN");
+    else if (pa == RF24_PA_LOW) Serial.println("LOW");
+    else if (pa == RF24_PA_HIGH) Serial.println("HIGH");
+    else Serial.println("MAX");
+
+    // Print addresses
+    //uint8_t addr[6];
+    radio.openReadingPipe(1, NRF24_ADDRESS_TRACTOR);  // Re-open to ensure it's set
+    Serial.print("Reading Pipe 1 Address: ");
+    for(int i = 0; i < 5; i++) {
+        Serial.print((char)NRF24_ADDRESS_TRACTOR[i]);
+    }
+    Serial.println();
+    Serial.print("Writing Pipe Address: ");
+    for(int i = 0; i < 5; i++) {
+        Serial.print((char)NRF24_ADDRESS_RADIO_CONTROL[i]);
+    }
+    Serial.println();
+    Serial.println("=========================");
+    // ========== END DEBUG LINES ==========
+
+
     // Init ACK (zero padding)
     memset(&ackPayload, 0, sizeof(AckPayloadStruct));
 
-    safeTextLog("1,0,SYS,start");
+    // MERGED FROM OLDER: Print bucket system info
+    Serial.println("10-Bucket Control System:");
+    Serial.println("  transmission_val 1023 -> bucket 0 -> JRK 3696 (FULL REVERSE)");
+    Serial.println("  transmission_val ~512 -> bucket 5 -> JRK 2985 (NEUTRAL)");
+    Serial.println("  transmission_val 1    -> bucket 9 -> JRK 2048 (FULL FORWARD)");
+
+    Serial.println("1,0,SYS,start");
+    Serial.flush();
 }
 
 // -------------------------------------------------------------------
@@ -710,4 +896,7 @@ void loop() {
     // 4. Control (rate limited)
     controlTransmission();
     controlSteering();
+
+    // MERGED FROM OLDER: Pot monitoring
+    debugSteerPot();
 }

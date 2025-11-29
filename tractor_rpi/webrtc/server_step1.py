@@ -9,7 +9,7 @@ Run:
   source ~/webrtc-robot/bin/activate
   python ~/tractor2025/tractor/webrtc/server_step1.py
 Open:
-  http://<PI_IP>:8080/
+  http://<PI_IP>:8080/ 
 """
 
 import asyncio, json, signal, time

@@ -10,7 +10,7 @@ reading position and heading information from both receivers.  See the Miro Boar
 
 ## teensy_serial_bridge.py
 
-`teensy_serial_bridge.py` This bridge reads serial data from the Teensy microcontroller and broadcasts key system status via UDP at 5 Hz for monitoring and control.  See the Miro Board for more details.
+`teensy_serial_bridge_{date}.py` This bridge reads serial data from the Teensy microcontroller and broadcasts key system status via UDP at 5 Hz for monitoring and control.  See the Miro Board for more details.
 
 ## led_status_controller.py
 

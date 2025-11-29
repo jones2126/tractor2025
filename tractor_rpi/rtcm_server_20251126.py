@@ -22,6 +22,8 @@ broadcast runs at a fixed rate and contains the following fields:
     }
 
 Adjust the configuration section below to match your hardware setup.
+
+11/26/25 - Added code for fatal errors when the GPS units are not detected
 """
 
 import json
@@ -73,6 +75,11 @@ state = {
     "carrier": None,
     "expectedErrDeg": None,
     "timestamp": None,
+    # Fatal connection info
+    "fatal_error": False,
+    "fatal_base_reason": None,    # /dev/gps-base-link issues
+    "fatal_heading_reason": None, # /dev/gps-heading issues
+
 }
 state_lock = threading.Lock()
 
@@ -262,13 +269,62 @@ def udp_publisher():
 # ---------------------------------------------------------------------------
 
 def main():
-    base_ser = serial.Serial(BASE_SERIAL, SERIAL_BAUD, timeout=1)
-    heading_ser = serial.Serial(HEADING_SERIAL, SERIAL_BAUD, timeout=1)
+    global state
 
+    base_ser = None
+    heading_ser = None
+
+    fatal_error = False
+    fatal_base_reason = None
+    fatal_heading_reason = None
+
+    # Try to open base serial
+    try:
+        base_ser = serial.Serial(BASE_SERIAL, SERIAL_BAUD, timeout=1)
+    except (serial.SerialException, FileNotFoundError) as e:
+        fatal_error = True
+        fatal_base_reason = f"could not open {BASE_SERIAL}: {e}"
+
+    # Try to open heading serial
+    try:
+        heading_ser = serial.Serial(HEADING_SERIAL, SERIAL_BAUD, timeout=1)
+    except (serial.SerialException, FileNotFoundError) as e:
+        fatal_error = True
+        fatal_heading_reason = f"could not open {HEADING_SERIAL}: {e}"
+
+    # Update shared state with fatal info so LED/status consumers can see it
+    with state_lock:
+        state["fatal_error"] = fatal_error
+        state["fatal_base_reason"] = fatal_base_reason
+        state["fatal_heading_reason"] = fatal_heading_reason
+        state["timestamp"] = datetime.now(timezone.utc).isoformat()
+
+    # Always start UDP publisher so we broadcast either normal nav data
+    # or a fatal_error + reasons.
+    threading.Thread(target=udp_publisher, daemon=True).start()
+
+    if fatal_error:
+        # Log clear messages to journalctl
+        print("[rtcm-server] FATAL GPS CONNECTION ERROR(S) DETECTED")
+        if fatal_base_reason:
+            print(f"[rtcm-server]   BASE:    {fatal_base_reason}")
+        if fatal_heading_reason:
+            print(f"[rtcm-server]   HEADING: {fatal_heading_reason}")
+        print("[rtcm-server] Service will remain running and continue to publish "
+              "fatal_error status over UDP for LED/monitoring clients.")
+
+        # Sit in a loop so systemd sees the service as 'running' and the LED controller can showing the fatal condition.
+        try:
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            pass
+        return
+
+    # If we get here, both serial ports opened successfully: normal behavior
     threading.Thread(target=forward_rtcm, args=(base_ser,), daemon=True).start()
     threading.Thread(target=monitor_gga, args=(base_ser,), daemon=True).start()
     threading.Thread(target=monitor_relposned, args=(heading_ser,), daemon=True).start()
-    threading.Thread(target=udp_publisher, daemon=True).start()
 
     print("RTCM server running. Press Ctrl+C to exit.")
     try:
@@ -276,6 +332,7 @@ def main():
             time.sleep(1)
     except KeyboardInterrupt:
         pass
+
 
 if __name__ == "__main__":
     main()
