@@ -1,0 +1,23 @@
+[Unit]
+Description=Robot Status LED Controller
+After=network.target ros2.service
+Wants=ros2.service
+
+[Service]
+Type=simple
+User=tractor
+Group=tractor
+WorkingDirectory=/home/tractor/ros2_ws
+Environment="ROS_DOMAIN_ID=0"
+Environment="RMW_IMPLEMENTATION=rmw_cyclonedds_cpp"
+# Source ROS 2 setup
+ExecStartPre=/bin/bash -c 'source /opt/ros/jazzy/setup.bash && source /home/tractor/ros2_ws/install/setup.bash'
+# Run the LED controller
+ExecStart=/usr/bin/python3 /home/tractor/ros2_ws/src/robot_status_leds.py
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
