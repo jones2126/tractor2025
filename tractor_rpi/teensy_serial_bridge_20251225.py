@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-teensy_serial_bridge_20251125.py
+teensy_serial_bridge_20251225.py
 =============================
 Bidirectional bridge between Teensy and ROS/monitoring systems.
 UPDATED: GPS status listener on UDP 6002 (from RTCM server), maps to enum, sends to Teensy at 2Hz.
@@ -23,7 +23,7 @@ logging.basicConfig(
 logger = logging.getLogger('TeensyBridge')
 
 SERIAL_PORT = '/dev/teensy'
-BAUD_RATE = 921600  # Match Teensy
+BAUD_RATE = 460800  # Match Teensy
 UDP_BROADCAST_IP = '255.255.255.255'
 UDP_STATUS_PORT = 6003
 UDP_COMMAND_PORT = 6004
@@ -251,56 +251,82 @@ class TeensySerialBridge:
         logger.info("GPS listener thread stopped")
 
     def parse_message(self, line):
+        """Parse a line from Teensy and update latest_data"""
         try:
             parts = line.strip().split(',', 3)
             
             if len(parts) < 3:
                 return None
             
+            # Handle occasional missing msg_type (rare bad line)
+            if not parts[0].isdigit():
+                if parts[0] == '' and parts[1].isdigit():
+                    parts = ['1'] + parts  # Assume type 1
+                else:
+                    return None
+            
             msg_type = int(parts[0])
             timestamp = int(parts[1])
             subsystem = parts[2]
             
-            data = {'msg_type': msg_type, 'timestamp': timestamp}
-
-            # CMD_ECHO PARSING
-            if msg_type == 3 and subsystem == "CMD_ECHO" and len(parts) > 3:
-                echo_data = {}
-                for kv in parts[3].split(","):
-                    if "=" in kv:
-                        k, v = kv.split("=", 1)
-                        try:
-                            echo_data[k] = float(v)
-                        except ValueError:
-                            echo_data[k] = v
-                self.cmd_vel_echo_count += 1
-                logger.info(f"CMD ECHO #{self.cmd_vel_echo_count}: "
-                            f"linear_x={echo_data.get('linear_x'):.3f}, "
-                            f"angular_z={echo_data.get('angular_z'):.3f}")
-                data['cmd_echo'] = echo_data
-                return {'subsystem': 'CMD_ECHO', 'data': data}
-
-            if len(parts) > 3:
-                payload = parts[3]
-                if msg_type == 1:
-                    if subsystem == "SYS":
-                        data['message'] = payload
-                    elif subsystem in ["RADIO", "STEER", "JRK", "TRANS"]:
-                        for kv in payload.split(","):
-                            if "=" in kv:
-                                k, v = kv.split("=", 1)
-                                try:
-                                    data[k] = float(v)
-                                except:
-                                    data[k] = v
-                elif msg_type == 2:
-                    data['warning'] = payload
-
-            return {'subsystem': subsystem, 'data': data}
+            current_time = time.time()
             
+            # Parse kv data if present
+            data_str = parts[3] if len(parts) > 3 else ''
+            kv_dict = {}
+            for kv in data_str.split(','):
+                if '=' in kv:
+                    k, v = kv.split('=', 1)
+                    try:
+                        kv_dict[k] = float(v) if '.' in v else int(v)
+                    except ValueError:
+                        kv_dict[k] = v
+            
+            parsed = {
+                'msg_type': msg_type,
+                'timestamp': timestamp,
+                'subsystem': subsystem,
+                'data': kv_dict,
+                'last_update': current_time
+            }
+            
+            if subsystem == 'RADIO':
+                # Handle both stats and detailed lines
+                radio_dict = self.latest_data.get('RADIO', {})
+                radio_dict.update(kv_dict)  # Merge new keys
+                if kv_dict.get('sg') == 1:
+                    radio_dict['signal'] = 'GOOD'
+                elif 'signal' not in radio_dict:
+                    radio_dict['signal'] = 'UNKNOWN'
+                radio_dict['last_update'] = current_time
+                self.latest_data['RADIO'] = radio_dict
+            
+            elif subsystem == 'STEER':
+                steer_dict = self.latest_data.get('STEER', {})
+                steer_dict.update(kv_dict)
+                steer_dict['last_update'] = current_time
+                self.latest_data['STEER'] = steer_dict
+            
+            elif subsystem == 'JRK' or subsystem == 'TRANS':
+                trans_dict = self.latest_data.get('TRANS', {})
+                trans_dict.update(kv_dict)  # tgt, current, etc.
+                trans_dict['last_update'] = current_time
+                self.latest_data['TRANS'] = trans_dict
+            
+            elif subsystem == 'SYS':
+                sys_dict = self.latest_data.get('SYSTEM', {})
+                sys_dict.update(kv_dict)  # hb, etc.
+                sys_dict['last_update'] = current_time
+                self.latest_data['SYSTEM'] = sys_dict
+            
+            # Add other subsystems as needed (GPS_ECHO, ACK_PREP if useful)
+            
+            return parsed
+        
         except Exception as e:
             logger.warning(f"Failed to parse line: {line} | {e}")
             return None
+
     
     def update_latest_data(self, parsed):
         if not parsed:
@@ -408,25 +434,25 @@ class TeensySerialBridge:
         if 'STEER' in self.latest_data:
             steer_data = self.latest_data['STEER']
             message['steering'] = {
-                'mode': int(steer_data.get('mode', 0)),
-                'setpoint': steer_data.get('setpt', 0.0),
-                'current': steer_data.get('current', 0.0),
-                'error': steer_data.get('error', 0.0),
-                'direction': steer_data.get('dir', 'UNKNOWN'),
-                'pwm': steer_data.get('pwm', 0.0),
+                'mode': int(steer_data.get('m', 0)),
+                'setpoint': steer_data.get('sp', 0.0),
+                'current': steer_data.get('c', 0.0),
+                'error': steer_data.get('e', 0.0),
+                'direction': steer_data.get('d', 'UNKNOWN'),
+                'pwm': steer_data.get('p', 0.0),
                 'age': current_time - steer_data.get('last_update', current_time)
             }
         
         if 'TRANS' in self.latest_data:
             trans_data = self.latest_data['TRANS']
             message['transmission'] = {
-                'mode': int(trans_data.get('mode', 0)),
-                'bucket': int(trans_data.get('bucket', 5)),
-                'target': trans_data.get('target', 2985),
-                'current': trans_data.get('current', 2985),
+                'mode': int(trans_data.get('m', 0)),
+                'bucket': int(trans_data.get('b', 5)),
+                'target': trans_data.get('tgt', 2985),
+                'current': trans_data.get('cur', 2985),
                 'age': current_time - trans_data.get('last_update', current_time)
             }
-        
+
         if 'SYSTEM' in self.latest_data:
             sys_data = self.latest_data['SYSTEM']
             message['system'] = {
@@ -516,12 +542,14 @@ class TeensySerialBridge:
                    f"Status Sent: {self.stats['gps_status_sent']}, "
                    f"Current: {self.current_gps_status}")
 
-    def run(self):  # Full production run
-        logger.info("Teensy Serial Bridge v2.2 starting...")
+    def run(self):
+        """Main loop - robust version with serial recovery and line filtering"""
+        logger.info("Teensy Serial Bridge v20251225 starting...")
         logger.info(f"Status broadcasts on UDP port {UDP_STATUS_PORT} at {BROADCAST_RATE} Hz")
         logger.info(f"Command listener on UDP port {UDP_COMMAND_PORT}")
         logger.info(f"GPS listener on UDP port {UDP_GPS_PORT} → Serial at 2Hz")
         
+        # Start background threads
         command_thread = threading.Thread(target=self.listen_for_commands, daemon=True)
         command_thread.start()
         
@@ -533,22 +561,57 @@ class TeensySerialBridge:
         
         try:
             while True:
-                if self.ser.in_waiting:
+                try:
+                    # Robust serial read
+                    if self.ser.in_waiting > 0:
+                        raw = self.ser.readline()
+                        if not raw:
+                            continue  # False positive readiness
+                        
+                        # Decode safely, ignore errors
+                        try:
+                            line = raw.decode('utf-8', errors='ignore').strip()
+                        except:
+                            continue
+                        
+                        if not line:
+                            continue
+                        
+                        # Skip non-standard lines (debug, garbage, etc.)
+                        if not line[0].isdigit():
+                            # Optional quiet debug: logger.debug(f"Skipped line: {line}")
+                            continue
+                        
+                        # Safe parsing
+                        self.process_serial_line(line)
+                    
+                    # Normal operations
+                    self.broadcast_status()
+                    
+                    if time.time() - last_stats_print >= stats_interval:
+                        self.print_statistics()
+                        last_stats_print = time.time()
+                    
+                    time.sleep(0.001)  # Low CPU, responsive
+                    
+                except serial.SerialException as e:
+                    logger.error(f"Serial read error: {e} - attempting reconnect in 5s...")
                     try:
-                        line = self.ser.readline().decode('utf-8').strip()
-                        if line:
-                            self.process_serial_line(line)
-                    except UnicodeDecodeError:
-                        self.stats['errors'] += 1
+                        self.ser.close()
+                    except:
                         pass
+                    time.sleep(5)
+                    try:
+                        self.ser = serial.Serial(self.serial_port, self.baud_rate, timeout=2)
+                        self.ser.flushInput()
+                        self.ser.flushOutput()
+                        logger.info("Serial reconnected successfully")
+                    except Exception as reconnect_e:
+                        logger.error(f"Serial reconnect failed: {reconnect_e}")
                 
-                self.broadcast_status()
-                
-                if time.time() - last_stats_print >= stats_interval:
-                    self.print_statistics()
-                    last_stats_print = time.time()
-                
-                time.sleep(0.001)
+                except Exception as e:
+                    logger.error(f"Unexpected error in main loop: {e}")
+                    time.sleep(1)
         
         except KeyboardInterrupt:
             logger.info("Shutting down...")
@@ -557,6 +620,7 @@ class TeensySerialBridge:
             command_thread.join(timeout=2)
             gps_thread.join(timeout=2)
             self.cleanup()
+
 
     def cleanup(self):
         if self.ser and self.ser.is_open:

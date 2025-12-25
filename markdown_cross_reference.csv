@@ -1,0 +1,18 @@
+Status,GitHub URL,File Path (from URL),Local File Path,Exists
+✓,https://github.com/jones2126/tractor2025/blob/2f10b0e6e60cc389181fc46f4a9c154a07645f0b/tractor_rpi/teensy_serial_bridge_documentation.md,tractor_rpi/teensy_serial_bridge_documentation.md,/home/al/tractor2025/tractor_rpi/teensy_serial_bridge_documentation.md,Yes
+✓,https://github.com/jones2126/tractor2025/blob/2f10b0e6e60cc389181fc46f4a9c154a07645f0b/tractor_teensy/tractor_teensy_main_documentation.md,tractor_teensy/tractor_teensy_main_documentation.md,/home/al/tractor2025/tractor_teensy/tractor_teensy_main_documentation.md,Yes
+✓,https://github.com/jones2126/tractor2025/blob/main/BridgevilleRTKBase/README.md,BridgevilleRTKBase/README.md,/home/al/tractor2025/BridgevilleRTKBase/README.md,Yes
+✓,https://github.com/jones2126/tractor2025/blob/main/BridgevilleRTKBase/esp32/production/esp32-renogy-csv-logger/readme.md,BridgevilleRTKBase/esp32/production/esp32-renogy-csv-logger/readme.md,/home/al/tractor2025/BridgevilleRTKBase/esp32/production/esp32-renogy-csv-logger/readme.md,Yes
+✓,https://github.com/jones2126/tractor2025/blob/main/BridgevilleRTKBase/raspberry-pi/archive/f9p-setup/ZED-F9P_Firmware_Update.md,BridgevilleRTKBase/raspberry-pi/archive/f9p-setup/ZED-F9P_Firmware_Update.md,/home/al/tractor2025/BridgevilleRTKBase/raspberry-pi/archive/f9p-setup/ZED-F9P_Firmware_Update.md,Yes
+✓,https://github.com/jones2126/tractor2025/blob/main/BridgevilleRTKBase/shared/docs/README.md,BridgevilleRTKBase/shared/docs/README.md,/home/al/tractor2025/BridgevilleRTKBase/shared/docs/README.md,Yes
+✓,https://github.com/jones2126/tractor2025/blob/main/BridgevilleRTKBase/shared/docs/geodetic_to_ecef_and_back.md,BridgevilleRTKBase/shared/docs/geodetic_to_ecef_and_back.md,/home/al/tractor2025/BridgevilleRTKBase/shared/docs/geodetic_to_ecef_and_back.md,Yes
+✗,https://github.com/jones2126/tractor2025/blob/main/BridgevilleRTKBase/shared_README.md,BridgevilleRTKBase/shared_README.md,NOT FOUND,No
+✓,https://github.com/jones2126/tractor2025/blob/main/README.md,README.md,/home/al/tractor2025/README.md,Yes
+✓,https://github.com/jones2126/tractor2025/blob/main/tractor_rpi/README.md,tractor_rpi/README.md,/home/al/tractor2025/tractor_rpi/README.md,Yes
+✓,https://github.com/jones2126/tractor2025/blob/main/tractor_rpi/f9p/readme.md,tractor_rpi/f9p/readme.md,/home/al/tractor2025/tractor_rpi/f9p/readme.md,Yes
+✓,https://github.com/jones2126/tractor2025/blob/main/tractor_rpi/light-tower/LED_QUICK_REFERENCE.md,tractor_rpi/light-tower/LED_QUICK_REFERENCE.md,/home/al/tractor2025/tractor_rpi/light-tower/LED_QUICK_REFERENCE.md,Yes
+✓,https://github.com/jones2126/tractor2025/blob/main/tractor_rpi/light-tower/LED_STATUS_TOWER_README.md,tractor_rpi/light-tower/LED_STATUS_TOWER_README.md,/home/al/tractor2025/tractor_rpi/light-tower/LED_STATUS_TOWER_README.md,Yes
+✓,https://github.com/jones2126/tractor2025/blob/main/tractor_rpi/oak-camera/requirements_doc.md,tractor_rpi/oak-camera/requirements_doc.md,/home/al/tractor2025/tractor_rpi/oak-camera/requirements_doc.md,Yes
+✓,https://github.com/jones2126/tractor2025/blob/main/tractor_rpi/testing/oak_camera_test/README.md,tractor_rpi/testing/oak_camera_test/README.md,/home/al/tractor2025/tractor_rpi/testing/oak_camera_test/README.md,Yes
+✓,https://github.com/jones2126/tractor2025/blob/main/tractor_teensy/MESSAGE_FORMAT_REFERENCE.md,tractor_teensy/MESSAGE_FORMAT_REFERENCE.md,/home/al/tractor2025/tractor_teensy/MESSAGE_FORMAT_REFERENCE.md,Yes
+✓,https://github.com/jones2126/tractor2025/tree/main/tractor_rpi/oak-camera/readme.md,tractor_rpi/oak-camera/readme.md,/home/al/tractor2025/tractor_rpi/oak-camera/readme.md,Yes

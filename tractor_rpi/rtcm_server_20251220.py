@@ -39,7 +39,7 @@ import serial
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
-RTCM_TCP_IP = "192.168.1.180"      # IP of RTCM source
+RTCM_TCP_IP = "192.168.1.95"      # IP of RTCM source
 RTCM_TCP_PORT = 6001               # Port of RTCM source
 BASE_SERIAL = "/dev/gps-base-link"  # serial device of base F9P
 HEADING_SERIAL = "/dev/gps-heading" # serial device of heading F9P
@@ -160,50 +160,117 @@ def expected_heading_error_deg(d):
 # Threads
 # ---------------------------------------------------------------------------
 
-def forward_rtcm(serial_conn):
-    """Forward RTCM data from TCP stream to base receiver."""
+def forward_rtcm(ser):
+    forwarded_total = 0
+    last_log_time = time.time()
+    reconnect_delay = 5
+
     while True:
         try:
-            sock = socket.create_connection((RTCM_TCP_IP, RTCM_TCP_PORT), timeout=10)
-            while True:
-                data = sock.recv(1024)
-                if not data:
-                    raise ConnectionError("RTCM stream closed")
-                serial_conn.write(data)
-        except Exception:
-            time.sleep(5)
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(15)
+            print(f"[RTCM Forwarder] Attempting connection to {RTCM_TCP_IP}:{RTCM_TCP_PORT}...")
+            sock.connect((RTCM_TCP_IP, RTCM_TCP_PORT))
+            print(f"[RTCM Forwarder] CONNECTED successfully to ESP32 RTCM source")
 
+            interval_bytes = 0
+            interval_start = time.time()
+
+            while True:
+                data = sock.recv(4096)
+                if not data:
+                    print("[RTCM Forwarder] Connection closed by ESP32 (empty recv)")
+                    break
+
+                written = ser.write(data)
+                ser.flush()
+                if written != len(data):
+                    print(f"[RTCM Forwarder] WARNING: Serial write incomplete: {written}/{len(data)} bytes")
+
+                interval_bytes += len(data)
+                forwarded_total += len(data)
+
+                now = time.time()
+                if now - last_log_time >= 10:
+                    elapsed = now - interval_start if interval_start else 1
+                    rate = interval_bytes / elapsed if elapsed > 0 else 0
+                    print(f"[RTCM Forwarder] Forwarded {interval_bytes} bytes (~{rate:.0f} B/s) in last {elapsed:.1f}s | Total forwarded: {forwarded_total}")
+                    interval_bytes = 0
+                    interval_start = now
+                    last_log_time = now
+
+        except socket.timeout:
+            print(f"[RTCM Forwarder] TCP timeout after {sock.gettimeout()}s")
+        except ConnectionRefusedError:
+            print("[RTCM Forwarder] Connection refused by ESP32")
+        except Exception as e:
+            print(f"[RTCM Forwarder] Unexpected error: {type(e).__name__}: {e}")
+        finally:
+            try:
+                sock.close()
+            except:
+                pass
+            print(f"[RTCM Forwarder] Reconnecting in {reconnect_delay} seconds...")
+            time.sleep(reconnect_delay)
 
 def monitor_gga(serial_conn):
-    """Monitor GNGGA sentences for lat/lon/fix info."""
-    buffer = b""
+    buf = b""
     while True:
-        b = serial_conn.read(1)
-        if not b:
-            continue
-        buffer += b
-        if b == b"\n":
-            if b"GNGGA" in buffer:
-                m = GGA_PATTERN.search(buffer)
-                if m:
-                    time_raw, lat_raw, lat_dir, lon_raw, lon_dir, fix_code = m.groups()
-                    lat = _parse_deg(lat_raw.decode(), lat_dir.decode())
-                    lon = _parse_deg(lon_raw.decode(), lon_dir.decode())
-                    fix = FIX_QUALITY.get(int(fix_code), "Unknown")
-                    with state_lock:
-                        state.update({
-                            "lat": lat,
-                            "lon": lon,
-                            "fix_quality": fix,
-                            "timestamp": datetime.now(timezone.utc).isoformat(),
-                        })
-            buffer = b""
+        try:
+            b = serial_conn.read(1)
+            if not b:
+                # No data available right now - brief pause to avoid tight loop
+                time.sleep(0.01)
+                continue
 
-'''
-2. Change both `datetime.utcnow().isoformat()` calls (lines 192 and 247) to\
-   `datetime.now(timezone.utc).isoformat()`.
-'''
+            buf += b
 
+            # Prevent unbounded growth if no newline
+            if len(buf) > 512:
+                print("[GGA Monitor] Buffer overflow prevention: trimming old data")
+                buf = buf[-256:]
+
+            if b == b'\n':
+                line = buf.strip()
+                buf = b""
+
+                if line.startswith(b'$GNGGA') or line.startswith(b'$GPGGA'):
+                    match = GGA_PATTERN.match(line)
+                    if match:
+                        time_str, lat_str, lat_dir, lon_str, lon_dir, fix = match.groups()
+                        if fix in (b'4', b'5'):
+                            try:
+                                # Parse latitude
+                                lat = float(lat_str)
+                                lat_deg = int(lat / 100)
+                                lat_min = lat - lat_deg * 100
+                                lat = lat_deg + lat_min / 60
+                                if lat_dir == b'S':
+                                    lat = -lat
+
+                                # Parse longitude
+                                lon = float(lon_str)
+                                lon_deg = int(lon / 100)
+                                lon_min = lon - lon_deg * 100
+                                lon = lon_deg + lon_min / 60
+                                if lon_dir == b'W':
+                                    lon = -lon
+
+                                with state_lock:
+                                    state["lat"] = lat
+                                    state["lon"] = lon
+                                    state["fix_quality"] = FIX_QUALITY.get(int(fix), "Unknown")
+                                    state["timestamp"] = datetime.now(timezone.utc).isoformat()
+                            except (ValueError, ZeroDivisionError) as parse_err:
+                                print(f"[GGA Monitor] Parse error on line: {line.decode(errors='ignore')} - {parse_err}")
+
+        except serial.SerialException as e:
+            print(f"[GGA Monitor] Serial error: {e} - attempting recovery in 5s...")
+            time.sleep(5)
+            # Continue trying on existing connection - often recovers automatically
+        except Exception as e:
+            print(f"[GGA Monitor] Unexpected error: {type(e).__name__}: {e}")
+            time.sleep(1)  # Prevent spam on repeated errors
 
 def _parse_deg(raw: str, direction: str) -> float:
     """Convert NMEA latitude/longitude component to decimal degrees."""
@@ -219,44 +286,75 @@ def _parse_deg(raw: str, direction: str) -> float:
     return value
 
 def monitor_relposned(serial_conn):
-    """Parse UBX-NAV-RELPOSNED for heading."""
     buf = bytearray()
     while True:
-        b = serial_conn.read(1)
-        if not b:
-            continue
-        buf += b
-        if len(buf) == 1 and buf[0] != SYNC1:
-            buf.clear(); continue
-        if len(buf) == 2 and buf[1] != SYNC2:
-            buf = bytearray([buf[1]]) if buf[1] == SYNC1 else bytearray(); continue
-        if len(buf) < 6:
-            continue
-        cls_, id_, length = struct.unpack_from("<BBH", buf, 2)
-        need = 6 + length + 2
-        while len(buf) < need:
-            chunk = serial_conn.read(need - len(buf))
-            if not chunk:
-                break
-            buf += chunk
-        if len(buf) < need:
-            buf.clear(); continue
-        ck_a, ck_b = ubx_checksum(buf[2:6+length])
-        if (ck_a, ck_b) != (buf[6+length], buf[7+length]):
-            buf.clear(); continue
-        payload = bytes(buf[6:6+length])
-        buf.clear()
-        if cls_ == CLS_NAV and id_ == ID_RELPOSNED:
-            d = parse_relposned(payload)
-            if d:
-                err_deg = expected_heading_error_deg(d)
-                with state_lock:
-                    state["headValid"] = d["headValid"]
-                    state["carrier"] = d["carrier"]
-                    state["expectedErrDeg"] = err_deg
-                    if d["headValid"]:
-                        state["heading_deg"] = d["heading_deg"]
-                    state["timestamp"] = datetime.now(timezone.utc).isoformat()
+        try:
+            b = serial_conn.read(1)
+            if not b:
+                # No data available right now - brief pause to avoid tight loop
+                time.sleep(0.01)
+                continue
+
+            buf.append(b[0])
+
+            # Prevent unbounded growth if sync never found
+            if len(buf) > 512:
+                print("[RELPOSNED Monitor] Buffer overflow prevention: trimming old data")
+                buf = buf[-256:]
+
+            # Need at least header to check sync
+            if len(buf) < 2:
+                continue
+
+            # Search for sync chars
+            if buf[0] != SYNC1 or buf[1] != SYNC2:
+                buf.pop(0)
+                continue
+
+            # Need full header for length
+            if len(buf) < 6:
+                continue
+
+            cls_ = buf[2]
+            id_ = buf[3]
+            length = buf[4] | (buf[5] << 8)
+            need = length + 8  # header (6) + payload + checksum (2)
+
+            if len(buf) < need:
+                continue
+
+            # Extract frame
+            frame = buf[:need]
+            buf = buf[need:]  # Remove processed frame
+
+            # Verify checksum
+            ck_a, ck_b = ubx_checksum(frame[2:6 + length])
+            if ck_a != frame[6 + length] or ck_b != frame[7 + length]:
+                print("[RELPOSNED Monitor] Checksum failed - discarding frame")
+                continue
+
+            payload = frame[6:6 + length]
+
+            if cls_ == CLS_NAV and id_ == ID_RELPOSNED:
+                d = parse_relposned(payload)
+                if d:
+                    err_deg = expected_heading_error_deg(d)  # Assuming this function exists in your script
+                    with state_lock:
+                        state["headValid"] = d["headValid"]
+                        state["carrier"] = d["carrier"]
+                        state["expectedErrDeg"] = err_deg
+                        if d["headValid"]:
+                            state["heading_deg"] = d["heading_deg"]
+                        state["timestamp"] = datetime.now(timezone.utc).isoformat()
+
+        except serial.SerialException as e:
+            print(f"[RELPOSNED Monitor] Serial error: {e} - attempting recovery in 5s...")
+            time.sleep(5)
+            # Optional: fully reopen serial_conn here if you add reconnect logic
+            # For now, continue trying on existing (often recovers)
+        except Exception as e:
+            print(f"[RELPOSNED Monitor] Unexpected error: {type(e).__name__}: {e}")
+            time.sleep(1)  # Prevent spam on repeated errors
 
 def udp_publisher():
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)

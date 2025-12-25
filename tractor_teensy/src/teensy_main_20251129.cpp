@@ -124,7 +124,7 @@ const unsigned long estopCheckInterval = 50;
 
 // Control printing intervals
 unsigned long lastTargetPrint = 0;
-const unsigned long targetPrintInterval = 5000;
+const unsigned long targetPrintInterval = 2000;
 
 unsigned long lastTransmissionControlRun = 0;
 const unsigned long controlTransmissionInterval = 100;   // 10 Hz
@@ -758,10 +758,9 @@ void handleRadio() {
 void setup() {
     delay(45000);  // waiting for the RPi to boot so the serial connection is made
     
-    // MERGED FROM OLDER: Verbose serial init for reliability
-    Serial.begin(921600);
+    Serial.begin(460800);
     while (!Serial && millis() < 10000);  // wait up to 10 seconds for USB serial to initialize 
-    Serial.println("Teensy Receiver Starting...");
+    Serial.println("Teensy Receiver Starting v20251225...");
     Serial.flush();
 
     // Print multiple times to ensure we see something
