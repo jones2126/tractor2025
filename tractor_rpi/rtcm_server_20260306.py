@@ -41,20 +41,24 @@ import serial
 # ---------------------------------------------------------------------------
 #RTCM_TCP_IP = "192.168.1.95"      # IP of RTCM source - Brenham
 RTCM_TCP_IP = "192.168.193.88"      # IP of RTCM source - Bridgeville
+
 RTCM_TCP_PORT = 6001               # Port of RTCM source
 BASE_SERIAL = "/dev/gps-base-link"  # serial device of base F9P
 HEADING_SERIAL = "/dev/gps-heading" # serial device of heading F9P
 SERIAL_BAUD = 115200
 
-# UDP publication target – by default use localhost so navigation program on
+# UDP publication target â€“ by default use localhost so navigation program on
 # same machine can listen on UDP_PORT.
 UDP_TARGET_IP = "127.0.0.1"
 UDP_TARGET_PORT = 6002
 UDP_PUBLISH_HZ = 20                 # broadcast rate
 
 # Regex to extract fields from GNGGA
+# Fields: time, lat, N/S, lon, E/W, fix, numSV, HDOP, alt, M, geoidSep, M, diffAge
+# CHANGED: Expanded from 6 capture groups to 8 (added numSV, HDOP)
+# diffAge is parsed separately via split since fields 9-13 have optional empty values
 GGA_PATTERN = re.compile(
-    rb"\$GNGGA,([^,]*),([^,]*),([NS]),([^,]*),([EW]),(\d),"
+    rb"\$G[NP]GGA,([^,]*),([^,]*),([NS]?),([^,]*),([EW]?),(\d),(\d*),([^,]*),"
 )
 FIX_QUALITY = {
     0: "Invalid",
@@ -71,6 +75,9 @@ state = {
     "lat": None,
     "lon": None,
     "fix_quality": "Unknown",
+    "numSV": None,           # Satellites used in fix (from GGA field 7)
+    "hdop": None,            # Horizontal dilution of precision (GGA field 8)
+    "diff_age": None,        # Age of differential corrections in seconds (GGA field 13)
     "heading_deg": None,
     "headValid": None,
     "carrier": None,
@@ -238,32 +245,59 @@ def monitor_gga(serial_conn):
                 if line.startswith(b'$GNGGA') or line.startswith(b'$GPGGA'):
                     match = GGA_PATTERN.match(line)
                     if match:
-                        time_str, lat_str, lat_dir, lon_str, lon_dir, fix = match.groups()
-                        if fix in (b'4', b'5'):
-                            try:
-                                # Parse latitude
-                                lat = float(lat_str)
-                                lat_deg = int(lat / 100)
-                                lat_min = lat - lat_deg * 100
-                                lat = lat_deg + lat_min / 60
-                                if lat_dir == b'S':
-                                    lat = -lat
+                        # CHANGED ~line 240: Now 8 capture groups (was 6)
+                        time_str, lat_str, lat_dir, lon_str, lon_dir, fix, num_sv_raw, hdop_raw = match.groups()
 
-                                # Parse longitude
-                                lon = float(lon_str)
-                                lon_deg = int(lon / 100)
-                                lon_min = lon - lon_deg * 100
-                                lon = lon_deg + lon_min / 60
-                                if lon_dir == b'W':
-                                    lon = -lon
+                        try:
+                            fix_int = int(fix)
+                            fix_str = FIX_QUALITY.get(fix_int, "Unknown")
 
-                                with state_lock:
+                            # NEW ~line 245: Parse numSV (field 7) - satellites used
+                            num_sv = int(num_sv_raw) if num_sv_raw else None
+
+                            # NEW ~line 248: Parse HDOP (field 8)
+                            hdop = float(hdop_raw) if hdop_raw else None
+
+                            # NEW ~line 251: Parse diff_age (field 13) via comma-split
+                            # GGA fields after HDOP: alt, M, geoidSep, M, diffAge, ...
+                            diff_age = None
+                            fields = line.split(b',')
+                            if len(fields) > 13 and fields[13]:
+                                try:
+                                    diff_age = float(fields[13])
+                                except ValueError:
+                                    pass  # Empty or malformed diff age field
+
+                            # CHANGED ~line 259: Update state for ALL fix qualities (was only 4/5)
+                            # This ensures diagnostic data is visible even when fix is degraded
+                            with state_lock:
+                                state["fix_quality"] = fix_str
+                                state["numSV"] = num_sv
+                                state["hdop"] = hdop
+                                state["diff_age"] = diff_age
+                                state["timestamp"] = datetime.now(timezone.utc).isoformat()
+
+                                # Parse lat/lon for any valid fix (1=GPS, 2=DGPS, 4=RTK Fixed, 5=RTK Float)
+                                if fix_int in (1, 2, 4, 5) and lat_str and lon_str:                                    
+                                    lat = float(lat_str)
+                                    lat_deg = int(lat / 100)
+                                    lat_min = lat - lat_deg * 100
+                                    lat = lat_deg + lat_min / 60
+                                    if lat_dir == b'S':
+                                        lat = -lat
+
+                                    lon = float(lon_str)
+                                    lon_deg = int(lon / 100)
+                                    lon_min = lon - lon_deg * 100
+                                    lon = lon_deg + lon_min / 60
+                                    if lon_dir == b'W':
+                                        lon = -lon
+
                                     state["lat"] = lat
                                     state["lon"] = lon
-                                    state["fix_quality"] = FIX_QUALITY.get(int(fix), "Unknown")
-                                    state["timestamp"] = datetime.now(timezone.utc).isoformat()
-                            except (ValueError, ZeroDivisionError) as parse_err:
-                                print(f"[GGA Monitor] Parse error on line: {line.decode(errors='ignore')} - {parse_err}")
+
+                        except (ValueError, ZeroDivisionError) as parse_err:
+                            print(f"[GGA Monitor] Parse error on line: {line.decode(errors='ignore')} - {parse_err}")
 
         except serial.SerialException as e:
             print(f"[GGA Monitor] Serial error: {e} - attempting recovery in 5s...")

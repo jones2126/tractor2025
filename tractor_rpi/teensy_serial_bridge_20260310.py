@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-teensy_serial_bridge_20251225.py
+teensy_serial_bridge_20260310.py
 =============================
 Bidirectional bridge between Teensy and ROS/monitoring systems.
-UPDATED: GPS status listener on UDP 6002 (from RTCM server), maps to enum, sends to Teensy at 2Hz.
+UPDATED: GPS status listener on UDP 6002 (from RTCM server), maps to enum, sends to Teensy at 5Hz (i.e. BROADCAST_RATE ).
 """
 
 import serial
@@ -49,8 +49,8 @@ class TeensySerialBridge:
         # GPS state
         self.current_gps_status = 1  # Default: no fix
         self.last_gps_send = 0
-        self.gps_send_interval = 0.5  # 2Hz
-        self.gps_last_status = 1  # Track changes
+        #self.gps_send_interval = 0.5  # 2Hz
+        #self.gps_last_status = 1  # Track changes
         
         self.last_broadcast = 0
         self.broadcast_interval = 1.0 / BROADCAST_RATE
@@ -114,106 +114,18 @@ class TeensySerialBridge:
             logger.error(f"Failed to create GPS UDP socket: {e}")
             raise
     
-    # GPS status mapping (0=unset,1=noNMEA,2=noRTK,3=RTK Fix)
-    # def map_gps_status(self, fix_quality, headValid, carrier):
-    #     if fix_quality == "Invalid":
-    #         return 0
-    #     elif fix_quality == "GPS Fix":
-    #         return 1
-    #     elif fix_quality == "DGPS":
-    #         return 2
-    #     elif fix_quality == "RTK Fixed" and headValid and carrier == "fixed":
-    #         return 3
-    #     elif fix_quality in ["RTK Fixed", "RTK Float"] and headValid:
-    #         return 2  # RTK but not full fix
-    #     else:
-    #         return 1  # Default GPS/no fix
-    def map_gps_status(self, fix_quality, headValid, carrier):
-        # Normalize strings to handle case variations
+    def map_gps_status(self, fix_quality):
         fix_quality = str(fix_quality).strip()
-        carrier = str(carrier).strip().lower()
         
-        if fix_quality == "Invalid":
-            return 0
-        elif fix_quality == "RTK Fixed" and headValid and carrier == "fixed":
-            return 3  # RTK Fixed with valid heading
-        elif "RTK" in fix_quality: 
-            return 2  # RTK Float or Fixed without header and carrier
+        if fix_quality == "RTK Fixed":
+            return 3
+        elif fix_quality == "RTK Float":
+            return 2
         elif fix_quality in ["GPS Fix", "DGPS"]:
-            return 1  # GPS but no RTK
+            return 1
         else:
             return 0  # Invalid/Unknown
 
-
-
-    # def send_gps_to_teensy(self, status):
-    #     now = time.time()
-        
-    #     # Debug entry
-    #     logger.info(f"send_gps_to_teensy called: status={status}, last_send={self.last_gps_send:.2f}, last_status={self.gps_last_status}")
-        
-    #     # Rate limit check (skip for first send)
-    #     if self.last_gps_send > 0 and now - self.last_gps_send < self.gps_send_interval:
-    #         logger.info(f"GPS send SKIPPED (rate limited: {now - self.last_gps_send:.2f}s < {self.gps_send_interval}s)")
-    #         return
-        
-    #     # No-change check (skip for first send)
-    #     if status == self.gps_last_status and self.last_gps_send > 0:
-    #         logger.info(f"GPS send SKIPPED (no change: {status} == {self.gps_last_status})")
-    #         return
-        
-    #     try:
-    #         cmd = f"GPS,{status}\n".encode('utf-8')
-    #         self.ser.write(cmd)
-    #         self.ser.flush()
-    #         self.stats['gps_status_sent'] += 1
-    #         logger.info(f"Sent GPS status {status} to Teensy (prev={self.gps_last_status})")
-    #         self.last_gps_send = now
-    #         self.gps_last_status = status
-    #     except Exception as e:
-    #         logger.error(f"Failed to send GPS status: {e}")
-    #         self.stats['errors'] += 1
-    
-    # GPS listener thread
-    # def gps_listener_thread(self):
-    #     logger.info("GPS listener thread started")
-    #     while self.running:
-    #         try:
-    #             ready = select.select([self.gps_sock], [], [], 0.1)
-    #             if ready[0]:
-    #                 data, addr = self.gps_sock.recvfrom(1024)
-    #                 self.stats['gps_packets_received'] += 1
-    #                 parsed = json.loads(data.decode())
-
-    #                 # ========== ADD DEBUG OUTPUT ==========
-    #                 fix = parsed.get('fix_quality', 'Unknown')
-    #                 head_valid = parsed.get('headValid', False)
-    #                 carr = parsed.get('carrier', 'none')
-    #                 logger.info(f"GPS Raw: fix={fix}, headValid={head_valid}, carrier={carr}")
-    #                 # ========== END DEBUG ==========
-
-    #                 status = self.map_gps_status(
-    #                     parsed.get('fix_quality', 'Unknown'),
-    #                     parsed.get('headValid', False),
-    #                     parsed.get('carrier', 'none')
-    #                 )
-
-    #                 # ========== ADD THIS DEBUG LINE ==========
-    #                 logger.info(f"GPS Mapped Status: {status} (from fix={fix}, head={head_valid}, carr={carr})")
-    #                 # ========== END DEBUG ==========
-
-    #                 self.current_gps_status = status
-    #                 self.send_gps_to_teensy(status)
-    #         except json.JSONDecodeError as e:
-    #             logger.warning(f"Invalid GPS JSON: {e}")
-    #             self.stats['errors'] += 1
-    #         except Exception as e:
-    #             if self.running:
-    #                 logger.error(f"GPS listener error: {e}")
-    #                 self.stats['errors'] += 1
-    #         time.sleep(0.05)  # ~20Hz poll, but non-blocking
-    #     logger.info("GPS listener thread stopped")
-    
     # GPS listener thread
     def gps_listener_thread(self):
         logger.info("GPS listener thread started")
@@ -224,12 +136,10 @@ class TeensySerialBridge:
                     data, addr = self.gps_sock.recvfrom(1024)
                     self.stats['gps_packets_received'] += 1
                     parsed = json.loads(data.decode())
-                    
+
                     status = self.map_gps_status(
-                        parsed.get('fix_quality', 'Unknown'),
-                        parsed.get('headValid', False),
-                        parsed.get('carrier', 'none')
-                    )
+                        parsed.get('fix_quality', 'Unknown')
+                    )                    
                     
                     # ========== SIMPLIFIED: Just update the status ==========
                     old_status = self.current_gps_status
@@ -544,10 +454,10 @@ class TeensySerialBridge:
 
     def run(self):
         """Main loop - robust version with serial recovery and line filtering"""
-        logger.info("Teensy Serial Bridge v20251225 starting...")
+        logger.info("Teensy Serial Bridge v20260310 starting...")
         logger.info(f"Status broadcasts on UDP port {UDP_STATUS_PORT} at {BROADCAST_RATE} Hz")
         logger.info(f"Command listener on UDP port {UDP_COMMAND_PORT}")
-        logger.info(f"GPS listener on UDP port {UDP_GPS_PORT} → Serial at 2Hz")
+        logger.info(f"GPS listener on UDP port {UDP_GPS_PORT} → Serial at {BROADCAST_RATE} Hz")
         
         # Start background threads
         command_thread = threading.Thread(target=self.listen_for_commands, daemon=True)

@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Teleop — Dashboard</title>
+<!-- Leaflet CSS/JS (for field use without internet, bundle these locally) -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+/* ── Reset & dark theme ────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    background: #111; color: #ccc; font-family: 'Segoe UI', system-ui, sans-serif;
+    height: 100vh; display: grid;
+    grid-template-columns: 1fr 320px;
+    grid-template-rows: auto 1fr;
+    overflow: hidden;
+}
+
+/* ── Header ────────────────────────────────────────────────── */
+#header {
+    grid-column: 1 / -1; display: flex; align-items: center; gap: 18px;
+    padding: 6px 16px; background: #1a1a1a; border-bottom: 1px solid #333;
+    font-size: 13px;
+}
+#header .title { font-weight: 600; color: #eee; margin-right: 12px; }
+.conn-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.conn-dot.ok  { background: #2ecc40; }
+.conn-dot.err { background: #ff4136; }
+#header .ages { margin-left: auto; font-size: 11px; color: #777; }
+
+/* ── Map area (left) ───────────────────────────────────────── */
+#map { background: #1a1a1a; }
+
+/* ── Side panels (right) ───────────────────────────────────── */
+#panels {
+    overflow-y: auto; padding: 8px;
+    display: flex; flex-direction: column; gap: 8px;
+    border-left: 1px solid #333;
+}
+
+.panel {
+    background: #1a1a1a; border: 1px solid #333; border-radius: 6px;
+    padding: 10px 12px;
+}
+.panel h3 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+    color: #666; margin-bottom: 8px; border-bottom: 1px solid #282828;
+    padding-bottom: 4px;
+}
+.panel .row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 2px 0; font-size: 13px;
+}
+.panel .row .k { color: #888; }
+.panel .row .v { color: #eee; font-weight: 500; font-variant-numeric: tabular-nums; }
+
+/* Colour-coded values */
+.v.good    { color: #2ecc40; }
+.v.warn    { color: #ffdc00; }
+.v.bad     { color: #ff4136; }
+.v.info    { color: #0074d9; }
+.v.stale   { color: #555; }
+</style>
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────────────── -->
+<div id="header">
+    <span class="title">Dashboard</span>
+    <span class="conn-dot" id="ws-dot"></span>
+    <span id="ws-label">connecting…</span>
+    <span class="ages" id="ages"></span>
+</div>
+
+<!-- ── Map ─────────────────────────────────────────────────── -->
+<div id="map"></div>
+
+<!-- ── Side panels ─────────────────────────────────────────── -->
+<div id="panels">
+
+    <!-- GPS / RTK -->
+    <div class="panel" id="p-gps">
+        <h3>GPS / RTK</h3>
+        <div class="row"><span class="k">Fix</span><span class="v" id="v-fix">--</span></div>
+        <div class="row"><span class="k">Lat</span><span class="v" id="v-lat">--</span></div>
+        <div class="row"><span class="k">Lon</span><span class="v" id="v-lon">--</span></div>
+        <div class="row"><span class="k">Heading</span><span class="v" id="v-hdg">--</span></div>
+        <div class="row"><span class="k">Head Valid</span><span class="v" id="v-hv">--</span></div>
+        <div class="row"><span class="k">Carrier</span><span class="v" id="v-carrier">--</span></div>
+        <div class="row"><span class="k">Heading Err</span><span class="v" id="v-herr">--</span></div>
+    </div>
+
+    <!-- Radio / NRF24 -->
+    <div class="panel" id="p-radio">
+        <h3>Radio</h3>
+        <div class="row"><span class="k">Signal</span><span class="v" id="v-sig">--</span></div>
+        <div class="row"><span class="k">ACK Rate</span><span class="v" id="v-ack">--</span></div>
+        <div class="row"><span class="k">Current Hz</span><span class="v" id="v-hz">--</span></div>
+        <div class="row"><span class="k">Age</span><span class="v" id="v-rage">--</span></div>
+    </div>
+
+    <!-- Steering -->
+    <div class="panel" id="p-steer">
+        <h3>Steering</h3>
+        <div class="row"><span class="k">Mode</span><span class="v" id="v-smode">--</span></div>
+        <div class="row"><span class="k">Setpoint</span><span class="v" id="v-ssp">--</span></div>
+        <div class="row"><span class="k">Current</span><span class="v" id="v-scur">--</span></div>
+        <div class="row"><span class="k">Error</span><span class="v" id="v-serr">--</span></div>
+        <div class="row"><span class="k">Direction</span><span class="v" id="v-sdir">--</span></div>
+        <div class="row"><span class="k">PWM</span><span class="v" id="v-spwm">--</span></div>
+    </div>
+
+    <!-- Transmission -->
+    <div class="panel" id="p-trans">
+        <h3>Transmission</h3>
+        <div class="row"><span class="k">Mode</span><span class="v" id="v-tmode">--</span></div>
+        <div class="row"><span class="k">Bucket</span><span class="v" id="v-tbkt">--</span></div>
+        <div class="row"><span class="k">Target</span><span class="v" id="v-ttgt">--</span></div>
+        <div class="row"><span class="k">Current</span><span class="v" id="v-tcur">--</span></div>
+    </div>
+
+    <!-- Cmd Vel -->
+    <div class="panel" id="p-cmd">
+        <h3>Cmd Vel</h3>
+        <div class="row"><span class="k">Active</span><span class="v" id="v-cact">--</span></div>
+        <div class="row"><span class="k">Linear X</span><span class="v" id="v-clx">--</span></div>
+        <div class="row"><span class="k">Angular Z</span><span class="v" id="v-caz">--</span></div>
+        <div class="row"><span class="k">Rx / Tx</span><span class="v" id="v-crxtx">--</span></div>
+        <div class="row"><span class="k">Echoed</span><span class="v" id="v-cecho">--</span></div>
+    </div>
+
+    <!-- System -->
+    <div class="panel" id="p-sys">
+        <h3>System</h3>
+        <div class="row"><span class="k">Heartbeat Age</span><span class="v" id="v-hb">--</span></div>
+        <div class="row"><span class="k">Fatal Error</span><span class="v" id="v-fatal">--</span></div>
+    </div>
+
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// Map setup
+// ══════════════════════════════════════════════════════════════
+const map = L.map('map', {
+    center: [30.17, -96.39],    // Brenham, TX default
+    zoom: 18,
+    zoomControl: true,
+});
+
+// OpenStreetMap tiles (swap to offline tiles for field use)
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 22,
+    attribution: '© OSM',
+}).addTo(map);
+
+// Tractor marker (green circle with heading indicator)
+const tractorIcon = L.divIcon({
+    className: '',
+    html: `<svg width="28" height="28" viewBox="-14 -14 28 28">
+             <circle r="10" fill="#2ecc40" fill-opacity="0.3" stroke="#2ecc40" stroke-width="2"/>
+             <line x1="0" y1="0" x2="0" y2="-12" stroke="#2ecc40" stroke-width="2" id="hdg-line"/>
+           </svg>`,
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
+});
+
+let tractorMarker = null;
+let trackLine = L.polyline([], { color: '#0074d9', weight: 2, opacity: 0.6 }).addTo(map);
+let trackPoints = [];
+const MAX_TRACK = 2000;     // keep last N points
+
+function updateMap(lat, lon, heading) {
+    if (lat == null || lon == null) return;
+
+    const pos = [lat, lon];
+
+    if (!tractorMarker) {
+        tractorMarker = L.marker(pos, { icon: tractorIcon }).addTo(map);
+        map.setView(pos, 18);
+    } else {
+        tractorMarker.setLatLng(pos);
+    }
+
+    // Rotate heading indicator via CSS
+    if (heading != null) {
+        const el = tractorMarker.getElement();
+        if (el) {
+            const line = el.querySelector('#hdg-line');
+            if (line) line.setAttribute('transform', `rotate(${heading})`);
+        }
+    }
+
+    // Breadcrumb trail
+    trackPoints.push(pos);
+    if (trackPoints.length > MAX_TRACK) trackPoints.shift();
+    trackLine.setLatLngs(trackPoints);
+}
+
+// ══════════════════════════════════════════════════════════════
+// Panel update helpers
+// ══════════════════════════════════════════════════════════════
+function setText(id, val, cls) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = (val != null && val !== '') ? val : '--';
+    el.className = 'v' + (cls ? ' ' + cls : '');
+}
+
+function fmt(v, decimals) {
+    if (v == null || v === '' || v === '--') return '--';
+    return typeof v === 'number' ? v.toFixed(decimals) : v;
+}
+
+const MODE_NAMES = { 0: 'Pause', 1: 'Manual', 2: 'Auto' };
+
+function fixClass(fix) {
+    if (fix === 'RTK Fixed') return 'good';
+    if (fix === 'RTK Float') return 'warn';
+    if (fix === 'GPS Fix' || fix === 'DGPS') return 'warn';
+    return 'bad';
+}
+
+// ══════════════════════════════════════════════════════════════
+// Apply full telemetry
+// ══════════════════════════════════════════════════════════════
+function applyTelemetry(d) {
+    const gps   = d.gps   || {};
+    const b     = d.bridge || {};
+    const radio = b.radio  || {};
+    const steer = b.steering || {};
+    const trans = b.transmission || {};
+    const cmdv  = b.cmd_vel || {};
+    const sys   = b.system || {};
+
+    // Header ages
+    const ageStr = `GPS: ${d.gps_age != null ? d.gps_age.toFixed(1) + 's' : '--'}  `
+                 + `Bridge: ${d.bridge_age != null ? d.bridge_age.toFixed(1) + 's' : '--'}`;
+    document.getElementById('ages').textContent = ageStr;
+
+    // ── GPS panel ──
+    const fix = gps.fix_quality || '--';
+    setText('v-fix', fix, fixClass(fix));
+    setText('v-lat', fmt(gps.lat, 8));
+    setText('v-lon', fmt(gps.lon, 8));
+    setText('v-hdg', gps.heading_deg != null ? fmt(gps.heading_deg, 1) + '°' : '--');
+    setText('v-hv', gps.headValid != null ? (gps.headValid ? 'YES' : 'NO') : '--',
+            gps.headValid ? 'good' : 'warn');
+    setText('v-carrier', gps.carrier || '--',
+            gps.carrier === 'fixed' ? 'good' : gps.carrier === 'float' ? 'warn' : '');
+    setText('v-herr', gps.expectedErrDeg != null ? fmt(gps.expectedErrDeg, 2) + '°' : '--');
+
+    // ── Radio panel ──
+    const sig = radio.signal || '--';
+    setText('v-sig', sig, sig === 'GOOD' ? 'good' : 'bad');
+    setText('v-ack', fmt(radio.ack_rate, 1));
+    setText('v-hz', fmt(radio.current_rate, 1));
+    setText('v-rage', radio.age != null ? fmt(radio.age, 1) + 's' : '--',
+            radio.age != null && radio.age < 2 ? '' : 'warn');
+
+    // ── Steering panel ──
+    setText('v-smode', MODE_NAMES[steer.mode] || steer.mode);
+    setText('v-ssp', fmt(steer.setpoint, 0));
+    setText('v-scur', fmt(steer.current, 0));
+    setText('v-serr', fmt(steer.error, 1));
+    setText('v-sdir', steer.direction || '--');
+    setText('v-spwm', fmt(steer.pwm, 0));
+
+    // ── Transmission panel ──
+    setText('v-tmode', MODE_NAMES[trans.mode] || trans.mode);
+    setText('v-tbkt', trans.bucket != null ? trans.bucket : '--');
+    setText('v-ttgt', fmt(trans.target, 0));
+    setText('v-tcur', fmt(trans.current, 0));
+
+    // ── Cmd Vel panel ──
+    const active = cmdv.active;
+    setText('v-cact', active != null ? (active ? 'YES' : 'NO') : '--',
+            active ? 'good' : 'stale');
+    setText('v-clx', fmt(cmdv.last_linear_x, 3));
+    setText('v-caz', fmt(cmdv.last_angular_z, 3));
+    setText('v-crxtx',
+        (cmdv.commands_received != null ? cmdv.commands_received : '--')
+        + ' / '
+        + (cmdv.commands_sent != null ? cmdv.commands_sent : '--'));
+    setText('v-cecho', cmdv.commands_echoed != null ? cmdv.commands_echoed : '--');
+
+    // ── System panel ──
+    setText('v-hb', sys.heartbeat_age != null ? fmt(sys.heartbeat_age, 1) + 's' : '--',
+            sys.heartbeat_age != null && sys.heartbeat_age < 10 ? '' : 'warn');
+    const fatal = gps.fatal_error;
+    setText('v-fatal', fatal != null ? (fatal ? 'YES' : 'no') : '--',
+            fatal ? 'bad' : 'good');
+
+    // ── Map update ──
+    updateMap(gps.lat, gps.lon, gps.heading_deg);
+}
+
+// ══════════════════════════════════════════════════════════════
+// WebSocket connection
+// ══════════════════════════════════════════════════════════════
+let ws = null;
+let reconnectTimer = null;
+
+function wsConnect() {
+    const dotEl  = document.getElementById('ws-dot');
+    const lblEl  = document.getElementById('ws-label');
+
+    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    ws = new WebSocket(`${proto}://${location.host}/ws_telemetry`);
+
+    ws.onopen = () => {
+        dotEl.className = 'conn-dot ok';
+        lblEl.textContent = 'connected';
+    };
+
+    ws.onmessage = (ev) => {
+        try { applyTelemetry(JSON.parse(ev.data)); }
+        catch (_) {}
+    };
+
+    ws.onclose = () => {
+        dotEl.className = 'conn-dot err';
+        lblEl.textContent = 'disconnected — retrying…';
+        reconnectTimer = setTimeout(wsConnect, 3000);
+    };
+
+    ws.onerror = () => {
+        ws.close();
+    };
+}
+
+wsConnect();
+</script>
+</body>
+</html>

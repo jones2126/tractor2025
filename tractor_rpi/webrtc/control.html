@@ -1,0 +1,233 @@
+<!doctype html><html><head><meta charset="utf-8"/>
+<title>WebRTC Tractor Teleop</title>
+<style>
+  :root { --bg:#111; --panel:#1e1e1e; --text:#eee; --muted:#aaa; --accent:#64b5f6; --danger:#e53935; }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,Arial;overflow:hidden;height:100vh;font-size:13px}
+  header{background:#141414;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 12px;border-bottom:1px solid #222;z-index:10}
+  .estop{background:var(--danger);color:#000;font-weight:800;border:0;border-radius:6px;padding:6px 12px;font-size:14px;cursor:pointer}
+  .hdr-title{color:var(--muted);font-size:13px;font-weight:600}
+  .mode-badge{background:#333;color:var(--accent);padding:3px 8px;border-radius:4px;font-size:11px;font-weight:600}
+  .wrap{display:grid;grid-template-columns: 1fr 280px;gap:10px;padding:10px;max-width:100vw;height:calc(100vh - 42px);overflow:hidden}
+  .card{background:var(--panel);border-radius:8px;padding:8px}
+  .video-container{width:100%;max-height:calc(100vh - 250px)}
+  video{width:100%;max-height:100%;height:auto;background:#000;border-radius:8px;display:block;object-fit:contain}
+  .row{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}
+  input[type="range"]{flex:1;min-width:0}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th,td{text-align:left;padding:4px 6px;border-bottom:1px solid #333}
+  th{color:var(--muted);font-weight:600;width:100px}
+  .radio-group{display:grid;grid-template-columns:1fr;gap:4px;}
+  .radio{display:flex;align-items:center;gap:6px;background:#252525;border-radius:6px;padding:4px 6px;font-size:12px}
+  .presets{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;width:100%}
+  .preset{background:#333;color:#eee;border:0;border-radius:4px;padding:4px 2px;cursor:pointer;font-size:11px;text-align:center;white-space:nowrap}
+  .preset:hover{background:#444}
+  pre{white-space:pre-wrap;font-size:10px;max-height:100px;overflow-y:auto;margin:4px 0}
+  h3{margin:0 0 6px 0;font-size:14px;font-weight:600}
+  @media (max-width: 1200px) {
+    .wrap{grid-template-columns:1fr}
+    .presets{grid-template-columns:repeat(4,1fr)}
+  }
+</style>
+</head><body>
+  <header>
+    <div style="display:flex;align-items:center;gap:10px">
+      <span class="hdr-title">Tractor Teleop</span>
+      <span class="mode-badge" id="modeLabel">MODE: --</span>
+      <span class="mode-badge" id="radioLabel">RADIO: --</span>
+    </div>
+    <button class="estop" id="estopTop">EMERGENCY STOP</button>
+  </header>
+
+  <div class="wrap">
+    <!-- Left: Video + Steering -->
+    <div style="display:flex;flex-direction:column;gap:8px;overflow:hidden">
+      <div class="card video-container">
+        <video id="remoteVideo" playsinline autoplay></video>
+      </div>
+
+      <div class="card">
+        <h3>Steering</h3>
+        <div class="presets" id="steerPresets"></div>
+        <div class="row">
+          <input id="steer" type="range" min="-1" max="1" value="0" step="0.01"/>
+          <div id="steerVal" style="min-width:40px;text-align:right;font-size:12px">0.00</div>
+        </div>
+      </div>
+
+      <div class="card" style="flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0">
+        <h3>Logs</h3>
+        <pre id="log" style="flex:1"></pre>
+      </div>
+    </div>
+
+    <!-- Right: Speed + Telemetry -->
+    <div style="display:flex;flex-direction:column;gap:8px;overflow:hidden">
+      <div class="card" style="flex:0 0 auto">
+        <h3>Speed</h3>
+        <div id="speedRadios" class="radio-group"></div>
+      </div>
+
+      <div class="card" style="flex:0 0 auto">
+        <h3>Telemetry</h3>
+        <table>
+          <tr><th>RTK Status</th><td id="t_rtk">--</td></tr>
+          <tr><th>Heading</th><td id="t_head">--</td></tr>
+          <tr><th>Radio</th><td id="t_radio">--</td></tr>
+          <tr><th>Steer Pot</th><td id="t_steer">--</td></tr>
+          <tr><th>Trans Mode</th><td id="t_trans">--</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+<script>
+const logEl = document.getElementById('log');
+const log = (...a)=>{ console.log(...a); logEl.textContent += a.join(' ') + "\n"; };
+
+const ws = new WebSocket('ws://' + location.host + '/ws');
+const pc = new RTCPeerConnection({ iceServers: [{urls:'stun:stun.l.google.com:19302'}] });
+
+pc.onicegatheringstatechange = ()=> log('iceGatheringState:', pc.iceGatheringState);
+pc.oniceconnectionstatechange = ()=> log('iceConnectionState:', pc.iceConnectionState);
+pc.onconnectionstatechange = ()=> log('connectionState:', pc.connectionState);
+pc.onsignalingstatechange = ()=> log('signalingState:', pc.signalingState);
+pc.onicecandidate = e => log('icecandidate:', e.candidate ? 'have' : 'end');
+
+pc.ontrack = e => {
+  const v = document.getElementById('remoteVideo');
+  v.muted = true; v.srcObject = e.streams[0];
+  v.onloadedmetadata = ()=> v.play().catch(err=>log('video.play error', err));
+  log('ontrack: got remote stream');
+};
+
+// --- DataChannels ---
+let ctrl = null;
+pc.ondatachannel = (e) => {
+  if (e.channel.label === "telemetry") {
+    e.channel.onopen    = ()=> log('telemetry: open');
+    e.channel.onmessage = (m)=> { updateTelemetry(m.data); };
+    e.channel.onclose   = ()=> log('telemetry: close');
+  }
+};
+
+ctrl = pc.createDataChannel('control');
+ctrl.onopen  = ()=> log('control: open');
+ctrl.onclose = ()=> log('control: close');
+
+ws.onopen = async () => {
+  log('ws open');
+  pc.addTransceiver('video', { direction: 'recvonly' });
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+  log('local offer created');
+  ws.send(JSON.stringify({ type: offer.type, sdp: offer.sdp }));
+};
+ws.onmessage = async (evt) => {
+  const data = JSON.parse(evt.data);
+  log('ws message:', data.type);
+  if (data.type === 'answer') {
+    await pc.setRemoteDescription({type:'answer', sdp:data.sdp});
+    log('remote answer set');
+  }
+};
+ws.onerror = e => log('ws error', e && e.message ? e.message : e);
+ws.onclose  = () => log('ws closed');
+
+// --- Steering UI (presets + slider) ---
+const steer = document.getElementById('steer');
+const steerVal = document.getElementById('steerVal');
+steer.addEventListener('input', ()=>{
+  steerVal.textContent = (+steer.value).toFixed(2);
+  sendCtrl({ steering: +steer.value });
+});
+const presets = [
+  ["Full Left",  -1.0],
+  ["1/2 Left",   -0.5],
+  ["1/4 Left",   -0.25],
+  ["Straight",    0.0],
+  ["1/4 Right",   0.25],
+  ["1/2 Right",   0.5],
+  ["Full Right",  1.0],
+];
+const steerPresets = document.getElementById('steerPresets');
+for (const [label, val] of presets){
+  const b = document.createElement('button');
+  b.className = 'preset';
+  b.textContent = label;
+  b.onclick = ()=>{ steer.value = val; steer.dispatchEvent(new Event('input')); };
+  steerPresets.appendChild(b);
+}
+
+// --- Speed Radio Buttons ---
+const speedRadios = document.getElementById('speedRadios');
+const speedLabels = {
+  1: "Reverse 4 (Max)",
+  2: "Reverse 3",
+  3: "Reverse 2",
+  4: "Reverse 1",
+  5: "Creep Rev",
+  6: "NEUTRAL (STOP)",
+  7: "Creep Fwd",
+  8: "Forward 1",
+  9: "Forward 2",
+  10:"Forward 3 (Max)"
+};
+function makeRadioRow(i){
+  const row = document.createElement('label'); row.className='radio';
+  const input = document.createElement('input'); input.type='radio'; input.name='speedpos'; input.value=String(i);
+  input.onchange = ()=>{ if (input.checked) sendCtrl({ speed_pos: i }); };
+  const txt = document.createElement('span'); txt.textContent = `${i}: ${speedLabels[i]}`;
+  row.appendChild(input); row.appendChild(txt);
+  return row;
+}
+for (let i=1;i<=10;i++){ speedRadios.appendChild(makeRadioRow(i)); }
+const neutralRadio = speedRadios.querySelector('input[value="6"]'); if (neutralRadio){ neutralRadio.checked = true; }
+
+document.getElementById('estopTop').onclick = ()=> sendCtrl({ eStop: true });
+
+function sendCtrl(obj){
+  if (ctrl && ctrl.readyState === 'open'){
+    ctrl.send(JSON.stringify(obj));
+  } else {
+    log('control channel not open yet');
+  }
+}
+
+// --- Telemetry display ---
+function updateTelemetry(jsonText){
+  try{
+    const obj = JSON.parse(jsonText);
+
+    // GPS data (from port 6002 via rtcm_server)
+    const gps = obj.gps || {};
+    const rtk = gps.fix_quality || '--';
+    const heading = gps.heading_deg;
+    setText('t_rtk',  rtk);
+    setText('t_head', heading != null ? heading.toFixed(1) + '\u00B0' : '--');
+
+    // Bridge data (from port 6003 via teensy_serial_bridge)
+    const bridge = obj.bridge || {};
+    const radio = bridge.radio || {};
+    const steerData = bridge.steering || {};
+    const trans = bridge.transmission || {};
+
+    setText('t_radio', radio.signal || '--');
+    setText('t_steer', steerData.current != null ? steerData.current.toFixed(0) : '--');
+
+    // Transmission mode label
+    const modeMap = {0:'Pause', 1:'Manual', 2:'Auto', 9:'Safety'};
+    const modeNum = trans.mode != null ? trans.mode : null;
+    setText('t_trans', modeNum != null ? (modeMap[modeNum] || modeNum) : '--');
+
+    // Header badges
+    document.getElementById('modeLabel').textContent = 'MODE: ' + (modeNum != null ? (modeMap[modeNum] || modeNum) : '--');
+    document.getElementById('radioLabel').textContent = 'RADIO: ' + (radio.signal || '--');
+
+  }catch(e){
+    console.error('telemetry parse error', e, jsonText);
+  }
+}
+function setText(id, t){ document.getElementById(id).textContent = String(t); }
+</script>
+</body></html>

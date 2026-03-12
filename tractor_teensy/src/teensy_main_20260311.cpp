@@ -455,7 +455,7 @@ void controlTransmission() {
                  "1,%lu,TRANS,m=%d,b=%d,tgt=%u,cur=%u",
                  currentMillis, radioData.control_mode, bucket,
                  requestedTarget, currentTransmissionOutput);
-        safeTextLog(buf);
+        Serial.println(buf);
         lastTargetPrint = currentMillis;
     }
 
@@ -522,7 +522,7 @@ void controlSteering() {
             char buf[48];
             snprintf(buf, sizeof(buf), "1,%lu,STEER,st=NO_SIG,pot=%.0f",
                      currentMillis, steer_current);
-            safeTextLog(buf);
+            Serial.println(buf);
             lastSteeringPrint = currentMillis;
         }
         lastSteeringControlRun = currentMillis;
@@ -618,7 +618,8 @@ void controlSteering() {
                      steer_setpoint, steer_current, steer_error,
                      dir, pwmValue);
         }
-        safeTextLog(buf);
+
+        Serial.println(buf);
         lastSteeringPrint = currentMillis;
     }
 
@@ -632,19 +633,6 @@ void estopCheck() {
     if (currentMillis - lastEstopCheckRun < estopCheckInterval) return;
     digitalWrite(ESTOP_RELAY_PIN, radioData.estop ? LOW : HIGH);
     lastEstopCheckRun = currentMillis;
-}
-
-// -------------------------------------------------------------------
-// MERGED FROM OLDER: Raw pot monitoring (1s interval)
-void debugSteerPot() {
-    static unsigned long lastPotDebug = 0;
-    if (currentMillis - lastPotDebug >= 1000) {
-        int rawPot = analogRead(STEER_POT_PIN);
-        char buf[64];
-        snprintf(buf, sizeof(buf), "debug,Raw pot: %d, V: %.2f", rawPot, (rawPot * 3.3)/1023.0);
-        safeTextLog(buf);  // Use newer's rate-limiter
-        lastPotDebug = currentMillis;
-    }
 }
 
 // -------------------------------------------------------------------
@@ -896,6 +884,4 @@ void loop() {
     controlTransmission();
     controlSteering();
 
-    // MERGED FROM OLDER: Pot monitoring
-    debugSteerPot();
 }
