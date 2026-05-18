@@ -165,7 +165,9 @@ void serveFileDownload(EthernetClient& client, const char* filename) {
     }
 
     unsigned long fileSize = f.size();
-    sendOkHeaders(client, "text/csv", fileSize, true, filename);
+    // application/octet-stream forces all browsers to save the file to disk
+    // rather than trying to preview or play it inline
+    sendOkHeaders(client, "application/octet-stream", fileSize, true, filename);
 
     uint8_t buf[512];
     while (f.available()) {
