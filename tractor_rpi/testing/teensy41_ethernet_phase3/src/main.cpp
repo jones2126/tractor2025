@@ -131,17 +131,20 @@ void drainHeaders(EthernetClient& client) {
 void sendOkHeaders(EthernetClient& client, const char* contentType,
                    long contentLen = -1,
                    bool attachment = false, const char* filename = nullptr) {
-    client.println("HTTP/1.1 200 OK");
-    client.print("Content-Type: "); client.println(contentType);
+    client.print("HTTP/1.1 200 OK\r\n");
+    client.print("Content-Type: "); client.print(contentType); client.print("\r\n");
     if (contentLen >= 0) {
-        client.print("Content-Length: "); client.println(contentLen);
+        client.print("Content-Length: "); client.print(contentLen); client.print("\r\n");
     }
     if (attachment && filename) {
         client.print("Content-Disposition: attachment; filename=\"");
-        client.print(filename); client.println("\"");
+        client.print(filename); client.print("\"\r\n");
     }
-    client.println("Connection: close");
-    client.println();
+    // Tell Chrome not to split the download into parallel range requests —
+    // we only support a single linear response
+    client.print("Accept-Ranges: none\r\n");
+    client.print("Connection: close\r\n");
+    client.print("\r\n");
 }
 
 // -------------------------------------------------------------------
@@ -170,9 +173,13 @@ void serveFileDownload(EthernetClient& client, const char* filename) {
     sendOkHeaders(client, "application/octet-stream", fileSize, true, filename);
 
     uint8_t buf[512];
-    while (f.available()) {
+    while (f.available() && client.connected()) {
         int n = f.read(buf, sizeof(buf));
-        client.write(buf, n);
+        int sent = 0;
+        while (sent < n && client.connected()) {
+            int s = client.write(buf + sent, n - sent);
+            if (s > 0) sent += s;
+        }
     }
     f.close();
     client.flush();
