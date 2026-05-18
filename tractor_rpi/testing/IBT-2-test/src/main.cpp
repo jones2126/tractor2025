@@ -1,7 +1,9 @@
 #include <Arduino.h>
 /*
-Simple test for IBT-2 H-Bridge with Teensy 3.5
-Runs motor forward and reverse in a timed loop.
+IBT-2 H-Bridge test for Teensy 4.1
+Wheel starts hard left — first movement drives RPWM (expected: move RIGHT).
+Watch the wheel direction and note which pin moves which way.
+PWM = 150 (above stall threshold).
 */
 
 int RPWM_Output = 5; // Connect to IBT-2 pin 1 (RPWM)
@@ -9,29 +11,38 @@ int LPWM_Output = 6; // Connect to IBT-2 pin 2 (LPWM)
 
 void setup()
 {
+  Serial.begin(115200);
   pinMode(RPWM_Output, OUTPUT);
   pinMode(LPWM_Output, OUTPUT);
+  analogWrite(RPWM_Output, 0);
+  analogWrite(LPWM_Output, 0);
+  Serial.println("IBT-2 test starting in 3 seconds...");
+  delay(3000);
 }
 
 void loop()
 {
-  // Forward at 50% speed
-  analogWrite(RPWM_Output, 0);     // Turn off reverse
-  analogWrite(LPWM_Output, 128);   // Set forward speed (0-255)
-  delay(3000);                     // Run forward for 3 seconds
+  // Step 1: Drive RPWM — wheel should move RIGHT (away from hard left)
+  Serial.println("RPWM ON (pin 5) — wheel should move RIGHT");
+  analogWrite(LPWM_Output, 0);
+  analogWrite(RPWM_Output, 150);
+  delay(3000);
 
   // Stop
   analogWrite(RPWM_Output, 0);
   analogWrite(LPWM_Output, 0);
-  delay(1000);                     // Pause for 1 second
+  Serial.println("STOP");
+  delay(2000);
 
-  // Reverse at 50% speed
-  analogWrite(LPWM_Output, 0);     // Turn off forward
-  analogWrite(RPWM_Output, 128);   // Set reverse speed
-  delay(3000);                     // Run reverse for 3 seconds
+  // Step 2: Drive LPWM — wheel should move LEFT
+  Serial.println("LPWM ON (pin 6) — wheel should move LEFT");
+  analogWrite(RPWM_Output, 0);
+  analogWrite(LPWM_Output, 150);
+  delay(3000);
 
   // Stop
   analogWrite(RPWM_Output, 0);
   analogWrite(LPWM_Output, 0);
-  delay(1000);                     // Pause before repeating
+  Serial.println("STOP");
+  delay(2000);
 }
