@@ -29,6 +29,7 @@ int LPWM_Output = 6;
 // Steering pot & PID
 #define STEER_POT_PIN A9
 #define STEER_DEADBAND 10
+#define STEER_MIN_PWM  150   // minimum PWM to overcome motor stall (~150 empirically)
 
 float steer_kp = 1.0;
 float steer_ki = 0.0;
@@ -554,6 +555,7 @@ void controlSteering() {
                     analogWrite(LPWM_Output, 0);
                 } else {
                     pwmValue = constrain(abs((int)out), 0, 255);
+                    if (pwmValue > 0 && pwmValue < STEER_MIN_PWM) pwmValue = STEER_MIN_PWM;
                     if (out > 0) {
                         // Positive error → pot needs to increase → steer LEFT → drive LPWM
                         analogWrite(RPWM_Output, 0);
@@ -580,6 +582,7 @@ void controlSteering() {
                     analogWrite(LPWM_Output, 0);
                 } else {
                     pwmValue = constrain(abs((int)out), 0, 255);
+                    if (pwmValue > 0 && pwmValue < STEER_MIN_PWM) pwmValue = STEER_MIN_PWM;
                     if (out > 0) {
                         // Positive error → steer LEFT → drive LPWM
                         analogWrite(RPWM_Output, 0);
