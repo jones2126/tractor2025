@@ -35,16 +35,22 @@ float steer_kp = 1.0;
 float steer_ki = 0.0;
 float steer_kd = 0.0;
 
-float steer_setpoint = 512;
-float steer_current   = 512;
+// Tractor steering pot — measured physical limits (field calibrated 2026-05-18)
+const int STEER_POT_RIGHT  = 197;   // tractor pot at hard right
+const int STEER_POT_CENTER = 447;   // tractor pot straight ahead
+const int STEER_POT_LEFT   = 815;   // tractor pot at hard left
+
+// RC joystick — measured values (field calibrated 2026-05-18)
+const int RADIO_STEER_RIGHT  = 1;    // RC joystick pushed hard right
+const int RADIO_STEER_CENTER = 503;  // RC joystick centered
+const int RADIO_STEER_LEFT   = 1024; // RC joystick pushed hard left
+
+float steer_setpoint = STEER_POT_CENTER;
+float steer_current   = STEER_POT_CENTER;
 float steer_error     = 0;
 float steer_error_sum = 0;
 float steer_last_error = 0;
 unsigned long steer_last_time = 0;
-
-const int STEER_MIN_POT = 0;
-const int STEER_MAX_POT = 1023;
-const int STEER_CENTER_POT = 512;
 
 // Transmission vars
 uint16_t currentTransmissionOutput = transmissionNeutralPos;
@@ -511,6 +517,32 @@ float calculateSteerPID() {
            steer_kd * d_error;
 }
 
+// -------------------------------------------------------------------
+// Two-segment linear map: RC joystick (0-1024) → tractor pot space.
+//
+// The steering pot is asymmetric — measured 2026-05-18:
+//   Right half: radio 1..503   → pot 197..447  (250 pot counts, 502 radio counts)
+//   Left  half: radio 503..1024 → pot 447..815  (368 pot counts, 521 radio counts)
+//
+// A single map() would compress one side. Two segments ensure joystick
+// center always maps to pot center and full travel hits the mechanical stop.
+float mapSteerSetpoint(int radioVal) {
+    radioVal = constrain(radioVal, RADIO_STEER_RIGHT, RADIO_STEER_LEFT);
+    if (radioVal <= RADIO_STEER_CENTER) {
+        // Right half
+        return STEER_POT_RIGHT +
+               (float)(radioVal - RADIO_STEER_RIGHT) *
+               (float)(STEER_POT_CENTER - STEER_POT_RIGHT) /
+               (float)(RADIO_STEER_CENTER - RADIO_STEER_RIGHT);
+    } else {
+        // Left half
+        return STEER_POT_CENTER +
+               (float)(radioVal - RADIO_STEER_CENTER) *
+               (float)(STEER_POT_LEFT - STEER_POT_CENTER) /
+               (float)(RADIO_STEER_LEFT - RADIO_STEER_CENTER);
+    }
+}
+
 void controlSteering() {
     if (currentMillis - lastSteeringControlRun < controlSteeringInterval) return;
 
@@ -543,8 +575,8 @@ void controlSteering() {
             dir = "P";
             break;
 
-        case 1:  // Manual PID
-            steer_setpoint = (float)radioData.steering_val;  // Cast int to float
+        case 1:  // Manual PID — map RC joystick to asymmetric tractor pot space
+            steer_setpoint = mapSteerSetpoint((int)radioData.steering_val);
 
             {
                 float out = calculateSteerPID();
