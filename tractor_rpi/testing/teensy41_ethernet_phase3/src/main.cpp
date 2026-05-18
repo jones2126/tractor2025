@@ -222,7 +222,8 @@ void serveMainPage(EthernetClient& client) {
                     fileRows += "<tr><td>" + name;
                     if (active) fileRows += " <span class='tag'>logging</span>";
                     fileRows += "</td><td class='num'>" + String(sz) + " B</td>";
-                    fileRows += "<td><a class='btn' href='/" + name + "'>Download</a></td><td>";
+                    // 'download' attribute tells browser to save the file, not navigate to it
+                    fileRows += "<td><a class='btn' href='/" + name + "' download='" + name + "'>Download</a></td><td>";
                     if (!active) {
                         fileRows += "<a class='btn del' href='/?delete=" + name +
                                     "' onclick=\"return confirm('Delete " + name + "?')\">Delete</a>";
@@ -241,7 +242,7 @@ void serveMainPage(EthernetClient& client) {
 
     String body =
         "<!DOCTYPE html><html><head><title>Teensy Logger</title>"
-        "<meta http-equiv='refresh' content='10'>"
+        ""  // auto-refresh removed — it caused Chrome to confuse page reload with download
         "<style>"
         "body{font-family:sans-serif;background:#1a1a2e;color:#e0e0e0;margin:0;padding:24px;}"
         "h1{color:#7ec8e3;margin:0 0 4px;}"
@@ -267,7 +268,7 @@ void serveMainPage(EthernetClient& client) {
         "</style></head><body>"
 
         "<h1>Teensy 4.1 Logger</h1>"
-        "<div class='sub'>Phase 3 &mdash; SD File Download &nbsp;&bull;&nbsp; auto-refresh 10s</div>"
+        "<div class='sub'>Phase 3 &mdash; SD File Download &nbsp;&bull;&nbsp; <a href='/' style='color:#7ec8e3;'>Refresh</a></div>"
 
         "<div class='card'><h2>Status</h2><table>"
         "<tr><td>IP Address</td><td class='val'>"  + ipStr + "</td></tr>"
