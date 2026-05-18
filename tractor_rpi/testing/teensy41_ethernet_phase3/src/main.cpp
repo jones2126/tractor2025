@@ -147,8 +147,12 @@ void sendOkHeaders(EthernetClient& client, const char* contentType,
 // -------------------------------------------------------------------
 // Route: GET /filename.csv  →  stream file to browser
 void serveFileDownload(EthernetClient& client, const char* filename) {
-    // Flush active log before reading it so data is complete
-    if (strcmp(filename, logFilename) == 0 && logFile) logFile.flush();
+    // The SD library cannot have the same file open twice.
+    // Close the active log before reading, then reopen it after.
+    bool isActiveLog = (strcmp(filename, logFilename) == 0);
+    if (isActiveLog && logFile) {
+        logFile.close();
+    }
 
     File f = SD.open(filename);
     if (!f) {
@@ -156,10 +160,12 @@ void serveFileDownload(EthernetClient& client, const char* filename) {
         client.println("Connection: close\r\n");
         client.println("File not found.");
         client.stop();
+        if (isActiveLog) logFile = SD.open(logFilename, FILE_WRITE);
         return;
     }
 
-    sendOkHeaders(client, "text/csv", f.size(), true, filename);
+    unsigned long fileSize = f.size();
+    sendOkHeaders(client, "text/csv", fileSize, true, filename);
 
     uint8_t buf[512];
     while (f.available()) {
@@ -171,7 +177,16 @@ void serveFileDownload(EthernetClient& client, const char* filename) {
     client.stop();
 
     Serial.print("Downloaded: "); Serial.print(filename);
-    Serial.print("  ("); Serial.print(f.size()); Serial.println(" B)");
+    Serial.print("  ("); Serial.print(fileSize); Serial.println(" B)");
+
+    // Reopen the log file for continued appending
+    if (isActiveLog) {
+        logFile = SD.open(logFilename, FILE_WRITE);
+        if (!logFile) {
+            Serial.println("ERROR: Could not reopen log after download — logging stopped");
+            sdReady = false;
+        }
+    }
 }
 
 // -------------------------------------------------------------------
