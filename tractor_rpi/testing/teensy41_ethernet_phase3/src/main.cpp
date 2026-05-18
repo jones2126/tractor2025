@@ -315,6 +315,8 @@ void handleWeb() {
         }
     }
 
+    Serial.print("REQ: "); Serial.println(path);  // debug: show every URL received
+
     // Route: /?delete=filename  →  delete file, redirect to /
     char* del = strstr(path, "?delete=");
     if (del) {
@@ -332,10 +334,13 @@ void handleWeb() {
     }
 
     // Route: /filename.csv  →  download
+    // Do NOT use SD.exists() as the gate — if it fails while the log is open,
+    // routing falls through to serveMainPage and Chrome saves HTML as the file.
+    // Instead: route any .csv URL to serveFileDownload; it returns 404 if missing.
     if (strlen(path) > 1) {
         char* fname = path + 1;          // strip leading /
         char* dot   = strrchr(fname, '.');
-        if (dot && (strcasecmp(dot, ".csv") == 0) && SD.exists(fname)) {
+        if (dot && strcasecmp(dot, ".csv") == 0) {
             serveFileDownload(client, fname);
             return;
         }
