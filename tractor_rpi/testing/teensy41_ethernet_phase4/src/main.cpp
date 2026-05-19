@@ -24,7 +24,9 @@ bool    rtcSet = false;
 char    rtcTimeStr[32] = "Not set";
 
 void updateRTCString() {
-    if (timeStatus() != timeNotSet && year() >= 2025) {
+    // Accept only years 2025-2034 — rejects NTP underflow artifacts (e.g. 2036)
+    // and un-set RTC (1970). Outside this window → treated as not set.
+    if (timeStatus() != timeNotSet && year() >= 2025 && year() <= 2034) {
         snprintf(rtcTimeStr, sizeof(rtcTimeStr),
                  "%04d-%02d-%02d %02d:%02d:%02d",
                  year(), month(), day(), hour(), minute(), second());
@@ -36,7 +38,13 @@ void updateRTCString() {
 }
 
 void setRTCFromUnix(unsigned long t) {
-    if (t < 1700000000UL) return;   // Sanity: must be after Nov 2023
+    // Accept only timestamps in the range 2025-01-01 to 2034-12-31
+    // 1735689600 = 2025-01-01 UTC,  2051222400 = 2035-01-01 UTC
+    // This prevents NTP underflow artifacts (zeros → ~2036) being written to RTC
+    if (t < 1735689600UL || t > 2051222400UL) {
+        Serial.print("RTC: rejected out-of-range timestamp: "); Serial.println(t);
+        return;
+    }
     setTime(t);
     Teensy3Clock.set(t);
     updateRTCString();
@@ -70,6 +78,20 @@ bool syncNTP() {
     while (millis() - start < 5000) {
         if (udp.parsePacket()) {
             udp.read(buf, 48);
+
+            // Validate: Mode bits (buf[0] & 0x07) must be 4 (server response)
+            // Stratum (buf[1]) must be non-zero (0 = unspecified/invalid)
+            // Transmit timestamp seconds (bytes 40-43) must be non-zero
+            bool modeOk    = ((buf[0] & 0x07) == 4);
+            bool stratumOk = (buf[1] != 0);
+            bool tsNonZero = (buf[40] || buf[41] || buf[42] || buf[43]);
+
+            if (!modeOk || !stratumOk || !tsNonZero) {
+                Serial.println("NTP: invalid response (bad mode/stratum/timestamp)");
+                udp.stop();
+                return false;
+            }
+
             unsigned long hi = word(buf[40], buf[41]);
             unsigned long lo = word(buf[42], buf[43]);
             unsigned long t  = (hi << 16 | lo) - SEVENTY_YEARS;
