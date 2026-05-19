@@ -16,16 +16,13 @@
 using namespace qindesign::network;
 
 // -------------------------------------------------------------------
-// RTC
+// Software time — no hardware RTC. Set from NTP or browser on each boot.
+// TimeLib tracks time in software from the moment setTime() is called.
 
-time_t getTeensyRTC() { return Teensy3Clock.get(); }
-
-bool    rtcSet = false;
-char    rtcTimeStr[32] = "Not set";
+bool rtcSet = false;
+char rtcTimeStr[32] = "Not set";
 
 void updateRTCString() {
-    // Accept only years 2025-2034 — rejects NTP underflow artifacts (e.g. 2036)
-    // and un-set RTC (1970). Outside this window → treated as not set.
     if (timeStatus() != timeNotSet && year() >= 2025 && year() <= 2034) {
         snprintf(rtcTimeStr, sizeof(rtcTimeStr),
                  "%04d-%02d-%02d %02d:%02d:%02d",
@@ -37,18 +34,16 @@ void updateRTCString() {
     }
 }
 
-void setRTCFromUnix(unsigned long t) {
-    // Accept only timestamps in the range 2025-01-01 to 2034-12-31
-    // 1735689600 = 2025-01-01 UTC,  2051222400 = 2035-01-01 UTC
-    // This prevents NTP underflow artifacts (zeros → ~2036) being written to RTC
+void setTimeFromUnix(unsigned long t) {
+    // Sanity: accept only 2025-01-01 to 2034-12-31
+    // Rejects NTP underflow artifacts and obvious garbage
     if (t < 1735689600UL || t > 2051222400UL) {
-        Serial.print("RTC: rejected out-of-range timestamp: "); Serial.println(t);
+        Serial.print("Time: rejected out-of-range timestamp: "); Serial.println(t);
         return;
     }
-    setTime(t);
-    Teensy3Clock.set(t);
+    setTime(t);   // TimeLib software clock — no hardware write
     updateRTCString();
-    Serial.print("RTC set: "); Serial.println(rtcTimeStr);
+    Serial.print("Time set: "); Serial.println(rtcTimeStr);
 }
 
 // -------------------------------------------------------------------
@@ -96,7 +91,7 @@ bool syncNTP() {
             unsigned long lo = word(buf[42], buf[43]);
             unsigned long t  = (hi << 16 | lo) - SEVENTY_YEARS;
             udp.stop();
-            setRTCFromUnix(t);
+            setTimeFromUnix(t);
             return true;
         }
     }
@@ -359,7 +354,7 @@ void serveMainPage(EthernetClient& client) {
         "</style></head><body>"
 
         "<h1>Teensy 4.1 Logger</h1>"
-        "<div class='sub'>Phase 4 &mdash; SD + RTC"
+        "<div class='sub'>Phase 4 &mdash; SD + Time Sync"
         " &nbsp;&bull;&nbsp; <a href='/' style='color:#7ec8e3;'>Refresh</a></div>"
 
         "<div class='card'><h2>Status</h2><table>"
@@ -425,7 +420,7 @@ void handleWeb() {
     char* stParam = strstr(path, "?settime=");
     if (stParam) {
         unsigned long t = strtoul(stParam + 9, nullptr, 10);
-        setRTCFromUnix(t);
+        setTimeFromUnix(t);
         client.print("HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
         client.flush(); client.stop();
         return;
@@ -471,13 +466,10 @@ void setup() {
     while (!Serial && millis() < 4000);
     Serial.println("=== Teensy 4.1 Ethernet Phase 4 ===");
 
-    // RTC — read hardware clock immediately
-    setSyncProvider(getTeensyRTC);
-    setSyncInterval(300);     // Resync TimeLib from RTC every 5 min
-    updateRTCString();
-    Serial.print("RTC on boot: "); Serial.println(rtcTimeStr);
+    // Time starts unknown — will be set by NTP or browser JS
+    Serial.println("Time: not set (waiting for NTP or browser sync)");
 
-    // SD — open log (sequential name until RTC is confirmed)
+    // SD — open log (sequential name until time is confirmed)
     setupSD();
 
     // Ethernet + NTP
