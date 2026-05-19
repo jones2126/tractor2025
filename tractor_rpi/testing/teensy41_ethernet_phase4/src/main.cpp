@@ -18,15 +18,28 @@ using namespace qindesign::network;
 // -------------------------------------------------------------------
 // Software time — no hardware RTC. Set from NTP or browser on each boot.
 // TimeLib tracks time in software from the moment setTime() is called.
+// Time is stored as UTC internally; localNow() applies the timezone offset.
+
+// US Eastern: EDT = UTC-4 (Mar–Nov), EST = UTC-5 (Nov–Mar)
+// Change TZ_OFFSET_HOURS to -5 in winter when EST is in effect
+#define TZ_OFFSET_HOURS  (-4)
+#define TZ_OFFSET_SEC    (TZ_OFFSET_HOURS * 3600L)
+#define TZ_LABEL         "EDT"
+
+time_t localNow() { return now() + TZ_OFFSET_SEC; }
 
 bool rtcSet = false;
 char rtcTimeStr[32] = "Not set";
 
 void updateRTCString() {
     if (timeStatus() != timeNotSet && year() >= 2025 && year() <= 2034) {
+        time_t lt = localNow();
+        tmElements_t tm;
+        breakTime(lt, tm);
         snprintf(rtcTimeStr, sizeof(rtcTimeStr),
-                 "%04d-%02d-%02d %02d:%02d:%02d",
-                 year(), month(), day(), hour(), minute(), second());
+                 "%04d-%02d-%02d %02d:%02d:%02d %s",
+                 tmYearToCalendar(tm.Year), tm.Month, tm.Day,
+                 tm.Hour, tm.Minute, tm.Second, TZ_LABEL);
         rtcSet = true;
     } else {
         strcpy(rtcTimeStr, "Not set");
@@ -130,9 +143,12 @@ void updateSimData() {
 void openLogFile() {
     updateRTCString();
     if (rtcSet) {
+        tmElements_t tm;
+        breakTime(localNow(), tm);
         snprintf(logFilename, sizeof(logFilename),
                  "%04d%02d%02d_%02d%02d%02d.csv",
-                 year(), month(), day(), hour(), minute(), second());
+                 tmYearToCalendar(tm.Year), tm.Month, tm.Day,
+                 tm.Hour, tm.Minute, tm.Second);
     } else {
         for (int i = 1; i <= 999; i++) {
             snprintf(logFilename, sizeof(logFilename), "log%03d.csv", i);
