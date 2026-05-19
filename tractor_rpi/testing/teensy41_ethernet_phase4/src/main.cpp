@@ -116,7 +116,7 @@ bool syncNTP() {
 // SD logging
 
 File  logFile;
-char  logFilename[24];
+char  logFilename[26];   // YYYYMMDD_HHMMSS.csv = 19 chars + null; 26 avoids compiler truncation warning
 unsigned long rowCount   = 0;
 bool          sdReady    = false;
 
