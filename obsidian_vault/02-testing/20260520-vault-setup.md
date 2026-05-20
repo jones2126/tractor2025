@@ -41,7 +41,19 @@ Merged four overlapping reference files into one canonical overview:
 - Corrected earlier wrong analysis that claimed pin 13 was consumed by Ethernet
 - Created `Electronics/Teensy 4.1/Teensy41_Pin_Reference.md` and copied pinout PDF
 
+### Vault Migration — Completed
+All content migrated from legacy vault (`claude-robot-project/`) to new vault:
+- Component notes → `03-design/03-3-tractor/` subfolders
+- RTK base station → `03-1-rtk-base/`
+- Reference PDFs, McMaster orders, Bob's Architecture → `04-reference/`
+- Andon lights, IBT-2 Gen2 → `05-future-ideas/`
+- Physical hardware notes → `03-3-10-frame-chassis/`
+- 120 images → `attachments/` — all resolving correctly in Obsidian
+- GPS component page written: `03-3-1-rpi5/GPS-ZED-F9P.md`
+
+Legacy vault kept as backup — not deleted.
+
 ## Next Session
-- Continue vault migration: move Electronics notes into `03-design/03-3-tractor/` subfolders
 - Field test: transmission neutral calibration using `jrkG2_range_test`
 - Steering PID tuning (currently kp=1.0 — jerky)
+- Create CLAUDE.md at `~/tractor2025/` repo root for Claude Code context
