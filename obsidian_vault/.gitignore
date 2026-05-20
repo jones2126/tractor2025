@@ -1,0 +1,11 @@
+# Obsidian workspace state — machine-specific, no need to version
+.obsidian/workspace
+.obsidian/workspace.json
+.obsidian/workspaces.json
+
+# Smart Connections embeddings — large, regenerates automatically
+.smart-env/
+
+# OS files
+.DS_Store
+Thumbs.db
