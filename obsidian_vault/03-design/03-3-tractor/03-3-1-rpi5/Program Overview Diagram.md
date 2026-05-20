@@ -1,0 +1,3 @@
+Please review this pure pursuit script and generate a diagram that provides and overview of its functionality. The diagram can use Mermaid or any other approach. The output should be a standalone HTML file that renders the overview diagram directly in a browser like Edge or Chrome.
+ 
+Hardcode inputs like max steer angle, wheelbase, gps off-set etc. should be represented as a data store or file feeding into the program. The mission file should also be represented as a data store or file that interfaces into the program.
