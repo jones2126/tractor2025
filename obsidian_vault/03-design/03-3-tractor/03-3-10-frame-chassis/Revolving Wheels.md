@@ -1,0 +1,2 @@
+[Revolve tool - skateboard wheel - Fusion 360](https://www.youtube.com/watch?v=-IURdrsitSw)
+ ![Embedded YouTube video](https://www.youtube.com/embed/-IURdrsitSw?feature=oembed&autoplay=true)   ![[Exported image 20260511102814-0.png]]

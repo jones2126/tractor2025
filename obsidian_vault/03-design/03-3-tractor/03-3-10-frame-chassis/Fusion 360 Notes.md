@@ -1,0 +1,2 @@
+[Intro to SHEET METAL in Fusion 360 - Sheet Metal Beginners Start Here!](https://www.youtube.com/watch?v=_Hl-WY_1UZE)
+ ![Embedded YouTube video](https://www.youtube.com/embed/_Hl-WY_1UZE?feature=oembed&autoplay=true)
