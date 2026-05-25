@@ -29,6 +29,8 @@ See [[milestones]] for full milestone list.
 
 ## RPi Connection
 
+**tractor01 (primary)**
+
 | | |
 |-|-|
 | Hostname | `raspberrypi` |
@@ -36,6 +38,15 @@ See [[milestones]] for full milestone list.
 | Local IP | `192.168.1.151` |
 | ZeroTier IP | `192.168.193.76` (network `ztuze7ml6g`) |
 | Serial | `/dev/teensy` — 460800 baud |
+
+**tractor02 (second RPi 5)**
+
+| | |
+|-|-|
+| Hostname | `tractor02` |
+| User | `al` |
+| Local IP | `192.168.1.214` |
+| ZeroTier IP | `192.168.193.48` (network `9f77fc393e0a16f8`) |
 
 ## Radio Modes
 

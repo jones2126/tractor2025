@@ -11,7 +11,7 @@
 | Phase | Task | Status |
 |-------|------|--------|
 | 1 | WiFi — netplan / wpasupplicant | ✅ Done |
-| 2 | ZeroTier — join robotics_network | ⬜ TODO |
+| 2 | ZeroTier — join robotics_network | ✅ Done |
 | 3 | BIG7 USB hub + Teensy udev rule | ⬜ TODO |
 | 4 | NVMe SSD hat — detect, clone, set boot order | ⬜ TODO |
 | 5 | GPS (ZED-F9P) udev rules | ⬜ TODO |
@@ -250,8 +250,8 @@ python3 -c "import depthai as dai; d=dai.Device(); print('OAK-D connected:', d.g
 
 | Method | Address |
 |--------|---------|
-| SSH (local) | `ssh al@192.168.1.XXX` (check router for IP) |
-| SSH (ZeroTier) | `ssh al@<tractor02-zerotier-ip>` (update after Phase 2) |
+| SSH (local) | `ssh al@192.168.1.214` |
+| SSH (ZeroTier) | `ssh al@192.168.193.48` |
 | PuTTY | Use local IP above |
 
 **tractor01 (original RPi 5):** `192.168.1.151` / ZeroTier `192.168.193.76`
