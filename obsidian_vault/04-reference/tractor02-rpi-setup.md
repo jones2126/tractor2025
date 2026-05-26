@@ -30,8 +30,8 @@ These are not included in a fresh install and must be added manually:
 | 2 | ZeroTier — join robotics_network | ✅ Done |
 | 3 | BIG7 USB hub + Teensy udev rule | ✅ Done |
 | 4 | NVMe SSD hat — detect, clone, set boot order | ✅ Done |
-| 5 | GPS (ZED-F9P) udev rules | ⬜ TODO |
-| 5 | OAK-D udev rule | ⬜ TODO |
+| 5 | OAK-D Lite — udev rule + depthai install + smoke test | ⬜ TODO |
+| 6 | GPS (ZED-F9P) — udev rules + serial test | ⬜ TODO |
 
 ---
 
