@@ -6,13 +6,29 @@
 
 ---
 
+## Packages Required (beyond base Ubuntu Server 24.04)
+
+These are not included in a fresh install and must be added manually:
+
+| Package | Command | Used for |
+|---------|---------|---------|
+| wpasupplicant | `sudo apt install wpasupplicant -y` | WiFi (Phase 1) |
+| git | `sudo apt install git -y` | Repo clone |
+| python3-serial | `sudo apt install python3-serial -y` | Teensy serial comms |
+| nvme-cli | `sudo apt install nvme-cli -y` | NVMe drive info (Phase 4) |
+| zerotier | `curl -s https://install.zerotier.com \| sudo bash` | ZeroTier VPN (Phase 2) |
+
+> Update this table whenever a new package is needed during setup.
+
+---
+
 ## Status Checklist
 
 | Phase | Task | Status |
 |-------|------|--------|
 | 1 | WiFi — netplan / wpasupplicant | ✅ Done |
 | 2 | ZeroTier — join robotics_network | ✅ Done |
-| 3 | BIG7 USB hub + Teensy udev rule | ⬜ TODO |
+| 3 | BIG7 USB hub + Teensy udev rule | ✅ Done |
 | 4 | NVMe SSD hat — detect, clone, set boot order | ⬜ TODO |
 | 5 | GPS (ZED-F9P) udev rules | ⬜ TODO |
 | 5 | OAK-D udev rule | ⬜ TODO |
