@@ -29,7 +29,7 @@ These are not included in a fresh install and must be added manually:
 | 1 | WiFi — netplan / wpasupplicant | ✅ Done |
 | 2 | ZeroTier — join robotics_network | ✅ Done |
 | 3 | BIG7 USB hub + Teensy udev rule | ✅ Done |
-| 4 | NVMe SSD hat — detect, clone, set boot order | ⬜ TODO |
+| 4 | NVMe SSD hat — detect, clone, set boot order | ✅ Done |
 | 5 | GPS (ZED-F9P) udev rules | ⬜ TODO |
 | 5 | OAK-D udev rule | ⬜ TODO |
 
@@ -157,46 +157,63 @@ python3 -c "import serial; s=serial.Serial('/dev/teensy',460800,timeout=1); prin
 
 NVMe provides faster storage and allows booting without an SD card, which is more reliable long-term.
 
+**Result:** tractor02 boots from `nvme0n1p2` (238GB). SD card (`mmcblk0`) remains as fallback.
+
 ### Detect the drive
 
 ```bash
-lsblk                        # look for nvme0n1
-sudo apt install -y nvme-cli
-sudo nvme list               # drive model, serial, size
-```
-
-### Benchmark vs SD card
-
-```bash
-# Write speed test
-sudo dd if=/dev/zero of=~/test_write bs=1M count=512 oflag=dsync
-rm ~/test_write
+lsblk    # look for nvme0n1
 ```
 
 ### Clone SD → NVMe
 
-```bash
-git clone https://github.com/billw2/rpi-clone.git /tmp/rpi-clone
-sudo cp /tmp/rpi-clone/rpi-clone /usr/local/sbin/
-sudo rpi-clone nvme0n1
-```
-
-### Set NVMe as boot device
+> **Note:** `rpi-clone` fails on NVMe due to partition naming bug — use `dd` instead.
 
 ```bash
-sudo rpi-eeprom-config --edit
+sudo dd if=/dev/mmcblk0 of=/dev/nvme0n1 bs=4M status=progress conv=fsync
 ```
+Takes ~13 minutes for a 59GB SD card at ~80 MB/s.
 
-Set:
-```
-BOOT_ORDER=0xf416
-```
-(`6` = SD card, `1` = NVMe, `4` = USB — tries NVMe first, falls back to SD)
+### Expand NVMe partition to full drive size
 
 ```bash
+sudo apt install cloud-guest-utils -y   # growpart (already in Ubuntu 24.04)
+sudo growpart /dev/nvme0n1 2
+sudo e2fsck -f /dev/nvme0n1p2           # fix any filesystem errors from live clone
+sudo resize2fs /dev/nvme0n1p2
+lsblk /dev/nvme0n1                      # nvme0n1p2 should now show full size
+```
+
+### Set EEPROM boot order to NVMe first
+
+> **Note:** `rpi-eeprom-config --edit` uses an older firmware binary from the Ubuntu package and reverts the config. Use `--apply` with a config file instead, then **power cycle** (not just reboot).
+
+```bash
+bash ~/tractor2025/tractor_rpi/setup/set_nvme_boot.sh
+sudo shutdown now
+# Unplug power, wait 10 seconds, plug back in
+```
+
+Verify after boot:
+```bash
+sudo rpi-eeprom-config    # should show BOOT_ORDER=0xf416
+lsblk                     # nvme0n1p1 should show /boot/firmware mountpoint
+```
+
+### Fix root partition pointer in cmdline.txt
+
+After setting boot order, `/boot/firmware` loads from NVMe but root `/` still mounts from SD card because both have `LABEL=writable`. Fix by pointing cmdline.txt to the NVMe PARTUUID:
+
+```bash
+sudo blkid /dev/nvme0n1p2          # get PARTUUID (e.g. a06488b5-02)
+sudo sed -i 's/root=LABEL=writable/root=PARTUUID=a06488b5-02/' /boot/firmware/cmdline.txt
+cat /boot/firmware/cmdline.txt     # verify change
 sudo reboot
-# After reboot, verify boot device:
-findmnt / | grep nvme
+```
+
+Verify after reboot:
+```bash
+findmnt /    # should show /dev/nvme0n1p2
 ```
 
 ---
