@@ -57,6 +57,12 @@ Install pip first if not present (Ubuntu Server 24.04 does not include it by def
 sudo apt install python3-pip -y
 ```
 
+After installing, add pip's script directory to PATH (prevents "not on PATH" warnings):
+
+```bash
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc && source ~/.bashrc
+```
+
 Then install depthai:
 
 ```bash
