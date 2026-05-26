@@ -15,6 +15,7 @@ These are not included in a fresh install and must be added manually:
 | wpasupplicant | `sudo apt install wpasupplicant -y` | WiFi (Phase 1) |
 | git | `sudo apt install git -y` | Repo clone |
 | python3-serial | `sudo apt install python3-serial -y` | Teensy serial comms |
+| python3-pip | `sudo apt install python3-pip -y` | pip (needed before any pip install) |
 | nvme-cli | `sudo apt install nvme-cli -y` | NVMe drive info (Phase 4) |
 | zerotier | `curl -s https://install.zerotier.com \| sudo bash` | ZeroTier VPN (Phase 2) |
 | depthai | `pip install "depthai==2.30.0.0" --break-system-packages` | OAK-D camera (Phase 5) |

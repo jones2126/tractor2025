@@ -51,6 +51,14 @@ lsusb | grep 03e7
 
 ## 4. Install DepthAI 2.30.0.0
 
+Install pip first if not present (Ubuntu Server 24.04 does not include it by default):
+
+```bash
+sudo apt install python3-pip -y
+```
+
+Then install depthai:
+
 ```bash
 python3 -m pip install "depthai==2.30.0.0" --break-system-packages --force-reinstall
 ```
