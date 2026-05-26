@@ -16,6 +16,7 @@ These are not included in a fresh install and must be added manually:
 | git | `sudo apt install git -y` | Repo clone |
 | python3-serial | `sudo apt install python3-serial -y` | Teensy serial comms |
 | python3-pip | `sudo apt install python3-pip -y` | pip (needed before any pip install) |
+| wireless-tools | `sudo apt install wireless-tools -y` | WiFi diagnostics (`iwlist wlan0 scan`) |
 | nvme-cli | `sudo apt install nvme-cli -y` | NVMe drive info (Phase 4) |
 | zerotier | `curl -s https://install.zerotier.com \| sudo bash` | ZeroTier VPN (Phase 2) |
 | depthai | `pip install "depthai==2.30.0.0" --break-system-packages` | OAK-D camera (Phase 5) |
@@ -35,6 +36,24 @@ These are not included in a fresh install and must be added manually:
 | 4 | NVMe SSD hat — detect, clone, set boot order | ✅ Done |
 | 5 | OAK-D Lite — udev rule + depthai install + smoke test | ✅ Done |
 | 6 | GPS (ZED-F9P) — udev rules + serial test | ⬜ TODO |
+
+---
+
+## 0. First Steps on a Fresh Install
+
+Run these immediately after first boot before anything else:
+
+```bash
+# Update all packages
+sudo apt update && sudo apt upgrade -y
+
+# Clone the tractor2025 repo
+sudo apt install git -y
+git clone https://github.com/jones2126/tractor2025.git ~/tractor2025
+
+# Fix pip PATH so installed scripts are accessible
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc && source ~/.bashrc
+```
 
 ---
 
