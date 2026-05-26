@@ -17,6 +17,8 @@ These are not included in a fresh install and must be added manually:
 | python3-serial | `sudo apt install python3-serial -y` | Teensy serial comms |
 | nvme-cli | `sudo apt install nvme-cli -y` | NVMe drive info (Phase 4) |
 | zerotier | `curl -s https://install.zerotier.com \| sudo bash` | ZeroTier VPN (Phase 2) |
+| depthai | `pip install "depthai==2.30.0.0" --break-system-packages` | OAK-D camera (Phase 5) |
+| numpy, opencv-python, flask | `pip install numpy opencv-python flask --break-system-packages` | OAK-D dependencies (Phase 5) |
 
 > Update this table whenever a new package is needed during setup.
 
@@ -218,7 +220,19 @@ findmnt /    # should show /dev/nvme0n1p2
 
 ---
 
-## 5. GPS (ZED-F9P) + OAK-D udev Rules
+## 5. OAK-D Camera
+
+See full setup guide: `tractor_rpi/oak-camera/readme.md`
+
+**Quick summary:**
+1. Connect OAK-D Lite to BIG7 hub
+2. Write udev rule (already done — `99-oak.rules` in place)
+3. Install depthai and dependencies (see packages table above)
+4. `git pull` on tractor02, then run `python3 ~/tractor2025/tractor_rpi/oak-camera/oak_quick_test.py`
+
+---
+
+## 6. GPS (ZED-F9P) udev Rules
 
 Stable `/dev/` names prevent port assignment from changing on reboot or reconnect.
 

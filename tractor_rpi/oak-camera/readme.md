@@ -1,47 +1,67 @@
-# Oak-D Camera Setup and Test Guide for Raspberry Pi 5 (Ubuntu)
+# OAK-D Camera Setup and Test Guide — Raspberry Pi 5 (Ubuntu)
 
-This guide explains how to set up and test an Oak-D or other Luxonis DepthAI camera on a Raspberry Pi 5 running Ubuntu, using a **powered USB hub** to ensure stable operation.
+This guide covers setup and testing of a Luxonis OAK-D or OAK-D Lite camera on a Raspberry Pi 5 running Ubuntu, connected through the BIG7 powered USB hub.
+
+> **Version lock:** Keep DepthAI at `2.30.0.0`. Version 3.x rewrites the API (`ColorCamera` → `Camera`, etc.) and is incompatible with this codebase.
 
 ---
 
 ## 1. Prerequisites
 
-- Raspberry Pi 5 with Ubuntu installed and updated:
-  ```bash
-  sudo apt update && sudo apt upgrade -y
-  ```
-- Internet connection (Ethernet or Wi-Fi)
-- Powered USB 3.0 hub (recommended to prevent power brownouts)
-- Python 3.12 (or newer) preinstalled with `pip`
+- Raspberry Pi 5 with Ubuntu installed and updated
+- tractor2025 repo cloned at `~/tractor2025`
+- BIG7 powered USB hub connected
+- OAK-D or OAK-D Lite camera (**OAK-D Lite preferred for bench testing** — USB bus-powered, no external supply needed)
 
 ---
 
-## 2. Connect Hardware
+## 2. Connect Hardware and Verify Detection
 
-1. Plug the powered USB hub into the Raspberry Pi 5.
-2. Connect the Oak-D camera to the hub using a short, high-quality USB 3.0 cable.
-3. Verify detection:
+1. Plug the OAK-D Lite into the BIG7 hub.
+2. Verify detection:
    ```bash
-   dmesg | tail -n 20
+   lsusb | grep 03e7
+   dmesg | tail -n 10
    ```
-   You should see messages like:
+   You should see:
    ```
-   usb 2-2: Product: Luxonis Device
-   usb 2-2: Manufacturer: Intel Corporation
-   usb 2-2: SerialNumber: <your-serial>
+   usb 4-1: New USB device found, idVendor=03e7, idProduct=2485
+   usb 4-1: Product: Movidius MyriadX
+   usb 4-1: Manufacturer: Movidius Ltd.
    ```
 
 ---
 
-## 3. Install DepthAI (Version 2.30)
+## 3. Write udev Rule (Non-root USB Access)
 
-DepthAI 2.30.0.0 is the last stable 2.x release and is recommended for codebases that use `ColorCamera` and `XLinkOut`.
+Required so depthai can open the camera without sudo:
+
+```bash
+echo 'SUBSYSTEM=="usb", ATTRS{idVendor}=="03e7", MODE="0666"' | sudo tee /etc/udev/rules.d/99-oak.rules
+sudo udevadm control --reload-rules && sudo udevadm trigger
+```
+
+Unplug and replug the camera, then confirm:
+
+```bash
+lsusb | grep 03e7
+```
+
+---
+
+## 4. Install DepthAI 2.30.0.0
 
 ```bash
 python3 -m pip install "depthai==2.30.0.0" --break-system-packages --force-reinstall
 ```
 
-Clear any cached firmware to avoid mismatches:
+Install additional dependencies:
+
+```bash
+python3 -m pip install numpy opencv-python flask --break-system-packages
+```
+
+Clear any cached firmware to avoid version mismatches:
 
 ```bash
 rm -rf ~/.cache/luxonis
@@ -49,99 +69,77 @@ rm -rf ~/.cache/luxonis
 
 ---
 
-## 4. Install Additional Dependencies
+## 5. Disable USB Autosuspend (Recommended)
 
-```bash
-python3 -m pip install numpy opencv-python flask --break-system-packages
-```
-
----
-
-## 5. Disable USB Autosuspend (Optional but Recommended)
-
-To prevent random disconnects:
+Prevents random disconnects during long sessions:
 
 ```bash
 echo -1 | sudo tee /sys/module/usbcore/parameters/autosuspend
 ```
 
-Make it persistent by adding `usbcore.autosuspend=-1` to `/boot/firmware/cmdline.txt` and rebooting.
+Make it persistent — add `usbcore.autosuspend=-1` to the end of `/boot/firmware/cmdline.txt` (keep everything on one line), then reboot.
 
 ---
 
-## 6. Run the Test Script
-
-Navigate to your project folder:
+## 6. Quick Connection Test
 
 ```bash
-cd ~/tractor2025/tractor/oak-camera
+cd ~/tractor2025/tractor_rpi/oak-camera
+python3 oak_quick_test.py
+```
+
+Expected output:
+```
+Got frame 1
+Got frame 2
+...
+Got frame 50
+```
+
+If you see 50 frames without errors, the camera is working correctly.
+
+---
+
+## 7. Live Stream Test
+
+```bash
+cd ~/tractor2025/tractor_rpi/oak-camera
 python3 oak_v3_streaming.py
 ```
 
-You should see:
+Expected output:
 ```
 Pipeline started. Waiting for frames...
 ```
 
 On another computer, open a browser and go to:
-
 ```
-http://<your-pi-ip>:5000
+http://<rpi-ip>:5000
 ```
 
-You should see a live video stream from the Oak-D.
+You should see a live video stream.
 
 ---
 
-## 7. Troubleshooting
+## 8. Troubleshooting
 
-- **Repeated USB disconnects** → Ensure you are using a powered hub or external power for the camera.
-- **X_LINK_ERROR** → Clear cache and try again: `rm -rf ~/.cache/luxonis`
-- **No image** → Check that your USB hub is connected to a USB 3.0 port on the Pi (blue port).
-- **Low FPS or lag** → If still unstable, test in USB2 mode as a fallback:
-  ```bash
-  sudo modprobe usbcore
-  sudo sh -c 'echo 0 > /sys/bus/usb/devices/usb2/authorized_default'
-  ```
-  (limits bandwidth but confirms stability issues are USB3 related)
+| Symptom | Fix |
+|---------|-----|
+| Repeated USB disconnects | Ensure BIG7 hub has power supply connected |
+| `X_LINK_ERROR` | `rm -rf ~/.cache/luxonis` then retry |
+| No frames, no error | Check udev rule exists: `cat /etc/udev/rules.d/99-oak.rules` |
+| Low FPS / lag | Test USB2 fallback: `sudo sh -c 'echo 0 > /sys/bus/usb/devices/usb2/authorized_default'` |
+| `Permission denied` on USB | udev rule missing or not reloaded — redo Step 3 |
 
 ---
 
-## 8. Verification Script (Optional)
+## 9. Notes on OAK-D Lite vs OAK-D
 
-For a quick test without Flask, use this script:
+| | OAK-D Lite | OAK-D (full) |
+|-|-----------|-------------|
+| Power | USB bus-powered | May need external supply |
+| API | Identical (depthai 2.x) | Identical |
+| Stereo baseline | Shorter | Longer (better depth at distance) |
+| Best for | Bench testing | Outdoor robot deployment |
 
-```python
-import depthai as dai
-
-pipeline = dai.Pipeline()
-cam = pipeline.createColorCamera()
-cam.setPreviewSize(640, 480)
-cam.setInterleaved(False)
-
-xout = pipeline.createXLinkOut()
-xout.setStreamName("preview")
-cam.preview.link(xout.input)
-
-with dai.Device(pipeline) as device:
-    q = device.getOutputQueue("preview")
-    for i in range(50):  # Capture ~50 frames
-        frame = q.get()
-        print(f"Got frame {i+1}")
-```
-
-Run it with:
-
-```bash
-python3 quick_test.py
-```
-
-If you see "Got frame 1", "Got frame 2" ... without errors, the camera is functioning correctly.
-
----
-
-## 9. Next Steps
-
-- Integrate this pipeline into your ROS2 or teleoperation code.
-- Optionally update to DepthAI 3.x in the future, but note that you will need to rewrite parts of your pipeline (ColorCamera → Camera, XLinkOut → MessageOut).
-
+Code written and tested on the Lite transfers directly to the full OAK-D.
