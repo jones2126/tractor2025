@@ -31,7 +31,8 @@ WINDOW = 20             # timestamps to keep per message type for rate calc
 UBX_NAMES = {
     (0x01, 0x07): "NAV-PVT",
     (0x01, 0x3C): "NAV-RELPOSNED",
-    (0x01, 0x3D): "NAV-DAHEADING",
+    (0x01, 0x3D): "NAV-DAHEADING(F9H)",
+    (0x01, 0x45): "NAV-DAHEADING(X20D?)",  # unconfirmed — new X20D message
     (0x01, 0x35): "NAV-SAT",
     (0x01, 0x21): "NAV-TIMEUTC",
     (0x01, 0x20): "NAV-TIMEGPS",
@@ -45,6 +46,9 @@ UBX_NAMES = {
     (0x0A, 0x04): "MON-VER",
     (0x0A, 0x09): "MON-HW",
 }
+
+# Dump raw hex for these class/ID pairs to help reverse-engineer unknown messages
+HEXDUMP_IDS = {(0x01, 0x45)}
 
 def ubx_checksum(data: bytes):
     a = b = 0
@@ -92,6 +96,10 @@ def main():
                         key = f"UBX {UBX_NAMES.get((cls_, id_), f'0x{cls_:02X}/0x{id_:02X}')}"
                         counts[key] += 1
                         timestamps[key].append(now)
+                        if (cls_, id_) in HEXDUMP_IDS and counts[key] <= 3:
+                            payload = bytes(buf[i+6:i+6+length])
+                            hexstr = " ".join(f"{b:02X}" for b in payload)
+                            print(f"\n[HEXDUMP 0x{cls_:02X}/0x{id_:02X} len={length}] {hexstr}")
                         i = frame_end
                     else:
                         i += 1  # bad checksum, skip byte
