@@ -4,7 +4,7 @@
 Start Claude Code from this directory: `/home/albert/tractor2025/`
 
 ## Who I Am
-Albert — hobbyist robotics developer. Not a professional software engineer.
+Al — hobbyist robotics developer. Not a professional software engineer.
 Walk me through processes step by step when needed.
 
 ## The Robot Project
