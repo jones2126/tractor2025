@@ -66,6 +66,8 @@ Full documentation: `obsidian_vault/00-project-overview.md`
 ```
 tractor2025/
 ├── CLAUDE.md                     ← this file
+├── README.md
+├── markdown_cross_reference.csv
 ├── obsidian_vault/               ← Obsidian engineering notebook (open as vault)
 │   ├── 00-project-overview.md   ← hardware ref, key files, RPi connection
 │   ├── 01-plan/milestones.md    ← project milestones
@@ -78,9 +80,16 @@ tractor2025/
 │   └── src/teensy_main_20260518.cpp
 ├── radiocontrol_nrf24radio/     ← Handheld RC unit firmware (Teensy 3.2)
 ├── tractor_rpi/                 ← RPi 5 scripts and testing utilities
-│   └── testing/                 ← test sketches and scripts
-├── BridgevilleRTKBase/          ← RTK base station (Bridgeville PA)
-└── hardware/                    ← Fusion 360 .f3d files (future)
+│   ├── f9p/                     ← dual F9P RTK scripts
+│   ├── light-tower/             ← LED tower control
+│   ├── oak-camera/              ← OAK-D WebRTC teleoperation
+│   ├── pure-pursuit/            ← path following algorithm
+│   ├── servo-board/             ← PCA9685 servo board scripts
+│   ├── setup/                   ← RPi setup and install scripts
+│   ├── teensy/                  ← Teensy serial bridge scripts
+│   ├── testing/                 ← test sketches and scripts
+│   └── webrtc/                  ← WebRTC streaming
+└── BridgevilleRTKBase/          ← RTK base station (Bridgeville PA)
 ```
 
 ---
