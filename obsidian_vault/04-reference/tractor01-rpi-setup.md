@@ -181,6 +181,37 @@ sudo systemctl stop rtcm-server teensy-bridge led-controller
 
 ---
 
+## 6. PlatformIO (Teensy Firmware Upload)
+
+PlatformIO is needed to compile and upload firmware to the Teensy 4.1 from the RPi.
+
+```bash
+sudo apt install pipx -y
+pipx install platformio
+pipx ensurepath
+source ~/.bashrc
+pio --version    # confirm install
+```
+
+Install the PlatformIO udev rules (required for USB upload without sudo):
+
+```bash
+sudo wget https://raw.githubusercontent.com/platformio/platformio-core/develop/platformio/assets/system/99-platformio-udev.rules \
+  -O /etc/udev/rules.d/99-platformio-udev.rules
+sudo udevadm control --reload-rules
+sudo udevadm trigger
+```
+
+Upload firmware to Teensy:
+
+```bash
+cd ~/tractor2025/tractor_teensy
+pio run --target upload
+pio device monitor    # optional: open serial monitor after upload
+```
+
+---
+
 ## Connection Reference
 
 | Method | Address |
@@ -200,3 +231,5 @@ sudo systemctl stop rtcm-server teensy-bridge led-controller
 | git | `sudo apt install git -y` | Repo clone |
 | python3-serial | `sudo apt install python3-serial -y` | Teensy serial comms |
 | zerotier | `curl -s https://install.zerotier.com \| sudo bash` | Remote VPN access |
+| pipx | `sudo apt install pipx -y` | Install PlatformIO |
+| platformio | `pipx install platformio` | Compile/upload Teensy firmware |
