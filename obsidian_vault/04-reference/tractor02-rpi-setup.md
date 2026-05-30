@@ -311,6 +311,54 @@ python3 -c "import depthai as dai; d=dai.Device(); print('OAK-D connected:', d.g
 
 ---
 
+## 7. Systemd Services
+
+Three services run on boot to operate the robot:
+
+| Service | Script | Purpose |
+|---------|--------|---------|
+| `rtcm-server` | `rtcm_server_20260306.py` | Receives RTCM GPS correction data, serves it to GPS modules |
+| `teensy-bridge` | `teensy_serial_bridge_20260310.py` | Serial bridge between RPi and Teensy 4.1 (starts after rtcm-server) |
+| `led-controller` | `led_status_controller.py` | LED tower status display (starts after both above) |
+
+### Install all three services
+
+```bash
+cd ~/tractor2025/tractor_rpi
+sudo bash install_services.sh
+```
+
+The script creates the `.service` files in `/etc/systemd/system/`, enables them for auto-start, and optionally starts them immediately.
+
+### Helper scripts (in `~/tractor2025/tractor_rpi/`)
+
+```bash
+bash check_services.sh          # show running/stopped status of all three
+sudo bash restart_services.sh   # restart all three in order
+bash view_logs.sh all           # tail logs from all three services
+bash view_logs.sh teensy-bridge # tail logs from one service
+```
+
+### Manual service commands
+
+```bash
+# Check status
+systemctl status rtcm-server teensy-bridge led-controller
+
+# View live logs
+sudo journalctl -u rtcm-server -f
+sudo journalctl -u teensy-bridge -f
+sudo journalctl -u led-controller -f
+
+# Restart all
+sudo systemctl restart rtcm-server teensy-bridge led-controller
+
+# Stop all
+sudo systemctl stop rtcm-server teensy-bridge led-controller
+```
+
+---
+
 ## Connection Reference
 
 | Method | Address |
