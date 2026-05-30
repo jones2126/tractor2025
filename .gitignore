@@ -20,6 +20,9 @@ gps_log.txt
 .vscode/
 .idea/
 
+# Obsidian app settings
+obsidian_vault/.obsidian/
+
 # OS files
 .DS_Store
 Thumbs.db
