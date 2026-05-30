@@ -92,9 +92,42 @@ Confirmed by live bench test on 2026-05-29. Structure mirrors RELPOSNED but with
 
 ---
 
+## udev Rule — Stable `/dev/gps-heading` Symlink
+
+The X20D appears as `/dev/ttyACM*` (u-blox native USB, VID=`1546`, PID=`01a9`). The udev rule in `tractor_rpi/setup/99-gps-heading.rules` gives it the stable name `/dev/gps-heading`.
+
+### Install on RPi
+
+```bash
+sudo cp ~/tractor2025/tractor_rpi/setup/99-gps-heading.rules /etc/udev/rules.d/
+sudo udevadm control --reload-rules
+sudo udevadm trigger
+ls -la /dev/gps-heading        # should point to /dev/ttyACM0 or similar
+```
+
+### Confirm USB IDs before deploying
+
+Plug in the X20D, then:
+
+```bash
+lsusb | grep -i "1546"
+udevadm info -a -n /dev/ttyACM0 | grep -E "idVendor|idProduct|serial"
+```
+
+Expected: `idVendor=="1546"`, `idProduct=="01a9"`. If you also have a ZED-F9P connected via u-blox native USB (same VID/PID), add `ATTRS{serial}=="..."` to distinguish them — the X20D's USB serial is printed on the ArduSimple board sticker. If the F9P connects via CP210x (VID=`10c4`) it will appear as `/dev/ttyUSB*` and won't conflict.
+
+### Quick test after rule is active
+
+```bash
+python3 ~/tractor2025/tractor_rpi/testing/parseDAHEADING.py --port /dev/gps-heading
+```
+
+---
+
 ## Related
 
 - [[GPS-ZED-F9P]] — original two-receiver RTK positioning setup
 - [[03-1-rtk-base]] — Bridgeville PA RTK base station (still used for centimeter-level position fix)
+- `tractor_rpi/setup/99-gps-heading.rules` — udev rule file (copy to `/etc/udev/rules.d/`)
 - `tractor_rpi/testing/parseDAHEADING.py` — live parser for this message
 - `tractor_rpi/testing/ubx_message_sniffer.py` — general UBX/NMEA message monitor

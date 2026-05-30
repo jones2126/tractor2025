@@ -1,0 +1,27 @@
+# /etc/udev/rules.d/99-gps-heading.rules
+#
+# Stable symlink for the ArduSimple ZED-X20D dual-antenna heading unit.
+#
+# Install:
+#   sudo cp 99-gps-heading.rules /etc/udev/rules.d/
+#   sudo udevadm control --reload-rules
+#   sudo udevadm trigger
+#
+# Verify:
+#   ls -la /dev/gps-heading
+#
+# To confirm your device's USB serial number before deploying:
+#   lsusb | grep -i "1546"                            # find the u-blox device
+#   udevadm info -a -n /dev/ttyACM0 | grep -E "idVendor|idProduct|serial"
+#
+# The ZED-X20D appears as /dev/ttyACM* (u-blox native USB, VID=1546, PID=01a9).
+# If you also have a ZED-F9P connected (VID=10c4 CP210x), it appears as /dev/ttyUSB*
+# and will not conflict.  If both units are u-blox native USB, add ATTRS{serial}=="..."
+# to pin this rule to the specific device.
+
+# ArduSimple ZED-X20D — /dev/gps-heading
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1546", ATTRS{idProduct}=="01a9", SYMLINK+="gps-heading", MODE="0666"
+
+# If you ever need to distinguish two u-blox native-USB devices by serial number,
+# comment out the line above and use this form instead:
+#SUBSYSTEM=="tty", ATTRS{idVendor}=="1546", ATTRS{idProduct}=="01a9", ATTRS{serial}=="YOUR_SERIAL_HERE", SYMLINK+="gps-heading", MODE="0666"

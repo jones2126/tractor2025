@@ -35,7 +35,7 @@ These are not included in a fresh install and must be added manually:
 | 3 | BIG7 USB hub + Teensy udev rule | ✅ Done |
 | 4 | NVMe SSD hat — detect, clone, set boot order | ✅ Done |
 | 5 | OAK-D Lite — udev rule + depthai install + smoke test | ✅ Done |
-| 6 | GPS (ZED-F9P) — udev rules + serial test | ⬜ TODO |
+| 6 | GPS (ZED-X20D) — udev rule + serial test | ⬜ TODO |
 
 ---
 
@@ -252,37 +252,35 @@ See full setup guide: `tractor_rpi/oak-camera/readme.md`
 
 ---
 
-## 6. GPS (ZED-F9P) udev Rules
+## 6. GPS (ZED-X20D) udev Rule
 
 Stable `/dev/` names prevent port assignment from changing on reboot or reconnect.
 
-### Identify GPS ports
+The ArduSimple ZED-X20D uses u-blox native USB (VID=`1546`, PID=`01a9`) and appears as `/dev/ttyACM*`.
+
+### Install the rule from the repo
 
 ```bash
-lsusb                        # find VID:PID for GPS adapters
-ls /dev/ttyUSB* /dev/ttyACM*
-
-# Get serial number for each GPS (plug in one at a time)
-udevadm info -a -n /dev/ttyUSB0 | grep -E "idVendor|idProduct|serial"
+sudo cp ~/tractor2025/tractor_rpi/setup/99-gps-heading.rules /etc/udev/rules.d/
+sudo udevadm control --reload-rules
+sudo udevadm trigger
+ls -la /dev/gps-heading        # verify symlink exists
 ```
 
-ArduSimple ZED-F9P boards typically use a CP210x USB adapter (VID=`10c4`, PID=`ea60`). Use the `ATTRS{serial}` value to distinguish rover from base.
-
-### Write GPS udev rule
+### Confirm USB IDs (plug in X20D first)
 
 ```bash
-sudo nano /etc/udev/rules.d/99-gps.rules
+lsusb | grep -i "1546"
+udevadm info -a -n /dev/ttyACM0 | grep -E "idVendor|idProduct|serial"
 ```
 
-```
-# GPS rover — /dev/gps0
-SUBSYSTEM=="tty", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", ATTRS{serial}=="ROVER_SERIAL_HERE", SYMLINK+="gps0", MODE="0666"
+Expected: `idVendor=="1546"`, `idProduct=="01a9"`. If a ZED-F9P is also connected via u-blox native USB (same VID/PID), add `ATTRS{serial}=="..."` to the rule — see comments inside `99-gps-heading.rules` and the ZED-X20D design doc.
 
-# GPS base / correction input — /dev/gps1
-SUBSYSTEM=="tty", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", ATTRS{serial}=="BASE_SERIAL_HERE", SYMLINK+="gps1", MODE="0666"
-```
+### Quick serial test
 
-Replace `ROVER_SERIAL_HERE` and `BASE_SERIAL_HERE` with the values from `udevadm info`.
+```bash
+python3 ~/tractor2025/tractor_rpi/testing/parseDAHEADING.py --port /dev/gps-heading
+```
 
 ### OAK-D Camera (Luxonis)
 
