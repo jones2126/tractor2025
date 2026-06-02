@@ -33,14 +33,18 @@ This means Ethernet is fully compatible with all standard peripherals including 
 | 2 | DATA_PIN (NeoPixel) | LED | OUT |
 | 5 | RPWM | IBT-2 steering | OUT |
 | 6 | LPWM | IBT-2 steering | OUT |
+| 7 | R_EN (open-drain) | IBT-2 Gen2 enable | OUT |
+| 8 | L_EN (open-drain) | IBT-2 Gen2 enable | OUT |
 | 9 | CE | NRF24 radio | OUT |
 | 10 | CSN (CS) | NRF24 radio | OUT |
 | 11 | MOSI | NRF24 radio (SPI0) | OUT |
 | 12 | MISO | NRF24 radio (SPI0) | IN |
 | 13 | SCK / LED | NRF24 radio (SPI0) | OUT |
+| 21 (A7) | R_IS current sense | IBT-2 Gen2 | IN (analog) |
+| 22 (A8) | L_IS current sense | IBT-2 Gen2 | IN (analog) |
+| 23 (A9) | STEER_POT_PIN | Steering potentiometer | IN |
 | 32 | ESTOP_RELAY_PIN | E-stop relay | OUT |
-| A9 (23) | STEER_POT_PIN | Steering potentiometer | IN |
-| Serial3 | JRK G2 | Transmission actuator | TX/RX |
+| Serial3 (TX=14, RX=15) | JRK G2 | Transmission actuator | TX/RX |
 
 **Bottom pads (Ethernet add-on — no edge pin conflicts):**
 - ENET_RXD0, ENET_RXD1, ENET_RXEN, ENET_RXER
