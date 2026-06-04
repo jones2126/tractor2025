@@ -9958,7 +9958,7 @@
 		(uuid "dd15d980-e58d-4257-a44b-eb6ff9f37c13")
 	)
 	(gr_text "IBT-2 LPWM"
-		(at 104.98 123.42 0)
+		(at 100.2 123.42 0)
 		(layer "F.SilkS")
 		(uuid "036fb86e-832e-4a52-b52b-955710655749")
 		(effects
@@ -9966,11 +9966,11 @@
 				(size 0.8 0.8)
 				(thickness 0.12)
 			)
-			(justify left)
+			(justify right)
 		)
 	)
 	(gr_text "IBT-2 RPWM"
-		(at 104.98 118.34 0)
+		(at 100.2 118.34 0)
 		(layer "F.SilkS")
 		(uuid "1702d14c-5b49-4775-89b1-75b3140fefb6")
 		(effects
@@ -9978,7 +9978,7 @@
 				(size 0.8 0.8)
 				(thickness 0.12)
 			)
-			(justify left)
+			(justify right)
 		)
 	)
 	(gr_text "Teensy Pin 5 RPWM"
@@ -9994,7 +9994,7 @@
 		)
 	)
 	(gr_text "IBT-2 L_EN"
-		(at 104.98 95.48 0)
+		(at 100.2 95.48 0)
 		(layer "F.SilkS")
 		(uuid "3dc3a5d1-c518-40eb-8c21-e1437a76c5b6")
 		(effects
@@ -10002,7 +10002,7 @@
 				(size 0.8 0.8)
 				(thickness 0.12)
 			)
-			(justify left)
+			(justify right)
 		)
 	)
 	(gr_text "Teensy Pin 21 A7 R_IS"
@@ -10042,7 +10042,7 @@
 		)
 	)
 	(gr_text "IBT-2 R_IS"
-		(at 104.98 103.1 0)
+		(at 100.2 103.1 0)
 		(layer "F.SilkS")
 		(uuid "8edb23be-8c0d-4191-aa39-6de772111124")
 		(effects
@@ -10050,7 +10050,7 @@
 				(size 0.8 0.8)
 				(thickness 0.12)
 			)
-			(justify left)
+			(justify right)
 		)
 	)
 	(gr_text "Teensy Pin 6 LPWM"
@@ -10066,7 +10066,7 @@
 		)
 	)
 	(gr_text "IBT-2 L_IS"
-		(at 104.98 110.72 0)
+		(at 100.2 110.72 0)
 		(layer "F.SilkS")
 		(uuid "b6bc9e82-8995-49bd-8af9-0cc969a337c6")
 		(effects
@@ -10074,7 +10074,7 @@
 				(size 0.8 0.8)
 				(thickness 0.12)
 			)
-			(justify left)
+			(justify right)
 		)
 	)
 	(gr_text "IBT-2 Gen2 Perf Board - starter KiCad layout from markdown"
@@ -10113,7 +10113,7 @@
 		)
 	)
 	(gr_text "IBT-2 R_EN"
-		(at 104.98 87.86 0)
+		(at 100.2 87.86 0)
 		(layer "F.SilkS")
 		(uuid "eda06e99-8a0e-4a91-9b8b-3af9e85cf536")
 		(effects
@@ -10121,7 +10121,7 @@
 				(size 0.8 0.8)
 				(thickness 0.12)
 			)
-			(justify left)
+			(justify right)
 		)
 	)
 	(gr_text "Teensy GND"
@@ -10149,7 +10149,7 @@
 		)
 	)
 	(gr_text "IBT-2 VCC"
-		(at 104.98 80.24 0)
+		(at 100.2 80.24 0)
 		(layer "F.SilkS")
 		(uuid "f8d4af3f-d093-435e-94e4-15f841571f80")
 		(effects
@@ -10157,11 +10157,11 @@
 				(size 0.8 0.8)
 				(thickness 0.12)
 			)
-			(justify left)
+			(justify right)
 		)
 	)
 	(gr_text "IBT-2 GND"
-		(at 104.98 128.5 0)
+		(at 100.2 128.5 0)
 		(layer "F.SilkS")
 		(uuid "fbe55427-22bf-477b-8232-dc1e384a4670")
 		(effects
@@ -10169,7 +10169,7 @@
 				(size 0.8 0.8)
 				(thickness 0.12)
 			)
-			(justify left)
+			(justify right)
 		)
 	)
 	(gr_text "W3"
