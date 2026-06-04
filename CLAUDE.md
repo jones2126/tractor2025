@@ -1,7 +1,10 @@
 # Claude Code Context — Tractor Robot Project
 
 ## Working Directory
-Start Claude Code from this directory: `/home/albert/tractor2025/`
+Start Claude Code from this directory: `/home/al/repos/tractor2025/`
+(Development happens on the RPi5NAS machine — see "This Machine" below.
+The robot's onboard Pi pulls from GitHub; hardware scripts in `tractor_rpi/`
+run there, not here.)
 
 ## Who I Am
 Al — hobbyist robotics developer. Not a professional software engineer.
@@ -23,10 +26,11 @@ Full documentation: `obsidian_vault/00-project-overview.md`
 | Camera | OAK-D stereo (WebRTC teleoperation) — DepthAI must stay at 2.30.0.0 |
 | LED tower | PCA9685 via I2C, channels 8–12 |
 
-### RPi Connection
+### Robot RPi Connection (onboard the tractor)
 - Hostname: `raspberrypi` | User: `al` | Local IP: `192.168.1.151`
 - ZeroTier IP: `192.168.193.76`
 - Serial bridge: `460800 baud` USB (`/dev/teensy`)
+- Reachable from the dev NAS over ZeroTier (`192.168.193.x` network).
 
 ### Radio Modes
 | Mode | Value | Behavior |
@@ -94,7 +98,14 @@ tractor2025/
 
 ---
 
-## This Machine (Linux Desktop)
-- OS: Ubuntu/Linux, AMD Radeon Mullins APU
-- GPU driver: `amdgpu` (not `radeon`) — switching to amdgpu fixed UI hanging
-- Verify: `lsmod | grep -E 'radeon|amdgpu'` — amdgpu should show >100 users
+## This Machine (Dev Box — RPi5NAS)
+Primary development machine for the robot project, going forward.
+(A Linux laptop was used earlier just to get familiar with Claude Code; it's retired.)
+
+- Hostname: `RPi5NAS` | User: `al`
+- Hardware: Raspberry Pi 5 Model B Rev 1.0 (aarch64)
+- OS: Ubuntu 25.04 (Plucky Puffin), kernel `6.14.0-raspi`
+- Local IPs: `192.168.1.2`, `192.168.1.205` | ZeroTier IP: `192.168.193.217`
+- Also runs as a NAS: 2× 1.8 TB NVMe (`nvme0n1`, `nvme1n1`, Crucial P3) + Docker.
+- Repo lives on the SD card root (`/dev/mmcblk0p2`, `/`), not the NVMe pool.
+- Role: edit code here, commit/push to GitHub; the robot's onboard Pi pulls and runs.
