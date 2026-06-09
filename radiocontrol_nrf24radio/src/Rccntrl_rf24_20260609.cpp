@@ -1,4 +1,5 @@
-//
+// 
+// Rccntrl_nrf24_20260517.cpp
 // NRF24L01 Radio Control Unit / Transmitter Code with PL9823 LEDs
 // - See RadioControlStruct for hardware pin assignments.
 // - LEDs: #1=Signal, #2=E-stop, #3=Mode, #4=GPS Status.
@@ -58,12 +59,11 @@ struct __attribute__((packed)) AckPayloadStruct {
 RadioControlStruct radioData;
 AckPayloadStruct ackPayload;
 
-// NRF24 addresses explicit const arrays 
-// const uint8_t NRF24_ADDRESS_TRACTOR[6]       = "TRACT";
-// const uint8_t NRF24_ADDRESS_RADIO_CONTROL[6] = "RCTRL";
-
-const uint8_t NRF24_ADDRESS_TRACTOR[6]       = "1Node";
-const uint8_t NRF24_ADDRESS_RADIO_CONTROL[6] = "2Node";
+// NRF24 addresses - named by data flow direction for clarity
+// ADDR_HANDHELD_TO_TRACTOR: commands travel this path (handheld TX -> tractor RX)
+// ADDR_TRACTOR_TO_HANDHELD: ACKs travel this path    (tractor TX -> handheld RX)
+const uint8_t ADDR_HANDHELD_TO_TRACTOR[6] = "1Node";
+const uint8_t ADDR_TRACTOR_TO_HANDHELD[6] = "2Node";
 
 // Hardware Pin definitions
 const int steeringPin = 16;      // Analog for steering
@@ -164,8 +164,8 @@ void setup() {
     radio.setChannel(76);  // Production: Match Teensy channel
     radio.setPayloadSize(14); 
 
-    radio.openWritingPipe(NRF24_ADDRESS_TRACTOR);           // Send data to the tractor
-    radio.openReadingPipe(1, NRF24_ADDRESS_RADIO_CONTROL);  // Listen for ACKs
+    radio.openWritingPipe(ADDR_HANDHELD_TO_TRACTOR);        // Send commands to tractor
+    radio.openReadingPipe(1, ADDR_TRACTOR_TO_HANDHELD);    // Listen for ACKs from tractor
 
     radio.enableAckPayload();
     radio.stopListening();  // Transmitter mode
@@ -182,12 +182,12 @@ void setup() {
 
     Serial.print("Writing to Address: ");
     for(int i = 0; i < 5; i++) {
-        Serial.print((char)NRF24_ADDRESS_TRACTOR[i]);
+        Serial.print((char)ADDR_HANDHELD_TO_TRACTOR[i]);
     }
     Serial.println();
     Serial.print("Listening on Pipe 1: ");
     for(int i = 0; i < 5; i++) {
-        Serial.print((char)NRF24_ADDRESS_RADIO_CONTROL[i]);
+        Serial.print((char)ADDR_TRACTOR_TO_HANDHELD[i]);
     }
     Serial.println();
     Serial.println("=========================");
@@ -199,7 +199,7 @@ void setup() {
     // ========== Lines 177-185: CHANGED initialization values to match new types ==========
     radioData.steering_val = 512;       // int16_t: OK as-is
     radioData.throttle_val = 512;       // int16_t: OK as-is
-    radioData.voltage_mv = 12000;       // CHANGED: 12.0V → 12000 millivolts
+    radioData.voltage_mv = 12000;       // CHANGED: 12.0V â†’ 12000 millivolts
     radioData.transmission_val = 512;   // int16_t: OK as-is
     radioData.pot4_val = 0;             // int16_t: OK as-is
     radioData.estop = 0;
@@ -234,7 +234,7 @@ void sendData(){
 
         // ========== Lines 215-216: CHANGED voltage to millivolts (uint16_t) ==========
         // Voltage: Convert ADC reading to millivolts
-        // Example: 12.6V battery → (12.6V / 5.0) = 2.52V on ADC pin
+        // Example: 12.6V battery â†’ (12.6V / 5.0) = 2.52V on ADC pin
         //          2.52V / 3.3V * 1023 = 781 ADC counts
         //          (781 * 3.3 / 1023) * 5.0 * 1000 = 12600 millivolts
         float voltage_float = (analogRead(voltagePin) * ADC_REF_VOLTAGE / 1023.0) * VOLTAGE_DIVIDER_RATIO;
@@ -326,9 +326,9 @@ void checkModeSW() {
         if (leftState == LOW) {
             radioData.control_mode = 0;  // Pause/Left position
         } else if (rightState == LOW) {
-            radioData.control_mode = 1;  // Manual/Right position
-        } else {
             radioData.control_mode = 2;  // Auto/Center position
+        } else {
+            radioData.control_mode = 1;  // Manual/Right position
         }
         
         lastModeCheck = currentMillis;

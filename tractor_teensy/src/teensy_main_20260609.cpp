@@ -14,12 +14,20 @@
 // -------------------------------------------------------------------
 // JRK controller
 #define JRK_BAUD 9600
-const uint16_t transmissionNeutralPos = 2985;
+const uint16_t transmissionNeutralPos = 2836;  // confirmed by watching the reverse switch on 6/9/26, not by driving
 
-// 10-bucket transmission targets
+// // 10-bucket transmission targets
+// const uint16_t bucketTargets[10] = {
+//     3696, 3554, 3412, 3270, 3128,
+//     2985, 2751, 2517, 2283, 2048
+// };
+
+// CHANGED 20260609: anchored to confirmed physical limits
+// Bucket 0=full reverse(3138), Bucket 5=neutral(2836), Bucket 9=full forward(2288)
+// 4 reverse buckets, 1 neutral, 5 forward buckets
 const uint16_t bucketTargets[10] = {
-    3696, 3554, 3412, 3270, 3128,
-    2985, 2751, 2517, 2283, 2048
+    3138, 3063, 2987, 2912, 2836,
+    2836, 2726, 2616, 2507, 2288
 };
 
 // IBT-2 steering pins
@@ -819,6 +827,11 @@ void setup() {
     
     Serial3.begin(JRK_BAUD);
 
+    // CHANGED 20260609: exit JRK safe start so motor responds to targets on power-up
+    delay(100);
+    Serial3.write(0x83);  // Exit safe start command
+    Serial3.flush();
+
     // === IBT-2 Steering controller SETUP ===
     pinMode(RPWM_Output, OUTPUT);
     pinMode(LPWM_Output, OUTPUT);
@@ -908,9 +921,9 @@ void setup() {
 
     // MERGED FROM OLDER: Print bucket system info
     Serial.println("10-Bucket Control System:");
-    Serial.println("  transmission_val 1023 -> bucket 0 -> JRK 3696 (FULL REVERSE)");
-    Serial.println("  transmission_val ~512 -> bucket 5 -> JRK 2985 (NEUTRAL)");
-    Serial.println("  transmission_val 1    -> bucket 9 -> JRK 2048 (FULL FORWARD)");
+    Serial.println("  transmission_val 1023 -> bucket 0 -> JRK 3138 (FULL REVERSE)");
+    Serial.println("  transmission_val ~512 -> bucket 5 -> JRK 2836 (NEUTRAL)");
+    Serial.println("  transmission_val 1    -> bucket 9 -> JRK 2288 (FULL FORWARD)");
 
     Serial.println("1,0,SYS,start");
     Serial.flush();
