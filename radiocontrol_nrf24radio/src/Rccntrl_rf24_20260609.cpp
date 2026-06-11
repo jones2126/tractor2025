@@ -324,11 +324,11 @@ void checkModeSW() {
         int rightState = digitalRead(rightPin);
         
         if (leftState == LOW) {
-            radioData.control_mode = 0;  // Pause/Left position
+            radioData.control_mode = 2;  // Pause / top position
         } else if (rightState == LOW) {
-            radioData.control_mode = 2;  // Auto/Center position
+            radioData.control_mode = 0;  // Auto / bottom position
         } else {
-            radioData.control_mode = 1;  // Manual/Right position
+            radioData.control_mode = 1;  // Manual / middle position
         }
         
         lastModeCheck = currentMillis;
