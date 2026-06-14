@@ -1,10 +1,11 @@
 # tractor01 RPi 5 — Setup Guide
 
 **Platform:** Raspberry Pi 5, Ubuntu 24.04.03 LTS  
-**Hostname:** `raspberrypi` | **User:** `al`  
+**Hostname:** `tractor` (target: rename to `tractor01` in a future update)  
+**User:** `al`  
 **Local IP:** `192.168.1.151` | **ZeroTier IP:** `192.168.193.76`
 
-> See also: `tractor02-rpi-setup.md` for the second RPi (different hardware — NVMe, OAK-D).
+> See also: `tractor02_rpi_setup.md` for the second RPi (different hardware — NVMe, OAK-D).
 
 ---
 
@@ -58,7 +59,6 @@ ZeroTier allows SSH from any location and connects tractor01 to the rest of the 
 **Network ID:** `9f77fc393e0a16f8`
 
 ```bash
-sudo apt update && sudo apt upgrade -y
 curl -s https://install.zerotier.com | sudo bash
 sudo systemctl enable zerotier-one
 sudo systemctl start zerotier-one
@@ -76,8 +76,14 @@ zerotier-cli listnetworks    # confirm assigned IP after authorization
 ## 3. Clone the Repo
 
 ```bash
-sudo apt install git -y    # already installed on Ubuntu 24.04, but confirm
+sudo apt install git -y
 git clone https://github.com/jones2126/tractor2025.git ~/tractor2025
+```
+
+Set git pager to avoid interactive pager in terminal sessions:
+
+```bash
+git config --global core.pager cat
 ```
 
 Future updates:
@@ -133,7 +139,33 @@ python3 -c "import serial; s=serial.Serial('/dev/teensy',460800,timeout=1); prin
 
 ---
 
-## 5. Systemd Services
+## 5. Repo Sync on Boot
+
+Installs a boot service that checks GitHub on every startup, pulls if behind, and sends a notification via ntfy.sh.
+
+**ntfy topic:** `rpi-tractor-jones2126` (updates automatically if hostname changes)
+
+```bash
+bash ~/tractor2025/tractor_rpi/setup/install_repo_sync.sh
+```
+
+After running, verify:
+
+```bash
+cat /var/log/repo_sync.log
+sudo systemctl status repo-sync.service
+```
+
+You should receive a ntfy notification on your phone confirming the repo status. From this point on, every boot sends a notification automatically — no SSH session needed.
+
+> **Note:** If the installer pulls new commits, manually restart affected services afterward:
+> ```bash
+> sudo systemctl restart rtcm-server teensy-bridge led-controller
+> ```
+
+---
+
+## 6. Systemd Services
 
 Three services run on boot to operate the robot:
 
@@ -181,7 +213,7 @@ sudo systemctl stop rtcm-server teensy-bridge led-controller
 
 ---
 
-## 6. PlatformIO (Teensy Firmware Upload)
+## 7. PlatformIO (Teensy Firmware Upload)
 
 PlatformIO is needed to compile and upload firmware to the Teensy 4.1 from the RPi.
 
@@ -230,6 +262,7 @@ pio device monitor    # optional: open serial monitor after upload
 | openssh-server | `sudo apt install openssh-server -y` | SSH access |
 | git | `sudo apt install git -y` | Repo clone |
 | python3-serial | `sudo apt install python3-serial -y` | Teensy serial comms |
+| curl | `sudo apt install curl -y` | ntfy notifications, ZeroTier install |
 | zerotier | `curl -s https://install.zerotier.com \| sudo bash` | Remote VPN access |
 | pipx | `sudo apt install pipx -y` | Install PlatformIO |
 | platformio | `pipx install platformio` | Compile/upload Teensy firmware |
