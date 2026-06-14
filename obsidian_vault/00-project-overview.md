@@ -104,7 +104,7 @@ Steering PID, transmission (JRK G2), NRF24 radio receive, e-stop relay, serial b
 Archive of older versions: `tractor_teensy/src/archive/`
 
 ### RC Unit Firmware (Handheld Transmitter — Teensy 3.2)
-**Current:** `radiocontrol_nrf24radio/src/Rccntrl_rf24_20260609.cpp`
+**Current:** `radiocontrol_nrf24radio/src/RadioControlNRF24_20260612.cpp`
 NRF24 transmit at 10 Hz, ACK receive, 4× PL9823 LEDs, mode switch, pots.
 
 ### Teensy Serial Bridge (RPi)

@@ -24,7 +24,7 @@ Older versions archived in `tractor_teensy/src/archive/`
 |--------|------------|-------------|--------|-------------|-------|
 | Teensy 4.1 — tractor01 | `tractor_teensy/src/teensy_main_20260609.cpp` | unknown | unknown | — | Commit not recorded before this file existed |
 | Teensy 4.1 — tractor02 | `tractor_teensy/src/teensy_main_20260609.cpp` | never | — | — | Not yet flashed |
-| Teensy 3.2 — RC handheld | `radiocontrol_nrf24radio/src/Rccntrl_rf24_20260609.cpp` | unknown | unknown | — | Commit not recorded before this file existed |
+| Teensy 3.2 — RC handheld | `radiocontrol_nrf24radio/src/RadioControlNRF24_20260612.cpp` | 6/12/26 | 6/14/26 |9cd39f7 | Firt commit using this process |
 
 ---
 
