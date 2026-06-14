@@ -1,4 +1,4 @@
-# Firmware Version Log
+# Firmware Version Log  
 
 Tracks what is actually flashed on each Teensy. The repo contains the source;
 this file records which commit was compiled and uploaded to each device.
