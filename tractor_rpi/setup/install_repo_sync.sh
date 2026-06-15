@@ -95,11 +95,27 @@ REMOTE=\$(git rev-parse origin/main)
 SHORT_LOCAL=\${LOCAL:0:7}
 SHORT_REMOTE=\${REMOTE:0:7}
 
+# NEW: Count commits in each direction
+BEHIND=\$(git rev-list HEAD..origin/main --count)
+AHEAD=\$(git rev-list origin/main..HEAD --count)
+
 if [ "\$LOCAL" = "\$REMOTE" ]; then
+    # UNCHANGED: in sync
     log "[OK] Up to date at \$SHORT_LOCAL"
     notify "\$HOSTNAME repo OK" "Up to date at \$SHORT_LOCAL" "low" "white_check_mark"
+
+elif [ "\$AHEAD" -gt 0 ] && [ "\$BEHIND" -eq 0 ]; then
+    # NEW: local is ahead — do not pull, just warn
+    log "[AHEAD] \$AHEAD local commits not yet pushed. Local=\$SHORT_LOCAL Remote=\$SHORT_REMOTE"
+    notify "\$HOSTNAME repo AHEAD" "\$AHEAD unpushed local commits. Local=\$SHORT_LOCAL Remote=\$SHORT_REMOTE. Push from dev machine needed." "default" "arrow_up"
+
+elif [ "\$AHEAD" -gt 0 ] && [ "\$BEHIND" -gt 0 ]; then
+    # NEW: diverged — do not auto-pull
+    log "[DIVERGED] \$AHEAD ahead, \$BEHIND behind. Local=\$SHORT_LOCAL Remote=\$SHORT_REMOTE — manual merge needed"
+    notify "\$HOSTNAME repo DIVERGED" "\$AHEAD ahead, \$BEHIND behind. Local=\$SHORT_LOCAL Remote=\$SHORT_REMOTE. Manual fix needed." "high" "warning"
+
 else
-    BEHIND=\$(git rev-list HEAD..origin/main --count)
+    # UNCHANGED: purely behind — safe to pull
     log "[BEHIND] \$BEHIND commits behind. Local=\$SHORT_LOCAL Remote=\$SHORT_REMOTE - pulling"
 
     git pull origin main >> "\$LOG_FILE" 2>&1
