@@ -1,23 +1,24 @@
 #!/bin/bash
 # install_repo_sync.sh
 # Installs the repo-sync boot check on any tractor RPi.
-# Run as user 'al' — sudo prompted as needed.
+# Auto-detects repo path from script location — works regardless of where
+# the repo is cloned (~/tractor2025 or ~/repos/tractor2025 etc.)
 #
-# Usage: bash ~/tractor2025/tractor_rpi/setup/install_repo_sync.sh
+# Usage: bash ~/repos/tractor2025/tractor_rpi/setup/install_repo_sync.sh
 #
 # What it does:
 #   1. Creates /var/log/repo_sync.log with correct permissions
 #   2. Writes /usr/local/bin/repo_sync_check.sh
 #   3. Writes /etc/systemd/system/repo-sync.service
 #   4. Enables and starts the service
-#   5. Sets git pager to cat (avoids interactive pager in scripts)
-#
-# ntfy topic: rpi-{hostname}-jones2126
-# Log file:   /var/log/repo_sync.log
+#   5. Sets git pager to cat
 
 set -e
 
-REPO_DIR="/home/al/tractor2025"
+# Auto-detect repo root from this script's location (works on any machine)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
 SCRIPT_PATH="/usr/local/bin/repo_sync_check.sh"
 SERVICE_PATH="/etc/systemd/system/repo-sync.service"
 LOG_FILE="/var/log/repo_sync.log"
@@ -30,10 +31,10 @@ echo "ntfy topic: $NTFY_TOPIC"
 echo "Repo dir:   $REPO_DIR"
 echo ""
 
-# Confirm repo dir exists
-if [ ! -d "$REPO_DIR" ]; then
-    echo "ERROR: $REPO_DIR not found. Clone the repo first:"
-    echo "  git clone https://github.com/jones2126/tractor2025.git ~/tractor2025"
+# Confirm repo dir looks right
+if [ ! -f "$REPO_DIR/obsidian_vault/00-project-overview.md" ]; then
+    echo "ERROR: $REPO_DIR does not look like the tractor2025 repo."
+    echo "Could not find obsidian_vault/00-project-overview.md"
     exit 1
 fi
 
@@ -47,7 +48,7 @@ echo "      Done."
 echo "[2/5] Writing $SCRIPT_PATH ..."
 sudo tee "$SCRIPT_PATH" > /dev/null << SCRIPT
 #!/bin/bash
-REPO_DIR="/home/al/tractor2025"
+REPO_DIR="$REPO_DIR"
 LOG_FILE="/var/log/repo_sync.log"
 TIMESTAMP=\$(date '+%Y-%m-%d %H:%M:%S')
 HOSTNAME=\$(hostname)
