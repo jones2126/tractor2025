@@ -21,7 +21,7 @@ Full documentation: `obsidian_vault/00-project-overview.md`
 | Primary compute | Raspberry Pi 5 — navigation, GPS, teleoperation |
 | Steering | IBT-2 H-bridge, PID (kp=1.0, ki=0.0, kd=0.0), pot feedback A9 |
 | Transmission | Pololu JRK G2 21v3 linear actuator, 10-bucket system, neutral=2985 |
-| GPS | 2× ArduSimple ZED-F9P RTK, JSON on UDP 6002 at 20 Hz |
+| GPS | 2× ArduSimple ZED-F9P RTK, 10 Hz fix rate; JSON republished on UDP 6002 at 20 Hz |
 | Radio | NRF24L01, 14-byte struct at 10 Hz, channel 76, 250KBPS |
 | Camera | OAK-D stereo (WebRTC teleoperation) — DepthAI must stay at 2.30.0.0 |
 | LED tower | PCA9685 via I2C, channels 8–12 |
@@ -42,7 +42,7 @@ Full documentation: `obsidian_vault/00-project-overview.md`
 ### UDP Ports
 | Port | Content |
 |------|---------|
-| 6002 | GPS/RTK state JSON — 20 Hz |
+| 6002 | GPS/RTK state JSON — published at 20 Hz (F9P fix rate is 10 Hz) |
 | 6003 | Teensy bridge status broadcast |
 | 6004 | cmd_vel commands JSON |
 
