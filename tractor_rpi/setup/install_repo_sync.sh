@@ -39,23 +39,27 @@ if [ ! -f "$REPO_DIR/obsidian_vault/00-project-overview.md" ]; then
 fi
 
 # Step 1 — Create log file
-echo "[1/5] Creating log file $LOG_FILE ..."
+echo "[1/6] Creating log file $LOG_FILE ..."
 sudo touch "$LOG_FILE"
 sudo chown al:al "$LOG_FILE"
 echo "      Done."
 
-# Step 2 — Write the sync script
-echo "[2/5] Writing $SCRIPT_PATH ..."
+# Step 2 — Enable NTP so the clock is correct before the repo check runs
+echo "[2/6] Enabling NTP time sync ..."
+sudo timedatectl set-ntp true
+echo "      Done."
+
+# Step 3 — Write the sync script
+echo "[3/6] Writing $SCRIPT_PATH ..."
 sudo tee "$SCRIPT_PATH" > /dev/null << SCRIPT
 #!/bin/bash
 REPO_DIR="$REPO_DIR"
 LOG_FILE="/var/log/repo_sync.log"
-TIMESTAMP=\$(date '+%Y-%m-%d %H:%M:%S')
 HOSTNAME=\$(hostname)
 NTFY_TOPIC="rpi-\${HOSTNAME}-jones2126"
 
 log() {
-    echo "\$TIMESTAMP \$1" >> "\$LOG_FILE"
+    echo "\$(date '+%Y-%m-%d %H:%M:%S') \$1" >> "\$LOG_FILE"
 }
 
 notify() {
@@ -86,6 +90,17 @@ done
 if ! ping -c1 -W2 github.com &>/dev/null; then
     log "[ERROR] No network after 30s"
     exit 1
+fi
+
+# Wait up to 60s for the clock to be NTP-synced before anything time-stamped.
+# The Pi has no battery-backed RTC, so it boots with a stale clock; without
+# this the log timestamps (and any committed times) would be wrong.
+for i in {1..30}; do
+    [ "\$(timedatectl show -p NTPSynchronized --value 2>/dev/null)" = "yes" ] && break
+    sleep 2
+done
+if [ "\$(timedatectl show -p NTPSynchronized --value 2>/dev/null)" != "yes" ]; then
+    log "[WARN] Clock not NTP-synced after 60s; timestamps may be off"
 fi
 
 git fetch origin >> "\$LOG_FILE" 2>&1
@@ -134,12 +149,12 @@ SCRIPT
 sudo chmod +x "$SCRIPT_PATH"
 echo "      Done."
 
-# Step 3 — Write the systemd service
-echo "[3/5] Writing $SERVICE_PATH ..."
+# Step 4 — Write the systemd service
+echo "[4/6] Writing $SERVICE_PATH ..."
 sudo tee "$SERVICE_PATH" > /dev/null << SERVICE
 [Unit]
 Description=Check and sync tractor2025 repo on boot
-After=network-online.target
+After=network-online.target time-sync.target
 Wants=network-online.target
 
 [Service]
@@ -153,15 +168,15 @@ WantedBy=multi-user.target
 SERVICE
 echo "      Done."
 
-# Step 4 — Enable and start the service
-echo "[4/5] Enabling and starting repo-sync.service ..."
+# Step 5 — Enable and start the service
+echo "[5/6] Enabling and starting repo-sync.service ..."
 sudo systemctl daemon-reload
 sudo systemctl enable repo-sync.service
 sudo systemctl start repo-sync.service
 echo "      Done."
 
-# Step 5 — Set git pager to cat
-echo "[5/5] Setting git pager to cat ..."
+# Step 6 — Set git pager to cat
+echo "[6/6] Setting git pager to cat ..."
 git config --global core.pager cat
 echo "      Done."
 

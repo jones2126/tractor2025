@@ -1,12 +1,11 @@
 #!/bin/bash
 REPO_DIR="/home/al/repos/tractor2025"
 LOG_FILE="/var/log/repo_sync.log"
-TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
 HOSTNAME=$(hostname)
 NTFY_TOPIC="rpi-${HOSTNAME}-jones2126"
 
 log() {
-    echo "$TIMESTAMP $1" >> "$LOG_FILE"
+    echo "$(date '+%Y-%m-%d %H:%M:%S') $1" >> "$LOG_FILE"
 }
 
 notify() {
@@ -37,6 +36,17 @@ done
 if ! ping -c1 -W2 github.com &>/dev/null; then
     log "[ERROR] No network after 30s"
     exit 1
+fi
+
+# Wait up to 60s for the clock to be NTP-synced before anything time-stamped.
+# The Pi has no battery-backed RTC, so it boots with a stale clock; without
+# this the log timestamps (and any committed times) would be wrong.
+for i in {1..30}; do
+    [ "$(timedatectl show -p NTPSynchronized --value 2>/dev/null)" = "yes" ] && break
+    sleep 2
+done
+if [ "$(timedatectl show -p NTPSynchronized --value 2>/dev/null)" != "yes" ]; then
+    log "[WARN] Clock not NTP-synced after 60s; timestamps may be off"
 fi
 
 git fetch origin >> "$LOG_FILE" 2>&1
