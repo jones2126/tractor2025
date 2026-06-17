@@ -136,7 +136,7 @@ void updateRadioSmoothing() {
 // E-stop
 unsigned long lastEstopCheckRun = 0;
 const unsigned long estopCheckInterval = 50;
-#define ESTOP_RELAY_PIN 32
+#define ESTOP_RELAY_PIN 30
 
 // Control printing intervals
 unsigned long lastTargetPrint = 0;
