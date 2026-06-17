@@ -57,9 +57,17 @@ UDP_PUBLISH_HZ = 20                 # broadcast rate
 # Fields: time, lat, N/S, lon, E/W, fix, numSV, HDOP, alt, M, geoidSep, M, diffAge
 # CHANGED: Expanded from 6 capture groups to 8 (added numSV, HDOP)
 # diffAge is parsed separately via split since fields 9-13 have optional empty values
+
+# new pattern below captures numSV and HDOP as well, which are important diagnostics even when fix is degraded
 GGA_PATTERN = re.compile(
     rb"\$G[NP]GGA,([^,]*),([^,]*),([NS]?),([^,]*),([EW]?),(\d),(\d*),([^,]*),"
 )
+
+# NEW (6/17/26) VTG pattern for ground speed
+VTG_PATTERN = re.compile(
+    rb"\$G[NP]VTG,[^,]*,[TM]?,[^,]*,[TM]?,([0-9]*\.?[0-9]+),N,([0-9]*\.?[0-9]+),K,"
+)
+
 FIX_QUALITY = {
     0: "Invalid",
     1: "GPS Fix",
@@ -78,6 +86,7 @@ state = {
     "numSV": None,           # Satellites used in fix (from GGA field 7)
     "hdop": None,            # Horizontal dilution of precision (GGA field 8)
     "diff_age": None,        # Age of differential corrections in seconds (GGA field 13)
+    "speed_mps": None,       # NEW 6/17/26: Ground speed m/s (from VTG)    
     "heading_deg": None,
     "headValid": None,
     "carrier": None,
@@ -298,6 +307,17 @@ def monitor_gga(serial_conn):
 
                         except (ValueError, ZeroDivisionError) as parse_err:
                             print(f"[GGA Monitor] Parse error on line: {line.decode(errors='ignore')} - {parse_err}")
+                
+                # NEW 6/17/26: VTG parsing for ground speed
+                elif line.startswith(b'$GNVTG') or line.startswith(b'$GPVTG'):
+                    match = VTG_PATTERN.match(line)
+                    if match:
+                        try:
+                            speed_kmh = float(match.group(2))
+                            with state_lock:
+                                state["speed_mps"] = round(speed_kmh / 3.6, 3)
+                        except ValueError:
+                            pass
 
         except serial.SerialException as e:
             print(f"[GGA Monitor] Serial error: {e} - attempting recovery in 5s...")

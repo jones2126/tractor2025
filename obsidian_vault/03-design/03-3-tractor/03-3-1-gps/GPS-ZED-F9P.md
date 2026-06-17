@@ -49,7 +49,7 @@ Status is broadcast by the Teensy ACK payload back to the handheld RC unit, whic
 ```
 ZED-F9P (USB)
     ↓
-rtcm_server_20260306.py
+rtcm_server_20260617.py
     ├── Parses GGA + RELPOSNED sentences
     ├── Forwards RTCM corrections (TCP from Bridgeville base)
     └── Broadcasts JSON status on UDP 6002 at 20 Hz
@@ -61,7 +61,7 @@ teensy_serial_bridge.py
 ```
 
 **Key files:**
-- `tractor_rpi/rtcm_server_20260306.py` — main GPS pipeline
+- `tractor_rpi/rtcm_server_20260617.py` — main GPS pipeline
 - `tractor_rpi/teensy_serial_bridge_20251101.py` — serial bridge
 
 ---

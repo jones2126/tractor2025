@@ -80,7 +80,7 @@ Full details in `tractor_rpi/setup/tractor01_rpi_setup.md` and `tractor02_rpi_se
 
 | Service | Current File | Notes |
 |---------|-------------|-------|
-| rtcm-server | `tractor_rpi/rtcm_server_20260306.py` | GPS pipeline, UDP 6002 |
+| rtcm-server | `tractor_rpi/rtcm_server_20260617.py` | GPS pipeline, UDP 6002 |
 | teensy-bridge | `tractor_rpi/teensy_serial_bridge_20260310.py` | Serial↔UDP bridge |
 | led-controller | `tractor_rpi/led_status_controller.py` | PCA9685 LED tower |
 | RTK base Bridgeville | `BridgevilleRTKBase/raspberry-pi/production/rtcm_base_server_20260526.py` | Bridgeville PA |

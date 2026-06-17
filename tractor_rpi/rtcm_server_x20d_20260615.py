@@ -17,6 +17,7 @@ UDP output schema is IDENTICAL to the F9P version so all downstream consumers
 (teensy_serial_bridge.py, led_status_controller.py, nav stack) need no changes.
 
 2026-06-15  Initial version derived from rtcm_server_20260306.py + parseDAHEADING.py
+2026-06-17  rtcm_server_20260306.py has been updated.  This version DOES NOT incorporate those changes related to tracking speed.
 """
 
 import json

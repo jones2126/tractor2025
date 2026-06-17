@@ -112,7 +112,7 @@ NRF24 transmit at 10 Hz, ACK receive, 4× PL9823 LEDs, mode switch, pots.
 Bidirectional serial↔UDP bridge, GPS status forwarding to Teensy, cmd_vel relay.
 
 ### RTCM Server / GPS Pipeline (Tractor RPi)
-**Current:** `tractor_rpi/rtcm_server_20260306.py`
+**Current:** `tractor_rpi/rtcm_server_20260617.py`
 RTCM TCP→serial forwarding, GGA + RELPOSNED parsing, JSON broadcast on UDP 6002 at 20 Hz.
 
 ### LED Status Controller (RPi)
