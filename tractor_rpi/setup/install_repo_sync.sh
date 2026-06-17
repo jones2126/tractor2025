@@ -117,7 +117,7 @@ AHEAD=\$(git rev-list origin/main..HEAD --count)
 if [ "\$LOCAL" = "\$REMOTE" ]; then
     # UNCHANGED: in sync
     log "[OK] Up to date at \$SHORT_LOCAL"
-    notify "\$HOSTNAME repo OK" "Up to date at \$SHORT_LOCAL" "low" "white_check_mark"
+    notify "\$HOSTNAME repo OK" "Up to date at \$SHORT_LOCAL" "default" "white_check_mark"
 
 elif [ "\$AHEAD" -gt 0 ] && [ "\$BEHIND" -eq 0 ]; then
     # NEW: local is ahead — do not pull, just warn
