@@ -1,0 +1,26 @@
+[Unit]
+Description=Teensy Serial Bridge
+Documentation=https://github.com/jones2126/tractor2025
+After=network.target 
+#After=network.target rtcm-server.service
+#Wants=rtcm-server.service
+
+[Service]
+Type=simple
+User=al
+WorkingDirectory=/home/al/tractor2025/tractor_rpi
+ExecStart=/usr/bin/python3 /home/al/tractor2025/tractor_rpi/teensy_serial_bridge_20260310.py
+Restart=always
+RestartSec=5
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=teensy-bridge
+
+# Resource limits (optional)
+# MemoryLimit=256M
+# CPUQuota=50%
+
+[Install]
+WantedBy=multi-user.target
