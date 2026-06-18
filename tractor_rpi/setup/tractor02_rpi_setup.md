@@ -2,7 +2,7 @@
 
 **Platform:** Raspberry Pi 5, Ubuntu Server 24.04 LTS  
 **Hostname:** `tractor02` | **User:** `al`  
-**Local IP:** `192.168.1.214` | **ZeroTier IP:** `192.168.193.48`  
+**Local IP:** `192.168.1.213` | **ZeroTier IP:** `192.168.193.48`  
 **Script:** `tractor_rpi/setup/tractor02_setup.sh` — run it on the RPi after reading this guide.
 
 ---
@@ -35,7 +35,7 @@
 | 3 | BIG7 USB hub + Teensy udev rule | ✅ Done |
 | 4 | NVMe SSD hat — detect, clone, set boot order | ✅ Done |
 | 5 | OAK-D Lite — udev rule + depthai install + smoke test | ✅ Done |
-| 6 | GPS (ZED-X20D) — udev rule + serial test | ⬜ TODO |
+| 6 | GPS (ZED-X20D) — udev rule + serial test | ✅ Done |
 | 7 | Repo sync on boot — install_repo_sync.sh + ntfy | ✅ Done |
 
 ---
@@ -250,19 +250,23 @@ See full setup guide: `tractor_rpi/oak-camera/readme.md`
 
 ---
 
-## 6. GPS (ZED-X20D) udev Rule (TODO)
+## 6. GPS (ZED-X20D) udev Rule (DONE)
 
 Stable `/dev/` names prevent port assignment from changing on reboot or reconnect.
 
-The ArduSimple ZED-X20D uses u-blox native USB (VID=`1546`, PID=`01a9`) and appears as `/dev/ttyACM*`.
+The ArduSimple ZED-X20D on tractor02 uses u-blox native USB (VID=`1546`, PID=`01ab`) and appears
+as `/dev/ttyACM*`. The symlink `/dev/gps-heading` is used by `rtcm_server_x20d_20260615.py`.
 
-### Install the rule from the repo
+> **Note:** The PID is `01ab` on this specific unit. The repo file `99-gps-heading.rules` was
+> originally written with `01a9` — confirm with `lsusb` before deploying on new hardware.
+
+### Install the rule
 
 ```bash
 sudo cp ~/tractor2025/tractor_rpi/setup/99-gps-heading.rules /etc/udev/rules.d/
 sudo udevadm control --reload-rules
-sudo udevadm trigger
-ls -la /dev/gps-heading        # verify symlink exists
+sudo reboot
+ls -la /dev/gps-heading        # verify symlink exists after reboot
 ```
 
 ### Confirm USB IDs (plug in ZED-X20D first)
@@ -272,7 +276,21 @@ lsusb | grep -i "1546"
 udevadm info -a -n /dev/ttyACM0 | grep -E "idVendor|idProduct|serial"
 ```
 
-Expected: `idVendor=="1546"`, `idProduct=="01a9"`. If a ZED-F9P is also connected via u-blox native USB (same VID/PID), add `ATTRS{serial}=="..."` to the rule to differentiate.
+Expected on tractor02: `idVendor=="1546"`, `idProduct=="01ab"`. No serial number is presented
+by this unit so the rule matches on VID/PID only — this is fine as long as only one u-blox
+device is connected.
+
+### Working rule content (as deployed 2026-06-17)
+
+```
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1546", ATTRS{idProduct}=="01ab", SYMLINK+="gps-heading", MODE="0666"
+```
+
+### Verify after reboot
+
+```bash
+ls -la /dev/gps-heading        # should show -> ttyACM0
+```
 
 ### Quick serial test
 

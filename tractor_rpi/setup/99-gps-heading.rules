@@ -20,8 +20,8 @@
 # to pin this rule to the specific device.
 
 # ArduSimple ZED-X20D — /dev/gps-heading
-SUBSYSTEM=="tty", ATTRS{idVendor}=="1546", ATTRS{idProduct}=="01a9", SYMLINK+="gps-heading", MODE="0666"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1546", ATTRS{idProduct}=="01ab", SYMLINK+="gps-heading", MODE="0666"
 
 # If you ever need to distinguish two u-blox native-USB devices by serial number,
 # comment out the line above and use this form instead:
-#SUBSYSTEM=="tty", ATTRS{idVendor}=="1546", ATTRS{idProduct}=="01a9", ATTRS{serial}=="YOUR_SERIAL_HERE", SYMLINK+="gps-heading", MODE="0666"
+#SUBSYSTEM=="tty", ATTRS{idVendor}=="1546", ATTRS{idProduct}=="01ab", ATTRS{serial}=="YOUR_SERIAL_HERE", SYMLINK+="gps-heading", MODE="0666"

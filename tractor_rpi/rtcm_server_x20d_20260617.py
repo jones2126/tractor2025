@@ -4,7 +4,7 @@
 Hardware: ArduSimple simpleRTK 4 Dual (u-blox ZED-X20D chipset)
           Two antennas on one module; produces position + heading on one USB port.
 
-Differences from rtcm_server_20260306.py (two-F9P version):
+Differences from rtcm_server_20260617.py (two-F9P version):
   - Single serial port (/dev/gps-heading) replaces two F9P ports.
   - UBX-NAV-DAHEADING (0x01 0x45, 64-byte payload) replaces RELPOSNED (0x01 0x3C).
   - One combined reader thread (monitor_gga_and_daheading) replaces the two
@@ -17,7 +17,10 @@ UDP output schema is IDENTICAL to the F9P version so all downstream consumers
 (teensy_serial_bridge.py, led_status_controller.py, nav stack) need no changes.
 
 2026-06-15  Initial version derived from rtcm_server_20260306.py + parseDAHEADING.py
-2026-06-17  rtcm_server_20260306.py has been updated.  This version DOES NOT incorporate those changes related to tracking speed.
+2026-06-17  Synced with rtcm_server_20260617.py (F9P):
+              - NEW: VTG_PATTERN regex for ground speed parsing
+              - NEW: speed_mps field added to state dict
+              - NEW: VTG parsing block added to _parse_gga_line()
 """
 
 import json
@@ -36,14 +39,14 @@ import serial
 # REMOVED: BASE_SERIAL = "/dev/gps-base-link"
 # REMOVED: HEADING_SERIAL = "/dev/gps-heading"  (was heading F9P)
 # ---------------------------------------------------------------------------
-# Line ~25 — select active base station IP for your location
+# Line ~30 — select active base station IP for your location
 #RTCM_TCP_IP = "192.168.1.95"       # Brenham TX base
 RTCM_TCP_IP = "192.168.193.88"      # Bridgeville PA base (ZeroTier)
 
 RTCM_TCP_PORT = 6001
 
-# NEW ~line 30: Single ZED-X20D port (replaces BASE_SERIAL + HEADING_SERIAL)
-X20D_SERIAL = "/dev/gps-heading"    # udev symlink for ZED-X20D (VID=1546, PID=01a9)
+# Single ZED-X20D port (replaces BASE_SERIAL + HEADING_SERIAL)
+X20D_SERIAL = "/dev/gps-heading"    # udev symlink for ZED-X20D (VID=1546, PID=01ab)
 SERIAL_BAUD  = 115200
 
 UDP_TARGET_IP   = "127.0.0.1"
@@ -51,10 +54,16 @@ UDP_TARGET_PORT = 6002
 UDP_PUBLISH_HZ  = 20
 
 # Regex: parse $GNGGA / $GPGGA.  Captures time, lat, N/S, lon, E/W, fix, numSV, hdop.
-# UNCHANGED from 20260306 version.
 GGA_PATTERN = re.compile(
     rb"\$G[NP]GGA,([^,]*),([^,]*),([NS]?),([^,]*),([EW]?),(\d),(\d*),([^,]*),"
 )
+
+# NEW (synced from rtcm_server_20260617.py): VTG pattern for ground speed
+# Line ~50
+VTG_PATTERN = re.compile(
+    rb"\$G[NP]VTG,[^,]*,[TM]?,[^,]*,[TM]?,([0-9]*\.?[0-9]+),N,([0-9]*\.?[0-9]+),K,"
+)
+
 FIX_QUALITY = {
     0: "Invalid",
     1: "GPS Fix",
@@ -65,7 +74,8 @@ FIX_QUALITY = {
 
 # ---------------------------------------------------------------------------
 # Shared state  — schema IDENTICAL to F9P version; downstream consumers unchanged.
-# CHANGED ~line 55: removed fatal_base_reason (only one port now).
+# CHANGED: removed fatal_base_reason (only one port now).
+# NEW (line ~70): speed_mps field added to match rtcm_server_20260617.py
 # ---------------------------------------------------------------------------
 state = {
     "lat":              None,
@@ -74,6 +84,7 @@ state = {
     "numSV":            None,
     "hdop":             None,
     "diff_age":         None,
+    "speed_mps":        None,       # NEW: Ground speed m/s (from VTG sentence)
     "heading_deg":      None,
     "headValid":        None,
     "carrier":          None,
@@ -81,18 +92,18 @@ state = {
     "timestamp":        None,
     # Fatal connection info
     "fatal_error":          False,
-    "fatal_heading_reason": None,   # CHANGED: was fatal_base_reason + fatal_heading_reason
+    "fatal_heading_reason": None,   # single port — was fatal_base_reason + fatal_heading_reason
 }
 state_lock = threading.Lock()
 
 # ---------------------------------------------------------------------------
 # UBX framing constants
-# CHANGED ~line 80: ID_DAHEADING = 0x45  (was ID_RELPOSNED = 0x3C)
+# ID_DAHEADING = 0x45  (replaces ID_RELPOSNED = 0x3C from F9P version)
 # ---------------------------------------------------------------------------
 SYNC1, SYNC2            = 0xB5, 0x62
 CLS_NAV                 = 0x01
 ID_DAHEADING            = 0x45      # ZED-X20D native heading message
-DAHEADING_PAYLOAD_LEN   = 64       # confirmed by bench test 2026-05-29
+DAHEADING_PAYLOAD_LEN   = 64        # confirmed by bench test 2026-05-29
 
 def ubx_checksum(data: bytes):
     """Fletcher-8 checksum over bytes between sync and checksum fields."""
@@ -103,7 +114,7 @@ def ubx_checksum(data: bytes):
     return a, b
 
 # ---------------------------------------------------------------------------
-# NEW ~line 95: parse_daheading() — replaces parse_relposned()
+# parse_daheading() — replaces parse_relposned() from F9P version.
 # Derived from tractor_rpi/testing/parseDAHEADING.py (bench-tested 2026-05-29).
 # Returns dict with same keys used downstream as parse_relposned() did,
 # so expected_heading_error_deg() and state update code remain compatible.
@@ -254,18 +265,18 @@ def forward_rtcm(ser):
             time.sleep(reconnect_delay)
 
 
-# NEW ~line 230: Combined GGA + DAHEADING reader — replaces monitor_gga() and
-# monitor_relposned() from the F9P version.
+# Combined GGA + DAHEADING reader — replaces monitor_gga() and monitor_relposned()
+# from the F9P version.
 #
 # The X20D sends both NMEA sentences (GGA for position/fix) and UBX binary
 # (DAHEADING for heading) on the same USB serial port, interleaved.
 # This thread reads one byte at a time and dispatches based on framing:
-#   '$'       → accumulate NMEA line until '\n', then parse GGA
+#   '$'       → accumulate NMEA line until '\n', then parse GGA/VTG
 #   0xB5 0x62 → accumulate UBX frame, verify checksum, parse DAHEADING
 #   anything else → discard (e.g. other NMEA sentences, other UBX IDs)
 def monitor_gga_and_daheading(serial_conn):
     """Single reader thread for the ZED-X20D serial port.
-    Dispatches to GGA parser (position/fix) or DAHEADING parser (heading).
+    Dispatches to GGA/VTG parser (position/fix/speed) or DAHEADING parser (heading).
     """
     nmea_buf = b""
     ubx_buf  = bytearray()
@@ -332,7 +343,7 @@ def monitor_gga_and_daheading(serial_conn):
                     line = nmea_buf.strip()
                     nmea_buf = b""
                     mode = IDLE
-                    _parse_gga_line(line)
+                    _parse_gga_line(line)   # handles both GGA and VTG
                 else:
                     nmea_buf += raw
                     if len(nmea_buf) > 512:
@@ -345,9 +356,8 @@ def monitor_gga_and_daheading(serial_conn):
                     nmea_buf = b"$"
                     mode = IN_NMEA
                 elif byte == SYNC1:
-                    # Peek: next byte must be SYNC2; we handle that on next iteration
                     ubx_buf = bytearray([SYNC1])
-                    mode = IN_UBX  # will confirm SYNC2 below
+                    mode = IN_UBX
 
             # Confirm second sync byte when we just entered UBX mode with one byte
             if mode == IN_UBX and len(ubx_buf) == 1:
@@ -366,60 +376,71 @@ def monitor_gga_and_daheading(serial_conn):
 
 
 def _parse_gga_line(line: bytes):
-    """Parse a single NMEA GGA sentence and update shared state.
-    UNCHANGED logic from monitor_gga() in the F9P version.
-    Extracted as a helper so monitor_gga_and_daheading() stays readable.
+    """Parse a single NMEA sentence and update shared state.
+    Handles GGA (position/fix/diagnostics) and VTG (ground speed).
+
+    CHANGED (20260617): Added VTG parsing block (synced from rtcm_server_20260617.py).
     """
-    if not (line.startswith(b'$GNGGA') or line.startswith(b'$GPGGA')):
-        return
+    # ---- GGA ----
+    if line.startswith(b'$GNGGA') or line.startswith(b'$GPGGA'):
+        match = GGA_PATTERN.match(line)
+        if not match:
+            return
 
-    match = GGA_PATTERN.match(line)
-    if not match:
-        return
+        time_str, lat_str, lat_dir, lon_str, lon_dir, fix, num_sv_raw, hdop_raw = match.groups()
 
-    time_str, lat_str, lat_dir, lon_str, lon_dir, fix, num_sv_raw, hdop_raw = match.groups()
+        try:
+            fix_int = int(fix)
+            fix_str = FIX_QUALITY.get(fix_int, "Unknown")
+            num_sv  = int(num_sv_raw)  if num_sv_raw  else None
+            hdop    = float(hdop_raw)  if hdop_raw    else None
 
-    try:
-        fix_int = int(fix)
-        fix_str = FIX_QUALITY.get(fix_int, "Unknown")
-        num_sv  = int(num_sv_raw)  if num_sv_raw  else None
-        hdop    = float(hdop_raw)  if hdop_raw    else None
+            # diff_age is GGA field index 13 (0-based)
+            diff_age = None
+            fields = line.split(b',')
+            if len(fields) > 13 and fields[13]:
+                try:
+                    diff_age = float(fields[13])
+                except ValueError:
+                    pass
 
-        # diff_age is GGA field index 13 (0-based)
-        diff_age = None
-        fields = line.split(b',')
-        if len(fields) > 13 and fields[13]:
+            with state_lock:
+                state["fix_quality"] = fix_str
+                state["numSV"]       = num_sv
+                state["hdop"]        = hdop
+                state["diff_age"]    = diff_age
+                state["timestamp"]   = datetime.now(timezone.utc).isoformat()
+
+                # Parse lat/lon for any valid fix (GPS, DGPS, RTK Float, RTK Fixed)
+                if fix_int in (1, 2, 4, 5) and lat_str and lon_str:
+                    lat     = float(lat_str)
+                    lat_deg = int(lat / 100)
+                    lat     = lat_deg + (lat - lat_deg * 100) / 60.0
+                    if lat_dir == b'S':
+                        lat = -lat
+
+                    lon     = float(lon_str)
+                    lon_deg = int(lon / 100)
+                    lon     = lon_deg + (lon - lon_deg * 100) / 60.0
+                    if lon_dir == b'W':
+                        lon = -lon
+
+                    state["lat"] = lat
+                    state["lon"] = lon
+
+        except (ValueError, ZeroDivisionError) as e:
+            print(f"[X20D Monitor] GGA parse error: {line.decode(errors='ignore')} — {e}")
+
+    # ---- VTG — ground speed (NEW, synced from rtcm_server_20260617.py) ----
+    elif line.startswith(b'$GNVTG') or line.startswith(b'$GPVTG'):
+        match = VTG_PATTERN.match(line)
+        if match:
             try:
-                diff_age = float(fields[13])
+                speed_kmh = float(match.group(2))
+                with state_lock:
+                    state["speed_mps"] = round(speed_kmh / 3.6, 3)
             except ValueError:
                 pass
-
-        with state_lock:
-            state["fix_quality"] = fix_str
-            state["numSV"]       = num_sv
-            state["hdop"]        = hdop
-            state["diff_age"]    = diff_age
-            state["timestamp"]   = datetime.now(timezone.utc).isoformat()
-
-            # Parse lat/lon for any valid fix (GPS, DGPS, RTK Float, RTK Fixed)
-            if fix_int in (1, 2, 4, 5) and lat_str and lon_str:
-                lat     = float(lat_str)
-                lat_deg = int(lat / 100)
-                lat     = lat_deg + (lat - lat_deg * 100) / 60.0
-                if lat_dir == b'S':
-                    lat = -lat
-
-                lon     = float(lon_str)
-                lon_deg = int(lon / 100)
-                lon     = lon_deg + (lon - lon_deg * 100) / 60.0
-                if lon_dir == b'W':
-                    lon = -lon
-
-                state["lat"] = lat
-                state["lon"] = lon
-
-    except (ValueError, ZeroDivisionError) as e:
-        print(f"[X20D Monitor] GGA parse error: {line.decode(errors='ignore')} — {e}")
 
 
 def udp_publisher():
@@ -434,9 +455,9 @@ def udp_publisher():
 
 # ---------------------------------------------------------------------------
 # Main
-# CHANGED ~line 370: Open one serial port instead of two.
+# CHANGED: Open one serial port instead of two.
 # REMOVED: base_ser open + fatal_base_reason block
-# REMOVED: heading_ser open + fatal_heading_reason block  
+# REMOVED: heading_ser open + fatal_heading_reason block
 # NEW:     x20d_ser open + fatal_heading_reason (reused key for single-port error)
 # ---------------------------------------------------------------------------
 def main():
@@ -468,14 +489,11 @@ def main():
             pass
         return
 
-    # Normal operation — CHANGED: two threads instead of three
-    # REMOVED: threading.Thread(target=monitor_gga, args=(base_ser,)...)
-    # REMOVED: threading.Thread(target=monitor_relposned, args=(heading_ser,)...)
-    # NEW:     single combined reader thread
+    # Normal operation — two threads: RTCM forwarder + combined GGA/DAHEADING reader
     threading.Thread(target=forward_rtcm,              args=(x20d_ser,), daemon=True).start()
     threading.Thread(target=monitor_gga_and_daheading, args=(x20d_ser,), daemon=True).start()
 
-    print("rtcm_server_x20d running (ZED-X20D single-port mode). Ctrl+C to exit.")
+    print("rtcm_server_x20d_20260617 running (ZED-X20D single-port mode). Ctrl+C to exit.")
     try:
         while True:
             time.sleep(1)
