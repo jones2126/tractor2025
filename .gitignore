@@ -31,3 +31,4 @@ Thumbs.db
 *.local
 BridgevilleRTKBase/raspberry-pi/production/gps_log_*.txt
 .pio/
+*.bak
