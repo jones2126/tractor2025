@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-field_test_logger_20260617.py
+field_test_logger_20260622.py
 ==============================
 Field test data logger for tractor manual drive sessions.
 
@@ -9,19 +9,23 @@ Listens on:
   UDP 6003 - Teensy/system status (from teensy_serial_bridge)
 
 Merges latest values from both sources by wall-clock timestamp.
-Writes one CSV row per 6003 broadcast (~5 Hz).
+Writes one CSV row per 6003 broadcast (~5 Hz) when Teensy bridge is running.
+
+CHANGED 20260622: GPS-only mode — if UDP 6003 is silent for GPS_ONLY_TIMEOUT
+seconds (e.g. no Teensy connected), rows are driven by UDP 6002 instead.
+Teensy/steering/radio columns will be empty in GPS-only rows.
 
 CSV is TimescaleDB-ready:
   - 'time' column is ISO-8601 UTC (hypertable partition key)
   - All other columns are plain numerics or short strings
-  - Ingest with: \COPY field_test FROM 'file.csv' CSV HEADER
+  - Ingest with: \\COPY field_test FROM 'file.csv' CSV HEADER
 
 Usage:
-  python3 field_test_logger_20260617.py
-  python3 field_test_logger_20260617.py --output /home/al/field_logs/run2.csv
+  python3 field_test_logger_20260622.py
+  python3 field_test_logger_20260622.py --output /home/al/field_logs/run2.csv
 
 Output file auto-named by datetime if --output not specified:
-  /home/al/field_logs/field_test_20260617_143022.csv
+  /home/al/field_logs/field_test_20260622_143022.csv
 """
 
 import argparse
@@ -42,7 +46,10 @@ from datetime import datetime, timezone
 UDP_GPS_PORT     = 6002   # from rtcm_server
 UDP_STATUS_PORT  = 6003   # from teensy_serial_bridge
 LOG_DIR          = "/home/al/field_logs"
-LOG_HZ           = 5      # rows per second (driven by 6003 broadcast rate)
+LOG_HZ           = 5      # rows per second (driven by 6003 or 6002 in GPS-only mode)
+
+# CHANGED 20260622: if 6003 is silent longer than this, switch to GPS-only mode
+GPS_ONLY_TIMEOUT = 2.0    # seconds
 
 # CSV column order - 'time' first for TimescaleDB hypertable key
 CSV_COLUMNS = [
@@ -66,7 +73,7 @@ CSV_COLUMNS = [
     "heading_deg",        # degrees from north
     "head_valid",         # bool: heading valid flag
     "carrier",            # "fixed" / "float" / "none"
-    "speed_mps",          # ground speed m/s (from VTG, requires rtcm_server update)
+    "speed_mps",          # ground speed m/s (from VTG)
     # --- Radio ---
     "radio_signal",       # "GOOD" / "UNKNOWN"
     "ack_rate",           # ACK packets/sec
@@ -81,15 +88,21 @@ latest_gps    = {}
 latest_status = {}
 state_lock    = threading.Lock()
 running       = True
+last_6003_time = 0.0      # CHANGED 20260622: track when 6003 was last received
 
 # ---------------------------------------------------------------------------
 # UDP listener threads
 # ---------------------------------------------------------------------------
 
 def gps_listener():
-    """Listen on 6002, update latest_gps."""
+    """Listen on 6002, update latest_gps.
+
+    CHANGED 20260622: also sets _new_row flag to drive logger when 6003 is
+    silent (GPS-only mode).  No separate thread needed — single socket handles both.
+    """
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
     sock.bind(('', UDP_GPS_PORT))
     sock.setblocking(False)
     print(f"[GPS listener] bound to UDP {UDP_GPS_PORT}")
@@ -101,6 +114,9 @@ def gps_listener():
                 parsed = json.loads(data.decode())
                 with state_lock:
                     latest_gps.update(parsed)
+                    # CHANGED 20260622: drive logger from GPS when Teensy bridge absent
+                    if time.time() - last_6003_time > GPS_ONLY_TIMEOUT:
+                        latest_status['_new_row'] = True
             except Exception as e:
                 print(f"[GPS listener] error: {e}")
     sock.close()
@@ -108,6 +124,7 @@ def gps_listener():
 
 def status_listener():
     """Listen on 6003, update latest_status. Also signals the logger thread."""
+    global last_6003_time    # CHANGED 20260622
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind(('', UDP_STATUS_PORT))
@@ -121,7 +138,8 @@ def status_listener():
                 parsed = json.loads(data.decode())
                 with state_lock:
                     latest_status.update(parsed)
-                    latest_status['_new_row'] = True   # signal to logger
+                    latest_status['_new_row'] = True
+                    last_6003_time = time.time()   # CHANGED 20260622
             except Exception as e:
                 print(f"[Status listener] error: {e}")
     sock.close()
@@ -167,7 +185,7 @@ def build_row(start_time: float) -> dict:
         "heading_deg":   gps.get('heading_deg', ''),
         "head_valid":    gps.get('headValid', ''),
         "carrier":       gps.get('carrier', ''),
-        "speed_mps":     gps.get('speed_mps', ''),   # empty until rtcm_server updated
+        "speed_mps":     gps.get('speed_mps', ''),
 
         # Radio
         "radio_signal":  radio.get('signal', ''),
@@ -189,7 +207,7 @@ def run_logger(output_path: str):
     print(f"\n{'='*55}")
     print(f"  Field Test Logger  |  {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"  Output: {output_path}")
-    print(f"  Rate:   ~{LOG_HZ} Hz (driven by UDP 6003)")
+    print(f"  Rate:   ~{LOG_HZ} Hz (6003 when Teensy present, else 6002 GPS-only)")  # CHANGED
     print(f"  Ctrl+C to stop and close file cleanly")
     print(f"{'='*55}\n")
 
@@ -204,7 +222,7 @@ def run_logger(output_path: str):
 
         try:
             while running:
-                # Wait for a new 6003 packet (status_listener sets _new_row flag)
+                # Wait for a new packet (_new_row set by either listener)
                 time.sleep(1.0 / (LOG_HZ * 4))   # poll at 4x log rate
 
                 with state_lock:
@@ -228,9 +246,12 @@ def run_logger(output_path: str):
                     speed = row.get('speed_mps', 'N/A')
                     bkt   = row.get('bucket', 'N/A')
                     sig   = row.get('radio_signal', 'N/A')
+                    # CHANGED 20260622: show GPS-only vs full mode
+                    mode_str = "GPS-only" if time.time() - last_6003_time > GPS_ONLY_TIMEOUT else "full"
                     print(f"  [{row['elapsed_sec']:7.1f}s]  rows={row_count:5d}  "
                           f"fix={fix:<12}  speed={speed} m/s  "
-                          f"bucket={bkt}  radio={sig}")
+                          f"bucket={bkt}  radio={sig}  mode={mode_str}")
+
                     last_print = now
 
         except KeyboardInterrupt:
@@ -280,8 +301,9 @@ def main():
     t_gps.start()
     t_status.start()
 
-    # Brief wait for sockets to bind before first row
+    # CHANGED 20260622: announce GPS-only mode if 6003 silent at startup
     time.sleep(0.5)
+    print("[Logger] Waiting for data... (GPS-only mode active until Teensy bridge seen)")
 
     run_logger(output_path)
 
