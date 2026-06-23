@@ -102,12 +102,23 @@ void setup() {
   Serial.begin(115200);
   delay(2000);
   
-  // REMOVED: The "Waiting for user input..." loop (blocks Python connect)
+  // Wait for serial connection to stabilize (e.g. RPi USB enumeration)
+  // Drains any commands sent during boot so they don't interfere with setup
+  Serial.println("Waiting 10 seconds for serial to stabilize...");
+  for (int i = 10; i > 0; i--) {
+    Serial.println(String(i) + " seconds remaining...");
+    delay(1000);
+    while (Serial.available()) {
+      Serial.read();
+    }
+  }
   
-  Serial.println("User input received! Starting setup...");  // Kept for legacy, but non-blocking
-  delay(1000);
   Serial.println("Starting!");
   
+  // Format SPIFFS to fix corruption (REMOVE AFTER FIRST UPLOAD)
+  Serial.println("Formatting SPIFFS... pausing 1 sec");
+  SPIFFS.format();
+  delay(1000);
   // Initialize SPIFFS for CSV file storage
   if (!SPIFFS.begin(true)) {
     Serial.println("An error occurred while mounting SPIFFS");
@@ -292,7 +303,7 @@ String getCurrentTimestamp() {
   struct tm * timeinfo;
   timeinfo = gmtime(&rawtime);
   
-  char buffer[25];  // Safe size (extra room)
+  char buffer[32];  // Safe size for "YYYY-MM-DD HH:MM:SS EST" + null
   sprintf(buffer, "%04d-%02d-%02d %02d:%02d:%02d EST",
           timeinfo->tm_year + 1900,
           timeinfo->tm_mon + 1,

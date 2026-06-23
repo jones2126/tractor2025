@@ -3,32 +3,26 @@ __pycache__/
 *.py[cod]
 *$py.class
 *.so
-
 # Logs
 logs/
 *.log
-
 # GPS data files
 gps_log.txt
 *.bin
-
 # Temporary files
 *.tmp
 *.temp
-
 # IDE files
 .vscode/
 .idea/
-
 # Obsidian app settings
 obsidian_vault/.obsidian/
-
 # OS files
 .DS_Store
 Thumbs.db
-
 # Local configuration
 *.local
 BridgevilleRTKBase/raspberry-pi/production/gps_log_*.txt
 .pio/
 *.bak
+BridgevilleRTKBase/raspberry-pi/production/daily_position_log.csv
