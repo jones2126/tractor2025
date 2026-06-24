@@ -22,7 +22,7 @@ obsidian_vault/.obsidian/
 Thumbs.db
 # Local configuration
 *.local
-BridgevilleRTKBase/raspberry-pi/production/gps_log_*.txt
+RTKBase/Bridgeville/gps_log_*.txt
 .pio/
 *.bak
-BridgevilleRTKBase/raspberry-pi/production/daily_position_log.csv
+RTKBase/Bridgeville/daily_position_log.csv
