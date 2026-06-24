@@ -4,7 +4,7 @@
 #include <ModbusMaster.h>
 #include <FS.h>
 #include <SPIFFS.h>
-#include <time.h>  // NEW: For gmtime, time_t, struct tm (fixes stack smash)
+#include <time.h>  // For gmtime, time_t, struct tm
 
 // Temperature sensor setup
 const int oneWireBus = 32;
@@ -93,9 +93,9 @@ void downloadAndDeleteCSVData();
 void showFileStatus();
 void clearCSVFile();
 void showHelp();
-void setTime(unsigned long epoch);  // UPDATED: Forward declaration
-String getCurrentTimestamp();       // UPDATED: Forward declaration
-String getCurrentCSVFilename();     // FIXED: Added forward declaration (was missing)
+void setTime(unsigned long epoch);
+String getCurrentTimestamp();
+String getCurrentCSVFilename();
 void createNewCSVFile();
 
 void setup() {
@@ -115,10 +115,11 @@ void setup() {
   
   Serial.println("Starting!");
   
-  // Format SPIFFS to fix corruption (REMOVE AFTER FIRST UPLOAD)
+  // Format SPIFFS on every boot to ensure clean state
   Serial.println("Formatting SPIFFS... pausing 1 sec");
   SPIFFS.format();
   delay(1000);
+
   // Initialize SPIFFS for CSV file storage
   if (!SPIFFS.begin(true)) {
     Serial.println("An error occurred while mounting SPIFFS");
@@ -139,9 +140,8 @@ void setup() {
   initializeCSVFile();
   
   Serial.println("Setup complete! Starting data logging...");
-  if (!timeIsSynced) {
-    Serial.println("WARNING: Time not synced. Timestamps will be relative until SETTIME command received.");
-  }
+  // UPDATED: Inform that logging is paused until SETTIME received
+  Serial.println("WARNING: Logging paused. Waiting for SETTIME command before writing CSV records.");
   Serial.println("Ready for Python sync/download commands.");
 }
 
@@ -151,14 +151,14 @@ void loop() {
   postResults();
   handleSerialCommands();
   
-  // OPTIONAL DEBUG: Print sync status every 30s
+  // Debug: Print sync status every 30s
   static unsigned long lastDebug = 0;
   if (millis() - lastDebug >= 30000) {
-    Serial.println("Debug: Time synced=" + String(timeIsSynced ? "Yes (" + getCurrentTimestamp() + ")" : "No") + ", Free heap=" + String(ESP.getFreeHeap()));
+    Serial.println("Debug: Time synced=" + String(timeIsSynced ? "Yes (" + getCurrentTimestamp() + ")" : "No (logging paused)") + ", Free heap=" + String(ESP.getFreeHeap()));
     lastDebug = millis();
   }
   
-  delay(100); // Small delay to prevent excessive CPU usage
+  delay(100);
 }
 
 void readTemperature() {
@@ -171,8 +171,6 @@ void readTemperature() {
     if (currentTemp != DEVICE_DISCONNECTED_C) {
       tempSum += currentTemp;
       tempCount++;
-      
-      // Calculate running average
       avgTemperatureC = tempSum / tempCount;
       avgTemperatureF = (avgTemperatureC * 9.0 / 5.0) + 32.0;
       
@@ -219,117 +217,20 @@ void postResults() {
   
   if (currentTime - lastCSVWrite >= csvInterval) {
     writeToCSV();
-    
-    // Reset temperature averaging for next period
-    tempSum = 0;
-    tempCount = 0;
-    
     lastCSVWrite = currentTime;
   }
 }
 
-void handleSerialCommands() {
-  if (Serial.available()) {
-    processingCommand = true;  // Stop normal output
-    
-    // Read the command
-    String command = Serial.readStringUntil('\n');
-    command.trim();
-    
-    // Check for SETTIME command (case-sensitive for the timestamp part)
-    if (command.startsWith("SETTIME ")) {
-      // Extract the timestamp (everything after "SETTIME ")
-      String timestampStr = command.substring(8);
-      unsigned long epoch = timestampStr.toInt();
-      setTime(epoch);
-    } else {
-      // Convert to uppercase for other commands
-      command.toUpperCase();
-      
-      // Clear any remaining serial buffer
-      while (Serial.available()) {
-        Serial.read();
-      }
-      
-      // Add a small delay to let any pending output finish
-      delay(200);
-      
-      // Process the command
-      if (command == "DOWNLOAD") {
-        downloadCSVData();
-      } else if (command == "DOWNLOAD_DELETE") {
-        downloadAndDeleteCSVData();
-      } else if (command == "STATUS") {
-        showFileStatus();
-      } else if (command == "CLEAR") {
-        clearCSVFile();
-      } else if (command == "HELP") {
-        showHelp();
-      } else if (command.length() > 0) {
-        Serial.println("Unknown command: " + command + ". Type HELP for available commands.");
-      }
-      
-      // Add end marker for command completion
-      Serial.println("COMMAND_COMPLETE");
-      Serial.flush();
-    }
-    
-    processingCommand = false;  // Resume normal output
-  }
-}
-
-// UPDATED: Improved setTime with EST confirmation
-void setTime(unsigned long epoch) {
-  timeSyncEpoch = epoch;
-  timeSyncMillis = millis();
-  timeIsSynced = true;
-  Serial.println("TIME_SYNCED:" + String(epoch));
-  Serial.println("Current timestamp: " + getCurrentTimestamp());  // Now with EST
-}
-
-// UPDATED: Robust getCurrentTimestamp with EST suffix and safe buffer
-String getCurrentTimestamp() {
+// UPDATED: Guard added - no logging until SETTIME received from Pi
+void writeToCSV() {
   if (!timeIsSynced) {
-    // Return milliseconds since boot if time not synced
-    return String(millis());
-  }
-  
-  // Calculate current Unix timestamp
-  unsigned long elapsedSeconds = (millis() - timeSyncMillis) / 1000;
-  unsigned long currentEpoch = timeSyncEpoch + elapsedSeconds;
-  
-  // Convert to datetime string: YYYY-MM-DD HH:MM:SS EST
-  time_t rawtime = currentEpoch;
-  struct tm * timeinfo;
-  timeinfo = gmtime(&rawtime);
-  
-  char buffer[32];  // Safe size for "YYYY-MM-DD HH:MM:SS EST" + null
-  sprintf(buffer, "%04d-%02d-%02d %02d:%02d:%02d EST",
-          timeinfo->tm_year + 1900,
-          timeinfo->tm_mon + 1,
-          timeinfo->tm_mday,
-          timeinfo->tm_hour,
-          timeinfo->tm_min,
-          timeinfo->tm_sec);
-  
-  return String(buffer);
-}
-
-void initializeCSVFile() {
-  String filename = getCurrentCSVFilename();
-  File file = SPIFFS.open(filename, FILE_WRITE);
-  if (!file) {
-    Serial.println("Failed to create CSV file: " + filename);
+    // Silently skip - Pi hasn't synced time yet
+    // Reset temperature averaging so we don't accumulate stale readings
+    tempSum = 0;
+    tempCount = 0;
     return;
   }
-  
-  // UPDATED: Removed Avg_Temp_C, Battery_SOC, Solar_Panel_Watts from headers
-  file.println("Timestamp,Avg_Temp_F,Battery_Voltage,Solar_Panel_Voltage,Solar_Panel_Amps,Load_Watts");
-  file.close();
-  Serial.println("CSV file initialized: " + filename);
-}
 
-void writeToCSV() {
   String filename = getCurrentCSVFilename();
   
   // Check if current file exists and its size
@@ -350,10 +251,8 @@ void writeToCSV() {
     return;
   }
   
-  // Get current timestamp
   String timestamp = getCurrentTimestamp();
   
-  // UPDATED: Removed Avg_Temp_C, Battery_SOC, Solar_Panel_Watts from data rows
   file.print(timestamp);
   file.print(",");
   file.print(avgTemperatureF, 2);
@@ -368,11 +267,104 @@ void writeToCSV() {
   
   file.close();
   
+  // Reset temperature averaging for next period
+  tempSum = 0;
+  tempCount = 0;
+  
   if (!processingCommand) {
-    Serial.println("Data written to " + filename + " at " + timestamp + " - Temp: " + String(avgTemperatureC) + "°C, Battery: " + 
+    Serial.println("Data written to " + filename + " at " + timestamp + 
+                   " - Temp: " + String(avgTemperatureC) + "°C, Battery: " + 
                    String(renogy_data.battery_voltage) + "V (" + String(renogy_data.battery_soc) + "%)");
   }
 }
+
+void handleSerialCommands() {
+  if (Serial.available()) {
+    processingCommand = true;
+    
+    String command = Serial.readStringUntil('\n');
+    command.trim();
+    
+    if (command.startsWith("SETTIME")) {
+      String timestampStr = command.substring(8);
+      unsigned long epoch = timestampStr.toInt();
+      setTime(epoch);
+    } else {
+      command.toUpperCase();
+      
+      while (Serial.available()) {
+        Serial.read();
+      }
+      
+      delay(200);
+      
+      if (command == "DOWNLOAD") {
+        downloadCSVData();
+      } else if (command == "DOWNLOAD_DELETE") {
+        downloadAndDeleteCSVData();
+      } else if (command == "STATUS") {
+        showFileStatus();
+      } else if (command == "CLEAR") {
+        clearCSVFile();
+      } else if (command == "HELP") {
+        showHelp();
+      } else if (command.length() > 0) {
+        Serial.println("Unknown command: " + command + ". Type HELP for available commands.");
+      }
+      
+      Serial.println("COMMAND_COMPLETE");
+      Serial.flush();
+    }
+    
+    processingCommand = false;
+  }
+}
+
+void setTime(unsigned long epoch) {
+  timeSyncEpoch = epoch;
+  timeSyncMillis = millis();
+  timeIsSynced = true;
+  Serial.println("TIME_SYNCED:" + String(epoch));
+  Serial.println("Current timestamp: " + getCurrentTimestamp());
+}
+
+String getCurrentTimestamp() {
+  if (!timeIsSynced) {
+    return String(millis());
+  }
+  
+  unsigned long elapsedSeconds = (millis() - timeSyncMillis) / 1000;
+  unsigned long currentEpoch = timeSyncEpoch + elapsedSeconds;
+  
+  time_t rawtime = currentEpoch;
+  struct tm * timeinfo;
+  timeinfo = gmtime(&rawtime);
+  
+  char buffer[32];
+  sprintf(buffer, "%04d-%02d-%02d %02d:%02d:%02d EST",
+          timeinfo->tm_year + 1900,
+          timeinfo->tm_mon + 1,
+          timeinfo->tm_mday,
+          timeinfo->tm_hour,
+          timeinfo->tm_min,
+          timeinfo->tm_sec);
+  
+  return String(buffer);
+}
+
+void initializeCSVFile() {
+  String filename = getCurrentCSVFilename();
+  File file = SPIFFS.open(filename, FILE_WRITE);
+  if (!file) {
+    Serial.println("Failed to create CSV file: " + filename);
+    return;
+  }
+  file.println("Timestamp,Avg_Temp_F,Battery_Voltage,Solar_Panel_Voltage,Solar_Panel_Amps,Load_Watts");
+  file.close();
+  Serial.println("CSV file initialized: " + filename);
+}
+
+void writeToCSV();  // already defined above
 
 void renogy_read_data_registers() {
   uint8_t j, result;
@@ -418,7 +410,6 @@ void renogy_read_data_registers() {
     renogy_data.last_update_time = millis();
   } else {
     renogy_data.controller_connected = false;
-    // Reset values on failure
     renogy_data.battery_voltage = 0;
     renogy_data.battery_charging_amps = 0;
     renogy_data.battery_soc = 0;
@@ -448,15 +439,11 @@ void downloadCSVData() {
   
   Serial.println("FILE_NAME:" + filename);
   Serial.println("FILE_SIZE:" + String(file.size()));
-  
-  // UPDATED: Removed Avg_Temp_C, Battery_SOC, Solar_Panel_Watts from headers
   Serial.println("Timestamp,Avg_Temp_F,Battery_Voltage,Solar_Panel_Voltage,Solar_Panel_Amps,Load_Watts");
   
-  // Send file content, skipping header line if it exists
   while (file.available()) {
     String line = file.readStringUntil('\n');
     line.trim();
-    // Skip empty lines and header lines
     if (line.length() > 0 && !line.startsWith("Timestamp,")) {
       Serial.println(line);
     }
@@ -479,15 +466,11 @@ void downloadAndDeleteCSVData() {
   
   Serial.println("FILE_NAME:" + filename);
   Serial.println("FILE_SIZE:" + String(file.size()));
-  
-  // UPDATED: Removed Avg_Temp_C, Battery_SOC, Solar_Panel_Watts from headers
   Serial.println("Timestamp,Avg_Temp_F,Battery_Voltage,Solar_Panel_Voltage,Solar_Panel_Amps,Load_Watts");
   
-  // Send file content, skipping header line if it exists
   while (file.available()) {
     String line = file.readStringUntil('\n');
     line.trim();
-    // Skip empty lines and header lines
     if (line.length() > 0 && !line.startsWith("Timestamp,")) {
       Serial.println(line);
     }
@@ -495,10 +478,8 @@ void downloadAndDeleteCSVData() {
   
   file.close();
   
-  // Delete the file after successful download
   if (SPIFFS.remove(filename)) {
     Serial.println("FILE_DELETED:" + filename);
-    // Create a new file with headers
     initializeCSVFile();
     Serial.println("NEW_FILE_CREATED:" + getCurrentCSVFilename());
   } else {
@@ -520,7 +501,6 @@ void showFileStatus() {
       Serial.println("Current timestamp: " + getCurrentTimestamp());
     }
     
-    // Count lines
     int lineCount = 0;
     while (file.available()) {
       if (file.read() == '\n') lineCount++;
@@ -531,7 +511,6 @@ void showFileStatus() {
     Serial.println("Current CSV file not found: " + filename);
   }
   
-  // Show all CSV files
   File root = SPIFFS.open("/");
   File foundFile = root.openNextFile();
   Serial.println("All CSV files on SPIFFS:");
@@ -543,7 +522,6 @@ void showFileStatus() {
     foundFile = root.openNextFile();
   }
   
-  // Show SPIFFS info
   Serial.println("SPIFFS total: " + String(SPIFFS.totalBytes()) + " bytes");
   Serial.println("SPIFFS used: " + String(SPIFFS.usedBytes()) + " bytes");
   Serial.println("SPIFFS free: " + String(SPIFFS.totalBytes() - SPIFFS.usedBytes()) + " bytes");
@@ -553,7 +531,7 @@ void clearCSVFile() {
   String filename = getCurrentCSVFilename();
   if (SPIFFS.remove(filename)) {
     Serial.println("CSV file deleted successfully: " + filename);
-    initializeCSVFile(); // Recreate with headers
+    initializeCSVFile();
     Serial.println("New CSV file created: " + getCurrentCSVFilename());
   } else {
     Serial.println("Failed to delete CSV file: " + filename);
