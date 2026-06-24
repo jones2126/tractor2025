@@ -26,3 +26,5 @@ RTKBase/Bridgeville/gps_log_*.txt
 .pio/
 *.bak
 RTKBase/Bridgeville/daily_position_log.csv
+RTKBase/Bridgeville/current_position.json
+RTKBase/Bridgeville/wifi_rssi_log.csv
