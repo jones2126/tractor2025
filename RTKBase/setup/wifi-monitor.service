@@ -1,0 +1,18 @@
+[Unit]
+Description=WiFi RSSI Monitor for RTK Base Station
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=al
+Group=al
+WorkingDirectory=/home/al/tractor2025/RTKBase/Bridgeville
+ExecStart=/usr/bin/python3 -u /home/al/tractor2025/RTKBase/Bridgeville/wifi_monitor_20260624.py
+Restart=always
+RestartSec=30
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
