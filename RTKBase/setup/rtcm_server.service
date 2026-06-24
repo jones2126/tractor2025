@@ -1,0 +1,21 @@
+[Unit]
+Description=RTCM Base Station Server
+After=network-online.target
+Wants=network-online.target
+StartLimitBurst=5
+StartLimitIntervalSec=300
+
+[Service]
+Type=simple
+User=al
+Group=al
+WorkingDirectory=/home/al/tractor2025/RTKBase/Bridgeville
+ExecStart=/usr/bin/python3 -u /home/al/tractor2025/RTKBase/Bridgeville/rtcm_base_server_20260624.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+Environment=PYTHONPATH=/home/al/tractor2025/RTKBase/Bridgeville
+
+[Install]
+WantedBy=multi-user.target

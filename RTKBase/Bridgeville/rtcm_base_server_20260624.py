@@ -62,6 +62,31 @@ def get_next_log_time(now=None):
 
 next_log_time = get_next_log_time()
 
+# NEW FUNCTION: ~line 88
+current_position_path = os.path.join(os.path.dirname(__file__), 'current_position.json')
+_last_position_write = 0.0
+
+def write_current_position(lat, lon, alt):
+    """Write current GPS position to JSON file, throttled to once per 60 seconds."""
+    global _last_position_write
+    if lat is None or lon is None:
+        return
+    now = time.time()
+    if now - _last_position_write < 60.0:
+        return
+    _last_position_write = now
+    import json
+    try:
+        with open(current_position_path, 'w') as f:
+            json.dump({
+                'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'lat': round(lat, 8),
+                'lon': round(lon, 8),
+                'alt': round(alt, 3) if alt is not None else None
+            }, f)
+    except Exception:
+        pass
+
 def update_position_average(lat, lon, alt):
     """Update running totals for position averaging."""
     if None in (lat, lon, alt):
@@ -552,6 +577,7 @@ try:
                         if msg_type.endswith("GGA"):
                             lat, lon, alt = parse_gga_sentence(sentence)
                             update_position_average(lat, lon, alt)
+                            write_current_position(lat, lon, alt)
 
                 # Check for UBX message
                 elif pos < len(data_buffer) - 1 and data_buffer[pos:pos+2] == b'\xB5\x62':
