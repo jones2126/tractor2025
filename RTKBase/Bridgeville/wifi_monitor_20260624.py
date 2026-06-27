@@ -65,28 +65,19 @@ def get_wifi_info():
         return None, None
 
 
-# --- GPS lat/lon from F9P via NMEA GGA ---
-def get_gps_position(timeout=15):
-    """
-    Read a GGA sentence from the F9P and return (lat, lon) as floats,
-    or (None, None) if unavailable. Stops rtcm_server briefly if needed.
-    Since rtcm_server holds the port, we read from the daily_position_log.csv
-    as a fallback — it's always present and avoids port conflicts.
-    """
-    # Prefer the daily position log written by rtcm_base_server
-    log_path = "/home/al/tractor2025/RTKBase/Bridgeville/daily_position_log.csv"
+# CHANGED: read from current_position.json instead of daily_position_log.csv
+def get_gps_position():
+    """Read current position from current_position.json written by rtcm_base_server."""
+    import json
+    json_path = "/home/al/tractor2025/RTKBase/Bridgeville/current_position.json"
     try:
-        if os.path.exists(log_path):
-            with open(log_path, "r") as f:
-                lines = [l.strip() for l in f if l.strip() and not l.startswith("Timestamp")]
-            if lines:
-                last = lines[-1].split(",")
-                # Expected columns: Timestamp, lat, lon, alt, fix_quality, num_sats, hdop
-                if len(last) >= 3:
-                    lat = float(last[1])
-                    lon = float(last[2])
-                    if lat != 0.0 and lon != 0.0:
-                        return lat, lon
+        if os.path.exists(json_path):
+            with open(json_path, "r") as f:
+                data = json.load(f)
+            lat = data.get("lat")
+            lon = data.get("lon")
+            if lat and lon:
+                return lat, lon
     except Exception:
         pass
     return None, None
