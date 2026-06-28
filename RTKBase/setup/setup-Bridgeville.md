@@ -123,9 +123,6 @@ git sparse-checkout set --no-cone RTKBase/ .gitignore
 ├── Brenham/                            # Placeholder for future Brenham base station
 └── README.md
 
-/home/al/scripts/
-└── daily_esp32_download.sh             # Symlinked/called by cron (calls RTKBase/Bridgeville/ version)
-
 /home/al/esp32_data/                    # Downloaded ESP32 CSV files (not in repo)
 ```
 
@@ -275,7 +272,7 @@ crontab -e
 
 ```
 # Daily ESP32 data download and delete at 8 PM
-0 20 * * * /home/al/scripts/daily_esp32_download.sh >> /home/al/logs/esp32_cron.log 2>&1
+15 20 * * * /home/al/tractor2025/RTKBase/Bridgeville/daily_esp32_download.sh >> /home/al/logs/esp32_cron.log 2>&1
 
 # Push daily position log to GitHub at 8:15 PM
 15 20 * * * /home/al/tractor2025/RTKBase/Bridgeville/push_daily_log.sh >> /home/al/logs/git_push.log 2>&1
