@@ -1,12 +1,12 @@
 #!/bin/bash
-# /home/al/scripts/daily_esp32_download.sh
+# /home/al/tractor2025/RTKBase/Bridgeville/daily_esp32_download.sh
 
 set -e  # Exit on error
 
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] === ESP32 Daily Download Started ==="
 
 DATA_DIR="/home/al/esp32_data"
-SCRIPT_DIR="/home/al/tractor2025/BridgevilleRTKBase/raspberry-pi/production"
+SCRIPT_DIR="/home/al/tractor2025/RTKBase/Bridgeville"
 
 # Create data directory if it doesn't exist
 mkdir -p "$DATA_DIR"
