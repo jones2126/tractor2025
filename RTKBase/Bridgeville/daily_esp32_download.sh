@@ -6,7 +6,7 @@ set -e  # Exit on error
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] === ESP32 Daily Download Started ==="
 
 DATA_DIR="/home/al/esp32_data"
-SCRIPT_DIR="/home/al/python"
+SCRIPT_DIR="/home/al/tractor2025/BridgevilleRTKBase/raspberry-pi/production"
 
 # Create data directory if it doesn't exist
 mkdir -p "$DATA_DIR"
@@ -18,9 +18,8 @@ if fuser /dev/esp32 2>/dev/null; then
 fi
 
 # Run the download with --delete flag
-# latest filename: esp32_auto_download_20251206.py
 cd "$SCRIPT_DIR"
-if python3 esp32_auto_download_20251206.py --delete; then
+if python3 esp32_downloader_20260623.py download_delete; then
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] SUCCESS: Download completed"
     
     # Compress old files (older than 30 days)
