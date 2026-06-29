@@ -24,10 +24,11 @@ BAUD_RATE = 460800
 
 # ==================== CONFIG ====================
 # Change these when switching interfaces
-UDP_BROADCAST_IP = '192.168.1.255'   # wlan0
-UDP_BIND_IP = '192.168.1.213'        # wlan0
-# UDP_BROADCAST_IP = '192.168.193.255'
-# UDP_BIND_IP = '192.168.193.48'
+# UDP_BROADCAST_IP = '192.168.1.255'   # wlan0
+# UDP_BIND_IP = '192.168.1.213'        # wlan0
+UDP_BROADCAST_IP = '192.168.193.255'
+#UDP_BIND_IP = '192.168.193.48'         # 192.168.193.48 (tractor02's IP)
+UDP_BIND_IP = '192.168.193.76'         # 192.168.193.48 (tractor2025/tractor01's IP)
 
 UDP_STATUS_PORT = 6003
 UDP_COMMAND_PORT = 6004
