@@ -29,3 +29,4 @@ RTKBase/Bridgeville/daily_position_log.csv
 RTKBase/Bridgeville/current_position.json
 RTKBase/Bridgeville/wifi_rssi_log.csv
 RTKBase/Bridgeville/current_position.json
+RTKBase/setup/skytraq_survey_candidate_*.json
