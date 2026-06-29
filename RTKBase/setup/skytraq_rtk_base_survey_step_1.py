@@ -67,7 +67,8 @@ import serial
 # USER SETTINGS
 # =============================================================================
 
-PORT = "COM6"                  # Example Windows port; Pi example: "/dev/gps"
+# PORT = "COM6"                  # Example Windows port; Pi example: "/dev/gps"
+PORT = "/dev/skytraq"
 BAUD = 115200
 
 # SkyTraq supports 60 through 1,209,600 seconds. Start at 60 for testing.

@@ -59,7 +59,8 @@ import serial
 # USER SETTINGS
 # =============================================================================
 
-PORT = "COM6"        # Windows: "COM6"; Raspberry Pi: "/dev/gps" or "/dev/ttyUSB0"
+# PORT = "COM6"        # Windows: "COM6"; Raspberry Pi: "/dev/gps" or "/dev/ttyUSB0"
+PORT = "/dev/skytraq"        # Windows: "COM6"; Raspberry Pi: "/dev/gps" or "/dev/ttyUSB0"
 BAUD = 115200
 
 # Default file is next to this script. Override it with --config PATH.
