@@ -20,8 +20,8 @@ Full setup details in `tractor_rpi/setup/tractor01_rpi_setup.md` and `tractor02_
 | `teensy_main_{date}.cpp` | Teensy 4.1 — tractor01 | 2026-06-17 | 9c585d1 | https://raw.githubusercontent.com/jones2126/tractor2025/main/tractor_teensy/src/teensy_main_20260617.cpp |
 | `teensy_main_{date}.cpp` | Teensy 4.1 — tractor02 | never | — | https://raw.githubusercontent.com/jones2126/tractor2025/main/tractor_teensy/src/teensy_main_20260609.cpp |
 | `RadioControlNRF24_{date}.cpp` | Teensy 3.2 — RC handheld | 2026-06-12 | 9cd39f7 | https://raw.githubusercontent.com/jones2126/tractor2025/main/radiocontrol_nrf24radio/src/RadioControlNRF24_20260612.cpp |
-| `rtcm_server_{date}.py` | tractor01 RPi5 | 2026-06-17 | — | https://raw.githubusercontent.com/jones2126/tractor2025/main/tractor_rpi/rtcm_server_20260617.py |
-| `rtcm_server_x20d_{date}.py` | tractor02 RPi5 | 2026-06-17 | — | https://raw.githubusercontent.com/jones2126/tractor2025/main/tractor_rpi/rtcm_server_x20d_20260617.py |
+| `rtcm_server_{date}.py` | tractor01 RPi5 | 2026-07-02 | — | https://raw.githubusercontent.com/jones2126/tractor2025/main/tractor_rpi/rtcm_server_20260702.py |
+| `rtcm_server_x20d_{date}.py` | tractor02 RPi5 | 2026-07-02 | — | https://raw.githubusercontent.com/jones2126/tractor2025/main/tractor_rpi/rtcm_server_x20d_20260702.py |
 | `teensy_serial_bridge_{date}.py` | tractor01 RPi5, tractor02 RPi5 | 2026-03-10 | — | https://raw.githubusercontent.com/jones2126/tractor2025/main/tractor_rpi/teensy_serial_bridge_20260310.py |
 | `led_status_controller.py` | tractor01 RPi5, tractor02 RPi5 | — | — | https://raw.githubusercontent.com/jones2126/tractor2025/main/tractor_rpi/led_status_controller.py |
 | `field_test_logger_{date}.py` | tractor01 RPi5, tractor02 RPi5 | 2026-06-17 | — | https://raw.githubusercontent.com/jones2126/tractor2025/main/tractor_rpi/field_test_logger_20260617.py |

@@ -28,6 +28,7 @@ import math
 import re
 import socket
 import struct
+import subprocess
 import threading
 import time
 from datetime import datetime, timezone
@@ -52,6 +53,11 @@ SERIAL_BAUD  = 115200
 UDP_TARGET_IP   = "127.0.0.1"
 UDP_TARGET_PORT = 6002
 UDP_PUBLISH_HZ  = 20
+
+# NEW (7/2/26): WiFi RSSI monitoring, same logic as rtcm_server_20260702.py (F9P)
+WIFI_INTERFACE  = "wlan0"
+WIFI_POLL_HZ    = 2                 # polling rate for iwconfig (2 Hz requested; cheap on RPi)
+WIFI_WEAK_DBM   = -80               # dBm threshold used for the "weak" label
 
 # Regex: parse $GNGGA / $GPGGA.  Captures time, lat, N/S, lon, E/W, fix, numSV, hdop.
 GGA_PATTERN = re.compile(
@@ -93,8 +99,51 @@ state = {
     # Fatal connection info
     "fatal_error":          False,
     "fatal_heading_reason": None,   # single port — was fatal_base_reason + fatal_heading_reason
+    # NEW (7/2/26): WiFi status, polled independently of GPS state
+    "wifi_ssid":            None,
+    "wifi_rssi_dbm":        None,
+    "wifi_signal_label":    "unknown",
 }
 state_lock = threading.Lock()
+
+# ---------------------------------------------------------------------------
+# NEW (7/2/26): WiFi monitoring helpers
+# (same logic as rtcm_server_20260702.py / RTKBase/Bridgeville/wifi_monitor_20260624.py)
+# ---------------------------------------------------------------------------
+
+def wifi_signal_label(rssi):
+    if rssi is None:
+        return "unknown"
+    if rssi >= -65:
+        return "strong"
+    if rssi >= WIFI_WEAK_DBM:
+        return "medium"
+    return "weak"
+
+
+def get_wifi_info():
+    """Return (ssid, rssi_dBm) for current WIFI_INTERFACE connection, or (None, None)."""
+    try:
+        result = subprocess.run(
+            ["iwconfig", WIFI_INTERFACE],
+            capture_output=True, text=True, timeout=5
+        )
+        out = result.stdout
+        ssid, rssi = None, None
+        for line in out.splitlines():
+            if 'ESSID:"' in line:
+                ssid = line.split('ESSID:"')[1].split('"')[0]
+                if ssid == "":
+                    ssid = None
+            if "Signal level=" in line:
+                raw = line.split("Signal level=")[1].split()[0]
+                try:
+                    rssi = int(raw.replace("dBm", "").strip())
+                except ValueError:
+                    pass
+        return ssid, rssi
+    except Exception:
+        return None, None
 
 # ---------------------------------------------------------------------------
 # UBX framing constants
@@ -443,6 +492,22 @@ def _parse_gga_line(line: bytes):
                 pass
 
 
+# NEW (7/2/26): polls WiFi RSSI at WIFI_POLL_HZ and writes into shared state,
+# which udp_publisher() below broadcasts on UDP 6002 along with GPS data.
+def monitor_wifi():
+    while True:
+        try:
+            ssid, rssi = get_wifi_info()
+            label = wifi_signal_label(rssi)
+            with state_lock:
+                state["wifi_ssid"] = ssid
+                state["wifi_rssi_dbm"] = rssi
+                state["wifi_signal_label"] = label
+        except Exception as e:
+            print(f"[WiFi Monitor] Unexpected error: {type(e).__name__}: {e}")
+        time.sleep(1.0 / WIFI_POLL_HZ)
+
+
 def udp_publisher():
     """Broadcast state dict at UDP_PUBLISH_HZ.  UNCHANGED from F9P version."""
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -476,6 +541,10 @@ def main():
 
     # Always start UDP publisher — broadcasts fatal_error state if port open failed
     threading.Thread(target=udp_publisher, daemon=True).start()
+
+    # NEW (7/2/26): Always start WiFi monitor too - independent of GPS fatal
+    # state, so signal strength is visible even when the X20D port fails to open.
+    threading.Thread(target=monitor_wifi, daemon=True).start()
 
     if fatal_error:
         print("[rtcm-server-x20d] FATAL: could not open X20D serial port")
