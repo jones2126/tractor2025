@@ -6,6 +6,56 @@
 
 ---
 
+## Solution overview (added 2026-07-03)
+
+**Five physical network devices are needed**, not three — it's easy to undercount because two roles (the backhaul radios) are a different product from the rest:
+
+| Device | Role | Hardware |
+|---|---|---|
+| Base router (Corner A) | Connects to `Pixel_4952`, DHCP server for the whole Field LAN, broadcasts `TractorField-5G` locally | GL-SFT1200 #1 |
+| CPE210 #1 (Corner A) | Dedicated point-to-point backhaul radio, AP mode - talks only to CPE210 #2 | TP-Link CPE210 |
+| CPE210 #2 (Corner B) | Dedicated point-to-point backhaul radio, Client mode - talks only to CPE210 #1 | TP-Link CPE210 |
+| Corner B AP | Plugs into CPE210 #2's Ethernet output, broadcasts `TractorField-5G` locally at Corner B | GL-SFT1200 #2 |
+| Tractor router | WISP/repeater client - joins whichever `TractorField-5G` signal is stronger, runs the Tractor LAN | GL-SFT1200 #3 |
+
+**In one sentence:** the phone hotspot feeds the base router, which hands its network across the field to a second router at Corner B over a dedicated wireless CPE210 bridge (not the tractor's WiFi), and the tractor's own router roams between whichever of the two local `TractorField-5G` signals (Corner A's or Corner B's) is currently stronger.
+
+**The point most worth remembering:** CPE210 #2 is not something the tractor can connect to directly - it's a bridge radio only, paired exclusively with CPE210 #1. Corner B needs its own separate AP (the third GL-SFT1200) sitting behind CPE210 #2 to actually give the tractor something to join.
+
+```mermaid
+graph LR
+    Phone(["Pixel_4952 hotspot"])
+
+    subgraph CornerA["Corner A — RTK Base"]
+        BaseGL["Base GL-SFT1200<br/>DHCP server<br/>192.168.50.1"]
+        RTK["rtkbase RPi<br/>192.168.50.10"]
+        CPE1["CPE210 #1<br/>AP mode<br/>192.168.50.2"]
+        BaseGL -->|Ethernet| RTK
+        BaseGL -->|Ethernet| CPE1
+    end
+
+    Phone -.->|WiFi WAN| BaseGL
+
+    subgraph CornerB["Corner B"]
+        CPE2["CPE210 #2<br/>Client mode<br/>192.168.50.3"]
+        CornerBGL["Corner B GL-SFT1200<br/>AP mode, DHCP off<br/>192.168.50.4"]
+        CPE2 -->|Ethernet| CornerBGL
+    end
+
+    CPE1 ==>|Wireless PtP backhaul<br/>FieldBackhaul-24| CPE2
+
+    subgraph TractorNode["Tractor"]
+        Tractor["Tractor GL-SFT1200<br/>WISP client + Tractor LAN DHCP<br/>192.168.51.1"]
+        RPi["tractor02 RPi 5<br/>192.168.51.10"]
+        Tractor -->|Ethernet| RPi
+    end
+
+    BaseGL -.->|WiFi TractorField-5G| Tractor
+    CornerBGL -.->|WiFi TractorField-5G| Tractor
+```
+
+---
+
 ## 1. Design goals
 
 This design creates a **local Field LAN** that continues operating even when the Pixel phone has weak 5G coverage or disconnects. The phone hotspot is used only as an optional Internet/WAN uplink.
