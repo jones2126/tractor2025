@@ -12,6 +12,7 @@ import threading
 import select
 from collections import defaultdict
 import logging
+import socket as socket_lib
 
 logging.basicConfig(
     level=logging.INFO,
@@ -23,12 +24,18 @@ SERIAL_PORT = '/dev/teensy'
 BAUD_RATE = 460800
 
 # ==================== CONFIG ====================
-# Change these when switching interfaces
-# UDP_BROADCAST_IP = '192.168.1.255'   # wlan0
-# UDP_BIND_IP = '192.168.1.213'        # wlan0
+# 
 UDP_BROADCAST_IP = '192.168.193.255'
-#UDP_BIND_IP = '192.168.193.48'         # 192.168.193.48 (tractor02's IP)
-UDP_BIND_IP = '192.168.193.76'         # 192.168.193.48 (tractor2025/tractor01's IP)
+#
+# UDP_BIND_IP is selected based the machine's hostname when moved between tractor01 and tractor02.
+_HOSTNAME_BIND_IP = {
+    'tractor':   '192.168.193.76',   # tractor01
+    'tractor02': '192.168.193.48',   # tractor02
+}
+_hostname = socket.gethostname()
+UDP_BIND_IP = _HOSTNAME_BIND_IP.get(_hostname, '192.168.193.76')  # falls back to tractor01's IP
+if _hostname not in _HOSTNAME_BIND_IP:
+    print(f"[WARNING] Unrecognized hostname '{_hostname}' - defaulting UDP_BIND_IP to tractor01 ({UDP_BIND_IP})")
 
 UDP_STATUS_PORT = 6003
 UDP_COMMAND_PORT = 6004
