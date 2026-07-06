@@ -138,9 +138,15 @@ def main():
                 diff = msg.get('diff_age')
                 head = msg.get('headValid', '?')
                 carrier = msg.get('carrier', '?')
+
+                wifi = msg.get('wifi_signal_label', '?')
+                rssi = msg.get('wifi_rssi_dbm')
+                rssi_str = f"{rssi}dBm" if rssi is not None else "?"
+
                 hdop_str = f"{hdop:.1f}" if hdop is not None else "?"
                 diff_str = f"{diff:.1f}s" if diff is not None else "?"
-                print(f"fix={fix:12s} SV={sv:>2} HDOP={hdop_str:>5} diff_age={diff_str:>6} head={head} carrier={carrier}")
+                #print(f"fix={fix:12s} SV={sv:>2} HDOP={hdop_str:>5} diff_age={diff_str:>6} head={head} carrier={carrier}")
+                print(f"fix={fix:12s} SV={sv:>2} HDOP={hdop_str:>5} diff_age={diff_str:>6} head={head} carrier={carrier} wifi={wifi}({rssi_str})")
 
             tracker.add(now, msg)
             tracker.report(now)
