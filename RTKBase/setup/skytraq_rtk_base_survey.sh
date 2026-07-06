@@ -2,6 +2,7 @@
 # skytraq_rtk_base_survey.sh
 # Interactive launcher for skytraq_rtk_base_survey_step_1.py
 # Prompts for receiver type and survey duration, then runs the correct command.
+# Stops rtcm_server before the survey and restarts it afterward.
 # Place this file in tractor2025/RTKBase/setup/ alongside the Python scripts.
 set -e
 cd "$(dirname "$0")"
@@ -72,6 +73,28 @@ if [ "$DURATION_CHOICE" = "2" ]; then
         exit 1
     fi
 fi
+
+# --- Stop rtcm_server if running so it releases /dev/skytraq ---
+RTCM_SERVICE="rtcm_server"
+RTCM_WAS_RUNNING=false
+
+if systemctl is-active --quiet "$RTCM_SERVICE"; then
+    echo ""
+    echo "Stopping $RTCM_SERVICE to release /dev/skytraq..."
+    sudo systemctl stop "$RTCM_SERVICE"
+    RTCM_WAS_RUNNING=true
+    echo "$RTCM_SERVICE stopped."
+fi
+
+# Ensure rtcm_server is restarted on exit, even if the survey fails or is interrupted
+trap '
+    if [ "$RTCM_WAS_RUNNING" = true ]; then
+        echo ""
+        echo "Restarting $RTCM_SERVICE..."
+        sudo systemctl start "$RTCM_SERVICE"
+        echo "$RTCM_SERVICE restarted."
+    fi
+' EXIT
 
 echo ""
 echo "Starting survey..."
