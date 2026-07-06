@@ -1,0 +1,8 @@
+{
+	"nodes":[
+		{"id":"b79e5b89704109e1","type":"text","text":"TP-Link AXE5400 Archer AXE75","x":-300,"y":60,"width":305,"height":60},
+		{"id":"f820196d16438720","type":"file","file":"06-whiteboard/attachments/TP-Link AXE5400 Archer AXE75.png","x":-347,"y":-200,"width":399,"height":238},
+		{"id":"4a33d4699362a289","type":"text","text":"RTK Base Station - RPi 3 with ESP32\n\n[Open RTCM source code]([tractor2025/RTKBase/Bridgeville/rtcm_base_server_20260628.py at main · jones2126/tractor2025](https://github.com/jones2126/tractor2025/blob/main/RTKBase/Bridgeville/rtcm_base_server_20260628.py)\n\nRTCM Correction Data Stream\nMessage Types and Approximate Rates: \n1005 (Stationary Antenna Reference Point): ~1 Hz, providing base station coordinates. \n1074 (GPS MSM4 Observations): ~1 Hz, providing GPS observation data. \n1084 (GLONASS MSM4 Observations): ~1 Hz, for GLONASS observations. \n1094 (Galileo MSM4 Observations): ~1 Hz, for Galileo observations. \n1230 (GLONASS Code-Phase Biases): ~1 Hz, for GLONASS bias corrections.","x":-1380,"y":-580,"width":1000,"height":320}
+	],
+	"edges":[]
+}
