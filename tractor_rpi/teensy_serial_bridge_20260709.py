@@ -262,8 +262,8 @@ class TeensySerialBridge:
             d = self.latest_data['RADIO']
             message['radio'] = {
                 'signal': d.get('signal', 'UNKNOWN'),
-                'ack_rate': d.get('ack_rate', 0.0),
-                'current_rate': d.get('current_rate', 0.0),
+                'ack_rate': d.get('ar', 0.0),        # CHANGED: Teensy sends key 'ar', not 'ack_rate'
+                'current_rate': d.get('cr', 0.0),    # CHANGED: Teensy sends key 'cr', not 'current_rate'
                 'age': current_time - d.get('last_update', current_time)
             }
         if 'STEER' in self.latest_data:
