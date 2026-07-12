@@ -3,11 +3,11 @@
 
 ---
 
-## 🔴 CRITICAL / Immediate Action Items
+## 🔴 Immediate Action Items
 
-- [ ] **Field logger**: Get `field_test_logger_20260617.py` running on tractor02 (desk), then on tractor2025 (field). Root cause of last failure: no GPS data logged when base station was offline (RTCM failure blocked GPS parsing).
-- [ ] **RTK base station**: Configure for field use from back of pickup — re-mount electronics, replace 12V→5V supply (RPi currently unstable).
-- [ ] **X20D RTCM server**: Update `rtcm_server_x20d_20260615.py` to incorporate GPS speed tracking changes from `rtcm_server_20260617.py`.
+- [ ] **Field logger**: Update `field_test_logger_{date}.py` to include data needed to debug loss of RTK Fix
+- [ ] **RTK base station**: Setup battery power for Starlink and Router; Re-mount electronics; Add hand cart to make it easy to move into place; Survey location for 24 hours.
+- [ ] **X20D RTCM server**: Update `rtcm_server_x20d_{date}.py` to incorporate changes from `rtcm_server_{date}.py`.
 - [ ] **tractor02 services**: Run `install_services.sh` (has not been run yet on tractor02). Then copy and enable services:
   ```bash
   sudo cp ~/tractor2025/tractor_rpi/setup/rtcm-server.service /etc/systemd/system/
