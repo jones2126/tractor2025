@@ -8,6 +8,7 @@
 - [ ] **Field logger**: Update `field_test_logger_{date}.py` to include data needed to debug loss of RTK Fix
 - [ ] **RTK base station**: Setup battery power for Starlink and Router; Re-mount electronics; Add hand cart to make it easy to move into place; Survey location for 24 hours.
 - [ ] **X20D RTCM server**: Update `rtcm_server_x20d_{date}.py` to incorporate changes from `rtcm_server_{date}.py`.
+- [ ] **tractor01 services:** copy /etc/systemd/system/rtcm-server.service and  /etc/systemd/system/teensy-bridge.service to /tractor2025/tractor_rpi/setup/.
 - [ ] **tractor02 services**: Run `install_services.sh` (has not been run yet on tractor02). Then copy and enable services:
   ```bash
   sudo cp ~/tractor2025/tractor_rpi/setup/rtcm-server.service /etc/systemd/system/
