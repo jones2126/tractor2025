@@ -1,19 +1,27 @@
 #!/usr/bin/env python3
 """
-field_test_logger_20260622.py
+field_test_logger_20260710.py
 ==============================
 Field test data logger for tractor manual drive sessions.
 
 Listens on:
   UDP 6002 - GPS/RTK state (from rtcm_server)
   UDP 6003 - Teensy/system status (from teensy_serial_bridge)
+  TCP 6005 - GL router WiFi signal strength (from wifi_publish.sh on router)
 
-Merges latest values from both sources by wall-clock timestamp.
+Merges latest values from all three sources by wall-clock timestamp.
 Writes one CSV row per 6003 broadcast (~5 Hz) when Teensy bridge is running.
 
 CHANGED 20260622: GPS-only mode — if UDP 6003 is silent for GPS_ONLY_TIMEOUT
 seconds (e.g. no Teensy connected), rows are driven by UDP 6002 instead.
 Teensy/steering/radio columns will be empty in GPS-only rows.
+
+CHANGED 20260710: Added TCP listener on port 6005 for GL router upstream WiFi
+signal strength (router -> field hotspot link). This is separate from the
+wlan0 wifi_ssid/rssi columns which reflect the RPi's own wlan0 interface
+(RPi -> Mofi link). Both signal paths are now logged:
+  wifi_ssid/rssi_dbm/signal_label    = RPi wlan0 -> Mofi
+  router_wifi_ssid/rssi_dbm/signal_label = GL router -> upstream hotspot
 
 CSV is TimescaleDB-ready:
   - 'time' column is ISO-8601 UTC (hypertable partition key)
@@ -21,11 +29,11 @@ CSV is TimescaleDB-ready:
   - Ingest with: \\COPY field_test FROM 'file.csv' CSV HEADER
 
 Usage:
-  python3 field_test_logger_20260622.py
-  python3 field_test_logger_20260622.py --output /home/al/field_logs/run2.csv
+  python3 field_test_logger_20260710.py
+  python3 field_test_logger_20260710.py --output /home/al/field_logs/run2.csv
 
 Output file auto-named by datetime if --output not specified:
-  /home/al/field_logs/field_test_20260622_143022.csv
+  /home/al/field_logs/field_test_20260710_143022.csv
 """
 
 import argparse
@@ -45,6 +53,7 @@ from datetime import datetime, timezone
 # ---------------------------------------------------------------------------
 UDP_GPS_PORT     = 6002   # from rtcm_server
 UDP_STATUS_PORT  = 6003   # from teensy_serial_bridge
+TCP_ROUTER_PORT  = 6005   # NEW 20260710: GL router upstream WiFi signal (from wifi_publish.sh)
 LOG_DIR          = "/home/al/field_logs"
 LOG_HZ           = 5      # rows per second (driven by 6003 or 6002 in GPS-only mode)
 
@@ -74,6 +83,13 @@ CSV_COLUMNS = [
     "head_valid",         # bool: heading valid flag
     "carrier",            # "fixed" / "float" / "none"
     "speed_mps",          # ground speed m/s (from VTG)
+    "wifi_ssid",           # RPi wlan0 SSID (RPi -> Mofi link)
+    "wifi_rssi_dbm",       # RPi wlan0 signal strength dBm
+    "wifi_signal_label",   # "strong"/"medium"/"weak"/"unknown"
+    # --- GL Router upstream WiFi (router -> field hotspot link) ---  NEW 20260710
+    "router_wifi_ssid",         # NEW 20260710: SSID GL router is connected to
+    "router_wifi_rssi_dbm",     # NEW 20260710: GL router upstream signal dBm
+    "router_wifi_signal_label", # NEW 20260710: "strong"/"medium"/"weak"
     # --- Radio ---
     "radio_signal",       # "GOOD" / "UNKNOWN"
     "ack_rate",           # ACK packets/sec
@@ -84,8 +100,9 @@ CSV_COLUMNS = [
 # ---------------------------------------------------------------------------
 # Shared state (updated by listener threads, read by logger thread)
 # ---------------------------------------------------------------------------
-latest_gps    = {}
-latest_status = {}
+latest_gps         = {}
+latest_status      = {}
+latest_router_wifi = {}   # NEW 20260710: data from GL router TCP port 6005
 state_lock    = threading.Lock()
 running       = True
 last_6003_time = 0.0      # CHANGED 20260622: track when 6003 was last received
@@ -144,6 +161,45 @@ def status_listener():
                 print(f"[Status listener] error: {e}")
     sock.close()
 
+# NEW 20260710: TCP listener for GL router upstream WiFi signal strength
+def router_wifi_listener():
+    """Listen on TCP 6005 for WiFi signal data pushed by GL router wifi_publish.sh.
+
+    The GL router connects to the field hotspot (upstream) and reports that
+    link's SSID and RSSI here. This is distinct from the RPi's own wlan0
+    signal which reflects the RPi->Mofi link.
+    """
+    while running:
+        try:
+            server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            server.bind(('', TCP_ROUTER_PORT))
+            server.listen(1)
+            server.settimeout(2.0)
+            print(f"[Router WiFi listener] bound to TCP {TCP_ROUTER_PORT}")
+            while running:
+                try:
+                    conn, addr = server.accept()
+                    conn.settimeout(2.0)
+                    with conn:
+                        data = conn.recv(1024)
+                        if data:
+                            parsed = json.loads(data.decode())
+                            with state_lock:
+                                latest_router_wifi.update(parsed)
+                except socket.timeout:
+                    continue
+                except Exception as e:
+                    print(f"[Router WiFi listener] connection error: {e}")
+        except Exception as e:
+            print(f"[Router WiFi listener] socket error: {e}, retrying in 5s")
+            time.sleep(5)
+        finally:
+            try:
+                server.close()
+            except Exception:
+                pass
+
 # ---------------------------------------------------------------------------
 # Row builder
 # ---------------------------------------------------------------------------
@@ -154,8 +210,9 @@ def build_row(start_time: float) -> dict:
     elapsed = time.time() - start_time
 
     with state_lock:
-        gps    = dict(latest_gps)
-        status = dict(latest_status)
+        gps         = dict(latest_gps)
+        status      = dict(latest_status)
+        router_wifi = dict(latest_router_wifi)   # NEW 20260710
 
     steer = status.get('steering', {})
     trans = status.get('transmission', {})
@@ -186,6 +243,14 @@ def build_row(start_time: float) -> dict:
         "head_valid":    gps.get('headValid', ''),
         "carrier":       gps.get('carrier', ''),
         "speed_mps":     gps.get('speed_mps', ''),
+        "wifi_ssid":         gps.get('wifi_ssid', ''),
+        "wifi_rssi_dbm":     gps.get('wifi_rssi_dbm', ''),
+        "wifi_signal_label": gps.get('wifi_signal_label', ''),
+
+        # GL router upstream WiFi (router -> field hotspot)  NEW 20260710
+        "router_wifi_ssid":         router_wifi.get('wifi_ssid', ''),
+        "router_wifi_rssi_dbm":     router_wifi.get('wifi_rssi_dbm', ''),
+        "router_wifi_signal_label": router_wifi.get('wifi_signal_label', ''),
 
         # Radio
         "radio_signal":  radio.get('signal', ''),
@@ -296,10 +361,12 @@ def main():
     signal.signal(signal.SIGTERM, handle_signal)
 
     # Start listener threads
-    t_gps    = threading.Thread(target=gps_listener,    daemon=True)
-    t_status = threading.Thread(target=status_listener, daemon=True)
+    t_gps    = threading.Thread(target=gps_listener,         daemon=True)
+    t_status = threading.Thread(target=status_listener,      daemon=True)
+    t_router = threading.Thread(target=router_wifi_listener, daemon=True)  # NEW 20260710
     t_gps.start()
     t_status.start()
+    t_router.start()   # NEW 20260710
 
     # CHANGED 20260622: announce GPS-only mode if 6003 silent at startup
     time.sleep(0.5)
@@ -310,6 +377,7 @@ def main():
     running = False
     t_gps.join(timeout=1)
     t_status.join(timeout=1)
+    t_router.join(timeout=1)   # NEW 20260710
 
 
 if __name__ == "__main__":

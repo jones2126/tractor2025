@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-teensy_serial_bridge_20260625-final.py
+teensy_serial_bridge_20260709.py
 Full original functionality + proven reliable broadcast thread.
 """
 
@@ -101,6 +101,8 @@ class TeensySerialBridge:
 
     def gps_listener_thread(self):
         logger.info("GPS listener started")
+        last_gps_sent_time = 0                        # NEW
+        GPS_SEND_INTERVAL = 1.0  # seconds - resend periodically so Teensy's 5s timeout never trips  # NEW
         while self.running:
             try:
                 ready = select.select([self.gps_sock], [], [], 0.1)
@@ -112,6 +114,17 @@ class TeensySerialBridge:
                     if status != self.current_gps_status:
                         logger.info(f"GPS: {self.current_gps_status} → {status}")
                     self.current_gps_status = status
+
+                now = time.time()                                          # NEW
+                if now - last_gps_sent_time >= GPS_SEND_INTERVAL:          # NEW
+                    try:                                                   # NEW
+                        if self.ser and self.ser.out_waiting < 256:        # NEW
+                            command = f"GPS,{self.current_gps_status}\n"   # NEW
+                            self.ser.write(command.encode('utf-8'))       # NEW
+                            self.ser.flush()                               # NEW
+                            last_gps_sent_time = now                       # NEW
+                    except Exception as e:                                 # NEW
+                        logger.error(f"Failed to send GPS status to Teensy: {e}")  # NEW
             except:
                 pass
             time.sleep(0.05)
@@ -249,8 +262,8 @@ class TeensySerialBridge:
             d = self.latest_data['RADIO']
             message['radio'] = {
                 'signal': d.get('signal', 'UNKNOWN'),
-                'ack_rate': d.get('ack_rate', 0.0),
-                'current_rate': d.get('current_rate', 0.0),
+                'ack_rate': d.get('ar', 0.0),        # CHANGED: Teensy sends key 'ar', not 'ack_rate'
+                'current_rate': d.get('cr', 0.0),    # CHANGED: Teensy sends key 'cr', not 'current_rate'
                 'age': current_time - d.get('last_update', current_time)
             }
         if 'STEER' in self.latest_data:
