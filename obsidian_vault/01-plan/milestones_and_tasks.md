@@ -2,8 +2,9 @@
 ---
 
 ## 🟡 Field Test Start-up
-- [ ] Power up RTKBase, Base Router, Base Starlink Mini
+- [ ] Power up RTKBase, Base Router, Base Starlink Mini - Suggestion: Turn off router switch on the back; Connect; Then turn on and watch LED to confirm power.  Takes 3 minutes for network TractorField to appear.
 - [ ] Check if TractorField is being broadcast (e.g. Check if TractorField is showing in laptop wi-fi list)
+- [ ] If needed, open Starlink App; Check if Starlink Mini is online
 - [ ] Once you have TractorField you can log on to the router and see what is connected http://192.168.10.1/webpages/index.html#/login  ; watch to make sure Base, Laptop and tractor are connected
 - [ ] Log on to RTK Base and reset download files $ python3 /home/al/tractor2025/RTKBase/Bridgeville/esp32_downloader_20260623.py download_delete ; Then check status and make sure file is growing
 - [ ] Run the base station survey if needed - see the runbook
