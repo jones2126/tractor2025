@@ -87,12 +87,16 @@ class PurePursuit:
         print(f"Loaded {len(self.path)} waypoints from {filename}.")
 
     def latlon_to_xy(self, lat, lon):
-        """Convert lat/lon to local x/y meters (equirectangular projection)."""
+        """Convert lat/lon to local x/y meters (equirectangular projection).
+
+        Constants 111320/110540 are meters-per-DEGREE, so they must multiply
+        degree deltas (not radians). cos() still takes radians.
+        """
         lat0_rad = math.radians(self.ref_lat)
-        dlat_rad = math.radians(lat - self.ref_lat)
-        dlon_rad = math.radians(lon - self.ref_lon)
-        x = 111320.0 * dlon_rad * math.cos(lat0_rad)
-        y = 110540.0 * dlat_rad
+        dlat_deg = lat - self.ref_lat
+        dlon_deg = lon - self.ref_lon
+        x = 111320.0 * dlon_deg * math.cos(lat0_rad)
+        y = 110540.0 * dlat_deg
         return x, y
 
     def gps_to_base(self, gps_lat, gps_lon, heading_rad):
