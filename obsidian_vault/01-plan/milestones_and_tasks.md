@@ -112,6 +112,7 @@
 *Status: NOT STARTED*
 
 - [ ] Test first waypoint mission
+- [ ] See Claude chat (check LLM - may not be able to use Fable ): https://claude.ai/chat/d9024a5b-7510-4f24-b937-55456ee38de8
 - [ ] Achieve acceptable cross-track error
 
 ---
