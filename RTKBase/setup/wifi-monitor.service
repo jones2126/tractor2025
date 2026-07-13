@@ -1,16 +1,24 @@
 [Unit]
-Description=WiFi RSSI Monitor for RTK Base Station
-After=network-online.target
-Wants=network-online.target
+Description=WiFi and ZeroTier Monitor for RTK Base Station
+Wants=zerotier-one.service
+After=network.target zerotier-one.service
 
 [Service]
 Type=simple
 User=al
 Group=al
 WorkingDirectory=/home/al/tractor2025/RTKBase/Bridgeville
-ExecStart=/usr/bin/python3 -u /home/al/tractor2025/RTKBase/Bridgeville/wifi_monitor_20260624.py
-Restart=always
+
+# Replace this with the ZeroTier IPv4 address of an always-on peer such as
+# RPi5NAS. That peer must accept TCP on the configured test port.
+Environment=ZEROTIER_TEST_HOST=192.168.193.217
+Environment=ZEROTIER_TEST_PORT=22
+
+ExecStart=/usr/bin/python3 -u /home/al/tractor2025/RTKBase/Bridgeville/wifi_monitor_20260713.py
+Restart=on-failure
 RestartSec=30
+TimeoutStopSec=10
+
 StandardOutput=journal
 StandardError=journal
 
