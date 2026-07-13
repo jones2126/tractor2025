@@ -6,6 +6,7 @@
 - [ ] Check if TractorField is being broadcast (e.g. Check if TractorField is showing in laptop wi-fi list)
 - [ ] Once you have TractorField you can log on to the router and see what is connected http://192.168.10.1/webpages/index.html#/login  ; watch to make sure Base, Laptop and tractor are connected
 - [ ] Log on to RTK Base and reset download files $ python3 /home/al/tractor2025/RTKBase/Bridgeville/esp32_downloader_20260623.py download_delete ; Then check status and make sure file is growing
+- [ ] Run the base station survey if needed - see the runbook
 - [ ] Turn on radio - check radio connectivity
 - [ ] Power on tractor01
 - [ ] Log on to GLINET router and check script is running and/or run $ python3 /home/al/tractor2025/tractor_rpi/testing/router_wifi_tcp_listener_TESTING.py
@@ -30,6 +31,7 @@
 ## 🔴 Today Action Items
 
 - [ ] **RTK base station**: Setup battery power for Starlink and Router; Re-mount electronics; Add hand cart to make it easy to move into place; Survey location for 24 hours.
+- [ ] Install a throttle control on the tractor motor
 
 
 ---
@@ -96,6 +98,7 @@
 - [ ] Steering PID tuned (currently kp=1.0, ki=0, kd=0 — jerky)
 - [ ] Transmission neutral confirmed via JRK position reader
 - [ ] Manual drive test with tractor moving
+- [ ] Put the status of the pushbuttons in the field logger data.  Think of a time when you want to capture a mission by first driving the path.  Having a 'bread crumb' of sorts at the beginning and end of that mission will be helpful.
 - [x] NRF24 radio communication working (addresses "1Node"/"2Node")
 - [x] Steering direction fixed (RPWM/LPWM swap corrected 2026-05-18)
 - [x] Asymmetric pot mapping calibrated (RC: right=1, center=503, left=1024)
@@ -122,6 +125,7 @@
 
 ### Power Distribution
 - [ ] Make PCB for RPi 20 pin header for Andon Light and power input.
+- [ ] Put battery monitor/voltage divdier on teensy and publish tractor battery voltage data on a UDP port for field logger.
 - [x] Place and secure Buck converter #1 and #2 (RPi power) — route USB-C output to RPi
 - [X] Run 14 AWG from blade fuse block to IBT-2; install 20 A fuse
 
