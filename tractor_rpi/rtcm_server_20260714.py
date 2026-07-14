@@ -69,6 +69,11 @@ GGA_PATTERN = re.compile(
     rb"\$G[NP]GGA,([^,]*),([^,]*),([NS]?),([^,]*),([EW]?),(\d),(\d*),([^,]*),"
 )
 
+# NEW (6/17/26) VTG pattern for ground speed
+VTG_PATTERN = re.compile(
+    rb"\$G[NP]VTG,[^,]*,[TM]?,[^,]*,[TM]?,([0-9]*\.?[0-9]+),N,([0-9]*\.?[0-9]+),K,"
+)
+
 # NEW (7/14/26) RMC pattern for ground speed - fallback since F9P outputs
 # RMC by default but VTG is not enabled. Field 7 = speed over ground (knots).
 RMC_PATTERN = re.compile(
@@ -382,7 +387,6 @@ def monitor_gga(serial_conn):
                                     state["speed_mps"] = round(speed_knots * 0.514444, 3)
                             except ValueError:
                                 pass
-
 
 
         except serial.SerialException as e:
