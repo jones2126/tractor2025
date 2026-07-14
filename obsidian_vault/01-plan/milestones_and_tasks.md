@@ -33,6 +33,9 @@
 
 - [ ] **RTK base station**: Setup battery power for Starlink and Router; Re-mount electronics; Add hand cart to make it easy to move into place; Survey location for 24 hours.
 - [ ] Install a throttle control on the tractor motor
+- [ ] Double check the base link GPS is wired to the correct udev rule - try $ ls -l /dev/gps-* and then disconnect the base-link gps
+- [ ] Set the gps offsets to zero in Pure Pursuit for base link
+- [ ] Push new teensy firmware in the 20260714 folder.  It will have to go into the src folder then platformio compile
 
 
 ---

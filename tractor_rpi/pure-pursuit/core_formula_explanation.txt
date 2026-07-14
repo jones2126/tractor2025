@@ -1,0 +1,14 @@
+The standard formula (derived from the bicycle/Ackermann kinematic model) is:
+
+δ = arctan( (2 * L * sin(α)) / l_d )
+
+Where:
+L = wheelbase (distance between front and rear axles).
+α = angle between the vehicle’s heading and the line to the lookahead point.
+l_d = lookahead distance (fixed or adaptive parameter).
+
+The textbook form is δ = atan(2L·sin(α)/ld), where α is the angle between the heading and the line to the lookahead point. 
+
+The code computes delta = atan2(2 * yt * L, ld²), where yt is the lateral (sideways) offset of the lookahead point in the vehicle frame. But yt = ld·sin(α) by definition — so substitute and you get atan(2L·ld·sin(α)/ld²) = atan(2L·sin(α)/ld). Identical. 
+
+Using yt just skips computing α explicitly. This is inherited from your pure_pursuit.cpp (same atan2(2 * yt * L_, ld_2) line).
