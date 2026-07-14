@@ -7,10 +7,10 @@
 - [ ] If needed, open Starlink App; Check if Starlink Mini is online
 - [ ] Once you have TractorField you can log on to the router and see what is connected http://192.168.10.1/webpages/index.html#/login  ; watch to make sure Base, Laptop and tractor are connected
 - [ ] Log on to RTK Base and reset download files $ python3 /home/al/tractor2025/RTKBase/Bridgeville/esp32_downloader_20260623.py download_delete ; Then check status and make sure file is growing
-- [ ] Run the base station survey if needed - see the runbook; $ cd /home/al/tractor2025/RTKBase/setup ; then $ ./skytraq_rtk_base_survey.sh  ; the field 'Run-time survey length:  250 second(s)' should be going down.  If not make sure the antennae is connectec with the connector in line with the usb port being used.
+- [ ] Run the base station survey if needed - see the runbook; $ cd /home/al/tractor2025/RTKBase/setup ; then $ ./skytraq_rtk_base_survey.sh  ; the field 'Run-time survey length:  250 second(s)' should be going down.  If not make sure the antennae is connectec with the connector in line with the usb port being used. ; Then capture the filename output from the survey process and use in the next command to review the changes; $ python3 skytraq_rtk_base_commit_step_2.py --config "skytraq_survey_candidate_20260714_110609_px1172rh-5min-test.json"  ; Then to apply the changes use $ python3 skytraq_rtk_base_commit_step_2.py --commit --config "/home/al/tractor2025/RTKBase/setup/skytraq_survey_candidate_20260714_110609_px1172rh-5min-test.json"
 - [ ] Turn on radio - check radio connectivity
 - [ ] Power on tractor01
-- [ ] Log on to GLINET router and check script is running and/or run $ python3 /home/al/tractor2025/tractor_rpi/testing/router_wifi_tcp_listener_TESTING.py
+- [ ] Log on to GLINET router and check script is running and/or from tracto01 run $ python3 /home/al/tractor2025/tractor_rpi/testing/router_wifi_tcp_listener_TESTING.py
 - [ ] Check LED4 on radio control for green (i.e. RTK Fix)
 - [ ] Check key services are running: $ cd /home/al/tractor2025/tractor_rpi  ; $ ./check_services.sh
 - [ ] Start data logging -- Use nohup with output redirected to a log file: $ nohup python3 /home/al/tractor2025/tractor_rpi/field_test_logger_20260710.py > /home/al/field_logs/logger_console.log 2>&1 & 
