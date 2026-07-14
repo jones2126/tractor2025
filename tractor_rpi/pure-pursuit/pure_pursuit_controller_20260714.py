@@ -195,7 +195,7 @@ class GPSReceiver:
 # ---------------------------------------------------------------------------
 
 class PurePursuit:
-    def __init__(self, wheelbase=1.27, max_steer=0.623, pos_tol=0.1,
+    def __init__(self, wheelbase=1.27, max_steer=0.623, pos_tol=0.5,   # CHANGED 20260714: was 0.1
                  target_ip='127.0.0.1', target_port=CMD_VEL_UDP_PORT, rate_hz=20.0,
                  max_speed_mps=DEFAULT_MAX_SPEED_MPS):
         """
@@ -204,7 +204,11 @@ class PurePursuit:
                ~35.7 deg, derived from measured turning circle). This is the
                only steering-geometry value the navigation layer needs; pot
                calibration lives on the Teensy.
-        :param pos_tol: Position tolerance for goal reaching in meters.
+        :param pos_tol: Along-track goal window in meters (default 0.5,
+               ~half vehicle length). Mission ends when the final waypoint is
+               within this distance ahead of (or anywhere behind) base_link.
+               Lateral error is NOT part of this check. Physical stopping
+               distance (actuator travel + hydro coast) adds on top.
         :param target_ip: IP for UDP sending (default: localhost).
         :param target_port: UDP port for cmd_vel (default: 6004).
         :param rate_hz: Send rate in Hz for timed/live modes.
@@ -343,7 +347,13 @@ class PurePursuit:
             dy = py - curr_y
             rel_x = dx * math.cos(curr_h) + dy * math.sin(curr_h)
             rel_y = -dx * math.sin(curr_h) + dy * math.cos(curr_h)
-            if abs(rel_x) <= self.pos_tol:
+            # CHANGED 20260714: was `if abs(rel_x) <= self.pos_tol:`
+            # rel_x is signed along-track distance to the goal (+ = still
+            # ahead of us). Declare goal reached when it's within pos_tol
+            # ahead OR already behind us -- so overshooting the window can
+            # never fall through to the extend-lookahead branch and drive
+            # past the goal indefinitely.
+            if rel_x <= self.pos_tol:
                 self.goal_reached = True
                 return 0.0, 0.0
             rel_yaw = pyaw - curr_h
@@ -609,6 +619,8 @@ def main():
                         help='Allow driving even if headValid=False (NOT recommended -- bench test only)')
     parser.add_argument('--max-speed', type=float, default=DEFAULT_MAX_SPEED_MPS,
                         help=f'Safety cap on commanded speed in m/s (default: {DEFAULT_MAX_SPEED_MPS})')
+    parser.add_argument('--pos-tol', type=float, default=0.5,
+                        help='Along-track goal window in meters (default: 0.5)')
     args = parser.parse_args()
 
     pp = PurePursuit(
@@ -616,6 +628,7 @@ def main():
         target_port=args.port,
         rate_hz=args.rate,
         max_speed_mps=args.max_speed,
+        pos_tol=args.pos_tol,
     )
 
     if args.mode in ('timed', 'live') and not args.mission_file:
