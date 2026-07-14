@@ -7,7 +7,7 @@
 - [ ] If needed, open Starlink App; Check if Starlink Mini is online
 - [ ] Once you have TractorField you can log on to the router and see what is connected http://192.168.10.1/webpages/index.html#/login  ; watch to make sure Base, Laptop and tractor are connected
 - [ ] Log on to RTK Base and reset download files $ python3 /home/al/tractor2025/RTKBase/Bridgeville/esp32_downloader_20260623.py download_delete ; Then check status and make sure file is growing
-- [ ] Run the base station survey if needed - see the runbook
+- [ ] Run the base station survey if needed - see the runbook; $ cd /home/al/tractor2025/RTKBase/setup ; then $ ./skytraq_rtk_base_survey.sh  ; the field 'Run-time survey length:  250 second(s)' should be going down.  If not make sure the antennae is connectec with the connector in line with the usb port being used.
 - [ ] Turn on radio - check radio connectivity
 - [ ] Power on tractor01
 - [ ] Log on to GLINET router and check script is running and/or run $ python3 /home/al/tractor2025/tractor_rpi/testing/router_wifi_tcp_listener_TESTING.py
