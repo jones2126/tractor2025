@@ -1,8 +1,16 @@
 /*********************************************************************
   teensy_main_20260714.cpp
   --------------------------------------------------------------
-  * Date: July 14, 2026
-  * CHANGED: cmd_vel contract for auto mode (mode 2). Pairs with
+  * Date: July 14, 2026 (rev 2)
+  * CHANGED: Mode numbering renumbered to match physical switch intuition.
+  *   DOWN  = Auto  = mode 0  (was mode 2)
+  *   MIDDLE= Manual= mode 1  (unchanged)
+  *   UP    = Pause = mode 2  (was mode 0)
+  *   NO RADIO SIGNAL = mode 9 (unchanged)
+  *   All case labels, == comparisons, and comments updated. No logic changed.
+  *   ModeMonitor in jackstand_steer_test_20260714.py and any other consumer
+  *   of m= fields must be updated to match (MODE_NAMES dict).
+  * CHANGED: cmd_vel contract for auto mode (now mode 0). Pairs with
   *          pure_pursuit_controller_20260714.py. NOT compatible with
   *          older senders that used the normalized/pot-count contract.
   *   - angular_z now arrives NORMALIZED: +1.0 = full LEFT, -1.0 = full
@@ -472,11 +480,22 @@ void controlTransmission() {
     int bucketTmp = bucket;
 
     switch (radioData.control_mode) {
-        case 0:  // Pause
-            requestedTarget = transmissionNeutralPos;
+        case 0:  // Auto (cmd_vel) -- DOWN position on RC switch
+            // CHANGED 20260714: linear_x is now m/s, positive = forward
+            // (was: normalized (linear_x+1)*511.5 bucket scaling, neg=fwd).
+            // Continuous JRK target via SPEED_CAL interpolation -- no bucket
+            // quantization in auto mode. bucketTmp forced to 5 (neutral) so
+            // the TRANS status line stays meaningful in auto.
+            if (cmdVel.received) {
+                requestedTarget = mpsToJrkTarget(cmdVel.linear_x);
+                bucketTmp = 5;  // buckets don't apply in auto; report neutral slot
+            } else {
+                requestedTarget = transmissionNeutralPos;
+                bucketTmp = 5;
+            }
             break;
 
-        case 1:  // Manual bucket
+        case 1:  // Manual bucket -- MIDDLE position on RC switch
             {
                 int tv = (int)radioData.transmission_val;  // CHANGED: Cast int16_t to int
                 if (tv >= 931) bucketTmp = 0;
@@ -493,19 +512,8 @@ void controlTransmission() {
             }
             break;
 
-        case 2:  // Auto (cmd_vel)
-            // CHANGED 20260714: linear_x is now m/s, positive = forward
-            // (was: normalized (linear_x+1)*511.5 bucket scaling, neg=fwd).
-            // Continuous JRK target via SPEED_CAL interpolation -- no bucket
-            // quantization in auto mode. bucketTmp forced to 5 (neutral) so
-            // the TRANS status line stays meaningful in auto.
-            if (cmdVel.received) {
-                requestedTarget = mpsToJrkTarget(cmdVel.linear_x);
-                bucketTmp = 5;  // buckets don't apply in auto; report neutral slot
-            } else {
-                requestedTarget = transmissionNeutralPos;
-                bucketTmp = 5;
-            }
+        case 2:  // Pause -- UP position on RC switch
+            requestedTarget = transmissionNeutralPos;
             break;
 
         default:
@@ -529,7 +537,7 @@ void controlTransmission() {
 
     // ---- TRANS_LOG (only in auto + cmd_vel) ----
     if (currentMillis - lastTransLogPrint >= transLogInterval &&
-        radioData.control_mode == 2 && cmdVel.received) {
+        radioData.control_mode == 0 && cmdVel.received) {  // CHANGED: 2->0 (Auto is now mode 0)
 
         uint16_t fb = readFeedback();
         char buf[96];
@@ -648,42 +656,7 @@ void controlSteering() {
     const char* dir = "N";
 
     switch (radioData.control_mode) {
-        case 0:  // Pause
-            analogWrite(RPWM_Output, 0);
-            analogWrite(LPWM_Output, 0);
-            steer_setpoint = steer_current;
-            dir = "P";
-            break;
-
-        case 1:  // Manual PID — map RC joystick to asymmetric tractor pot space
-            steer_setpoint = mapSteerSetpoint((int)radioData.steering_val);
-
-            {
-                float out = calculateSteerPID();
-                if (abs(steer_error) <= STEER_DEADBAND) {
-                    pwmValue = 0;
-                    dir = "N";
-                    analogWrite(RPWM_Output, 0);
-                    analogWrite(LPWM_Output, 0);
-                } else {
-                    pwmValue = constrain(abs((int)out), 0, 255);
-                    if (pwmValue > 0 && pwmValue < STEER_MIN_PWM) pwmValue = STEER_MIN_PWM;
-                    if (out > 0) {
-                        // Positive error → pot needs to increase → steer LEFT → drive LPWM
-                        analogWrite(RPWM_Output, 0);
-                        analogWrite(LPWM_Output, pwmValue);
-                        dir = "L";
-                    } else {
-                        // Negative error → pot needs to decrease → steer RIGHT → drive RPWM
-                        analogWrite(LPWM_Output, 0);
-                        analogWrite(RPWM_Output, pwmValue);
-                        dir = "R";
-                    }
-                }
-            }
-            break;
-
-        case 2:  // Auto (cmd_vel)
+        case 0:  // Auto (cmd_vel) -- DOWN position on RC switch
             if (cmdVel.received) {
                 // CHANGED 20260714: angular_z is now NORMALIZED -1..+1
                 // (+1 = full left) from pure_pursuit_controller_20260714.py.
@@ -718,6 +691,41 @@ void controlSteering() {
             }
             break;
 
+        case 1:  // Manual PID — MIDDLE position on RC switch
+            steer_setpoint = mapSteerSetpoint((int)radioData.steering_val);
+
+            {
+                float out = calculateSteerPID();
+                if (abs(steer_error) <= STEER_DEADBAND) {
+                    pwmValue = 0;
+                    dir = "N";
+                    analogWrite(RPWM_Output, 0);
+                    analogWrite(LPWM_Output, 0);
+                } else {
+                    pwmValue = constrain(abs((int)out), 0, 255);
+                    if (pwmValue > 0 && pwmValue < STEER_MIN_PWM) pwmValue = STEER_MIN_PWM;
+                    if (out > 0) {
+                        // Positive error → pot needs to increase → steer LEFT → drive LPWM
+                        analogWrite(RPWM_Output, 0);
+                        analogWrite(LPWM_Output, pwmValue);
+                        dir = "L";
+                    } else {
+                        // Negative error → pot needs to decrease → steer RIGHT → drive RPWM
+                        analogWrite(LPWM_Output, 0);
+                        analogWrite(RPWM_Output, pwmValue);
+                        dir = "R";
+                    }
+                }
+            }
+            break;
+
+        case 2:  // Pause -- UP position on RC switch
+            analogWrite(RPWM_Output, 0);
+            analogWrite(LPWM_Output, 0);
+            steer_setpoint = steer_current;
+            dir = "P";
+            break;
+
         default:
             analogWrite(RPWM_Output, 0);
             analogWrite(LPWM_Output, 0);
@@ -728,7 +736,7 @@ void controlSteering() {
     // ---- Human readable status (rate limited) ----
     if (currentMillis - lastSteeringPrint >= steeringPrintInterval) {
         char buf[96];
-        if (radioData.control_mode == 2) {
+        if (radioData.control_mode == 0) {  // CHANGED: 2->0 (Auto is now mode 0)
             snprintf(buf, sizeof(buf),
                      "1,%lu,STEER,m=%d,sp=%.0f,c=%.0f,e=%.0f,d=%s,p=%d,z=%.2f",
                      currentMillis, radioData.control_mode,
