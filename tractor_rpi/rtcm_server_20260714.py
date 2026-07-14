@@ -74,6 +74,12 @@ VTG_PATTERN = re.compile(
     rb"\$G[NP]VTG,[^,]*,[TM]?,[^,]*,[TM]?,([0-9]*\.?[0-9]+),N,([0-9]*\.?[0-9]+),K,"
 )
 
+# NEW (7/14/26) RMC pattern for ground speed - fallback since F9P outputs
+# RMC by default but VTG is not enabled. Field 7 = speed over ground (knots).
+RMC_PATTERN = re.compile(
+    rb"\$G[NP]RMC,[^,]*,([AV]),[^,]*,[NS]?,[^,]*,[EW]?,([0-9]*\.?[0-9]+),"
+)
+
 FIX_QUALITY = {
     0: "Invalid",
     1: "GPS Fix",
@@ -366,6 +372,22 @@ def monitor_gga(serial_conn):
                                 state["speed_mps"] = round(speed_kmh / 3.6, 3)
                         except ValueError:
                             pass
+
+                # NEW (7/14/26): RMC parsing for ground speed - fallback path
+                # since the F9P outputs RMC by default but VTG is disabled.
+                # Only trust speed when status flag is 'A' (data valid).
+                elif line.startswith(b'$GNRMC') or line.startswith(b'$GPRMC'):
+                    match = RMC_PATTERN.match(line)
+                    if match:
+                        status, speed_knots_raw = match.groups()
+                        if status == b'A':
+                            try:
+                                speed_knots = float(speed_knots_raw)
+                                with state_lock:
+                                    state["speed_mps"] = round(speed_knots * 0.514444, 3)
+                            except ValueError:
+                                pass
+
 
         except serial.SerialException as e:
             print(f"[GGA Monitor] Serial error: {e} - attempting recovery in 5s...")
