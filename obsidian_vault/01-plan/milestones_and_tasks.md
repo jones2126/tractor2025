@@ -24,6 +24,8 @@
 - [ ] tractor01 - sudo shutdown now
 - [ ] RtkBase - $ python3 /home/al/tractor2025/RTKBase/Bridgeville/esp32_downloader_20260623.py download_delete
 - [ ] RtkBase - $ sudo shutdown now
+- [ ] Turn off radion control
+- [ ] Turn off master power to the tractor; Disconnect battery charger; Put tractor away and cover it up.
 
 
 
