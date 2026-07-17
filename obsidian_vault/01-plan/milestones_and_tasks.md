@@ -37,6 +37,7 @@
 - [ ] Running run_mission_20260714.sh did not capture lat, lon movement.  Something is broken in the data capture process.  What I need: re-map transmission to captured actual speed
 - [ ] Test run shows dropping RTK Fix.  I need to expand the data logged to debug why
 - [ ] **RTK base station**: Re-mount electronics and antennae; Survey location for 24 hours.
+- [ ] 'jrk_current' in the field logger data is not being updated.  It stays at 2985 throughout the log.
 - [X] Double check the base link GPS is wired to the correct udev rule - try $ ls -l /dev/gps-* and then disconnect the base-link gps
 - [X] Set the gps offsets to zero in Pure Pursuit for base link
 - [X] Push new teensy firmware in the 20260714 folder.  It will have to go into the src folder then platformio compile
@@ -177,3 +178,4 @@
 - [ ]  **Mission file m/s**: How is the speed position set: https://claude.ai/chat/b728f2b7-ffa6-49cf-917c-8d0f23bbee50
 - [ ] Which LLM to use: https://claude.ai/chat/cd6167d1-b607-4d12-a8b2-d62f5a3703a7
 - [ ] Data analysis of lost RTK Fix: https://claude.ai/chat/475bcda0-390f-4d66-a788-43d0b955dbf9
+- [ ] Figuring out why using .sh was linked to field logger not capturing lat, lon data: https://claude.ai/chat/e0e147a3-70e2-4d9a-b76a-96ee17687003
