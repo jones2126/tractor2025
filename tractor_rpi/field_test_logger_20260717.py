@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-field_test_logger_20260710.py
+field_test_logger_20260717.py
 ==============================
 Field test data logger for tractor manual drive sessions.
 
@@ -29,8 +29,8 @@ CSV is TimescaleDB-ready:
   - Ingest with: \\COPY field_test FROM 'file.csv' CSV HEADER
 
 Usage:
-  python3 field_test_logger_20260710.py
-  python3 field_test_logger_20260710.py --output /home/al/field_logs/run2.csv
+  python3 field_test_logger_20260717.py
+  python3 field_test_logger_20260717.py --output /home/al/field_logs/run2.csv
 
 Output file auto-named by datetime if --output not specified:
   /home/al/field_logs/field_test_20260710_143022.csv
@@ -51,7 +51,7 @@ from datetime import datetime, timezone
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
-UDP_GPS_PORT     = 6002   # from rtcm_server
+UDP_GPS_PORT     = 6009   # from rtcm_server -- dedicated logging feed, no longer shares 6002 with the live controller
 UDP_STATUS_PORT  = 6003   # from teensy_serial_bridge
 TCP_ROUTER_PORT  = 6005   # NEW 20260710: GL router upstream WiFi signal (from wifi_publish.sh)
 LOG_DIR          = "/home/al/field_logs"
