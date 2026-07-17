@@ -33,11 +33,15 @@
 
 ## 🔴 Today Action Items
 
-- [ ] **RTK base station**: Setup battery power for Starlink and Router; Re-mount electronics; Add hand cart to make it easy to move into place; Survey location for 24 hours.
-- [ ] Install a throttle control on the tractor motor
+- [ ] Move teensy_main_20260717.cpp to tractor01, compile and upload
+- [ ] Running run_mission_20260714.sh did not capture lat, lon movement.  Something is broken in the data capture process.  What I need: re-map transmission to captured actual speed
+- [ ] Test run shows dropping RTK Fix.  I need to expand the data logged to debug why
+- [ ] **RTK base station**: Re-mount electronics and antennae; Survey location for 24 hours.
 - [X] Double check the base link GPS is wired to the correct udev rule - try $ ls -l /dev/gps-* and then disconnect the base-link gps
 - [X] Set the gps offsets to zero in Pure Pursuit for base link
 - [X] Push new teensy firmware in the 20260714 folder.  It will have to go into the src folder then platformio compile
+- [X] Install a throttle control on the tractor motor
+- [X] **RTK base station**: Setup battery power for Starlink and Router; Re-mount electronics; Add hand cart to make it easy to move into place; Survey location for 24 hours.
 
 
 ---
@@ -45,7 +49,7 @@
 ## 🟡 Next Field Test Tasks
 
 - [ ] Check voltage using watch command: $ watch -n 1 "vcgencmd pmic_read_adc | grep -i 5v"
-- [ ] Review the end of this chat.  https://claude.ai/chat/3c1d37b8-b622-45c0-a808-2516b6f1fcc4 ; Resolve getting ground speed into the captured data. ; $ sudo cat /dev/gps-base-link | grep -E "RMC" | head -5  # will see if RMC NMEA sentences are being published.
+- [X] Review the end of this chat.  https://claude.ai/chat/3c1d37b8-b622-45c0-a808-2516b6f1fcc4 ; Resolve getting ground speed into the captured data. ; $ sudo cat /dev/gps-base-link | grep -E "RMC" | head -5  # will see if RMC NMEA sentences are being published.
 
 ---
 
@@ -79,7 +83,7 @@
 - [ ] 3D-print holder for Oak Camera
 - [ ] Browser controls working
 - [ ] OAK camera feed live
-- [ ] Low-latency steering response
+- [ ] Review this summary chat looking at the test code: https://chatgpt.com/share/6a5907b1-b708-83ea-8c54-983f3b9b04ec
 
 ---
 
@@ -167,3 +171,9 @@
 - [ ] Migrate RPiNAS OS to Ubuntu 26.04 LTS
 
 ---
+## Reference - Recent LLM conversations
+*Status: NA*
+
+- [ ]  **Mission file m/s**: How is the speed position set: https://claude.ai/chat/b728f2b7-ffa6-49cf-917c-8d0f23bbee50
+- [ ] Which LLM to use: https://claude.ai/chat/cd6167d1-b607-4d12-a8b2-d62f5a3703a7
+- [ ] Data analysis of lost RTK Fix: https://claude.ai/chat/475bcda0-390f-4d66-a788-43d0b955dbf9
