@@ -54,10 +54,13 @@ const uint16_t transmissionNeutralPos = 2836;  // confirmed by watching the reve
 // CHANGED 20260609: anchored to confirmed physical limits
 // Bucket 0=full reverse(3138), Bucket 5=neutral(2836), Bucket 9=full forward(2288)
 // 4 reverse buckets, 1 neutral, 5 forward buckets
-const uint16_t bucketTargets[10] = {
-    3138, 3063, 2987, 2912, 2836,
-    2836, 2726, 2616, 2507, 2288
-};
+// const uint16_t bucketTargets[10] = {
+//     3138, 3063, 2987, 2912, 2836,
+//     2836, 2726, 2616, 2507, 2288
+// };
+
+// updated on 7/22/26
+const uint16_t bucketTargets[10] = {3138, 3063, 2987, 2912, 2836, 2616, 2534, 2452, 2370, 2288};
 
 // NEW 20260714: m/s -> JRK target calibration for auto mode (cmd_vel).
 // linear_x now arrives in m/s (positive = forward). The JRK accepts a
@@ -70,10 +73,16 @@ const uint16_t bucketTargets[10] = {
 // course). Points must be in ascending m/s order; add as many rows as
 // you measure, e.g. {0.30f, 2790}, {0.50f, 2745}, ...
 struct SpeedCalPoint { float mps; uint16_t jrkTarget; };
+
 const SpeedCalPoint SPEED_CAL[] = {
-    {0.00f, 2836},   // neutral (confirmed 2026-06-09)
-    {1.50f, 2288},   // PLACEHOLDER: full forward assumed = 1.5 m/s
+    {0.00f, 2836},
+    {0.40f, 2452},
+    {0.87f, 2421},  // measured: 0.899 outbound, 0.846 return
+    {0.94f, 2404},  // measured: 0.974 outbound, 0.898 return
+    {1.08f, 2370},  // measured: 1.122 outbound, 1.042 return
+    {1.25f, 2288},
 };
+
 const int SPEED_CAL_POINTS = sizeof(SPEED_CAL) / sizeof(SPEED_CAL[0]);
 
 // NEW 20260714: interpolate SPEED_CAL. <=0 m/s -> neutral (reverse is not
