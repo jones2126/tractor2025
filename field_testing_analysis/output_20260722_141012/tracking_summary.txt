@@ -1,0 +1,39 @@
+Pure Pursuit Tracking Analysis
+===============================
+Valid GPS samples: 5371
+Driving/AUTO-proxy samples: 4760 (88.6%)
+Active-tracking samples (waypoint_idx > 0): 3082
+Mission waypoints: 141
+
+Geometric cross-track error during active mission tracking
+(nearest mission polyline; + left / - right of mission direction)
+  Bias / mean signed          : -0.089 m
+  MAE                         : 0.219 m
+  RMSE                        : 0.388 m
+  Median absolute             : 0.144 m
+  95th percentile absolute    : 0.353 m
+  Maximum absolute            : 2.976 m
+  Signed standard deviation   : 0.378 m
+  Within ±0.10m               : 26.7%
+  Within ±0.25m               : 67.8%
+  Within ±0.50m               : 97.7%
+  Steering saturation (|cmd|≥.999): 11.6%
+  Error zero crossings: 21
+  Zero crossings per 10 m progress: 2.40
+
+Interpretation
+  Bias: persistent left/right offset; inspect alignment/calibration.
+  RMSE/P95: overall and near-worst tracking accuracy.
+  Frequent zero crossings: weaving/oscillation; compare at the same speed.
+  Steering saturation: controller often requests more authority than available.
+
+Important: CSV cross_track_err_m is abs(yt), the lookahead target's lateral
+offset in the tractor frame. It is not geometric distance to the mission path.
+This report recomputes geometric CTE from GPS and the mission polyline.
+
+AUTO caveat: this log has no radio_mode field. 'driving=True' only proves that
+the controller sent cmd_vel; it is used here as an AUTO proxy.
+
+Path-acquisition caveat: waypoint_idx=0 is excluded from the headline CTE.
+This run began about 23 m from the first waypoint, so including its approach
+would measure start-position error rather than path-following accuracy.

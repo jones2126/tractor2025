@@ -33,6 +33,7 @@
 
 ## 🔴 Today Action Items
 
+- [ ] Enhance pure-pursuit logs for reproducible steering comparisons — see [[Pure_Pursuit_Log_Enhancements]]
 - [ ] Move teensy_main_20260717.cpp to tractor01, compile and upload
 - [ ] Running run_mission_20260714.sh did not capture lat, lon movement.  Something is broken in the data capture process.  What I need: re-map transmission to captured actual speed
 - [ ] Test run shows dropping RTK Fix.  I need to expand the data logged to debug why
