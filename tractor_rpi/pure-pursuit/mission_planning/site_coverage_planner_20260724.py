@@ -69,9 +69,13 @@ SEGMENT_COLUMNS = [
 
 ANGLE_COLUMNS = [
     "angle_degrees",
+    "compass_bearing_a",
+    "compass_bearing_b",
     "included_stripes",
+    "turns_between_stripes",
     "clipped_segments",
     "short_segments",
+    "average_stripe_length_m",
     "stripe_length_m",
     "air_connectors_m",
     "estimated_route_m",
@@ -348,6 +352,55 @@ def parse_angle_spec(specification: str) -> list[float]:
     return sorted({round(value % 180.0, 6) for value in values})
 
 
+def nearest_evaluated_angle(target: float, angles: Sequence[float]) -> float:
+    target %= 180.0
+    return min(
+        angles,
+        key=lambda angle: min(abs(angle - target), 180.0 - abs(angle - target)),
+    )
+
+
+def gallery_angles(
+    rows: Sequence[dict[str, object]],
+    angles: Sequence[float],
+) -> tuple[list[float], float]:
+    """Choose an operator-friendly set around the fewest-row orientation."""
+    fewest_row = min(
+        rows,
+        key=lambda row: (
+            int(row["included_stripes"]),
+            -float(row["average_stripe_length_m"]),
+        ),
+    )
+    center = float(fewest_row["angle_degrees"])
+    targets = [
+        center - 20.0,
+        center - 10.0,
+        center,
+        center + 10.0,
+        center + 20.0,
+        center + 90.0,
+    ]
+    selected = []
+    for target in targets:
+        angle = nearest_evaluated_angle(target, angles)
+        if angle not in selected:
+            selected.append(angle)
+    for row in sorted(
+        rows,
+        key=lambda item: (
+            int(item["included_stripes"]),
+            -float(item["average_stripe_length_m"]),
+        ),
+    ):
+        angle = float(row["angle_degrees"])
+        if angle not in selected:
+            selected.append(angle)
+        if len(selected) >= min(6, len(angles)):
+            break
+    return selected[:6], center
+
+
 def draw_polygon(ax, geometry, facecolor, edgecolor, alpha, label=None):
     first = True
     for polygon in polygon_parts(geometry):
@@ -393,12 +446,19 @@ def run_compare_angles(args: argparse.Namespace) -> int:
         ]
         stripe_length = sum(float(stripe["length_m"]) for stripe in included)
         connectors = air_connector_length(included)
+        average_length = stripe_length / len(included) if included else 0.0
+        compass_a = (90.0 - angle) % 360.0
+        compass_b = (compass_a + 180.0) % 360.0
         rows.append(
             {
                 "angle_degrees": f"{angle:.1f}",
+                "compass_bearing_a": f"{compass_a:.1f}",
+                "compass_bearing_b": f"{compass_b:.1f}",
                 "included_stripes": len(included),
+                "turns_between_stripes": max(0, len(included) - 1),
                 "clipped_segments": len(stripes),
                 "short_segments": len(stripes) - len(included),
+                "average_stripe_length_m": f"{average_length:.1f}",
                 "stripe_length_m": f"{stripe_length:.1f}",
                 "air_connectors_m": f"{connectors:.1f}",
                 "estimated_route_m": f"{stripe_length + connectors:.1f}",
@@ -410,59 +470,101 @@ def run_compare_angles(args: argparse.Namespace) -> int:
     write_csv(csv_path, ANGLE_COLUMNS, rows)
 
     plt = plot_setup()
-    fig, left_axis = plt.subplots(figsize=(11, 7))
-    x_values = [float(row["angle_degrees"]) for row in rows]
-    route_values = [float(row["estimated_route_m"]) for row in rows]
-    connector_values = [float(row["air_connectors_m"]) for row in rows]
-    line1 = left_axis.plot(
-        x_values,
-        route_values,
-        "o-",
-        color="#1565c0",
-        label="Stripe + straight-line connector estimate",
+    row_by_angle = {
+        float(row["angle_degrees"]): row
+        for row in rows
+    }
+    selected_angles, fewest_row_angle = gallery_angles(
+        rows, list(row_by_angle)
     )
-    line2 = left_axis.plot(
-        x_values,
-        connector_values,
-        "o--",
-        color="#ef6c00",
-        label="Straight-line connector estimate",
+    fig, axes = plt.subplots(2, 3, figsize=(15, 10), squeeze=False)
+    min_x, min_y, max_x, max_y = boundary.bounds
+    padding = max(max_x - min_x, max_y - min_y) * 0.06
+    for axis, angle in zip(axes.flat, selected_angles):
+        row = row_by_angle[angle]
+        stripes = make_stripes(
+            stripe_area,
+            angle,
+            args.lane_spacing_m,
+            args.stripe_end_trim_m,
+            args.scan_from,
+            args.first_stripe_direction,
+        )
+        draw_polygon(
+            axis,
+            boundary,
+            facecolor="#eeeeee",
+            edgecolor="#616161",
+            alpha=0.55,
+        )
+        draw_polygon(
+            axis,
+            stripe_area,
+            facecolor="#fffde7",
+            edgecolor="#f9a825",
+            alpha=0.75,
+        )
+        for stripe in stripes:
+            start, end = stripe["start"], stripe["end"]
+            included = float(stripe["length_m"]) >= args.minimum_segment_m
+            color = "#1565c0" if included else "#c62828"
+            axis.annotate(
+                "",
+                xy=end,
+                xytext=start,
+                arrowprops={
+                    "arrowstyle": "->",
+                    "color": color,
+                    "lw": 1.15 if included else 0.8,
+                    "linestyle": "-" if included else ":",
+                },
+            )
+        compass_a = float(row["compass_bearing_a"])
+        compass_b = float(row["compass_bearing_b"])
+        label = "  •  FEWEST ROWS" if angle == fewest_row_angle else ""
+        axis.set_title(
+            f"{angle:.0f}° math  =  {compass_a:.0f}°/{compass_b:.0f}° compass"
+            f"{label}\n"
+            f"{row['included_stripes']} rows, "
+            f"{row['turns_between_stripes']} end turns, "
+            f"{row['average_stripe_length_m']} m average row"
+        )
+        axis.set_xlim(min_x - padding, max_x + padding)
+        axis.set_ylim(min_y - padding, max_y + padding)
+        axis.set_aspect("equal", adjustable="box")
+        axis.grid(True, alpha=0.2)
+        axis.set_xlabel("East (m)")
+        axis.set_ylabel("North (m)")
+    for axis in list(axes.flat)[len(selected_angles):]:
+        axis.set_visible(False)
+    fig.suptitle(
+        "Coverage-line orientation choices\n"
+        "Gray outline: site boundary  •  Orange outline: interior stripe area\n"
+        "Blue arrows: included rows  •  Red dotted: too short\n"
+        f"{args.lane_spacing_m / 0.0254:.1f} in center spacing  •  "
+        "Fewer rows means fewer end turns  •  Turn paths are not shown yet",
+        fontsize=13,
     )
-    left_axis.set_xlabel("Stripe angle (degrees CCW from east)")
-    left_axis.set_ylabel("Estimated distance (m)")
-    left_axis.grid(True, alpha=0.3)
-
-    right_axis = left_axis.twinx()
-    count_values = [int(row["included_stripes"]) for row in rows]
-    line3 = right_axis.plot(
-        x_values,
-        count_values,
-        "s-",
-        color="#2e7d32",
-        label="Included stripe segments",
-    )
-    right_axis.set_ylabel("Stripe segment count")
-    all_lines = line1 + line2 + line3
-    left_axis.legend(all_lines, [line.get_label() for line in all_lines])
-    left_axis.set_title(
-        "Angle comparison (screening estimate only—turn feasibility comes later)"
-    )
-    fig.tight_layout()
+    fig.tight_layout(rect=(0, 0, 1, 0.88))
     fig.savefig(plot_path, dpi=160)
     plt.close(fig)
 
-    best = min(rows, key=lambda row: float(row["estimated_route_m"]))
+    fewest = row_by_angle[fewest_row_angle]
     print(f"Angles evaluated : {len(rows)}")
     print(
-        "Shortest screening estimate: "
-        f"{best['angle_degrees']}° ({best['estimated_route_m']} m)"
+        "Fewest-row candidate: "
+        f"{fewest['angle_degrees']}° math "
+        f"({fewest['compass_bearing_a']}°/"
+        f"{fewest['compass_bearing_b']}° compass, "
+        f"{fewest['included_stripes']} rows)"
     )
     print(f"Comparison CSV   : {csv_path}")
     print(f"Comparison plot  : {plot_path}")
     print(
-        "\nThe shortest estimate is not automatically the best field choice. "
-        "Review slope, wet areas, discharge direction and turn space, then run "
-        "preview with the selected --angle-degrees (19 is valid)."
+        "\nThe fewest-row orientation is not automatically the best field "
+        "choice. Review the actual stripe layouts, slope, wet areas, discharge "
+        "direction and available turn space, then run preview with the selected "
+        "--angle-degrees."
     )
     return 0
 

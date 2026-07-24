@@ -352,13 +352,25 @@ the circle unsafely.
 
 Screen angles before generating the reviewed stripe table:
 
+Windows 10 PowerShell, with the requested 39-inch (`0.9906 m`) row spacing and
+no obstacle file:
+
+```powershell
+python site_coverage_planner_20260724.py compare-angles "$site\01_boundary_final.csv" --output-dir "$site" --angles 0:175:5 --lane-spacing-m 0.9906 --stripe-end-trim-m 3.0 --boundary-clearance-m 0.75 --headland-passes 2
+
+Invoke-Item "$site\01_angle_comparison.png"
+Invoke-Item "$site\01_angle_comparison.csv"
+```
+
+RPi5NAS, with an optional obstacle file:
+
 ```bash
 python3 site_coverage_planner_20260724.py compare-angles \
   ~/field_plans/site_01/01_boundary_final.csv \
   --obstacles ~/field_plans/site_01/01_obstacles.csv \
   --output-dir ~/field_plans/site_01 \
   --angles 0:175:5 \
-  --lane-spacing-m 0.90 \
+  --lane-spacing-m 0.9906 \
   --stripe-end-trim-m 3.0 \
   --boundary-clearance-m 0.75 \
   --headland-passes 2
@@ -369,9 +381,21 @@ Outputs:
 - `01_angle_comparison.csv`
 - `01_angle_comparison.png`
 
-The distance estimate uses straight-line distances between stripe endpoints. It
-is only a screening metric; actual turn feasibility is checked during `build`.
-The shortest result is not automatically the best operating choice. Consider:
+The PNG shows six actual coverage-line layouts rather than a multi-axis
+engineering graph. The choices are centered around the orientation producing
+the fewest rows, plus nearby rotations and an approximately perpendicular
+comparison. Each panel translates the math-frame angle into the two compass
+headings, and reports row count, estimated end-turn count, and average row
+length. Blue arrows are included rows; red dotted pieces are too short and
+would be excluded.
+
+The CSV retains results for every evaluated angle. It includes compass
+bearings, row and end-turn counts, short-segment count, average row length, and
+the original screening-distance columns for deeper inspection.
+
+The fewest-row result is not automatically the best operating choice. Actual
+keyhole-turn geometry is not drawn or validated until the later
+preview/build work. Also consider:
 
 - slope direction and rollover risk;
 - drainage, wet ground, and rutting;
