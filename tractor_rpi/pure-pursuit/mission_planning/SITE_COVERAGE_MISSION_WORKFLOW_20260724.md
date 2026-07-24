@@ -547,7 +547,7 @@ python site_coverage_planner_20260724.py build --settings "$site\02_plan_setting
 if ($LASTEXITCODE -eq 0) {
   Invoke-Item "$site\62_Collins_Dr_mission_preview.png"
   Invoke-Item "$site\62_Collins_Dr_mission_audit.csv"
-  Invoke-Item "$site\62_Collins_Dr_mission_build_report.json"
+  Get-Content "$site\62_Collins_Dr_mission_build_report.json" -Raw
 } else {
   Write-Warning "Build failed; no mission artifacts were written."
 }
@@ -607,7 +607,7 @@ Windows 10 PowerShell:
 python validate_site_mission_20260724.py $mission --settings "$site\02_plan_settings.json"
 
 Invoke-Item "$site\62_Collins_Dr_mission_validation.png"
-Invoke-Item "$site\62_Collins_Dr_mission_validation.json"
+Get-Content "$site\62_Collins_Dr_mission_validation.json" -Raw
 ```
 
 Optional hard curvature gate:
