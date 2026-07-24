@@ -430,7 +430,7 @@ the Collins Drive site, the selected value is `105`:
 ```powershell
 $angle = 105
 
-python site_coverage_planner_20260724.py preview "$site\01_boundary_final.csv" --output-dir "$site" --angle-degrees $angle --lane-spacing-m 0.9906 --stripe-end-trim-m 3.0 --boundary-clearance-m 0.75 --headland-passes 2 --turn-radius-m 3.0 --waypoint-spacing-m 0.50 --scan-from low --first-stripe-direction reverse --ring-direction clockwise
+python site_coverage_planner_20260724.py preview "$site\01_boundary_final.csv" --output-dir "$site" --angle-degrees $angle --lane-spacing-m 0.9906 --stripe-end-trim-m 3.0 --boundary-clearance-m 0.75 --headland-passes 2 --turn-radius-m 1.90 --stripe-turn-policy keyhole --waypoint-spacing-m 0.50 --scan-from low --first-stripe-direction reverse --ring-direction clockwise
 
 Invoke-Item "$site\02_coverage_preview.png"
 Invoke-Item "$site\02_coverage_segments.csv"
@@ -448,7 +448,8 @@ python3 site_coverage_planner_20260724.py preview \
   --stripe-end-trim-m 3.0 \
   --boundary-clearance-m 0.75 \
   --headland-passes 2 \
-  --turn-radius-m 3.0 \
+  --turn-radius-m 1.90 \
+  --stripe-turn-policy keyhole \
   --waypoint-spacing-m 0.50 \
   --scan-from low \
   --first-stripe-direction reverse \
@@ -476,7 +477,8 @@ Outputs:
 | `boundary-clearance-m` | Distance from the logged perimeter to the tractor reference point. Set it from deck/body overhang, survey meaning, GPS error, and desired safety margin. |
 | `headland-passes` | Perimeter coverage passes before interior stripes. This creates working room but does not by itself guarantee a feasible U-turn. |
 | `stripe-end-trim-m` | Distance removed from both ends of every clipped stripe to leave turning room. This replaces the notebook’s separate “shorten stripes” script and is visible in the editable CSV/plot. |
-| `turn-radius-m` | Minimum planned Dubins radius and headland corner-rounding radius. The controller documentation estimates a 1.77 m steering limit; 3.0 m is intentionally gentler until field measurements justify less. |
+| `turn-radius-m` | Common minimum planning radius for left and right turns. Manual circle tests measured approximately 1.05 m full-left and 1.63 m full-right. This site uses 1.90 m: 0.27 m (about 17%) gentler than the weaker measured right turn. Do not plan at the measured limit without repeatability tests. |
+| `stripe-turn-policy` | `keyhole` constrains adjacent-row transitions to compact three-arc agricultural omega turns. `shortest-dubins` is retained for engineering comparison and must not be used merely to force a build. |
 | `waypoint-spacing-m` | Maximum sampling gap. 0.50 m is denser than the current controller’s historical 1 m examples. |
 | lookahead/speed options | Straight, turn, and headland values are saved separately. Start conservatively. |
 
@@ -507,13 +509,20 @@ Useful orientation controls:
 
 ### Required keyhole-turn policy checkpoint
 
-For the Collins Drive mission, do not treat a successful generic build as
-approval yet. The current builder tests all six Dubins families and chooses the
-shortest contained connector. That does **not** guarantee the requested
-left-then-right keyhole turn for every adjacent-row transition. The PowerShell
-commands below document the build and validation mechanics, but the mission
-preview must show the requested turn direction at every row end before the
-mission can proceed to the tractor.
+With `stripe-turn-policy` set to `keyhole`, adjacent rows use compact
+three-arc omega turns. Because the 39-inch row spacing is less than twice the
+tractor's turn radius, a forward-only left-then-right two-arc path cannot finish
+aligned with the adjacent row. The third, smaller correcting arc is
+kinematically necessary.
+
+When the next row is on the right, the normal pattern is `LRL`
+(left-right-left); when it is on the left, the mirror is `RLR`. The first
+Collins Drive transition is next to the polygon edge and cannot turn away from
+the row while remaining contained, so it uses a clearly recorded
+`boundary-fallback` omega in the opposite orientation. All later tested row
+transitions use the preferred turn-away-first pattern. Review every orange
+connector in the mission preview before validation or field use. A red triangle
+marks each boundary-constrained fallback requiring special attention.
 
 ### 4A. Build the candidate executable mission
 
@@ -522,7 +531,7 @@ Windows 10 PowerShell:
 ```powershell
 $mission = Join-Path $site '62_Collins_Dr_mission.txt'
 
-python site_coverage_planner_20260724.py build --settings "$site\02_plan_settings.json" --segments "$site\02_coverage_segments.csv" --output $mission
+python site_coverage_planner_20260724.py build --settings "$site\02_plan_settings.json" --segments "$site\02_coverage_segments.csv" --output $mission --strict-curvature
 
 Invoke-Item "$site\62_Collins_Dr_mission_preview.png"
 Invoke-Item "$site\62_Collins_Dr_mission_audit.csv"
@@ -542,8 +551,9 @@ The builder:
 
 1. Reconstructs the reviewed safe polygon.
 2. Creates/densifies headland and stripe path pieces.
-3. Tries all six Dubins path families for each transition.
-4. Chooses the shortest connector that remains inside the safe polygon.
+3. Uses the selected compact keyhole/omega policy for adjacent coverage rows.
+4. Uses contained Dubins-family searches for headland-to-headland and
+   headland-to-first-stripe transitions.
 5. Refuses to write a mission if a connector or manual edit leaves that
    polygon.
 6. Converts every local point back to lat/lon and writes the controller’s exact
@@ -554,6 +564,10 @@ Additional outputs are:
 - `site_01_mission_audit.csv`
 - `site_01_mission_build_report.json`
 - `site_01_mission_preview.png`
+
+If `build` prints `ERROR`, it deliberately does not write the mission, preview,
+audit, or build report. Do not run `Invoke-Item` for those outputs after a
+failed build; correct the reported geometry problem and rerun `build`.
 
 If a connector fails, this is useful information—not a reason to bypass the
 check. Try, in this order:

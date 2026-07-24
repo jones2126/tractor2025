@@ -94,6 +94,8 @@ AUDIT_COLUMNS = [
     "local_radius_m",
 ]
 
+ROUTE_POINT_TOLERANCE_M = 0.01
+
 
 def plot_setup():
     require_matplotlib()
@@ -592,6 +594,7 @@ def settings_from_args(
         "stripe_end_trim_m": args.stripe_end_trim_m,
         "scan_from": args.scan_from,
         "first_stripe_direction": args.first_stripe_direction,
+        "stripe_turn_policy": args.stripe_turn_policy,
         "ring_direction": args.ring_direction,
         "start_anchor": {"lat": start_lat, "lon": start_lon},
         "turn_radius_m": args.turn_radius_m,
@@ -843,6 +846,63 @@ def valid_connector(
     return None
 
 
+def keyhole_connector(
+    start_pose,
+    end_pose,
+    drive_area,
+    radius_m: float,
+    spacing_m: float,
+):
+    """Create a compact forward agricultural omega/keyhole transition.
+
+    Adjacent rows are much closer than twice the tractor's turn radius, so a
+    two-arc LSR/RSL maneuver is not kinematically available. The forward-only
+    solution is a three-arc omega turn: LRL when the next row is on the right,
+    RLR when it is on the left. The first arc turns away from the next row; the
+    last arc is the small alignment correction required by the geometry.
+    """
+    from shapely.geometry import LineString
+
+    start_x, start_y, start_yaw = start_pose
+    goal_x, goal_y, _goal_yaw = end_pose
+    heading_x = math.cos(start_yaw)
+    heading_y = math.sin(start_yaw)
+    relative_x = goal_x - start_x
+    relative_y = goal_y - start_y
+    cross = heading_x * relative_y - heading_y * relative_x
+    next_side = "left" if cross > 0 else "right"
+    preferred_mode = "RLR" if next_side == "left" else "LRL"
+    fallback_mode = "LRL" if next_side == "left" else "RLR"
+
+    safe_numeric_area = drive_area.buffer(0.03)
+    candidates = dubins_candidates(
+        start_pose, end_pose, radius_m, spacing_m
+    )
+    for mode, preferred in (
+        (preferred_mode, True),
+        (fallback_mode, False),
+    ):
+        for candidate in candidates:
+            if candidate["mode"] != mode:
+                continue
+            points = candidate["points"]
+            line = LineString([(point[0], point[1]) for point in points])
+            if not safe_numeric_area.covers(line):
+                continue
+            return {
+                **candidate,
+                "mode": (
+                    f"{mode}-keyhole"
+                    if preferred else f"{mode}-boundary-fallback"
+                ),
+                "points": points,
+                "lead_m": 0.0,
+                "next_row_side": next_side,
+                "preferred_turn_away_first": preferred,
+            }
+    return None
+
+
 def prepare_ring(
     raw_points: Sequence[tuple[float, float]],
     clockwise: bool,
@@ -1014,7 +1074,10 @@ def append_piece(
 ) -> None:
     dense = densify_polyline(points, spacing_m)
     for point in dense:
-        if route and distance(route[-1]["xy"], point) < 1e-5:  # type: ignore[arg-type]
+        if (
+            route
+            and distance(route[-1]["xy"], point) < ROUTE_POINT_TOLERANCE_M  # type: ignore[arg-type]
+        ):
             continue
         route.append({"xy": point, "kind": kind})
 
@@ -1024,7 +1087,10 @@ def append_connector(
     candidate: dict[str, object],
 ) -> None:
     for x, y, _yaw in candidate["points"][1:]:
-        if route and distance(route[-1]["xy"], (x, y)) < 1e-5:  # type: ignore[arg-type]
+        if (
+            route
+            and distance(route[-1]["xy"], (x, y)) < ROUTE_POINT_TOLERANCE_M  # type: ignore[arg-type]
+        ):
             continue
         route.append({"xy": (x, y), "kind": "connector"})
 
@@ -1072,6 +1138,7 @@ def run_build(args: argparse.Namespace) -> int:
 
     turn_radius_m = float(settings["turn_radius_m"])
     spacing_m = float(settings["waypoint_spacing_m"])
+    stripe_turn_policy = str(settings.get("stripe_turn_policy", "keyhole"))
     clockwise = str(settings.get("ring_direction", "clockwise")) == "clockwise"
     anchor_data = settings["start_anchor"]
     anchor = frame.to_xy(float(anchor_data["lat"]), float(anchor_data["lon"]))
@@ -1079,6 +1146,7 @@ def run_build(args: argparse.Namespace) -> int:
     route: list[dict[str, object]] = []
     connector_records = []
     previous_pose = None
+    previous_label = None
     first_stripe_preconnected = False
 
     if headlands:
@@ -1114,6 +1182,7 @@ def run_build(args: argparse.Namespace) -> int:
             }
         )
         previous_pose = path_start_pose(stripes[0]["points"])
+        previous_label = selected_rings[-1]["label"]
         first_stripe_preconnected = True
 
     for stripe_index, stripe in enumerate(stripes):
@@ -1122,41 +1191,72 @@ def run_build(args: argparse.Namespace) -> int:
         if previous_pose is not None and not (
             stripe_index == 0 and first_stripe_preconnected
         ):
-            connector = valid_connector(
-                previous_pose,
-                start_pose,
-                drive_area,
-                turn_radius_m,
-                spacing_m,
-            )
+            if stripe_turn_policy == "keyhole" and previous_label is not None:
+                connector = keyhole_connector(
+                    previous_pose,
+                    start_pose,
+                    drive_area,
+                    turn_radius_m,
+                    spacing_m,
+                )
+            else:
+                connector = valid_connector(
+                    previous_pose,
+                    start_pose,
+                    drive_area,
+                    turn_radius_m,
+                    spacing_m,
+                )
             if connector is None:
+                connector_name = (
+                    "keyhole" if stripe_turn_policy == "keyhole"
+                    else "Dubins"
+                )
                 raise ValueError(
-                    f"No {turn_radius_m:.2f} m-radius contained Dubins connector "
-                    f"from the previous path to {stripe['label']}. Inspect the "
-                    "preview, try reversing that CSV row, trim the segment, "
-                    "change the stripe order, or increase available turn space."
+                    f"No {turn_radius_m:.2f} m-radius contained {connector_name} "
+                    f"connector from {previous_label or 'the previous path'} to "
+                    f"{stripe['label']}. Do not reverse one alternating row just "
+                    "to force a build; review turn radius, endpoint trim, row "
+                    "order, and available headland space."
                 )
             append_connector(route, connector)
+            connector_midpoint = connector["points"][
+                len(connector["points"]) // 2
+            ]
             connector_records.append(
                 {
-                    "from": "previous path",
+                    "from": previous_label or "previous path",
                     "to": stripe["label"],
                     "mode": connector["mode"],
                     "length_m": float(connector["length_m"]),
+                    "lead_m": float(connector.get("lead_m", 0.0)),
+                    "next_row_side": connector.get("next_row_side", ""),
+                    "preferred_turn_away_first": connector.get(
+                        "preferred_turn_away_first", ""
+                    ),
+                    "review_point_east_m": float(connector_midpoint[0]),
+                    "review_point_north_m": float(connector_midpoint[1]),
                 }
             )
         append_piece(route, points, "stripe", spacing_m)
         previous_pose = path_end_pose(points)
+        previous_label = stripe["label"]
 
     if len(route) < 2:
         raise ValueError("Planner produced fewer than two route points")
-    route_xy = deduplicate_points([item["xy"] for item in route], tolerance_m=1e-5)
+    route_xy = deduplicate_points(
+        [item["xy"] for item in route],
+        tolerance_m=ROUTE_POINT_TOLERANCE_M,
+    )
     if len(route_xy) != len(route):
         # Consecutive duplicates should already have been removed. Keep the
         # metadata aligned if floating-point snapping found any extras.
         compact = [route[0]]
         for item in route[1:]:
-            if distance(compact[-1]["xy"], item["xy"]) >= 1e-5:  # type: ignore[arg-type]
+            if (
+                distance(compact[-1]["xy"], item["xy"])
+                >= ROUTE_POINT_TOLERANCE_M  # type: ignore[arg-type]
+            ):
                 compact.append(item)
         route = compact
         route_xy = [item["xy"] for item in route]
@@ -1237,6 +1337,11 @@ def run_build(args: argparse.Namespace) -> int:
     )
     write_mission(output, mission)
     write_csv(audit_path, AUDIT_COLUMNS, audit_rows)
+    boundary_fallbacks = [
+        record
+        for record in connector_records
+        if record.get("preferred_turn_away_first") is False
+    ]
     write_json(
         report_path,
         {
@@ -1246,6 +1351,7 @@ def run_build(args: argparse.Namespace) -> int:
             "waypoints": len(mission),
             "route_length_m": polyline_length(route_xy),
             "connector_count": len(connector_records),
+            "keyhole_boundary_fallback_count": len(boundary_fallbacks),
             "connectors": connector_records,
             "minimum_sampled_radius_m": (
                 None if math.isinf(minimum_sampled_radius)
@@ -1289,6 +1395,17 @@ def run_build(args: argparse.Namespace) -> int:
         *route_xy[-1], s=80, color="#c62828", marker="x",
         label="Mission end", zorder=5
     )
+    if boundary_fallbacks:
+        ax.scatter(
+            [record["review_point_east_m"] for record in boundary_fallbacks],
+            [record["review_point_north_m"] for record in boundary_fallbacks],
+            s=110,
+            color="#c62828",
+            marker="^",
+            edgecolor="black",
+            label="Boundary keyhole fallback—review",
+            zorder=6,
+        )
     ax.set_aspect("equal", adjustable="datalim")
     ax.set_xlabel("East (m)")
     ax.set_ylabel("North (m)")
@@ -1306,6 +1423,11 @@ def run_build(args: argparse.Namespace) -> int:
     print(f"Mission waypoints      : {len(mission)}")
     print(f"Route length           : {polyline_length(route_xy):.1f} m")
     print(f"Contained connectors   : {len(connector_records)}")
+    if boundary_fallbacks:
+        print(
+            "REVIEW keyhole fallback : "
+            f"{len(boundary_fallbacks)} boundary-constrained transition(s)"
+        )
     print(
         "Minimum sampled radius: "
         + (
@@ -1420,6 +1542,15 @@ def build_parser() -> argparse.ArgumentParser:
     preview.add_argument("--start-lat", type=float)
     preview.add_argument("--start-lon", type=float)
     preview.add_argument("--turn-radius-m", type=float, default=3.0)
+    preview.add_argument(
+        "--stripe-turn-policy",
+        choices=["keyhole", "shortest-dubins"],
+        default="keyhole",
+        help=(
+            "adjacent-row connector policy: agricultural keyhole/omega turns "
+            "or unconstrained shortest contained Dubins path (default keyhole)"
+        ),
+    )
     preview.add_argument("--waypoint-spacing-m", type=float, default=0.50)
     preview.add_argument("--straight-lookahead-m", type=float, default=3.0)
     preview.add_argument("--straight-speed-mps", type=float, default=0.50)
