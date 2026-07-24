@@ -676,7 +676,13 @@ The helper:
 4. Verifies every copied file by SHA-256.
 5. Generates a GitHub-renderable site `README.md` with parameters, status,
    mission hash, visual checkpoints, and field hold points.
-6. Refuses to overwrite an existing archive accidentally.
+6. Generates `run_<site-name>_mission.sh`. The launcher resolves the mission,
+   controller, and logger paths relative to its own location, so it can be
+   started from any directory on the tractor RPi. Before moving the tractor it
+   requires validation status `PASS` and verifies the mission SHA-256. It then
+   starts the field logger in the background and the controller in the
+   foreground with a conservative `0.30 m/s` default speed cap.
+7. Refuses to overwrite an existing archive accidentally.
 
 If an already archived mission is deliberately superseded by a newly reviewed
 and validated version, inspect both versions first, then use:
@@ -694,6 +700,20 @@ $archive = Join-Path $repo "tractor_rpi\pure-pursuit\missions\$siteName"
 Invoke-Item "$archive\README.md"
 git status --short
 ```
+
+The generated launcher is part of the archived mission package. After the
+package has been committed, pushed, and pulled onto the tractor RPi, run it
+with `bash` (the executable file bit is not required):
+
+```bash
+cd ~/repos/tractor2025/tractor_rpi/pure-pursuit/missions/62_Collins_Dr
+bash ./run_62_Collins_Dr_mission.sh
+```
+
+The launcher stops the background logger when the controller exits or when
+`Ctrl+C` is pressed. Keep the tractor in Manual or Pause until RTK Fixed,
+heading, e-stop, and route-start checks are complete. Do not raise the default
+speed for the first supervised field run.
 
 The JSON files should be committed. The settings make the mission reproducible;
 the build report records connector decisions; and the validation report records
