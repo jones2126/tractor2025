@@ -5,7 +5,7 @@ field_test_logger_20260717.py
 Field test data logger for tractor manual drive sessions.
 
 Listens on:
-  UDP 6002 - GPS/RTK state (from rtcm_server)
+  UDP 6009 - dedicated GPS/RTK logging feed (from rtcm_server)
   UDP 6003 - Teensy/system status (from teensy_serial_bridge)
   TCP 6005 - GL router WiFi signal strength (from wifi_publish.sh on router)
 
@@ -13,7 +13,7 @@ Merges latest values from all three sources by wall-clock timestamp.
 Writes one CSV row per 6003 broadcast (~5 Hz) when Teensy bridge is running.
 
 CHANGED 20260622: GPS-only mode — if UDP 6003 is silent for GPS_ONLY_TIMEOUT
-seconds (e.g. no Teensy connected), rows are driven by UDP 6002 instead.
+seconds (e.g. no Teensy connected), rows are driven by UDP 6009 instead.
 Teensy/steering/radio columns will be empty in GPS-only rows.
 
 CHANGED 20260710: Added TCP listener on port 6005 for GL router upstream WiFi
@@ -55,7 +55,7 @@ UDP_GPS_PORT     = 6009   # from rtcm_server -- dedicated logging feed, no longe
 UDP_STATUS_PORT  = 6003   # from teensy_serial_bridge
 TCP_ROUTER_PORT  = 6005   # NEW 20260710: GL router upstream WiFi signal (from wifi_publish.sh)
 LOG_DIR          = "/home/al/field_logs"
-LOG_HZ           = 5      # rows per second (driven by 6003 or 6002 in GPS-only mode)
+LOG_HZ           = 5      # rows per second (driven by 6003 or 6009 in GPS-only mode)
 
 # CHANGED 20260622: if 6003 is silent longer than this, switch to GPS-only mode
 GPS_ONLY_TIMEOUT = 2.0    # seconds
@@ -115,7 +115,7 @@ last_6003_time = 0.0      # CHANGED 20260622: track when 6003 was last received
 # ---------------------------------------------------------------------------
 
 def gps_listener():
-    """Listen on 6002, update latest_gps.
+    """Listen on the dedicated UDP 6009 logging feed, update latest_gps.
 
     CHANGED 20260622: also sets _new_row flag to drive logger when 6003 is
     silent (GPS-only mode).  No separate thread needed — single socket handles both.
@@ -278,7 +278,7 @@ def run_logger(output_path: str):
     print(f"\n{'='*55}")
     print(f"  Field Test Logger  |  {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"  Output: {output_path}")
-    print(f"  Rate:   ~{LOG_HZ} Hz (6003 when Teensy present, else 6002 GPS-only)")  # CHANGED
+    print(f"  Rate:   ~{LOG_HZ} Hz (6003 when Teensy present, else 6009 GPS-only)")  # CHANGED
     print(f"  Ctrl+C to stop and close file cleanly")
     print(f"{'='*55}\n")
 
