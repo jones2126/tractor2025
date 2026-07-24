@@ -45,7 +45,7 @@ Run these from `tractor_rpi/pure-pursuit/mission_planning/`:
 
 | File | Purpose |
 |---|---|
-| `site_boundary_from_log_20260724.py` | Extract/finalize a boundary and fit optional circular obstacles |
+| `site_boundary_from_log_20260724.py` | Extract a logged boundary or import a GeoJSON/KML/KMZ polygon, finalize it, and fit optional circular obstacles |
 | `site_coverage_planner_20260724.py` | Compare angles, preview coverage, and build a candidate mission |
 | `validate_site_mission_20260724.py` | Independently audit and plot the five-column mission |
 | `site_planner_common_20260724.py` | Shared projection, CSV, curvature, and Dubins helpers |
@@ -85,6 +85,64 @@ normally remain outside the source-code directory:
 mkdir -p ~/field_plans/site_01
 ```
 
+## Optional one-time setup on Windows 10
+
+Use PowerShell from the Windows 10 laptop. The examples assume the repository
+is at `C:\Repos\tractor2025`, which is the current location on this laptop.
+First check that Python 3.11 or newer is available:
+
+```powershell
+python --version
+```
+
+If that command is missing or only opens the Microsoft Store, install the
+[official Python Install Manager for Windows](https://www.python.org/downloads/)
+and follow its prompt to install a current Python runtime. The
+[official Windows Python documentation](https://docs.python.org/3/using/windows.html)
+also covers command and app-execution-alias troubleshooting.
+
+```powershell
+cd C:\Repos\tractor2025\tractor_rpi\pure-pursuit\mission_planning
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements_site_planner_20260724.txt
+```
+
+If PowerShell refuses to run `Activate.ps1`, allow local script execution only
+for the current PowerShell window, then activate again:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\.venv\Scripts\Activate.ps1
+```
+
+Reactivate the environment in each new PowerShell window and define convenient
+locations for this session:
+
+```powershell
+$repo = 'C:\Repos\tractor2025'
+$planner = Join-Path $repo 'tractor_rpi\pure-pursuit\mission_planning'
+$site = Join-Path $env:USERPROFILE 'Documents\field_plans\site_01'
+
+Set-Location $planner
+.\.venv\Scripts\Activate.ps1
+New-Item -ItemType Directory -Force $site
+```
+
+The Linux commands later in this guide remain the primary RPi5NAS examples.
+On Windows:
+
+| RPi5NAS form | Windows PowerShell form |
+|---|---|
+| `python3` | `python` after activating `.venv` |
+| `source .venv/bin/activate` | `.\.venv\Scripts\Activate.ps1` |
+| `~/field_plans/site_01/file.csv` | `"$site\file.csv"` |
+| trailing `\` for a continued command | trailing backtick `` ` `` |
+
+Keep site artifacts outside the Git repository unless there is a deliberate
+reason to version a reviewed boundary or mission.
+
 ## Step 1 — Capture and review the site outline
 
 ### 1A. Log one clean perimeter lap
@@ -97,6 +155,14 @@ GPS logging feed is UDP 6009.
 cd ~/repos/tractor2025/tractor_rpi
 python3 field_test_logger_20260717.py \
   --output ~/field_plans/site_01/00_boundary_log.csv
+```
+
+The equivalent Windows 10 command is:
+
+```powershell
+Set-Location "$repo\tractor_rpi"
+python field_test_logger_20260717.py `
+  --output "$site\00_boundary_log.csv"
 ```
 
 Recommended capture practice:
@@ -114,6 +180,72 @@ If the CSV contains setup time, multiple laps, or the drive back to the trailer,
 open it in Excel first and note the useful data-row range. `--start-row` and
 `--end-row` count data rows after the header. The candidate output also records
 the actual source CSV row.
+
+### Optional alternative to 1A and 1B: draw one polygon on a map
+
+Use this route when a field-logged perimeter is unavailable or when a map
+polygon is a useful first draft. It avoids copying individual latitude and
+longitude values from Google Maps. The boundary tool accepts one polygon from
+`.geojson`, `.json`, `.kml`, or `.kmz` and converts it into the same editable
+candidate CSV used by the logged-data route.
+
+Public options:
+
+1. **Google My Maps — easiest with familiar aerial imagery.** Open
+   [Google My Maps](https://www.google.com/maps/about/mymaps/), create a map,
+   choose **Draw a line > Add line or shape**, click the perimeter vertices,
+   and close the shape. Google documents the drawing process in
+   [Draw lines & shapes in My Maps](https://support.google.com/mymaps/answer/3433053).
+   From the map's three-dot menu, export the polygon layer or whole map as
+   KML/KMZ.
+2. **geojson.io — fastest direct GeoJSON route.** Open
+   [geojson.io](https://geojson.io/), zoom to the site, use the polygon tool,
+   inspect the vertices, and save the result as GeoJSON. It is a convenient
+   public web editor, but imagery and service availability can change.
+3. **QGIS — best repeatable desktop option.** QGIS is free and open source,
+   runs on Windows, and provides more capable digitizing and layer inspection.
+   Use the current Windows installer from the
+   [official QGIS download page](https://www.qgis.org/download/), create a
+   polygon layer in `EPSG:4326 - WGS 84`, digitize one polygon, and export that
+   layer as GeoJSON or KML. The QGIS Long Term Release is the conservative
+   choice if this becomes a regular workflow.
+
+For today's Windows 10 workflow, Google My Maps plus KML/KMZ export is the
+simplest starting point. Save the downloaded file in the site directory, then:
+
+```powershell
+Set-Location $planner
+
+python site_boundary_from_log_20260724.py import-map `
+  "$site\site_outline.kml" `
+  --output "$site\01_boundary_candidates.csv" `
+  --plot "$site\01_boundary_candidates.png"
+```
+
+Use the actual downloaded extension and filename; `.kmz` and `.geojson` work
+the same way. The RPi5NAS equivalent is:
+
+```bash
+python3 site_boundary_from_log_20260724.py import-map \
+  ~/field_plans/site_01/site_outline.kml \
+  --output ~/field_plans/site_01/01_boundary_candidates.csv \
+  --plot ~/field_plans/site_01/01_boundary_candidates.png
+```
+
+The import deliberately rejects files containing multiple polygons or mixed
+geometry. Export only the intended site boundary layer. Then review:
+
+- `01_boundary_candidates.png` for shape, scale, vertex order, and start point;
+- `01_boundary_candidates.csv` in Excel for `include`, `sequence`, and notes;
+- the polygon against known physical features, property limits, obstacles,
+  slopes, ditches, and the room needed for headland turns.
+
+Satellite/aerial imagery is not an RTK survey. Rooflines, trees, shadows,
+seasonal imagery, and tile alignment can move the apparent edge by enough to
+matter to a mower. Treat a map polygon as a draft, use a conservative
+`boundary-clearance-m`, and verify critical edges in the field. A strong hybrid
+workflow is to draw the coarse polygon on the laptop, then replace or adjust
+critical vertices with RTK-logged evidence.
 
 ### 1B. Extract a candidate boundary
 
@@ -413,8 +545,9 @@ deck, trees, people, animals, drop-offs, or moving objects are clear.
 4. Headland corners are rounded with the configured radius, but complex
    concave boundaries can still produce tight sampled transitions. The
    independent curvature warning and slow first run remain required.
-5. Add GeoJSON/KML export and an aerial-image overlay as another visual
-   checkpoint.
+5. Add GeoJSON/KML export and an aerial-image overlay to the generated
+   checkpoint plots. Map polygon import is supported, but the current PNG
+   checkpoint intentionally shows geometry without a live basemap.
 6. Add mission filename, SHA-256, planner settings, and boundary/obstacle hashes
    to the pursuit log so every test can be reproduced exactly.
 7. Add operator event markers to `field_test_logger` to record “boundary start,”

@@ -3,8 +3,9 @@
 
 This is intentionally a two-checkpoint workflow:
 
-1. ``extract`` filters and spatially thins a field logger CSV.  It writes an
-   Excel-editable candidate CSV and a plot.
+1. ``extract`` filters and spatially thins a field logger CSV, or
+   ``import-map`` reads one polygon from GeoJSON, KML, or KMZ.  Either route
+   writes an Excel-editable candidate CSV and a plot.
 2. Review/edit ``include``, ``sequence`` and ``notes`` in that CSV.
 3. ``finalize`` validates the edited polygon, optionally simplifies GPS noise,
    and writes the boundary CSV used by the coverage planner.
@@ -17,8 +18,11 @@ included logged point is enclosed, then adds the requested safety margin.
 from __future__ import annotations
 
 import argparse
+import json
 import math
 import sys
+import xml.etree.ElementTree as ET
+import zipfile
 from pathlib import Path
 
 from site_planner_common_20260724 import (
@@ -214,6 +218,163 @@ def run_extract(args: argparse.Namespace) -> int:
     print(f"Candidate points  : {len(candidates)}")
     print(f"Spatial spacing   : {args.min_spacing_m:.2f} m minimum")
     print(f"Rejected rows     : {rejected}")
+    print(f"Candidate CSV     : {csv_path}")
+    print(f"Checkpoint plot   : {plot_path}")
+    print(
+        "\nNext: review include/sequence/notes in the candidate CSV, then run "
+        "the finalize subcommand."
+    )
+    return 0
+
+
+def map_polygon_latlon(path: str) -> list[tuple[float, float]]:
+    """Read exactly one exterior polygon ring from GeoJSON, KML, or KMZ."""
+    source = Path(path)
+    suffix = source.suffix.lower()
+
+    if suffix in {".geojson", ".json"}:
+        with source.open("r", encoding="utf-8-sig") as handle:
+            document = json.load(handle)
+        if not isinstance(document, dict):
+            raise ValueError("GeoJSON root must be an object")
+        geometries = []
+        kind = document.get("type")
+        if kind == "FeatureCollection":
+            geometries = [
+                feature.get("geometry")
+                for feature in document.get("features", [])
+                if feature.get("geometry") is not None
+            ]
+        elif kind == "Feature":
+            geometries = [document.get("geometry")]
+        else:
+            geometries = [document]
+        polygons = [geometry for geometry in geometries
+                    if geometry and geometry.get("type") == "Polygon"]
+        unsupported = [
+            geometry.get("type")
+            for geometry in geometries
+            if geometry and geometry.get("type") != "Polygon"
+        ]
+        if unsupported:
+            raise ValueError(
+                "Map file must contain only one Polygon; found other geometry "
+                f"types: {sorted(set(unsupported))}"
+            )
+        if len(polygons) != 1:
+            raise ValueError(
+                f"Expected exactly one GeoJSON Polygon; found {len(polygons)}"
+            )
+        rings = polygons[0].get("coordinates", [])
+        if not rings:
+            raise ValueError("GeoJSON Polygon has no exterior ring")
+        lonlat = []
+        for point in rings[0]:
+            if not isinstance(point, (list, tuple)) or len(point) < 2:
+                raise ValueError(f"Invalid GeoJSON coordinate: {point!r}")
+            lonlat.append((float(point[0]), float(point[1])))
+
+    elif suffix in {".kml", ".kmz"}:
+        try:
+            if suffix == ".kmz":
+                with zipfile.ZipFile(source) as archive:
+                    names = [name for name in archive.namelist()
+                             if name.lower().endswith(".kml")]
+                    if not names:
+                        raise ValueError("KMZ archive contains no KML file")
+                    xml_bytes = archive.read(names[0])
+            else:
+                xml_bytes = source.read_bytes()
+            root = ET.fromstring(xml_bytes)
+        except (ET.ParseError, zipfile.BadZipFile) as exc:
+            raise ValueError(f"Could not parse {source.name}: {exc}") from exc
+        coordinate_nodes = root.findall(
+            ".//{*}Polygon/{*}outerBoundaryIs/{*}LinearRing/{*}coordinates"
+        )
+        if len(coordinate_nodes) != 1:
+            raise ValueError(
+                "Expected exactly one KML polygon exterior ring; found "
+                f"{len(coordinate_nodes)}"
+            )
+        coordinate_text = coordinate_nodes[0].text or ""
+        lonlat = []
+        for token in coordinate_text.split():
+            parts = token.split(",")
+            if len(parts) < 2:
+                raise ValueError(f"Invalid KML coordinate: {token!r}")
+            lonlat.append((float(parts[0]), float(parts[1])))
+    else:
+        raise ValueError("Map input must end in .geojson, .json, .kml, or .kmz")
+
+    latlon = [(lat, lon) for lon, lat in lonlat]
+    if len(latlon) > 3 and latlon[0] == latlon[-1]:
+        latlon.pop()
+    if len(latlon) < 3:
+        raise ValueError("Imported polygon needs at least three distinct vertices")
+    for lat, lon in latlon:
+        if not (-90 <= lat <= 90 and -180 <= lon <= 180):
+            raise ValueError(f"Invalid imported latitude/longitude: {lat}, {lon}")
+    return latlon
+
+
+def run_import_map(args: argparse.Namespace) -> int:
+    latlon = map_polygon_latlon(args.map_file)
+    frame = LocalFrame(*latlon[0])
+    xy = [frame.to_xy(lat, lon) for lat, lon in latlon]
+    candidates = []
+    for sequence, (lat, lon) in enumerate(latlon, 1):
+        candidates.append(
+            {
+                "sequence": sequence,
+                "include": "y",
+                "source_row": "",
+                "time": "",
+                "lat": f"{lat:.9f}",
+                "lon": f"{lon:.9f}",
+                "fix_quality": "map digitized",
+                "hdop": "",
+                "notes": f"Imported from {Path(args.map_file).name}",
+            }
+        )
+
+    csv_path = output_path(args.output, args.map_file, "_boundary_candidates.csv")
+    plot_path = output_path(args.plot, args.map_file, "_boundary_candidates.png")
+    write_csv(csv_path, CANDIDATE_COLUMNS, candidates)
+
+    plt = plot_setup()
+    fig, ax = plt.subplots(figsize=(10, 8))
+    closed = xy + xy[:1]
+    ax.fill(
+        [point[0] for point in closed],
+        [point[1] for point in closed],
+        color="#90caf9",
+        alpha=0.25,
+    )
+    ax.plot(
+        [point[0] for point in closed],
+        [point[1] for point in closed],
+        "o-",
+        color="#0d47a1",
+        markersize=5,
+        linewidth=1.4,
+        label=f"Imported polygon ({len(xy)} vertices)",
+    )
+    for index, point in enumerate(xy, 1):
+        ax.annotate(str(index), point, fontsize=8, xytext=(4, 4),
+                    textcoords="offset points")
+    ax.scatter(*xy[0], s=90, color="#2e7d32", label="Start/anchor")
+    ax.set_aspect("equal", adjustable="datalim")
+    ax.set_xlabel("East of first polygon vertex (m)")
+    ax.set_ylabel("North of first polygon vertex (m)")
+    ax.set_title("Map polygon import checkpoint")
+    ax.grid(True, alpha=0.3)
+    ax.legend()
+    fig.tight_layout()
+    plot_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(plot_path, dpi=160)
+    plt.close(fig)
+
+    print(f"Imported vertices : {len(candidates)}")
     print(f"Candidate CSV     : {csv_path}")
     print(f"Checkpoint plot   : {plot_path}")
     print(
@@ -452,7 +613,10 @@ def run_fit_obstacle(args: argparse.Namespace) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Prepare reviewed site boundaries/obstacles from field logger CSVs"
+        description=(
+            "Prepare reviewed site boundaries/obstacles from field logs or "
+            "map polygons"
+        )
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
@@ -493,6 +657,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="minimum distance between candidate points (default 0.50 m)",
     )
     extract.set_defaults(handler=run_extract)
+
+    import_map = subparsers.add_parser(
+        "import-map",
+        help="import one polygon from GeoJSON, KML, or KMZ",
+    )
+    import_map.add_argument("map_file")
+    import_map.add_argument("--output", help="candidate CSV output path")
+    import_map.add_argument("--plot", help="checkpoint PNG output path")
+    import_map.set_defaults(handler=run_import_map)
 
     finalize = subparsers.add_parser(
         "finalize",
