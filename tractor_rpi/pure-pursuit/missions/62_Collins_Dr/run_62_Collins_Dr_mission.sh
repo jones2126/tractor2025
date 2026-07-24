@@ -13,7 +13,7 @@ MISSION="${SCRIPT_DIR}/62_Collins_Dr_mission.txt"
 VALIDATION="${SCRIPT_DIR}/62_Collins_Dr_mission_validation.json"
 CONTROLLER="${PURE_PURSUIT_DIR}/pure_pursuit_controller_20260714.py"
 LOGGER="${TRACTOR_RPI_DIR}/field_test_logger_20260717.py"
-EXPECTED_SHA256="C67B5E2BE6CA06B3F47C2DABB9AD0EA0FC5AFDCCB0FF72CFB13C56446A92320A"
+EXPECTED_SHA256="77A2C65C2F2BE7909A58782380AFAC90428122037FFBD56BDCA190F6B9747F28"
 
 for required in "${MISSION}" "${VALIDATION}" "${CONTROLLER}" "${LOGGER}"; do
     if [[ ! -f "${required}" ]]; then
@@ -27,9 +27,9 @@ if ! grep -Eq '"status"[[:space:]]*:[[:space:]]*"PASS"' "${VALIDATION}"; then
     exit 1
 fi
 
-ACTUAL_SHA256="$(sha256sum "${MISSION}" | awk '{print $1}')"
+ACTUAL_SHA256="$(tr -d '\r' < "${MISSION}" | sha256sum | awk '{print $1}')"
 if [[ "${ACTUAL_SHA256^^}" != "${EXPECTED_SHA256}" ]]; then
-    echo "ERROR: mission SHA-256 does not match the archived validated mission."
+    echo "ERROR: normalized mission SHA-256 does not match the archived validated mission."
     echo "Expected: ${EXPECTED_SHA256}"
     echo "Actual  : ${ACTUAL_SHA256^^}"
     exit 1

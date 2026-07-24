@@ -679,7 +679,8 @@ The helper:
 6. Generates `run_<site-name>_mission.sh`. The launcher resolves the mission,
    controller, and logger paths relative to its own location, so it can be
    started from any directory on the tractor RPi. Before moving the tractor it
-   requires validation status `PASS` and verifies the mission SHA-256. It then
+   requires validation status `PASS` and verifies the mission's LF-normalized
+   SHA-256, so Windows CRLF and Linux LF checkouts verify identically. It then
    starts the field logger in the background and the controller in the
    foreground with the explicitly selected launcher speed cap. For this
    tractor, use `--launcher-max-speed-mps 0.75`; the mission itself retains

@@ -44,10 +44,11 @@ provenance. The executable mission itself has no path dependency.
 
 ## Integrity
 
-SHA-256 for `62_Collins_Dr_mission.txt`:
+SHA-256 for the LF-normalized text of `62_Collins_Dr_mission.txt` (identical on Windows
+and Linux):
 
 ```text
-C67B5E2BE6CA06B3F47C2DABB9AD0EA0FC5AFDCCB0FF72CFB13C56446A92320A
+77A2C65C2F2BE7909A58782380AFAC90428122037FFBD56BDCA190F6B9747F28
 ```
 
 ## Visual checkpoints
@@ -65,7 +66,7 @@ mower-deck clearance, controller tracking, or obstacle clearance.
 Before normal operation:
 
 1. Pull this exact Git revision onto the tractor RPi.
-2. Confirm the mission SHA-256.
+2. Confirm the mission's LF-normalized SHA-256.
 3. Perform a controller-load/no-motion check.
 4. Review every boundary keyhole fallback.
 5. Conduct a supervised low-speed test with RTK Fixed and immediate e-stop

@@ -42,6 +42,12 @@ def sha256(path: Path) -> str:
     return digest.hexdigest().upper()
 
 
+def normalized_text_sha256(path: Path) -> str:
+    """Hash text content with Windows and Unix line endings treated equally."""
+    content = path.read_bytes().replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    return hashlib.sha256(content).hexdigest().upper()
+
+
 def number(value: object, digits: int = 2) -> str:
     if value is None:
         return "not reported"
@@ -114,7 +120,8 @@ provenance. The executable mission itself has no path dependency.
 
 ## Integrity
 
-SHA-256 for `{mission_name}`:
+SHA-256 for the LF-normalized text of `{mission_name}` (identical on Windows
+and Linux):
 
 ```text
 {mission_hash}
@@ -135,7 +142,7 @@ mower-deck clearance, controller tracking, or obstacle clearance.
 Before normal operation:
 
 1. Pull this exact Git revision onto the tractor RPi.
-2. Confirm the mission SHA-256.
+2. Confirm the mission's LF-normalized SHA-256.
 3. Perform a controller-load/no-motion check.
 4. Review every boundary keyhole fallback.
 5. Conduct a supervised low-speed test with RTK Fixed and immediate e-stop
@@ -197,9 +204,9 @@ if ! grep -Eq '"status"[[:space:]]*:[[:space:]]*"PASS"' "${{VALIDATION}}"; then
     exit 1
 fi
 
-ACTUAL_SHA256="$(sha256sum "${{MISSION}}" | awk '{{print $1}}')"
+ACTUAL_SHA256="$(tr -d '\\r' < "${{MISSION}}" | sha256sum | awk '{{print $1}}')"
 if [[ "${{ACTUAL_SHA256^^}}" != "${{EXPECTED_SHA256}}" ]]; then
-    echo "ERROR: mission SHA-256 does not match the archived validated mission."
+    echo "ERROR: normalized mission SHA-256 does not match the archived validated mission."
     echo "Expected: ${{EXPECTED_SHA256}}"
     echo "Actual  : ${{ACTUAL_SHA256^^}}"
     exit 1
@@ -321,7 +328,7 @@ def archive(args: argparse.Namespace) -> int:
             raise ValueError(f"Hash mismatch after copying {name}")
         copied.append(name)
 
-    mission_hash = sha256(target / mission_name)
+    mission_hash = normalized_text_sha256(target / mission_name)
     launcher_max_speed_mps = float(args.launcher_max_speed_mps)
     if launcher_max_speed_mps <= 0:
         raise ValueError("--launcher-max-speed-mps must be greater than zero")
