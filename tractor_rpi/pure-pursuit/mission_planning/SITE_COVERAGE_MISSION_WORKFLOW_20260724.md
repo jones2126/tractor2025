@@ -505,7 +505,31 @@ Useful orientation controls:
 
 ## Step 4 — Build, validate, and only then field-test
 
+### Required keyhole-turn policy checkpoint
+
+For the Collins Drive mission, do not treat a successful generic build as
+approval yet. The current builder tests all six Dubins families and chooses the
+shortest contained connector. That does **not** guarantee the requested
+left-then-right keyhole turn for every adjacent-row transition. The PowerShell
+commands below document the build and validation mechanics, but the mission
+preview must show the requested turn direction at every row end before the
+mission can proceed to the tractor.
+
 ### 4A. Build the candidate executable mission
+
+Windows 10 PowerShell:
+
+```powershell
+$mission = Join-Path $site '62_Collins_Dr_mission.txt'
+
+python site_coverage_planner_20260724.py build --settings "$site\02_plan_settings.json" --segments "$site\02_coverage_segments.csv" --output $mission
+
+Invoke-Item "$site\62_Collins_Dr_mission_preview.png"
+Invoke-Item "$site\62_Collins_Dr_mission_audit.csv"
+Invoke-Item "$site\62_Collins_Dr_mission_build_report.json"
+```
+
+RPi5NAS:
 
 ```bash
 python3 site_coverage_planner_20260724.py build \
@@ -548,6 +572,23 @@ alone cannot prove the driven radius.
 
 ### 4B. Independently validate
 
+Windows 10 PowerShell:
+
+```powershell
+python validate_site_mission_20260724.py $mission --settings "$site\02_plan_settings.json"
+
+Invoke-Item "$site\62_Collins_Dr_mission_validation.png"
+Invoke-Item "$site\62_Collins_Dr_mission_validation.json"
+```
+
+Optional hard curvature gate:
+
+```powershell
+python validate_site_mission_20260724.py $mission --settings "$site\02_plan_settings.json" --strict-curvature
+```
+
+RPi5NAS:
+
 ```bash
 python3 validate_site_mission_20260724.py \
   ~/field_plans/site_01/site_01_mission.txt \
@@ -579,6 +620,12 @@ Use `--strict-curvature` when offset-polygon corners have been smoothed or
 otherwise proven feasible and a hard minimum-radius gate is desired.
 
 ### 4C. Controller dry run and first field run
+
+The Windows laptop stops after creating and reviewing a `PASS`/acceptable
+`REVIEW` validation report. Do not try to run the live tractor controller from
+Windows. Transfer the reviewed mission to the onboard Raspberry Pi, then use
+the RPi command below only after the keyhole-turn preview and all static checks
+are satisfactory.
 
 The final file has no header and is directly read by:
 
