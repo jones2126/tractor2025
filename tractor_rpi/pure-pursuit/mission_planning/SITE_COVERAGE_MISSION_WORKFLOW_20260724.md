@@ -436,6 +436,17 @@ Invoke-Item "$site\02_coverage_preview.png"
 Invoke-Item "$site\02_coverage_segments.csv"
 ```
 
+Before proceeding to Step 4, verify that the newly written settings contain
+the selected radius and turn policy:
+
+```powershell
+Get-Content "$site\02_plan_settings.json" -Raw | ConvertFrom-Json | Select-Object angle_degrees, lane_spacing_m, turn_radius_m, stripe_turn_policy
+```
+
+For Collins Drive, the expected values are `105`, `0.9906`, `1.9`, and
+`keyhole`. If `turn_radius_m` still reports `3.0` or the policy is blank, Step 3
+was not rerun with the current command; do not start Step 4.
+
 RPi5NAS, with an optional obstacle file:
 
 ```bash
@@ -533,9 +544,13 @@ $mission = Join-Path $site '62_Collins_Dr_mission.txt'
 
 python site_coverage_planner_20260724.py build --settings "$site\02_plan_settings.json" --segments "$site\02_coverage_segments.csv" --output $mission --strict-curvature
 
-Invoke-Item "$site\62_Collins_Dr_mission_preview.png"
-Invoke-Item "$site\62_Collins_Dr_mission_audit.csv"
-Invoke-Item "$site\62_Collins_Dr_mission_build_report.json"
+if ($LASTEXITCODE -eq 0) {
+  Invoke-Item "$site\62_Collins_Dr_mission_preview.png"
+  Invoke-Item "$site\62_Collins_Dr_mission_audit.csv"
+  Invoke-Item "$site\62_Collins_Dr_mission_build_report.json"
+} else {
+  Write-Warning "Build failed; no mission artifacts were written."
+}
 ```
 
 RPi5NAS:
