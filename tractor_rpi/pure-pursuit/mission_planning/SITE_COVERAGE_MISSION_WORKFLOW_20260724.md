@@ -424,20 +424,42 @@ direction is 251° compass.
 
 ## Step 3 — Preview and edit the coverage plan
 
+Carry the selected Step 2 angle into `preview` through `--angle-degrees`. For
+the Collins Drive site, the selected value is `105`:
+
+```powershell
+$angle = 105
+
+python site_coverage_planner_20260724.py preview "$site\01_boundary_final.csv" --output-dir "$site" --angle-degrees $angle --lane-spacing-m 0.9906 --stripe-end-trim-m 3.0 --boundary-clearance-m 0.75 --headland-passes 2 --turn-radius-m 3.0 --waypoint-spacing-m 0.50 --scan-from low --first-stripe-direction reverse --ring-direction clockwise
+
+Invoke-Item "$site\02_coverage_preview.png"
+Invoke-Item "$site\02_coverage_segments.csv"
+```
+
+RPi5NAS, with an optional obstacle file:
+
 ```bash
 python3 site_coverage_planner_20260724.py preview \
   ~/field_plans/site_01/01_boundary_final.csv \
   --obstacles ~/field_plans/site_01/01_obstacles.csv \
   --output-dir ~/field_plans/site_01 \
-  --angle-degrees 19 \
-  --lane-spacing-m 0.90 \
+  --angle-degrees 105 \
+  --lane-spacing-m 0.9906 \
   --stripe-end-trim-m 3.0 \
   --boundary-clearance-m 0.75 \
   --headland-passes 2 \
   --turn-radius-m 3.0 \
   --waypoint-spacing-m 0.50 \
+  --scan-from low \
+  --first-stripe-direction reverse \
   --ring-direction clockwise
 ```
+
+For `105°`, `reverse` makes the first stripe heading approximately `165°`
+compass (south-southeast). With `scan-from low`, the following stripe is on the
+tractor's right and is driven at approximately `345°` compass
+(north-northwest). This matches the requested alternating-row setup before the
+keyhole turn geometry itself is generated and reviewed.
 
 Outputs:
 
@@ -450,7 +472,7 @@ Outputs:
 
 | Parameter | Meaning |
 |---|---|
-| `lane-spacing-m` | Center-to-center cut spacing. The 42-inch deck is about 1.06 m; 0.90 m provides overlap, but verify actual cut width and GPS tracking. |
+| `lane-spacing-m` | Center-to-center cut spacing. The selected 39-inch spacing is `0.9906 m`, giving about 3 inches of nominal overlap with the 42-inch deck. Verify actual cut width and GPS tracking. |
 | `boundary-clearance-m` | Distance from the logged perimeter to the tractor reference point. Set it from deck/body overhang, survey meaning, GPS error, and desired safety margin. |
 | `headland-passes` | Perimeter coverage passes before interior stripes. This creates working room but does not by itself guarantee a feasible U-turn. |
 | `stripe-end-trim-m` | Distance removed from both ends of every clipped stripe to leave turning room. This replaces the notebook’s separate “shorten stripes” script and is visible in the editable CSV/plot. |
