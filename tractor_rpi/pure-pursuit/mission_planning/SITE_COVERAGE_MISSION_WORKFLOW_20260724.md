@@ -48,6 +48,7 @@ Run these from `tractor_rpi/pure-pursuit/mission_planning/`:
 | `site_boundary_from_log_20260724.py` | Extract a logged boundary or import a GeoJSON/KML/KMZ polygon, finalize it, and fit optional circular obstacles |
 | `site_coverage_planner_20260724.py` | Compare angles, preview coverage, and build a candidate mission |
 | `validate_site_mission_20260724.py` | Independently audit and plot the five-column mission |
+| `archive_site_mission_20260724.py` | Verify PASS and archive the reviewed deployment/audit package into Git |
 | `site_planner_common_20260724.py` | Shared projection, CSV, curvature, and Dubins helpers |
 | `requirements_site_planner_20260724.txt` | Shapely and Matplotlib dependencies |
 
@@ -648,7 +649,61 @@ Exit status and report status:
 Use `--strict-curvature` when offset-polygon corners have been smoothed or
 otherwise proven feasible and a hard minimum-radius gate is desired.
 
-### 4C. Controller dry run and first field run
+### 4C. Version the validated mission in Git
+
+The per-site working directory remains outside the repository while planning.
+After static validation passes and the visual checkpoints are accepted, run
+the archive helper from the activated mission-planning environment:
+
+```powershell
+python archive_site_mission_20260724.py "$site"
+```
+
+The site directory name becomes both the Git directory name and the default
+mission prefix. For example, a working directory named `62_Collins_Dr` expects
+`62_Collins_Dr_mission.txt` and creates:
+
+```text
+tractor_rpi/pure-pursuit/missions/62_Collins_Dr/
+```
+
+The helper:
+
+1. Refuses to archive anything without validation status `PASS`.
+2. Confirms the validation report names the same mission file.
+3. Copies the executable mission, final boundary, reviewed segments, settings,
+   audit, build/validation reports, and final PNG checkpoints.
+4. Verifies every copied file by SHA-256.
+5. Generates a GitHub-renderable site `README.md` with parameters, status,
+   mission hash, visual checkpoints, and field hold points.
+6. Refuses to overwrite an existing archive accidentally.
+
+If an already archived mission is deliberately superseded by a newly reviewed
+and validated version, inspect both versions first, then use:
+
+```powershell
+python archive_site_mission_20260724.py "$site" --replace
+```
+
+Review what Git will receive:
+
+```powershell
+$siteName = Split-Path $site -Leaf
+$archive = Join-Path $repo "tractor_rpi\pure-pursuit\missions\$siteName"
+
+Invoke-Item "$archive\README.md"
+git status --short
+```
+
+The JSON files should be committed. The settings make the mission reproducible;
+the build report records connector decisions; and the validation report records
+the exact checks that passed. Do not version `.venv`, temporary angle sweeps,
+failed builds, or every intermediate working file.
+
+Mission files expose exact geographic coordinates. Confirm that publishing
+those coordinates is intentional before pushing to a public repository.
+
+### 4D. Controller dry run and first field run
 
 The Windows laptop stops after creating and reviewing a `PASS`/acceptable
 `REVIEW` validation report. Do not try to run the live tractor controller from

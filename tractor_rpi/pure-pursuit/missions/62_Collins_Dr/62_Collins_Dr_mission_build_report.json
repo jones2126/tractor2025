@@ -1,0 +1,171 @@
+{
+  "configured_turn_radius_m": 1.9,
+  "connector_count": 15,
+  "connectors": [
+    {
+      "from": "headland_1_outer_1",
+      "length_m": 4.807233755314286,
+      "mode": "RSL",
+      "to": "headland_2_outer_1"
+    },
+    {
+      "from": "headland_2_outer_1",
+      "length_m": 23.36951012380068,
+      "mode": "RSL",
+      "to": "stripe_2"
+    },
+    {
+      "from": "stripe_2",
+      "lead_m": 0.0,
+      "length_m": 14.115479787430598,
+      "mode": "LRL-boundary-fallback",
+      "next_row_side": "left",
+      "preferred_turn_away_first": false,
+      "review_point_east_m": -5.692909115269873,
+      "review_point_north_m": -5.141549150559589,
+      "to": "stripe_3"
+    },
+    {
+      "from": "stripe_3",
+      "lead_m": 0.0,
+      "length_m": 12.723466869266062,
+      "mode": "LRL-keyhole",
+      "next_row_side": "right",
+      "preferred_turn_away_first": true,
+      "review_point_east_m": 3.8126053271955387,
+      "review_point_north_m": -30.371588795378706,
+      "to": "stripe_4"
+    },
+    {
+      "from": "stripe_4",
+      "lead_m": 0.0,
+      "length_m": 12.7234774243388,
+      "mode": "RLR-keyhole",
+      "next_row_side": "left",
+      "preferred_turn_away_first": true,
+      "review_point_east_m": -4.831846997448425,
+      "review_point_north_m": -1.9769827922793308,
+      "to": "stripe_5"
+    },
+    {
+      "from": "stripe_5",
+      "lead_m": 0.0,
+      "length_m": 12.723315392716867,
+      "mode": "LRL-keyhole",
+      "next_row_side": "right",
+      "preferred_turn_away_first": true,
+      "review_point_east_m": 1.9304698808180063,
+      "review_point_north_m": -31.00187998214755,
+      "to": "stripe_6"
+    },
+    {
+      "from": "stripe_6",
+      "lead_m": 0.0,
+      "length_m": 12.723590750712242,
+      "mode": "RLR-keyhole",
+      "next_row_side": "left",
+      "preferred_turn_away_first": true,
+      "review_point_east_m": -6.771769380065522,
+      "review_point_north_m": -2.391908223902985,
+      "to": "stripe_7"
+    },
+    {
+      "from": "stripe_7",
+      "lead_m": 0.0,
+      "length_m": 12.72346939066812,
+      "mode": "LRL-keyhole",
+      "next_row_side": "right",
+      "preferred_turn_away_first": true,
+      "review_point_east_m": 0.04825536623331328,
+      "review_point_north_m": -31.632297039143307,
+      "to": "stripe_8"
+    },
+    {
+      "from": "stripe_8",
+      "lead_m": 0.0,
+      "length_m": 12.723590901645425,
+      "mode": "RLR-keyhole",
+      "next_row_side": "left",
+      "preferred_turn_away_first": true,
+      "review_point_east_m": -8.711656457725937,
+      "review_point_north_m": -2.8068778502449403,
+      "to": "stripe_9"
+    },
+    {
+      "from": "stripe_9",
+      "lead_m": 0.0,
+      "length_m": 12.723315661820589,
+      "mode": "LRL-keyhole",
+      "next_row_side": "right",
+      "preferred_turn_away_first": true,
+      "review_point_east_m": -1.8338928994891888,
+      "review_point_north_m": -32.26258973754122,
+      "to": "stripe_10"
+    },
+    {
+      "from": "stripe_10",
+      "lead_m": 0.0,
+      "length_m": 12.723590722790027,
+      "mode": "RLR-keyhole",
+      "next_row_side": "left",
+      "preferred_turn_away_first": true,
+      "review_point_east_m": -10.651524032077512,
+      "review_point_north_m": -3.2218411712533643,
+      "to": "stripe_11"
+    },
+    {
+      "from": "stripe_11",
+      "lead_m": 0.0,
+      "length_m": 12.723469432371608,
+      "mode": "LRL-keyhole",
+      "next_row_side": "right",
+      "preferred_turn_away_first": true,
+      "review_point_east_m": -3.7161073478114006,
+      "review_point_north_m": -32.89300666494835,
+      "to": "stripe_12"
+    },
+    {
+      "from": "stripe_12",
+      "lead_m": 0.0,
+      "length_m": 12.72348522946377,
+      "mode": "RLR-keyhole",
+      "next_row_side": "left",
+      "preferred_turn_away_first": true,
+      "review_point_east_m": -12.591448963362787,
+      "review_point_north_m": -3.636847208540891,
+      "to": "stripe_13"
+    },
+    {
+      "from": "stripe_13",
+      "lead_m": 0.0,
+      "length_m": 12.723428133985191,
+      "mode": "LRL-keyhole",
+      "next_row_side": "right",
+      "preferred_turn_away_first": true,
+      "review_point_east_m": -5.598231923401722,
+      "review_point_north_m": -33.52332584455478,
+      "to": "stripe_14"
+    },
+    {
+      "from": "stripe_14",
+      "lead_m": 0.0,
+      "length_m": 12.723592099752883,
+      "mode": "RLR-keyhole",
+      "next_row_side": "left",
+      "preferred_turn_away_first": true,
+      "review_point_east_m": -14.531376573945284,
+      "review_point_north_m": -4.051777772426833,
+      "to": "stripe_15"
+    }
+  ],
+  "contained_in_safe_drive_area": true,
+  "controller_format": "lat lon yaw_rad lookahead_m speed_mps",
+  "curvature_warning": false,
+  "keyhole_boundary_fallback_count": 1,
+  "minimum_sampled_radius_m": 1.8999999999991544,
+  "mission_file": "C:\\Users\\al532\\Documents\\field_plans\\62_Collins_Dr\\62_Collins_Dr_mission.txt",
+  "route_length_m": 650.9938225077348,
+  "segments_file": "C:\\Users\\al532\\Documents\\field_plans\\62_Collins_Dr\\02_coverage_segments.csv",
+  "settings_file": "C:\\Users\\al532\\Documents\\field_plans\\62_Collins_Dr\\02_plan_settings.json",
+  "waypoints": 1424
+}

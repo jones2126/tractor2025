@@ -1,0 +1,19 @@
+{
+  "configured_turn_radius_m": 1.9,
+  "duplicate_consecutive_points": 0,
+  "errors": [],
+  "gap_limit_m": 0.8,
+  "maximum_gap_m": 0.5000956410327572,
+  "maximum_speed_mps": 0.5,
+  "maximum_yaw_error_degrees": 0.04037774080078892,
+  "minimum_distance_to_safe_area_edge_m": 0.13083973515932962,
+  "minimum_lookahead_m": 1.5,
+  "minimum_sampled_radius_m": 1.8821091058090327,
+  "minimum_speed_mps": 0.3,
+  "mission_file": "C:\\Users\\al532\\Documents\\field_plans\\62_Collins_Dr\\62_Collins_Dr_mission.txt",
+  "route_length_m": 650.994120814687,
+  "settings_file": "C:\\Users\\al532\\Documents\\field_plans\\62_Collins_Dr\\02_plan_settings.json",
+  "status": "PASS",
+  "warnings": [],
+  "waypoints": 1424
+}

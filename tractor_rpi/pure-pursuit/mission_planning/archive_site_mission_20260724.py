@@ -1,0 +1,274 @@
+#!/usr/bin/env python3
+"""Archive one validated site mission into the Git repository.
+
+The planning workspace remains outside Git while a mission is being developed.
+After independent validation reports PASS, this tool copies the reviewed
+deployment/audit package to:
+
+    tractor_rpi/pure-pursuit/missions/<site-name>/
+
+It also generates a GitHub-renderable README and verifies every copied file by
+SHA-256. It never copies the virtual environment, failed builds, angle sweeps,
+or other temporary planning artifacts.
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import shutil
+import sys
+from pathlib import Path
+
+
+def read_json(path: Path) -> dict[str, object]:
+    try:
+        with path.open("r", encoding="utf-8-sig") as handle:
+            value = json.load(handle)
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError(f"Could not read JSON file {path}: {exc}") from exc
+    if not isinstance(value, dict):
+        raise ValueError(f"Expected a JSON object in {path}")
+    return value
+
+
+def sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for block in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest().upper()
+
+
+def number(value: object, digits: int = 2) -> str:
+    if value is None:
+        return "not reported"
+    return f"{float(value):.{digits}f}"
+
+
+def make_readme(
+    site_name: str,
+    mission_name: str,
+    settings: dict[str, object],
+    build: dict[str, object],
+    validation: dict[str, object],
+    mission_hash: str,
+) -> str:
+    mission_stem = Path(mission_name).stem
+    display_name = site_name.replace("_", " ")
+    fallback_count = int(build.get("keyhole_boundary_fallback_count", 0))
+    angle = number(settings.get("angle_degrees"), 1)
+    compass_a = (90.0 - float(settings["angle_degrees"])) % 360.0
+    compass_b = (compass_a + 180.0) % 360.0
+    lane_spacing = float(settings["lane_spacing_m"])
+    radius = float(settings["turn_radius_m"])
+    status = str(validation.get("status", "UNKNOWN"))
+
+    return f"""# {display_name} Coverage Mission
+
+**Status: static validation {status} — not yet field approved**
+
+The executable controller file is `{mission_name}`. It contains:
+
+```text
+lat lon yaw_rad lookahead_m speed_mps
+```
+
+## Mission summary
+
+| Item | Value |
+|---|---:|
+| Coverage angle | {angle}° math frame |
+| Compass stripe headings | {compass_a:.1f}° / {compass_b:.1f}° |
+| Lane spacing | {lane_spacing:.4f} m ({lane_spacing / 0.0254:.1f} in) |
+| Planning turn radius | {radius:.2f} m |
+| Turn policy | {settings.get("stripe_turn_policy", "not recorded")} |
+| Waypoints | {int(validation.get("waypoints", 0)):,} |
+| Route length | {number(validation.get("route_length_m"), 1)} m |
+| Maximum waypoint gap | {number(validation.get("maximum_gap_m"), 2)} m |
+| Minimum validated sampled radius | {number(validation.get("minimum_sampled_radius_m"), 2)} m |
+| Boundary keyhole fallbacks | {fallback_count} |
+| Static validation | {status} |
+
+## Versioned files
+
+| File | Purpose |
+|---|---|
+| `{mission_name}` | Executable Pure Pursuit mission |
+| `01_boundary_final.csv` | Reviewed final site polygon |
+| `02_plan_settings.json` | Exact planner inputs |
+| `02_coverage_segments.csv` | Reviewed coverage rows and execution order |
+| `{mission_stem}_audit.csv` | Waypoint geometry and controller parameters |
+| `{mission_stem}_build_report.json` | Connector decisions and build provenance |
+| `{mission_stem}_validation.json` | Independent static validation results |
+| `{mission_stem}_preview.png` | Visual mission checkpoint |
+| `{mission_stem}_validation.png` | Visual validation checkpoint |
+
+The settings and reports retain their original planning-machine paths as
+provenance. The executable mission itself has no path dependency.
+
+## Integrity
+
+SHA-256 for `{mission_name}`:
+
+```text
+{mission_hash}
+```
+
+## Visual checkpoints
+
+![Executable mission preview]({mission_stem}_preview.png)
+
+![Independent validation]({mission_stem}_validation.png)
+
+## Field hold point
+
+Static `PASS` confirms file structure, containment, waypoint spacing, yaw,
+speed, and sampled curvature. It does not confirm map accuracy, terrain,
+mower-deck clearance, controller tracking, or obstacle clearance.
+
+Before normal operation:
+
+1. Pull this exact Git revision onto the tractor RPi.
+2. Confirm the mission SHA-256.
+3. Perform a controller-load/no-motion check.
+4. Review every boundary keyhole fallback.
+5. Conduct a supervised low-speed test with RTK Fixed and immediate e-stop
+   access.
+
+This directory contains exact geographic coordinates. Do not publish it in a
+public repository unless that disclosure is intentional.
+"""
+
+
+def archive(args: argparse.Namespace) -> int:
+    site_dir = Path(args.site_dir).resolve()
+    if not site_dir.is_dir():
+        raise ValueError(f"Site working directory does not exist: {site_dir}")
+
+    site_name = args.site_name or site_dir.name
+    if not site_name or Path(site_name).name != site_name:
+        raise ValueError("--site-name must be one directory name")
+
+    mission_name = args.mission_file or f"{site_name}_mission.txt"
+    if Path(mission_name).name != mission_name or not mission_name.endswith(".txt"):
+        raise ValueError("--mission-file must be one .txt filename")
+    mission_stem = Path(mission_name).stem
+
+    repo_root = (
+        Path(args.repo_root).resolve()
+        if args.repo_root
+        else Path(__file__).resolve().parents[3]
+    )
+    target = (
+        repo_root
+        / "tractor_rpi"
+        / "pure-pursuit"
+        / "missions"
+        / site_name
+    )
+    if target.exists() and not args.replace:
+        raise ValueError(
+            f"Archive already exists: {target}. Review it, then rerun with "
+            "--replace only if this validated mission should supersede it."
+        )
+
+    names = [
+        "01_boundary_final.csv",
+        "02_plan_settings.json",
+        "02_coverage_segments.csv",
+        mission_name,
+        f"{mission_stem}_audit.csv",
+        f"{mission_stem}_build_report.json",
+        f"{mission_stem}_preview.png",
+        f"{mission_stem}_validation.json",
+        f"{mission_stem}_validation.png",
+    ]
+    missing = [name for name in names if not (site_dir / name).is_file()]
+    if missing:
+        raise ValueError(
+            "Required validated artifacts are missing: " + ", ".join(missing)
+        )
+
+    settings = read_json(site_dir / "02_plan_settings.json")
+    build = read_json(site_dir / f"{mission_stem}_build_report.json")
+    validation = read_json(site_dir / f"{mission_stem}_validation.json")
+    if validation.get("status") != "PASS":
+        raise ValueError(
+            "Mission archive requires validation status PASS; found "
+            f"{validation.get('status', 'missing')!r}"
+        )
+    if Path(str(validation.get("mission_file", ""))).name != mission_name:
+        raise ValueError(
+            "Validation report refers to a different mission file: "
+            f"{validation.get('mission_file')!r}"
+        )
+
+    target.mkdir(parents=True, exist_ok=True)
+    copied = []
+    for name in names:
+        source = site_dir / name
+        destination = target / name
+        shutil.copy2(source, destination)
+        if sha256(source) != sha256(destination):
+            raise ValueError(f"Hash mismatch after copying {name}")
+        copied.append(name)
+
+    mission_hash = sha256(target / mission_name)
+    readme = make_readme(
+        site_name,
+        mission_name,
+        settings,
+        build,
+        validation,
+        mission_hash,
+    )
+    (target / "README.md").write_text(readme, encoding="utf-8", newline="\n")
+
+    print(f"Validation status : {validation['status']}")
+    print(f"Archived files    : {len(copied)} plus README.md")
+    print(f"Mission SHA-256   : {mission_hash}")
+    print(f"Git directory     : {target}")
+    print(
+        "\nNext: inspect README.md and `git status`, then intentionally commit "
+        "and push the reviewed mission package."
+    )
+    return 0
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Archive a statically validated site mission into Git"
+    )
+    parser.add_argument("site_dir", help="external per-site planning directory")
+    parser.add_argument(
+        "--site-name",
+        help="Git mission directory name (default: site working directory name)",
+    )
+    parser.add_argument(
+        "--mission-file",
+        help="mission filename in site_dir (default: <site-name>_mission.txt)",
+    )
+    parser.add_argument(
+        "--repo-root",
+        help="tractor2025 root (default: inferred from this script)",
+    )
+    parser.add_argument(
+        "--replace",
+        action="store_true",
+        help="replace files in an existing archive after explicit review",
+    )
+    return parser
+
+
+def main() -> int:
+    try:
+        return archive(build_parser().parse_args())
+    except (OSError, ValueError) as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

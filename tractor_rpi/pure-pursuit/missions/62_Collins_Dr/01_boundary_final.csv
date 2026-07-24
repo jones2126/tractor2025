@@ -1,0 +1,5 @@
+sequence,lat,lon,east_m,north_m,source_sequence,notes
+1,40.485627600,-80.332425200,0.000,0.000,1,Imported from 62_Collins_Dr_polygon_1.kmz
+2,40.485590900,-80.332649200,-18.965,-4.057,2,Imported from 62_Collins_Dr_polygon_1.kmz
+3,40.485305300,-80.332531100,-8.966,-35.627,3,Imported from 62_Collins_Dr_polygon_1.kmz
+4,40.485362400,-80.332308500,9.881,-29.315,4,Imported from 62_Collins_Dr_polygon_1.kmz

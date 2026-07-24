@@ -1,0 +1,36 @@
+{
+  "angle_degrees": 105.0,
+  "boundary_clearance_m": 0.75,
+  "boundary_file": "C:\\Users\\al532\\Documents\\field_plans\\62_Collins_Dr\\01_boundary_final.csv",
+  "created_utc": "2026-07-24T16:42:44.291577+00:00",
+  "first_stripe_direction": "reverse",
+  "format_version": 1,
+  "frame": {
+    "ref_lat": 40.4856276,
+    "ref_lon": -80.3324252
+  },
+  "headland_lookahead_m": 2.0,
+  "headland_passes": 2,
+  "headland_speed_mps": 0.4,
+  "lane_spacing_m": 0.9906,
+  "minimum_segment_m": 2.0,
+  "obstacles_file": null,
+  "outputs": {
+    "preview_plot": "C:\\Users\\al532\\Documents\\field_plans\\62_Collins_Dr\\02_coverage_preview.png",
+    "segments_csv": "C:\\Users\\al532\\Documents\\field_plans\\62_Collins_Dr\\02_coverage_segments.csv"
+  },
+  "ring_direction": "clockwise",
+  "scan_from": "low",
+  "start_anchor": {
+    "lat": 40.4856276,
+    "lon": -80.3324252
+  },
+  "straight_lookahead_m": 3.0,
+  "straight_speed_mps": 0.5,
+  "stripe_end_trim_m": 3.0,
+  "stripe_turn_policy": "keyhole",
+  "turn_lookahead_m": 1.5,
+  "turn_radius_m": 1.9,
+  "turn_speed_mps": 0.3,
+  "waypoint_spacing_m": 0.5
+}
