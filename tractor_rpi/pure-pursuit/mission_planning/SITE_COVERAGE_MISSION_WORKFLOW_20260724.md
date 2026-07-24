@@ -211,15 +211,20 @@ Public options:
    choice if this becomes a regular workflow.
 
 For today's Windows 10 workflow, Google My Maps plus KML/KMZ export is the
-simplest starting point. Save the downloaded file in the site directory, then:
+simplest starting point. The input file may remain in `Downloads`; the generated
+CSV and PNG should go in the site's working directory. For example:
 
 ```powershell
 Set-Location $planner
+New-Item -ItemType Directory -Force $site
 
 python site_boundary_from_log_20260724.py import-map `
-  "$site\site_outline.kml" `
+  "$env:USERPROFILE\Downloads\site_outline.kmz" `
   --output "$site\01_boundary_candidates.csv" `
   --plot "$site\01_boundary_candidates.png"
+
+Invoke-Item "$site\01_boundary_candidates.png"
+Invoke-Item "$site\01_boundary_candidates.csv"
 ```
 
 Use the actual downloaded extension and filename; `.kmz` and `.geojson` work
@@ -239,6 +244,10 @@ geometry. Export only the intended site boundary layer. Then review:
 - `01_boundary_candidates.csv` in Excel for `include`, `sequence`, and notes;
 - the polygon against known physical features, property limits, obstacles,
   slopes, ditches, and the room needed for headland turns.
+
+If the PNG and CSV are correct, **skip Step 1B**. Map import has already created
+the candidate boundary that Step 1B would have extracted from a field log.
+Continue directly with **Step 1C — Finalize and validate the polygon**.
 
 Satellite/aerial imagery is not an RTK survey. Rooflines, trees, shadows,
 seasonal imagery, and tile alignment can move the apparent edge by enough to
@@ -286,6 +295,21 @@ In the CSV:
   find a contained forward-only transition.
 
 ### 1C. Finalize and validate the polygon
+
+Windows 10 PowerShell:
+
+```powershell
+python site_boundary_from_log_20260724.py finalize `
+  "$site\01_boundary_candidates.csv" `
+  --output "$site\01_boundary_final.csv" `
+  --plot "$site\01_boundary_final.png" `
+  --simplify-m 0.10
+
+Invoke-Item "$site\01_boundary_final.png"
+Invoke-Item "$site\01_boundary_final.csv"
+```
+
+RPi5NAS:
 
 ```bash
 python3 site_boundary_from_log_20260724.py finalize \
