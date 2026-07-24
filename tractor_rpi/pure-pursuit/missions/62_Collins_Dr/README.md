@@ -47,7 +47,7 @@ provenance. The executable mission itself has no path dependency.
 SHA-256 for `62_Collins_Dr_mission.txt`:
 
 ```text
-A17A34EE28531C39D62E0D77FD736B3442A4F86D82F92E89839DC91712234BF0
+C67B5E2BE6CA06B3F47C2DABB9AD0EA0FC5AFDCCB0FF72CFB13C56446A92320A
 ```
 
 ## Visual checkpoints
@@ -77,11 +77,12 @@ Initial RPi launch from this directory:
 bash ./run_62_Collins_Dr_mission.sh
 ```
 
-The launcher caps controller speed at 0.30 m/s by default. A later explicitly
-approved cap can be supplied with `--max-speed`, for example:
+The launcher caps controller speed at 0.75 m/s. A
+different explicitly approved cap can be supplied with `--max-speed`, for
+example:
 
 ```bash
-bash ./run_62_Collins_Dr_mission.sh --max-speed 0.50
+bash ./run_62_Collins_Dr_mission.sh --max-speed 0.75
 ```
 
 This directory contains exact geographic coordinates. Do not publish it in a

@@ -431,7 +431,7 @@ the Collins Drive site, the selected value is `105`:
 ```powershell
 $angle = 105
 
-python site_coverage_planner_20260724.py preview "$site\01_boundary_final.csv" --output-dir "$site" --angle-degrees $angle --lane-spacing-m 0.9906 --stripe-end-trim-m 3.0 --boundary-clearance-m 0.75 --headland-passes 2 --turn-radius-m 1.90 --stripe-turn-policy keyhole --waypoint-spacing-m 0.50 --scan-from low --first-stripe-direction reverse --ring-direction clockwise
+python site_coverage_planner_20260724.py preview "$site\01_boundary_final.csv" --output-dir "$site" --angle-degrees $angle --lane-spacing-m 0.9906 --stripe-end-trim-m 3.0 --boundary-clearance-m 0.75 --headland-passes 2 --turn-radius-m 1.90 --stripe-turn-policy keyhole --waypoint-spacing-m 0.50 --straight-speed-mps 0.75 --headland-speed-mps 0.50 --turn-speed-mps 0.50 --scan-from low --first-stripe-direction reverse --ring-direction clockwise
 
 Invoke-Item "$site\02_coverage_preview.png"
 Invoke-Item "$site\02_coverage_segments.csv"
@@ -656,7 +656,7 @@ After static validation passes and the visual checkpoints are accepted, run
 the archive helper from the activated mission-planning environment:
 
 ```powershell
-python archive_site_mission_20260724.py "$site"
+python archive_site_mission_20260724.py "$site" --launcher-max-speed-mps 0.75
 ```
 
 The site directory name becomes both the Git directory name and the default
@@ -681,14 +681,16 @@ The helper:
    started from any directory on the tractor RPi. Before moving the tractor it
    requires validation status `PASS` and verifies the mission SHA-256. It then
    starts the field logger in the background and the controller in the
-   foreground with a conservative `0.30 m/s` default speed cap.
+   foreground with the explicitly selected launcher speed cap. For this
+   tractor, use `--launcher-max-speed-mps 0.75`; the mission itself retains
+   `0.50 m/s` headland/turn speeds and `0.75 m/s` straight speeds.
 7. Refuses to overwrite an existing archive accidentally.
 
 If an already archived mission is deliberately superseded by a newly reviewed
 and validated version, inspect both versions first, then use:
 
 ```powershell
-python archive_site_mission_20260724.py "$site" --replace
+python archive_site_mission_20260724.py "$site" --replace --launcher-max-speed-mps 0.75
 ```
 
 Review what Git will receive:
@@ -712,8 +714,9 @@ bash ./run_62_Collins_Dr_mission.sh
 
 The launcher stops the background logger when the controller exits or when
 `Ctrl+C` is pressed. Keep the tractor in Manual or Pause until RTK Fixed,
-heading, e-stop, and route-start checks are complete. Do not raise the default
-speed for the first supervised field run.
+heading, e-stop, and route-start checks are complete. The `0.75 m/s` launcher
+cap permits the mission's requested speeds; it does not make every waypoint
+run at `0.75 m/s`.
 
 The JSON files should be committed. The settings make the mission reproducible;
 the build report records connector decisions; and the validation report records

@@ -2,7 +2,7 @@
   "angle_degrees": 105.0,
   "boundary_clearance_m": 0.75,
   "boundary_file": "C:\\Users\\al532\\Documents\\field_plans\\62_Collins_Dr\\01_boundary_final.csv",
-  "created_utc": "2026-07-24T16:42:44.291577+00:00",
+  "created_utc": "2026-07-24T21:15:44.893127+00:00",
   "first_stripe_direction": "reverse",
   "format_version": 1,
   "frame": {
@@ -11,7 +11,7 @@
   },
   "headland_lookahead_m": 2.0,
   "headland_passes": 2,
-  "headland_speed_mps": 0.4,
+  "headland_speed_mps": 0.5,
   "lane_spacing_m": 0.9906,
   "minimum_segment_m": 2.0,
   "obstacles_file": null,
@@ -26,11 +26,11 @@
     "lon": -80.3324252
   },
   "straight_lookahead_m": 3.0,
-  "straight_speed_mps": 0.5,
+  "straight_speed_mps": 0.75,
   "stripe_end_trim_m": 3.0,
   "stripe_turn_policy": "keyhole",
   "turn_lookahead_m": 1.5,
   "turn_radius_m": 1.9,
-  "turn_speed_mps": 0.3,
+  "turn_speed_mps": 0.5,
   "waypoint_spacing_m": 0.5
 }

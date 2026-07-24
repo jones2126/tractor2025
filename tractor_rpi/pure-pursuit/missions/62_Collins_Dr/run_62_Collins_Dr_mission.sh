@@ -13,7 +13,7 @@ MISSION="${SCRIPT_DIR}/62_Collins_Dr_mission.txt"
 VALIDATION="${SCRIPT_DIR}/62_Collins_Dr_mission_validation.json"
 CONTROLLER="${PURE_PURSUIT_DIR}/pure_pursuit_controller_20260714.py"
 LOGGER="${TRACTOR_RPI_DIR}/field_test_logger_20260717.py"
-EXPECTED_SHA256="A17A34EE28531C39D62E0D77FD736B3442A4F86D82F92E89839DC91712234BF0"
+EXPECTED_SHA256="C67B5E2BE6CA06B3F47C2DABB9AD0EA0FC5AFDCCB0FF72CFB13C56446A92320A"
 
 for required in "${MISSION}" "${VALIDATION}" "${CONTROLLER}" "${LOGGER}"; do
     if [[ ! -f "${required}" ]]; then
@@ -53,7 +53,7 @@ echo "  $(date '+%Y-%m-%d %H:%M:%S')"
 echo "  Site       : 62_Collins_Dr"
 echo "  Mission    : 62_Collins_Dr_mission.txt"
 echo "  SHA-256    : ${EXPECTED_SHA256}"
-echo "  Speed cap  : 0.30 m/s (override only after approval)"
+echo "  Speed cap  : 0.75 m/s"
 echo "========================================"
 
 echo "Starting field data logger..."
@@ -71,5 +71,5 @@ python3 "${CONTROLLER}" \
     --mode live \
     --ip 127.0.0.1 \
     --port 6004 \
-    --max-speed 0.30 \
+    --max-speed 0.75 \
     "$@"

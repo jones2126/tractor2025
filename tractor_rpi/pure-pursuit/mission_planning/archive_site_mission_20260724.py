@@ -52,6 +52,7 @@ def make_readme(
     site_name: str,
     mission_name: str,
     launcher_name: str,
+    launcher_max_speed_mps: float,
     settings: dict[str, object],
     build: dict[str, object],
     validation: dict[str, object],
@@ -146,11 +147,12 @@ Initial RPi launch from this directory:
 bash ./{launcher_name}
 ```
 
-The launcher caps controller speed at 0.30 m/s by default. A later explicitly
-approved cap can be supplied with `--max-speed`, for example:
+The launcher caps controller speed at {launcher_max_speed_mps:.2f} m/s. A
+different explicitly approved cap can be supplied with `--max-speed`, for
+example:
 
 ```bash
-bash ./{launcher_name} --max-speed 0.50
+bash ./{launcher_name} --max-speed {launcher_max_speed_mps:.2f}
 ```
 
 This directory contains exact geographic coordinates. Do not publish it in a
@@ -162,6 +164,7 @@ def make_launcher(
     site_name: str,
     mission_name: str,
     mission_hash: str,
+    launcher_max_speed_mps: float,
 ) -> str:
     mission_stem = Path(mission_name).stem
     validation_name = f"{mission_stem}_validation.json"
@@ -220,7 +223,7 @@ echo "  $(date '+%Y-%m-%d %H:%M:%S')"
 echo "  Site       : {site_name}"
 echo "  Mission    : {mission_name}"
 echo "  SHA-256    : ${{EXPECTED_SHA256}}"
-echo "  Speed cap  : 0.30 m/s (override only after approval)"
+echo "  Speed cap  : {launcher_max_speed_mps:.2f} m/s"
 echo "========================================"
 
 echo "Starting field data logger..."
@@ -238,7 +241,7 @@ python3 "${{CONTROLLER}}" \\
     --mode live \\
     --ip 127.0.0.1 \\
     --port 6004 \\
-    --max-speed 0.30 \\
+    --max-speed {launcher_max_speed_mps:.2f} \\
     "$@"
 """
 
@@ -319,7 +322,15 @@ def archive(args: argparse.Namespace) -> int:
         copied.append(name)
 
     mission_hash = sha256(target / mission_name)
-    launcher = make_launcher(site_name, mission_name, mission_hash)
+    launcher_max_speed_mps = float(args.launcher_max_speed_mps)
+    if launcher_max_speed_mps <= 0:
+        raise ValueError("--launcher-max-speed-mps must be greater than zero")
+    launcher = make_launcher(
+        site_name,
+        mission_name,
+        mission_hash,
+        launcher_max_speed_mps,
+    )
     launcher_path = target / launcher_name
     launcher_path.write_text(launcher, encoding="utf-8", newline="\n")
     launcher_path.chmod(0o755)
@@ -327,6 +338,7 @@ def archive(args: argparse.Namespace) -> int:
         site_name,
         mission_name,
         launcher_name,
+        launcher_max_speed_mps,
         settings,
         build,
         validation,
@@ -368,6 +380,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--replace",
         action="store_true",
         help="replace files in an existing archive after explicit review",
+    )
+    parser.add_argument(
+        "--launcher-max-speed-mps",
+        type=float,
+        default=0.30,
+        help="controller speed cap embedded in the generated RPi launcher",
     )
     return parser
 
