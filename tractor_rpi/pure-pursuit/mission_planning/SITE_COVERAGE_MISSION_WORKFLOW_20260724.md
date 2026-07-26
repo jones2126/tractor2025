@@ -49,6 +49,8 @@ Run these from `tractor_rpi/pure-pursuit/mission_planning/`:
 | `site_coverage_planner_20260724.py` | Compare angles, preview coverage, and build a candidate mission |
 | `validate_site_mission_20260724.py` | Independently audit and plot the five-column mission |
 | `archive_site_mission_20260724.py` | Verify PASS and archive the reviewed deployment/audit package into Git |
+| `collect_site_run_20260724.ps1` | Download completed-run logs and the exact mission package from the tractor RPi |
+| `collect_rtkbase_esp32_20260724.ps1` | Trigger the RTK-base ESP32 download and collect its verified CSV on Windows |
 | `site_planner_common_20260724.py` | Shared projection, CSV, curvature, and Dubins helpers |
 | `requirements_site_planner_20260724.txt` | Shapely and Matplotlib dependencies |
 
@@ -709,7 +711,7 @@ package has been committed, pushed, and pulled onto the tractor RPi, run it
 with `bash` (the executable file bit is not required):
 
 ```bash
-cd ~/repos/tractor2025/tractor_rpi/pure-pursuit/missions/62_Collins_Dr
+cd ~/tractor2025/tractor_rpi/pure-pursuit/missions/62_Collins_Dr
 bash ./run_62_Collins_Dr_mission.sh
 ```
 
@@ -757,6 +759,75 @@ Before powered autonomous motion:
 
 Static validation is not evidence that terrain is traversable or that the mower
 deck, trees, people, animals, drop-offs, or moving objects are clear.
+
+### 4E. Collect the completed run on Windows
+
+After the tractor is parked, its engine is off, and both programs have closed
+their logs, note the common timestamp printed in the two filenames. From the
+activated mission-planning PowerShell directory, run:
+
+```powershell
+.\collect_site_run_20260724.ps1 `
+  -RunId 20260724_172543 `
+  -SiteName 62_Collins_Dr
+```
+
+The script defaults to tractor01's ZeroTier address `192.168.193.76` and user
+`al`. Override them when necessary:
+
+```powershell
+.\collect_site_run_20260724.ps1 `
+  -RunId 20260724_172543 `
+  -SiteName 62_Collins_Dr `
+  -TractorHost 192.168.1.151
+```
+
+It checks SSH connectivity and remote files before downloading:
+
+- `/home/al/repos/field-testing-data/pursuit_log_<run>.csv`;
+- `/home/al/field_logs/field_test_<run>.csv`; and
+- the exact archived mission directory used on the tractor.
+
+The destination is:
+
+```text
+%USERPROFILE%\Documents\field_plans\<site>\runs\<run>\
+```
+
+It also records CSV data-row counts, `file_hashes.csv`, and
+`collection_summary.json`. Use `-SkipMissionPackage` only when the exact
+mission package has already been preserved with that run.
+
+Collect the corresponding ESP32 power/environment log through the RTK base:
+
+```powershell
+.\collect_rtkbase_esp32_20260724.ps1 `
+  -RunId 20260724_172543 `
+  -SiteName 62_Collins_Dr
+```
+
+This laptop-side script uses the RTK base ZeroTier address `192.168.193.88`.
+It remotely runs:
+
+```text
+python3 /home/al/tractor2025/RTKBase/Bridgeville/esp32_downloader_20260623.py download_delete <run-specific-file>
+```
+
+The base downloader first saves the CSV under `/home/al/esp32_data/` and only
+then clears/reinitializes the ESP32 source file. The PowerShell script copies
+that exact base file to the matching Windows run directory and requires its
+SHA-256 to match. It retains the base-station copy as a recovery backup. Use
+`-RemoveBaseCopyAfterVerify` only when intentionally removing that backup.
+
+If the ESP download was already run manually, collect that file without
+running `download_delete` again:
+
+```powershell
+.\collect_rtkbase_esp32_20260724.ps1 `
+  -RunId 20260724_172543 `
+  -SiteName 62_Collins_Dr `
+  -ExistingBaseFileName esp32_data_20260724_175633.csv
+```
 
 ## Known limitations and recommended next improvements
 
