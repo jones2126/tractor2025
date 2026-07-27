@@ -84,6 +84,7 @@ ANGLE_COLUMNS = [
 AUDIT_COLUMNS = [
     "waypoint",
     "kind",
+    "headland_pass",
     "east_m",
     "north_m",
     "lat",
@@ -605,6 +606,11 @@ def settings_from_args(
         "turn_speed_mps": args.turn_speed_mps,
         "headland_lookahead_m": args.headland_lookahead_m,
         "headland_speed_mps": args.headland_speed_mps,
+        **(
+            {"outer_headland_speed_mps": args.outer_headland_speed_mps}
+            if args.outer_headland_speed_mps is not None
+            else {}
+        ),
         "outputs": {
             "segments_csv": str((output_dir / "02_coverage_segments.csv").resolve()),
             "preview_plot": str((output_dir / "02_coverage_preview.png").resolve()),
@@ -997,6 +1003,7 @@ def plan_headland_chain(
             {
                 **variant,
                 "label": headlands[0]["label"],
+                "headland_pass": headlands[0]["pass"],
                 "cost": distance(variant["ring"][0], anchor),
                 "previous": None,
                 "incoming": None,
@@ -1022,6 +1029,7 @@ def plan_headland_chain(
                     best_state = {
                         **variant,
                         "label": ring_info["label"],
+                        "headland_pass": ring_info["pass"],
                         "cost": cost,
                         "previous": previous,
                         "incoming": connector,
@@ -1071,6 +1079,8 @@ def append_piece(
     points: Sequence[tuple[float, float]],
     kind: str,
     spacing_m: float,
+    *,
+    headland_pass: int | None = None,
 ) -> None:
     dense = densify_polyline(points, spacing_m)
     for point in dense:
@@ -1079,7 +1089,10 @@ def append_piece(
             and distance(route[-1]["xy"], point) < ROUTE_POINT_TOLERANCE_M  # type: ignore[arg-type]
         ):
             continue
-        route.append({"xy": point, "kind": kind})
+        item: dict[str, object] = {"xy": point, "kind": kind}
+        if headland_pass is not None:
+            item["headland_pass"] = headland_pass
+        route.append(item)
 
 
 def append_connector(
@@ -1095,16 +1108,25 @@ def append_connector(
         route.append({"xy": (x, y), "kind": "connector"})
 
 
-def mission_parameters(settings: dict[str, object], kind: str):
+def mission_parameters(
+    settings: dict[str, object],
+    kind: str,
+    headland_pass: int | None = None,
+):
     if kind == "stripe":
         return (
             float(settings["straight_lookahead_m"]),
             float(settings["straight_speed_mps"]),
         )
     if kind == "headland":
+        speed_key = (
+            "outer_headland_speed_mps"
+            if headland_pass == 1 and "outer_headland_speed_mps" in settings
+            else "headland_speed_mps"
+        )
         return (
             float(settings["headland_lookahead_m"]),
-            float(settings["headland_speed_mps"]),
+            float(settings[speed_key]),
         )
     return (
         float(settings["turn_lookahead_m"]),
@@ -1171,7 +1193,13 @@ def run_build(args: argparse.Namespace) -> int:
                         "length_m": float(incoming["length_m"]),
                     }
                 )
-            append_piece(route, selected["ring"], "headland", spacing_m)
+            append_piece(
+                route,
+                selected["ring"],
+                "headland",
+                spacing_m,
+                headland_pass=int(selected["headland_pass"]),
+            )
         append_connector(route, outgoing)
         connector_records.append(
             {
@@ -1286,7 +1314,10 @@ def run_build(args: argparse.Namespace) -> int:
         else:
             yaw = segment_yaw(route_xy[index - 1], route_xy[index])
         kind = str(item["kind"])
-        lookahead, speed = mission_parameters(settings, kind)
+        headland_pass = (
+            int(item["headland_pass"]) if "headland_pass" in item else None
+        )
+        lookahead, speed = mission_parameters(settings, kind, headland_pass)
         lat, lon = frame.to_latlon(*route_xy[index])
         mission_point = MissionPoint(
             lat=lat,
@@ -1300,6 +1331,7 @@ def run_build(args: argparse.Namespace) -> int:
             {
                 "waypoint": index + 1,
                 "kind": kind,
+                "headland_pass": headland_pass or "",
                 "east_m": f"{route_xy[index][0]:.3f}",
                 "north_m": f"{route_xy[index][1]:.3f}",
                 "lat": f"{lat:.9f}",
@@ -1558,6 +1590,14 @@ def build_parser() -> argparse.ArgumentParser:
     preview.add_argument("--turn-speed-mps", type=float, default=0.30)
     preview.add_argument("--headland-lookahead-m", type=float, default=2.0)
     preview.add_argument("--headland-speed-mps", type=float, default=0.40)
+    preview.add_argument(
+        "--outer-headland-speed-mps",
+        type=float,
+        help=(
+            "optional speed for headland pass 1; later passes use "
+            "--headland-speed-mps"
+        ),
+    )
     preview.set_defaults(handler=run_preview)
 
     build = subparsers.add_parser(
@@ -1598,8 +1638,17 @@ def main() -> int:
         parser.error("--headland-passes cannot be negative")
     if hasattr(args, "start_lat") and ((args.start_lat is None) != (args.start_lon is None)):
         parser.error("--start-lat and --start-lon must be supplied together")
-    for name in ("straight_speed_mps", "turn_speed_mps", "headland_speed_mps"):
-        if hasattr(args, name) and getattr(args, name) < 0:
+    for name in (
+        "straight_speed_mps",
+        "turn_speed_mps",
+        "headland_speed_mps",
+        "outer_headland_speed_mps",
+    ):
+        if (
+            hasattr(args, name)
+            and getattr(args, name) is not None
+            and getattr(args, name) < 0
+        ):
             parser.error(f"--{name.replace('_', '-')} cannot be negative")
     try:
         return int(args.handler(args))

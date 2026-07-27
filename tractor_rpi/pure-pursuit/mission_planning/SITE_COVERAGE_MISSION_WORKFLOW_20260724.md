@@ -500,7 +500,7 @@ the Collins Drive site, the selected value is `105`:
 ```powershell
 $angle = 105
 
-python site_coverage_planner_20260724.py preview "$site\01_boundary_final.csv" --output-dir "$site" --angle-degrees $angle --lane-spacing-m 0.9906 --stripe-end-trim-m 3.0 --boundary-clearance-m 0.75 --headland-passes 2 --turn-radius-m 1.90 --stripe-turn-policy keyhole --waypoint-spacing-m 0.50 --straight-speed-mps 0.75 --headland-speed-mps 0.50 --turn-speed-mps 0.50 --scan-from low --first-stripe-direction reverse --ring-direction clockwise
+python site_coverage_planner_20260724.py preview "$site\01_boundary_final.csv" --output-dir "$site" --angle-degrees $angle --lane-spacing-m 0.9906 --stripe-end-trim-m 3.0 --boundary-clearance-m 0.75 --headland-passes 2 --turn-radius-m 1.90 --stripe-turn-policy keyhole --waypoint-spacing-m 0.50 --straight-speed-mps 0.75 --outer-headland-speed-mps 0.50 --headland-speed-mps 0.75 --turn-speed-mps 0.50 --scan-from low --first-stripe-direction reverse --ring-direction clockwise
 
 Invoke-Item "$site\02_coverage_preview.png"
 Invoke-Item "$site\02_coverage_segments.csv"
@@ -510,7 +510,7 @@ Before proceeding to Step 4, verify that the newly written settings contain
 the selected radius and turn policy:
 
 ```powershell
-Get-Content "$site\02_plan_settings.json" -Raw | ConvertFrom-Json | Select-Object angle_degrees, lane_spacing_m, turn_radius_m, stripe_turn_policy
+Get-Content "$site\02_plan_settings.json" -Raw | ConvertFrom-Json | Select-Object angle_degrees, lane_spacing_m, turn_radius_m, stripe_turn_policy, straight_speed_mps, outer_headland_speed_mps, headland_speed_mps, turn_speed_mps
 ```
 
 For Collins Drive, the expected values are `105`, `0.9906`, `1.9`, and
@@ -560,6 +560,8 @@ Outputs:
 | `stripe-end-trim-m` | Distance removed from both ends of every clipped stripe to leave turning room. This replaces the notebook’s separate “shorten stripes” script and is visible in the editable CSV/plot. |
 | `turn-radius-m` | Common minimum planning radius for left and right turns. Manual circle tests measured approximately 1.05 m full-left and 1.63 m full-right. This site uses 1.90 m: 0.27 m (about 17%) gentler than the weaker measured right turn. Do not plan at the measured limit without repeatability tests. |
 | `stripe-turn-policy` | `keyhole` constrains adjacent-row transitions to compact three-arc agricultural omega turns. `shortest-dubins` is retained for engineering comparison and must not be used merely to force a build. |
+| `outer-headland-speed-mps` | Optional speed for perimeter pass 1. If omitted, pass 1 uses `headland-speed-mps` like the other perimeter passes. |
+| `headland-speed-mps` | Speed for perimeter pass 2 and any later perimeter passes. |
 | `waypoint-spacing-m` | Maximum sampling gap. 0.50 m is denser than the current controller’s historical 1 m examples. |
 | lookahead/speed options | Straight, turn, and headland values are saved separately. Start conservatively. |
 
