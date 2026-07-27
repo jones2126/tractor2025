@@ -1,0 +1,20 @@
+[Unit]
+Description=RTCM Server for GPS/RTK Corrections (tractor01 dual F9P)
+Documentation=https://github.com/jones2126/tractor2025
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=al
+WorkingDirectory=/home/al/tractor2025/tractor_rpi
+ExecStart=/usr/bin/python3 -u /home/al/tractor2025/tractor_rpi/rtcm_server_20260727.py
+Restart=always
+RestartSec=5
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=rtcm-server
+
+[Install]
+WantedBy=multi-user.target

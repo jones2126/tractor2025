@@ -1,0 +1,587 @@
+#!/usr/bin/env python3
+"""RTCM forwarder and GPS data server.
+
+This script forwards RTCM correction data from a TCP source to the base F9P
+receiver and simultaneously parses NMEA (GNGGA) from the base receiver to
+obtain latitude, longitude and fix quality.  It also listens to the heading
+F9P receiver for UBX-NAV-RELPOSNED messages to obtain heading information.
+
+The latest navigation state is broadcast as JSON over UDP so that a separate
+navigation program can consume the data without needing ROS2.  The UDP
+broadcast runs at a fixed rate and contains the following fields:
+
+    {
+        "timestamp": ISO-8601 string,
+        "lat": decimal degrees,
+        "lon": decimal degrees,
+        "fix_quality": string,            # e.g. "RTK Fixed"
+        "heading_deg": degrees from north,
+        "headValid": bool,
+        "carrier": string,                # e.g. "float"/"fixed"
+        "expectedErrDeg": float          # expected heading error (1-sigma)
+    }
+
+Adjust the configuration section below to match your hardware setup.
+
+11/26/25 - Added code for fatal errors when the GPS units are not detected
+07/27/26 - Added dedicated UDP 6010 navigation feed so Pure Pursuit does not
+           compete with the Teensy bridge on 6002 or field logger on 6009.
+"""
+
+import json
+import math
+import re
+import socket
+import struct
+import subprocess
+import threading
+import time
+from datetime import datetime, timezone
+import serial
+
+# ---------------------------------------------------------------------------
+# Configuration
+# ---------------------------------------------------------------------------
+#RTCM_TCP_IP = "192.168.1.95"      # IP of RTCM source - Brenham
+RTCM_TCP_IP = "192.168.193.88"      # IP of RTCM source - Bridgeville
+
+RTCM_TCP_PORT = 6001               # Port of RTCM source
+BASE_SERIAL = "/dev/gps-base-link"  # serial device of base F9P
+HEADING_SERIAL = "/dev/gps-heading" # serial device of heading F9P
+SERIAL_BAUD = 115200
+
+# UDP publication target â€“ by default use localhost so navigation program on
+# same machine can listen on UDP_PORT.
+UDP_TARGET_IP = "127.0.0.1"
+UDP_TARGET_PORT = 6002
+UDP_NAV_PORT = 6010
+UDP_LOG_PORT = 6009          # NEW line — dedicated feed for field_test_logger
+UDP_PUBLISH_HZ = 20                 # broadcast rate
+
+# NEW (7/2/26): WiFi RSSI monitoring, mirrors RTKBase/Bridgeville/wifi_monitor_20260624.py
+WIFI_INTERFACE  = "wlan0"
+WIFI_POLL_HZ    = 2                 # polling rate for iwconfig (2 Hz requested; cheap on RPi)
+WIFI_WEAK_DBM   = -80               # dBm threshold used for the "weak" label
+
+# Regex to extract fields from GNGGA
+# Fields: time, lat, N/S, lon, E/W, fix, numSV, HDOP, alt, M, geoidSep, M, diffAge
+# CHANGED: Expanded from 6 capture groups to 8 (added numSV, HDOP)
+# diffAge is parsed separately via split since fields 9-13 have optional empty values
+
+# new pattern below captures numSV and HDOP as well, which are important diagnostics even when fix is degraded
+GGA_PATTERN = re.compile(
+    rb"\$G[NP]GGA,([^,]*),([^,]*),([NS]?),([^,]*),([EW]?),(\d),(\d*),([^,]*),"
+)
+
+# NEW (6/17/26) VTG pattern for ground speed
+VTG_PATTERN = re.compile(
+    rb"\$G[NP]VTG,[^,]*,[TM]?,[^,]*,[TM]?,([0-9]*\.?[0-9]+),N,([0-9]*\.?[0-9]+),K,"
+)
+
+# NEW (7/14/26) RMC pattern for ground speed - fallback since F9P outputs
+# RMC by default but VTG is not enabled. Field 7 = speed over ground (knots).
+RMC_PATTERN = re.compile(
+    rb"\$G[NP]RMC,[^,]*,([AV]),[^,]*,[NS]?,[^,]*,[EW]?,([0-9]*\.?[0-9]+),"
+)
+
+FIX_QUALITY = {
+    0: "Invalid",
+    1: "GPS Fix",
+    2: "DGPS",
+    4: "RTK Fixed",
+    5: "RTK Float",
+}
+
+# ---------------------------------------------------------------------------
+# Shared state
+# ---------------------------------------------------------------------------
+state = {
+    "lat": None,
+    "lon": None,
+    "fix_quality": "Unknown",
+    "numSV": None,           # Satellites used in fix (from GGA field 7)
+    "hdop": None,            # Horizontal dilution of precision (GGA field 8)
+    "diff_age": None,        # Age of differential corrections in seconds (GGA field 13)
+    "speed_mps": None,       # NEW 6/17/26: Ground speed m/s (from VTG)    
+    "heading_deg": None,
+    "headValid": None,
+    "carrier": None,
+    "expectedErrDeg": None,
+    "timestamp": None,
+    # Fatal connection info
+    "fatal_error": False,
+    "fatal_base_reason": None,    # /dev/gps-base-link issues
+    "fatal_heading_reason": None, # /dev/gps-heading issues
+    # NEW (7/2/26): WiFi status, polled independently of GPS state
+    "wifi_ssid": None,
+    "wifi_rssi_dbm": None,
+    "wifi_signal_label": "unknown",
+}
+state_lock = threading.Lock()
+
+# ---------------------------------------------------------------------------
+# NEW (7/2/26): WiFi monitoring helpers
+# (adapted from RTKBase/Bridgeville/wifi_monitor_20260624.py)
+# ---------------------------------------------------------------------------
+
+def wifi_signal_label(rssi):
+    if rssi is None:
+        return "unknown"
+    if rssi >= -65:
+        return "strong"
+    if rssi >= WIFI_WEAK_DBM:
+        return "medium"
+    return "weak"
+
+
+def get_wifi_info():
+    """Return (ssid, rssi_dBm) for current WIFI_INTERFACE connection, or (None, None)."""
+    try:
+        result = subprocess.run(
+            ["iwconfig", WIFI_INTERFACE],
+            capture_output=True, text=True, timeout=5
+        )
+        out = result.stdout
+        ssid, rssi = None, None
+        for line in out.splitlines():
+            if 'ESSID:"' in line:
+                ssid = line.split('ESSID:"')[1].split('"')[0]
+                if ssid == "":
+                    ssid = None
+            if "Signal level=" in line:
+                raw = line.split("Signal level=")[1].split()[0]
+                try:
+                    rssi = int(raw.replace("dBm", "").strip())
+                except ValueError:
+                    pass
+        return ssid, rssi
+    except Exception:
+        return None, None
+
+# ---------------------------------------------------------------------------
+# Utility functions for UBX parsing (RELPOSNED)
+# ---------------------------------------------------------------------------
+SYNC1, SYNC2 = 0xB5, 0x62
+CLS_NAV, ID_RELPOSNED = 0x01, 0x3C
+
+def ubx_checksum(data: bytes):
+    a = b = 0
+    for x in data:
+        a = (a + x) & 0xFF
+        b = (b + a) & 0xFF
+    return a, b
+
+def cm_hp_to_m(cm: int, hp_0p1mm: int) -> float:
+    return (cm + hp_0p1mm * 0.01) / 100.0
+
+def parse_relposned(payload: bytes):
+    if len(payload) not in (40, 64):
+        return None
+    iTOW, relPosN, relPosE, relPosD = struct.unpack_from("<Iiii", payload, 0x04)
+    off = 0x14
+    relPosLen = relPosHead = None
+    if len(payload) == 64:
+        relPosLen, relPosHead = struct.unpack_from("<ii", payload, off)
+        off += 8
+        off += 4  # reserved
+    relPosHPN, relPosHPE, relPosHPD = struct.unpack_from("<bbb", payload, off)
+    off += 3
+    relPosHPLen = None
+    if len(payload) == 64:
+        relPosHPLen = struct.unpack_from("<b", payload, off)[0]
+        off += 1
+    else:
+        off += 1
+    accN_0p1mm, accE_0p1mm, accD_0p1mm = struct.unpack_from("<III", payload, off)
+    off += 12
+    accLen_0p1mm = accHead_1e5deg = None
+    if len(payload) == 64:
+        accLen_0p1mm, accHead_1e5deg = struct.unpack_from("<II", payload, off)
+        off += 8
+        off += 4  # reserved3
+    flags = struct.unpack_from("<I", payload, off)[0]
+
+    # Convert to metric units where needed
+    length = cm_hp_to_m(relPosLen, relPosHPLen) if relPosLen is not None else None
+    heading = (relPosHead * 1e-5) if relPosHead is not None else None
+
+    accN_m, accE_m = accN_0p1mm/10000.0, accE_0p1mm/10000.0
+    accHead_d = (accHead_1e5deg*1e-5) if accHead_1e5deg is not None else None
+
+    carrier = {0: "none", 1: "float", 2: "fixed"}.get((flags >> 3) & 0x3, "unknown")
+    headValid = bool(flags & (1 << 8))
+    return {
+        "length_m": length,
+        "heading_deg": heading,
+        "accN_m": accN_m,
+        "accE_m": accE_m,
+        "accHead_deg": accHead_d,
+        "carrier": carrier,
+        "headValid": headValid,
+    }
+
+
+def expected_heading_error_deg(d):
+    """Return expected 1-sigma heading error in degrees."""
+    if d["accHead_deg"] is not None and d["headValid"]:
+        return d["accHead_deg"]
+    L = d["length_m"] or 0.0
+    if L <= 1e-6:
+        return float("nan")
+    sigma_perp = math.hypot(d["accN_m"] or 0.0, d["accE_m"] or 0.0)
+    return math.degrees(math.atan2(sigma_perp, L))
+
+# ---------------------------------------------------------------------------
+# Threads
+# ---------------------------------------------------------------------------
+
+def forward_rtcm(ser):
+    forwarded_total = 0
+    last_log_time = time.time()
+    reconnect_delay = 5
+
+    while True:
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(15)
+            print(f"[RTCM Forwarder] Attempting connection to {RTCM_TCP_IP}:{RTCM_TCP_PORT}...")
+            sock.connect((RTCM_TCP_IP, RTCM_TCP_PORT))
+            print(f"[RTCM Forwarder] CONNECTED successfully to ESP32 RTCM source")
+
+            interval_bytes = 0
+            interval_start = time.time()
+
+            while True:
+                data = sock.recv(4096)
+                if not data:
+                    print("[RTCM Forwarder] Connection closed by ESP32 (empty recv)")
+                    break
+
+                written = ser.write(data)
+                ser.flush()
+                if written != len(data):
+                    print(f"[RTCM Forwarder] WARNING: Serial write incomplete: {written}/{len(data)} bytes")
+
+                interval_bytes += len(data)
+                forwarded_total += len(data)
+
+                now = time.time()
+                if now - last_log_time >= 10:
+                    elapsed = now - interval_start if interval_start else 1
+                    rate = interval_bytes / elapsed if elapsed > 0 else 0
+                    print(f"[RTCM Forwarder] Forwarded {interval_bytes} bytes (~{rate:.0f} B/s) in last {elapsed:.1f}s | Total forwarded: {forwarded_total}")
+                    interval_bytes = 0
+                    interval_start = now
+                    last_log_time = now
+
+        except socket.timeout:
+            print(f"[RTCM Forwarder] TCP timeout after {sock.gettimeout()}s")
+        except ConnectionRefusedError:
+            print("[RTCM Forwarder] Connection refused by ESP32")
+        except Exception as e:
+            print(f"[RTCM Forwarder] Unexpected error: {type(e).__name__}: {e}")
+        finally:
+            try:
+                sock.close()
+            except:
+                pass
+            print(f"[RTCM Forwarder] Reconnecting in {reconnect_delay} seconds...")
+            time.sleep(reconnect_delay)
+
+def monitor_gga(serial_conn):
+    buf = b""
+    while True:
+        try:
+            b = serial_conn.read(1)
+            if not b:
+                # No data available right now - brief pause to avoid tight loop
+                time.sleep(0.01)
+                continue
+
+            buf += b
+
+            # Prevent unbounded growth if no newline
+            if len(buf) > 512:
+                print("[GGA Monitor] Buffer overflow prevention: trimming old data")
+                buf = buf[-256:]
+
+            if b == b'\n':
+                line = buf.strip()
+                buf = b""
+
+                if line.startswith(b'$GNGGA') or line.startswith(b'$GPGGA'):
+                    match = GGA_PATTERN.match(line)
+                    if match:
+                        # CHANGED ~line 240: Now 8 capture groups (was 6)
+                        time_str, lat_str, lat_dir, lon_str, lon_dir, fix, num_sv_raw, hdop_raw = match.groups()
+
+                        try:
+                            fix_int = int(fix)
+                            fix_str = FIX_QUALITY.get(fix_int, "Unknown")
+
+                            # NEW ~line 245: Parse numSV (field 7) - satellites used
+                            num_sv = int(num_sv_raw) if num_sv_raw else None
+
+                            # NEW ~line 248: Parse HDOP (field 8)
+                            hdop = float(hdop_raw) if hdop_raw else None
+
+                            # NEW ~line 251: Parse diff_age (field 13) via comma-split
+                            # GGA fields after HDOP: alt, M, geoidSep, M, diffAge, ...
+                            diff_age = None
+                            fields = line.split(b',')
+                            if len(fields) > 13 and fields[13]:
+                                try:
+                                    diff_age = float(fields[13])
+                                except ValueError:
+                                    pass  # Empty or malformed diff age field
+
+                            # CHANGED ~line 259: Update state for ALL fix qualities (was only 4/5)
+                            # This ensures diagnostic data is visible even when fix is degraded
+                            with state_lock:
+                                state["fix_quality"] = fix_str
+                                state["numSV"] = num_sv
+                                state["hdop"] = hdop
+                                state["diff_age"] = diff_age
+                                state["timestamp"] = datetime.now(timezone.utc).isoformat()
+
+                                # Parse lat/lon for any valid fix (1=GPS, 2=DGPS, 4=RTK Fixed, 5=RTK Float)
+                                if fix_int in (1, 2, 4, 5) and lat_str and lon_str:                                    
+                                    lat = float(lat_str)
+                                    lat_deg = int(lat / 100)
+                                    lat_min = lat - lat_deg * 100
+                                    lat = lat_deg + lat_min / 60
+                                    if lat_dir == b'S':
+                                        lat = -lat
+
+                                    lon = float(lon_str)
+                                    lon_deg = int(lon / 100)
+                                    lon_min = lon - lon_deg * 100
+                                    lon = lon_deg + lon_min / 60
+                                    if lon_dir == b'W':
+                                        lon = -lon
+
+                                    state["lat"] = lat
+                                    state["lon"] = lon
+
+                        except (ValueError, ZeroDivisionError) as parse_err:
+                            print(f"[GGA Monitor] Parse error on line: {line.decode(errors='ignore')} - {parse_err}")
+                
+                # NEW 6/17/26: VTG parsing for ground speed
+                elif line.startswith(b'$GNVTG') or line.startswith(b'$GPVTG'):
+                    match = VTG_PATTERN.match(line)
+                    if match:
+                        try:
+                            speed_kmh = float(match.group(2))
+                            with state_lock:
+                                state["speed_mps"] = round(speed_kmh / 3.6, 3)
+                        except ValueError:
+                            pass
+
+                # NEW (7/14/26): RMC parsing for ground speed - fallback path
+                # since the F9P outputs RMC by default but VTG is disabled.
+                # Only trust speed when status flag is 'A' (data valid).
+                elif line.startswith(b'$GNRMC') or line.startswith(b'$GPRMC'):
+                    match = RMC_PATTERN.match(line)
+                    if match:
+                        status, speed_knots_raw = match.groups()
+                        if status == b'A':
+                            try:
+                                speed_knots = float(speed_knots_raw)
+                                with state_lock:
+                                    state["speed_mps"] = round(speed_knots * 0.514444, 3)
+                            except ValueError:
+                                pass
+
+
+        except serial.SerialException as e:
+            print(f"[GGA Monitor] Serial error: {e} - attempting recovery in 5s...")
+            time.sleep(5)
+            # Continue trying on existing connection - often recovers automatically
+        except Exception as e:
+            print(f"[GGA Monitor] Unexpected error: {type(e).__name__}: {e}")
+            time.sleep(1)  # Prevent spam on repeated errors
+
+def _parse_deg(raw: str, direction: str) -> float:
+    """Convert NMEA latitude/longitude component to decimal degrees."""
+    if not raw:
+        return float("nan")
+    # latitude has two degree digits; longitude has three
+    deg_digits = 2 if direction in ("N", "S") else 3
+    deg = float(raw[:deg_digits])
+    minutes = float(raw[deg_digits:])
+    value = deg + minutes / 60.0
+    if direction in ("S", "W"):
+        value = -value
+    return value
+
+def monitor_relposned(serial_conn):
+    buf = bytearray()
+    while True:
+        try:
+            b = serial_conn.read(1)
+            if not b:
+                # No data available right now - brief pause to avoid tight loop
+                time.sleep(0.01)
+                continue
+
+            buf.append(b[0])
+
+            # Prevent unbounded growth if sync never found
+            if len(buf) > 512:
+                print("[RELPOSNED Monitor] Buffer overflow prevention: trimming old data")
+                buf = buf[-256:]
+
+            # Need at least header to check sync
+            if len(buf) < 2:
+                continue
+
+            # Search for sync chars
+            if buf[0] != SYNC1 or buf[1] != SYNC2:
+                buf.pop(0)
+                continue
+
+            # Need full header for length
+            if len(buf) < 6:
+                continue
+
+            cls_ = buf[2]
+            id_ = buf[3]
+            length = buf[4] | (buf[5] << 8)
+            need = length + 8  # header (6) + payload + checksum (2)
+
+            if len(buf) < need:
+                continue
+
+            # Extract frame
+            frame = buf[:need]
+            buf = buf[need:]  # Remove processed frame
+
+            # Verify checksum
+            ck_a, ck_b = ubx_checksum(frame[2:6 + length])
+            if ck_a != frame[6 + length] or ck_b != frame[7 + length]:
+                print("[RELPOSNED Monitor] Checksum failed - discarding frame")
+                continue
+
+            payload = frame[6:6 + length]
+
+            if cls_ == CLS_NAV and id_ == ID_RELPOSNED:
+                d = parse_relposned(payload)
+                if d:
+                    err_deg = expected_heading_error_deg(d)  # Assuming this function exists in your script
+                    with state_lock:
+                        state["headValid"] = d["headValid"]
+                        state["carrier"] = d["carrier"]
+                        state["expectedErrDeg"] = err_deg
+                        if d["headValid"]:
+                            state["heading_deg"] = d["heading_deg"]
+                        state["timestamp"] = datetime.now(timezone.utc).isoformat()
+
+        except serial.SerialException as e:
+            print(f"[RELPOSNED Monitor] Serial error: {e} - attempting recovery in 5s...")
+            time.sleep(5)
+            # Optional: fully reopen serial_conn here if you add reconnect logic
+            # For now, continue trying on existing (often recovers)
+        except Exception as e:
+            print(f"[RELPOSNED Monitor] Unexpected error: {type(e).__name__}: {e}")
+            time.sleep(1)  # Prevent spam on repeated errors
+
+# NEW (7/2/26): polls WiFi RSSI at WIFI_POLL_HZ and writes into shared state,
+# which udp_publisher() below broadcasts on UDP 6002 along with GPS data.
+def monitor_wifi():
+    while True:
+        try:
+            ssid, rssi = get_wifi_info()
+            label = wifi_signal_label(rssi)
+            with state_lock:
+                state["wifi_ssid"] = ssid
+                state["wifi_rssi_dbm"] = rssi
+                state["wifi_signal_label"] = label
+        except Exception as e:
+            print(f"[WiFi Monitor] Unexpected error: {type(e).__name__}: {e}")
+        time.sleep(1.0 / WIFI_POLL_HZ)
+
+
+def udp_publisher():
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    while True:
+        time.sleep(1.0 / UDP_PUBLISH_HZ)
+        with state_lock:
+            payload = json.dumps(state).encode()
+        sock.sendto(payload, (UDP_TARGET_IP, UDP_TARGET_PORT))
+        sock.sendto(payload, (UDP_TARGET_IP, UDP_NAV_PORT))
+        sock.sendto(payload, (UDP_TARGET_IP, UDP_LOG_PORT))  # NEW line — separate flow, avoids SO_REUSEPORT contention with the controller on 6002
+
+# ---------------------------------------------------------------------------
+
+def main():
+    global state
+
+    base_ser = None
+    heading_ser = None
+
+    fatal_error = False
+    fatal_base_reason = None
+    fatal_heading_reason = None
+
+    # Try to open base serial
+    try:
+        base_ser = serial.Serial(BASE_SERIAL, SERIAL_BAUD, timeout=1)
+    except (serial.SerialException, FileNotFoundError) as e:
+        fatal_error = True
+        fatal_base_reason = f"could not open {BASE_SERIAL}: {e}"
+
+    # Try to open heading serial
+    try:
+        heading_ser = serial.Serial(HEADING_SERIAL, SERIAL_BAUD, timeout=1)
+    except (serial.SerialException, FileNotFoundError) as e:
+        fatal_error = True
+        fatal_heading_reason = f"could not open {HEADING_SERIAL}: {e}"
+
+    # Update shared state with fatal info so LED/status consumers can see it
+    with state_lock:
+        state["fatal_error"] = fatal_error
+        state["fatal_base_reason"] = fatal_base_reason
+        state["fatal_heading_reason"] = fatal_heading_reason
+        state["timestamp"] = datetime.now(timezone.utc).isoformat()
+
+    # Always start UDP publisher so we broadcast either normal nav data
+    # or a fatal_error + reasons.
+    threading.Thread(target=udp_publisher, daemon=True).start()
+
+    # NEW (7/2/26): Always start WiFi monitor too - independent of GPS fatal
+    # state, so signal strength is visible even when the GPS units fail.
+    threading.Thread(target=monitor_wifi, daemon=True).start()
+
+    if fatal_error:
+        # Log clear messages to journalctl
+        print("[rtcm-server] FATAL GPS CONNECTION ERROR(S) DETECTED")
+        if fatal_base_reason:
+            print(f"[rtcm-server]   BASE:    {fatal_base_reason}")
+        if fatal_heading_reason:
+            print(f"[rtcm-server]   HEADING: {fatal_heading_reason}")
+        print("[rtcm-server] Service will remain running and continue to publish "
+              "fatal_error status over UDP for LED/monitoring clients.")
+
+        # Sit in a loop so systemd sees the service as 'running' and the LED controller can showing the fatal condition.
+        try:
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            pass
+        return
+
+    # If we get here, both serial ports opened successfully: normal behavior
+    threading.Thread(target=forward_rtcm, args=(base_ser,), daemon=True).start()
+    threading.Thread(target=monitor_gga, args=(base_ser,), daemon=True).start()
+    threading.Thread(target=monitor_relposned, args=(heading_ser,), daemon=True).start()
+
+    print("RTCM server running. Press Ctrl+C to exit.")
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        pass
+
+
+if __name__ == "__main__":
+    main()
