@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tractor Run Analysis Map</title>
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css"
+  >
+  <style>
+    :root {
+      color-scheme: light;
+      font-family:
+        Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", sans-serif;
+      color: #172033;
+      background: #f4f6f8;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      background: #f4f6f8;
+    }
+    #tractor-run-map {
+      width: min(1180px, 100%);
+      margin: 0 auto;
+      padding: 18px;
+    }
+    .report-header {
+      margin-bottom: 14px;
+    }
+    .report-header h1 {
+      margin: 0 0 4px;
+      font-size: 1.45rem;
+    }
+    .report-subtitle {
+      margin: 0;
+      color: #5d6878;
+    }
+    .run-stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .card {
+      padding: 14px;
+      border: 1px solid #d8dee7;
+      border-radius: 10px;
+      background: #ffffff;
+      box-shadow: 0 1px 2px rgb(15 23 42 / 6%);
+    }
+    .stat-label {
+      min-height: 2.5em;
+      color: #5d6878;
+      font-size: 0.88rem;
+    }
+    .stat-value {
+      margin-top: 2px;
+      font-size: 1.75rem;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    .stat-note,
+    .map-note {
+      color: #697586;
+      font-size: 0.8rem;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px 18px;
+      padding: 10px 12px;
+      border: 1px solid #d8dee7;
+      border-bottom: 0;
+      border-radius: 10px 10px 0 0;
+      background: #ffffff;
+    }
+    .controls label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.9rem;
+    }
+    .controls select {
+      padding: 5px 8px;
+      border: 1px solid #b7c0cd;
+      border-radius: 6px;
+      background: #ffffff;
+      color: #172033;
+    }
+    #run-map {
+      width: 100%;
+      height: 650px;
+      min-height: 430px;
+      border: 1px solid #d8dee7;
+      background: #e8edf2;
+    }
+    .map-footer {
+      padding: 10px 12px;
+      border: 1px solid #d8dee7;
+      border-top: 0;
+      border-radius: 0 0 10px 10px;
+      background: #ffffff;
+    }
+    .map-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 18px;
+      margin-bottom: 6px;
+      font-size: 0.82rem;
+    }
+    .map-legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .legend-line {
+      display: inline-block;
+      width: 24px;
+      height: 0;
+      border-top: 4px solid currentColor;
+    }
+    .target-line {
+      color: #2563eb;
+    }
+    .actual-good {
+      color: #16a34a;
+    }
+    .actual-review {
+      color: #d97706;
+    }
+    .actual-high {
+      color: #dc2626;
+    }
+    .boundary-line {
+      color: #64748b;
+      border-top-style: dashed;
+    }
+    @media (max-width: 720px) {
+      #tractor-run-map {
+        padding: 10px;
+      }
+      .run-stats {
+        grid-template-columns: 1fr;
+      }
+      .stat-label {
+        min-height: auto;
+      }
+      #run-map {
+        height: 520px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main id="tractor-run-map">
+    <header class="report-header">
+      <h1 id="report-title">Tractor run analysis</h1>
+      <p class="report-subtitle">Target mission compared with the actual Auto-mode path</p>
+    </header>
+
+    <section class="run-stats" aria-label="Run tracking summary">
+      <div class="card">
+        <div class="stat-label">Controller lateral error &le; 0.10 m</div>
+        <div class="stat-value" id="logged-stat"></div>
+        <div class="stat-note">Auto + driving</div>
+      </div>
+      <div class="card">
+        <div class="stat-label">Geometric path error &le; 0.10 m</div>
+        <div class="stat-value" id="geometric-stat"></div>
+        <div class="stat-note">Actual GPS position to mission path</div>
+      </div>
+      <div class="card">
+        <div class="stat-label">Geometric path error, 95th percentile</div>
+        <div class="stat-value" id="p95-stat"></div>
+        <div class="stat-note">Auto + driving</div>
+      </div>
+    </section>
+
+    <section class="controls" aria-label="Map controls">
+      <label for="error-metric">
+        Color actual path by
+        <select id="error-metric">
+          <option value="geometric">Geometric path error</option>
+          <option value="controller">Controller lateral error</option>
+        </select>
+      </label>
+      <label>
+        <input id="show-target" type="checkbox" checked>
+        Target path
+      </label>
+      <label>
+        <input id="show-boundary" type="checkbox" checked>
+        Site boundary
+      </label>
+    </section>
+
+    <div
+      id="run-map"
+      role="img"
+      aria-label="Interactive map comparing the target mission with the actual Auto-mode tractor path"
+    ></div>
+
+    <footer class="map-footer">
+      <div class="map-legend" aria-label="Map legend">
+        <span><i class="legend-line target-line"></i>Target</span>
+        <span><i class="legend-line actual-good"></i>Actual &le; 0.10 m</span>
+        <span><i class="legend-line actual-review"></i>Actual 0.10&ndash;0.25 m</span>
+        <span><i class="legend-line actual-high"></i>Actual &gt; 0.25 m</span>
+        <span><i class="legend-line boundary-line"></i>Boundary</span>
+      </div>
+      <div class="map-note" id="map-note"></div>
+    </footer>
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+  <script>
+  (() => {
+    const DATA = /*__MAP_DATA__*/;
+    const root = document.getElementById("tractor-run-map");
+    const summary = DATA.summary;
+    const metadata = DATA.metadata;
+
+    document.title = `${metadata.site_name} ${metadata.run_id} run map`;
+    root.querySelector("#report-title").textContent =
+      `${metadata.site_name} — ${metadata.run_id}`;
+    root.querySelector("#logged-stat").textContent =
+      `${summary.controller_within_010_pct_time.toFixed(1)}%`;
+    root.querySelector("#geometric-stat").textContent =
+      `${summary.geometric_within_010_pct_time.toFixed(1)}%`;
+    root.querySelector("#p95-stat").textContent =
+      `${summary.geometric_p95_m.toFixed(3)} m`;
+    root.querySelector("#map-note").textContent =
+      `${(summary.duration_s / 60).toFixed(1)} minutes analyzed. ` +
+      `Actual path is downsampled to approximately 5 Hz for display; ` +
+      `statistics use the full 20 Hz log.`;
+
+    const colors = {
+      target: "#2563eb",
+      good: "#16a34a",
+      review: "#d97706",
+      high: "#dc2626",
+      boundary: "#64748b",
+      foreground: "#111827",
+    };
+
+    if (!window.L) {
+      root.querySelector("#run-map").textContent =
+        "Leaflet could not load. Check the internet connection and reopen this file.";
+      return;
+    }
+
+    const map = L.map(root.querySelector("#run-map"), {
+      preferCanvas: true,
+      zoomControl: true,
+    });
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 22,
+      attribution: "&copy; OpenStreetMap contributors",
+    }).addTo(map);
+
+    const targetLayer = L.polyline(DATA.target, {
+      color: colors.target,
+      weight: 3,
+      opacity: 0.9,
+    }).bindTooltip("Target mission path");
+    const boundaryPoints = [...DATA.boundary, DATA.boundary[0]];
+    const boundaryLayer = L.polyline(boundaryPoints, {
+      color: colors.boundary,
+      weight: 2,
+      opacity: 0.9,
+      dashArray: "7 6",
+    }).bindTooltip("Reviewed site boundary");
+    targetLayer.addTo(map);
+    boundaryLayer.addTo(map);
+
+    L.circleMarker(DATA.actual[0].slice(0, 2), {
+      radius: 6,
+      color: colors.foreground,
+      fillColor: colors.good,
+      fillOpacity: 1,
+      weight: 2,
+    }).bindTooltip("Auto path start").addTo(map);
+    L.circleMarker(DATA.actual[DATA.actual.length - 1].slice(0, 2), {
+      radius: 6,
+      color: colors.foreground,
+      fillColor: colors.target,
+      fillOpacity: 1,
+      weight: 2,
+    }).bindTooltip("Mission end").addTo(map);
+
+    let actualGroup = L.layerGroup().addTo(map);
+    const category = (value) => {
+      if (value <= 0.10) return "good";
+      if (value <= 0.25) return "review";
+      return "high";
+    };
+
+    const buildActual = (metric) => {
+      actualGroup.clearLayers();
+      const metricIndex = metric === "geometric" ? 3 : 2;
+      let points = [DATA.actual[0].slice(0, 2)];
+      let currentCategory = category(DATA.actual[0][metricIndex]);
+      let start = DATA.actual[0];
+      let maxError = DATA.actual[0][metricIndex];
+
+      const addGroup = (end) => {
+        const line = L.polyline(points, {
+          color: colors[currentCategory],
+          weight: 4,
+          opacity: 0.92,
+        });
+        const metricLabel =
+          metric === "geometric"
+            ? "Geometric path error"
+            : "Controller lateral error";
+        line.bindPopup(
+          `<strong>${metricLabel}</strong><br>` +
+          `Elapsed: ${start[4].toFixed(1)}&ndash;${end[4].toFixed(1)} s<br>` +
+          `Waypoints: ${start[5]}&ndash;${end[5]}<br>` +
+          `Maximum: ${maxError.toFixed(3)} m`
+        );
+        line.addTo(actualGroup);
+      };
+
+      for (let index = 1; index < DATA.actual.length; index += 1) {
+        const row = DATA.actual[index];
+        const rowCategory = category(row[metricIndex]);
+        points.push(row.slice(0, 2));
+        maxError = Math.max(maxError, row[metricIndex]);
+        if (rowCategory !== currentCategory) {
+          addGroup(row);
+          points = [DATA.actual[index - 1].slice(0, 2), row.slice(0, 2)];
+          currentCategory = rowCategory;
+          start = row;
+          maxError = row[metricIndex];
+        }
+      }
+      addGroup(DATA.actual[DATA.actual.length - 1]);
+    };
+
+    buildActual("geometric");
+    root.querySelector("#error-metric").addEventListener("change", (event) => {
+      buildActual(event.target.value);
+    });
+    root.querySelector("#show-target").addEventListener("change", (event) => {
+      if (event.target.checked) targetLayer.addTo(map);
+      else map.removeLayer(targetLayer);
+    });
+    root.querySelector("#show-boundary").addEventListener("change", (event) => {
+      if (event.target.checked) boundaryLayer.addTo(map);
+      else map.removeLayer(boundaryLayer);
+    });
+
+    const bounds = L.latLngBounds([
+      ...DATA.boundary,
+      ...DATA.actual.map((row) => row.slice(0, 2)),
+    ]);
+    map.fitBounds(bounds.pad(0.08));
+    window.setTimeout(() => map.invalidateSize(), 0);
+  })();
+  </script>
+</body>
+</html>

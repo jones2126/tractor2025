@@ -31,3 +31,12 @@ RTKBase/Bridgeville/current_position.json
 RTKBase/Bridgeville/wifi_rssi_log.csv
 RTKBase/Bridgeville/current_position.json
 RTKBase/setup/skytraq_survey_candidate_*.json
+
+# Field-test analysis working/generated artifacts
+field_testing_analysis/.mplconfig/
+field_testing_analysis/cte-analysis.json
+field_testing_analysis/path-map-data.json
+field_testing_analysis/tractor-path-map.html
+field_testing_analysis/*_run_analysis_*.json
+field_testing_analysis/*_run_map_data_*.json
+field_testing_analysis/*_run_map_*.html

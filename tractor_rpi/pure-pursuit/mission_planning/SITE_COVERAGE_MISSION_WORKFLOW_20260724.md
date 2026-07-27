@@ -41,7 +41,9 @@ corners are additionally rounded inward using the configured turn radius.
 
 ## Files
 
-Run these from `tractor_rpi/pure-pursuit/mission_planning/`:
+Mission-planning tools live in
+`tractor_rpi/pure-pursuit/mission_planning/`. Windows collection and
+post-run analysis tools live in `field_testing_analysis/`.
 
 | File | Purpose |
 |---|---|
@@ -49,8 +51,10 @@ Run these from `tractor_rpi/pure-pursuit/mission_planning/`:
 | `site_coverage_planner_20260724.py` | Compare angles, preview coverage, and build a candidate mission |
 | `validate_site_mission_20260724.py` | Independently audit and plot the five-column mission |
 | `archive_site_mission_20260724.py` | Verify PASS and archive the reviewed deployment/audit package into Git |
-| `collect_site_run_20260724.ps1` | Download completed-run logs and the exact mission package from the tractor RPi |
-| `collect_rtkbase_esp32_20260724.ps1` | Trigger the RTK-base ESP32 download and collect its verified CSV on Windows |
+| `field_testing_analysis/field_test_analysis_menu_20260726.ps1` | Menu for collecting RTK-base data, collecting tractor run data, and generating the final analysis/map |
+| `field_testing_analysis/collect_site_run_20260724.ps1` | Download and remotely verify completed-run logs plus the tractor mission-package snapshot |
+| `field_testing_analysis/collect_rtkbase_esp32_20260724.ps1` | Trigger the RTK-base ESP32 download and collect its verified CSV on Windows |
+| `field_testing_analysis/analyze_run_20260726.py` | Calculate time-weighted CTE results and generate the standalone interactive HTML map |
 | `site_planner_common_20260724.py` | Shared projection, CSV, curvature, and Dubins helpers |
 | `requirements_site_planner_20260724.txt` | Shapely and Matplotlib dependencies |
 
@@ -764,29 +768,28 @@ deck, trees, people, animals, drop-offs, or moving objects are clear.
 
 After the tractor is parked, its engine is off, and both programs have closed
 their logs, note the common timestamp printed in the two filenames. From the
-activated mission-planning PowerShell directory, run:
+repository root on Windows, start the menu:
 
 ```powershell
-.\collect_site_run_20260724.ps1 `
-  -RunId 20260724_172543 `
-  -SiteName 62_Collins_Dr
+.\field_testing_analysis\field_test_analysis_menu_20260726.ps1
 ```
 
-The script defaults to tractor01's ZeroTier address `192.168.193.76` and user
-`al`. Override them when necessary:
+Choose the site by number from the complete mission-package folders under
+`tractor_rpi/pure-pursuit/missions/`, then choose an existing downloaded run
+from the numbered list. Choose `N` and enter the common run timestamp only when
+collecting a run that does not yet have a local run directory. Then choose:
 
-```powershell
-.\collect_site_run_20260724.ps1 `
-  -RunId 20260724_172543 `
-  -SiteName 62_Collins_Dr `
-  -TractorHost 192.168.1.151
-```
+1. Download RTK-base/ESP32 data.
+2. Download the tractor logs and mission package.
+3. Analyze the run and generate/open the HTML map.
 
-It checks SSH connectivity and remote files before downloading:
+Option 2 defaults to tractor01's ZeroTier address `192.168.193.76`. It checks
+SSH connectivity and verifies remote SHA-256 values for:
 
 - `/home/al/repos/field-testing-data/pursuit_log_<run>.csv`;
 - `/home/al/field_logs/field_test_<run>.csv`; and
-- the exact archived mission directory used on the tractor.
+- every file in the site mission directory present on tractor01 at collection
+  time.
 
 The destination is:
 
@@ -794,20 +797,15 @@ The destination is:
 %USERPROFILE%\Documents\field_plans\<site>\runs\<run>\
 ```
 
-It also records CSV data-row counts, `file_hashes.csv`, and
-`collection_summary.json`. Use `-SkipMissionPackage` only when the exact
-mission package has already been preserved with that run.
+Existing files are reused only when their hashes match; mismatches stop without
+overwriting. The collector records CSV row counts, remote/local hashes,
+`file_hashes.csv`, and `collection_summary.json`. Collect immediately after
+the run so the copied mission directory represents the package used in the
+field.
 
-Collect the corresponding ESP32 power/environment log through the RTK base:
-
-```powershell
-.\collect_rtkbase_esp32_20260724.ps1 `
-  -RunId 20260724_172543 `
-  -SiteName 62_Collins_Dr
-```
-
-This laptop-side script uses the RTK base ZeroTier address `192.168.193.88`.
-It remotely runs:
+Option 1 collects the corresponding ESP32 power/environment log through the
+RTK base at ZeroTier address `192.168.193.88`. When a saved base file is not
+specified, it asks for confirmation before remotely running:
 
 ```text
 python3 /home/al/tractor2025/RTKBase/Bridgeville/esp32_downloader_20260623.py download_delete <run-specific-file>
@@ -816,17 +814,44 @@ python3 /home/al/tractor2025/RTKBase/Bridgeville/esp32_downloader_20260623.py do
 The base downloader first saves the CSV under `/home/al/esp32_data/` and only
 then clears/reinitializes the ESP32 source file. The PowerShell script copies
 that exact base file to the matching Windows run directory and requires its
-SHA-256 to match. It retains the base-station copy as a recovery backup. Use
-`-RemoveBaseCopyAfterVerify` only when intentionally removing that backup.
+SHA-256 to match. It retains the base-station copy as a recovery backup by
+default.
 
-If the ESP download was already run manually, collect that file without
-running `download_delete` again:
+Option 3 requires Python 3, NumPy, and pandas. One-time setup:
 
 ```powershell
-.\collect_rtkbase_esp32_20260724.ps1 `
+python -m pip install -r .\field_testing_analysis\requirements_field_testing_analysis_20260726.txt
+```
+
+The analyzer reads the collected logs and mission package, calculates
+time-weighted controller and geometric path error, and writes these files
+directly into the selected run directory:
+
+```text
+<site>_run_analysis_<run>.json
+<site>_run_map_data_<run>.json
+<site>_run_map_<run>.html
+```
+
+The HTML is assembled by Python as a complete UTF-8 document. Node.js and
+manual template-replacement commands are not required.
+
+The underlying tools can still be run directly when advanced host or path
+overrides are needed:
+
+```powershell
+.\field_testing_analysis\collect_site_run_20260724.ps1 `
   -RunId 20260724_172543 `
-  -SiteName 62_Collins_Dr `
-  -ExistingBaseFileName esp32_data_20260724_175633.csv
+  -SiteName 62_Collins_Dr
+
+.\field_testing_analysis\collect_rtkbase_esp32_20260724.ps1 `
+  -RunId 20260724_172543 `
+  -SiteName 62_Collins_Dr
+
+python .\field_testing_analysis\analyze_run_20260726.py `
+  --site-name 62_Collins_Dr `
+  --run-id 20260724_172543 `
+  --open-map
 ```
 
 ## Known limitations and recommended next improvements
