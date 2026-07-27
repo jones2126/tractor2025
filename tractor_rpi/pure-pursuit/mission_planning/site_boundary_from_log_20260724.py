@@ -3,9 +3,10 @@
 
 This is intentionally a two-checkpoint workflow:
 
-1. ``extract`` filters and spatially thins a field logger CSV, or
-   ``import-map`` reads one polygon from GeoJSON, KML, or KMZ.  Either route
-   writes an Excel-editable candidate CSV and a plot.
+1. ``auto-extract`` finds matching start/end pauses and then filters and
+   spatially thins a field logger CSV. ``extract`` does the same work with
+   explicit row limits, while ``import-map`` reads one polygon from GeoJSON,
+   KML, or KMZ.  Every route writes an Excel-editable candidate CSV and a plot.
 2. Review/edit ``include``, ``sequence`` and ``notes`` in that CSV.
 3. ``finalize`` validates the edited polygon, optionally simplifies GPS noise,
    and writes the boundary CSV used by the coverage planner.
@@ -91,6 +92,177 @@ def output_path(
     return Path(explicit) if explicit else Path(source).with_name(
         f"{Path(source).stem}{suffix}"
     )
+
+
+def find_stationary_runs(
+    rows: list[dict[str, str]],
+    *,
+    maximum_speed_mps: float,
+    minimum_pause_seconds: float,
+) -> list[dict[str, float | int]]:
+    """Return contiguous stationary runs using field-log data-row numbering."""
+
+    runs: list[dict[str, float | int]] = []
+    start_index: int | None = None
+
+    def finish_run(end_index: int) -> None:
+        nonlocal start_index
+        if start_index is None or end_index < start_index:
+            start_index = None
+            return
+
+        start_elapsed = optional_float(rows[start_index].get("elapsed_sec"))
+        end_elapsed = optional_float(rows[end_index].get("elapsed_sec"))
+        if start_elapsed is None or end_elapsed is None:
+            start_index = None
+            return
+        duration = end_elapsed - start_elapsed
+        if duration < minimum_pause_seconds:
+            start_index = None
+            return
+
+        positions = [
+            (lat, lon)
+            for row in rows[start_index : end_index + 1]
+            if (lat := optional_float(row.get("lat"))) is not None
+            and (lon := optional_float(row.get("lon"))) is not None
+        ]
+        if not positions:
+            start_index = None
+            return
+
+        runs.append(
+            {
+                "start_row": start_index + 1,
+                "end_row": end_index + 1,
+                "start_elapsed": start_elapsed,
+                "end_elapsed": end_elapsed,
+                "duration": duration,
+                "lat": sum(point[0] for point in positions) / len(positions),
+                "lon": sum(point[1] for point in positions) / len(positions),
+            }
+        )
+        start_index = None
+
+    for index, row in enumerate(rows):
+        speed = optional_float(row.get("speed_mps"))
+        stationary = speed is not None and abs(speed) <= maximum_speed_mps
+        if stationary:
+            if start_index is None:
+                start_index = index
+        elif start_index is not None:
+            finish_run(index - 1)
+
+    if start_index is not None:
+        finish_run(len(rows) - 1)
+    return runs
+
+
+def select_pause_pair(
+    runs: list[dict[str, float | int]],
+    *,
+    target_pause_seconds: float,
+    same_place_radius_m: float,
+    minimum_lap_seconds: float,
+) -> tuple[dict[str, float | int], dict[str, float | int], float]:
+    """Choose two approximately target-length pauses at the same location."""
+
+    choices = []
+    for first_index, first in enumerate(runs):
+        frame = LocalFrame(float(first["lat"]), float(first["lon"]))
+        for second in runs[first_index + 1 :]:
+            lap_seconds = float(second["start_elapsed"]) - float(first["end_elapsed"])
+            if lap_seconds < minimum_lap_seconds:
+                continue
+            separation_m = distance(
+                (0.0, 0.0),
+                frame.to_xy(float(second["lat"]), float(second["lon"])),
+            )
+            if separation_m > same_place_radius_m:
+                continue
+            duration_error = (
+                abs(float(first["duration"]) - target_pause_seconds)
+                + abs(float(second["duration"]) - target_pause_seconds)
+            )
+            choices.append(
+                (
+                    duration_error,
+                    separation_m,
+                    -lap_seconds,
+                    first,
+                    second,
+                )
+            )
+
+    if not choices:
+        raise ValueError(
+            "No matching pause pair was found. Check --pause-seconds, "
+            "--stationary-speed-mps and --same-place-radius-m, or use extract "
+            "with explicit --start-row/--end-row values."
+        )
+
+    _, separation_m, _, first, second = min(
+        choices, key=lambda choice: choice[:3]
+    )
+    return first, second, separation_m
+
+
+def run_auto_extract(args: argparse.Namespace) -> int:
+    rows = read_csv(args.field_log)
+    runs = find_stationary_runs(
+        rows,
+        maximum_speed_mps=args.stationary_speed_mps,
+        minimum_pause_seconds=args.pause_seconds,
+    )
+    if len(runs) < 2:
+        raise ValueError(
+            f"Only {len(runs)} qualifying pause(s) found; at least two are required."
+        )
+
+    print("Qualifying stationary pauses:")
+    for run in runs:
+        print(
+            f"  data rows {int(run['start_row'])}-{int(run['end_row'])} "
+            f"(Excel {int(run['start_row']) + 1}-{int(run['end_row']) + 1}), "
+            f"{float(run['duration']):.1f}s)"
+        )
+
+    first, second, separation_m = select_pause_pair(
+        runs,
+        target_pause_seconds=args.target_pause_seconds,
+        same_place_radius_m=args.same_place_radius_m,
+        minimum_lap_seconds=args.minimum_lap_seconds,
+    )
+
+    def settled_rows(run: dict[str, float | int]) -> list[int]:
+        return [
+            data_row
+            for data_row in range(int(run["start_row"]), int(run["end_row"]) + 1)
+            if (speed := optional_float(rows[data_row - 1].get("speed_mps"))) is not None
+            and abs(speed) <= args.pause_edge_speed_mps
+        ]
+
+    first_settled = settled_rows(first)
+    second_settled = settled_rows(second)
+    if not first_settled or not second_settled:
+        raise ValueError(
+            "A selected pause has no settled samples at or below "
+            "--pause-edge-speed-mps."
+        )
+    # Start at the last fully settled sample before departure and stop at the
+    # first fully settled sample after return. This avoids treating slow
+    # approach/departure samples as part of the intentional dwell.
+    args.start_row = first_settled[-1]
+    args.end_row = second_settled[0]
+    print(
+        "\nSelected pause pair:"
+        f"\n  first pause : data rows {int(first['start_row'])}-{int(first['end_row'])}"
+        f"\n  second pause: data rows {int(second['start_row'])}-{int(second['end_row'])}"
+        f"\n  separation  : {separation_m:.2f} m"
+        f"\n  extract     : --start-row {args.start_row} --end-row {args.end_row}"
+        f"\n  Excel rows  : {args.start_row + 1}-{args.end_row + 1}\n"
+    )
+    return run_extract(args)
 
 
 def parse_logged_points(args: argparse.Namespace):
@@ -658,6 +830,71 @@ def build_parser() -> argparse.ArgumentParser:
     )
     extract.set_defaults(handler=run_extract)
 
+    auto_extract = subparsers.add_parser(
+        "auto-extract",
+        help="find matching start/end pauses, then extract the driven boundary",
+    )
+    auto_extract.add_argument("field_log")
+    auto_extract.add_argument("--output", help="candidate CSV output path")
+    auto_extract.add_argument("--plot", help="checkpoint PNG output path")
+    auto_extract.add_argument(
+        "--fix-quality",
+        default="RTK Fixed",
+        help="exact fix quality to retain; use an empty string for any quality",
+    )
+    auto_extract.add_argument(
+        "--max-hdop",
+        type=float,
+        default=None,
+        help="optional maximum HDOP; rows with blank HDOP are rejected",
+    )
+    auto_extract.add_argument(
+        "--min-spacing-m",
+        type=float,
+        default=0.50,
+        help="minimum distance between candidate points (default 0.50 m)",
+    )
+    auto_extract.add_argument(
+        "--stationary-speed-mps",
+        type=float,
+        default=0.10,
+        help="maximum absolute speed counted as stationary (default 0.10 m/s)",
+    )
+    auto_extract.add_argument(
+        "--pause-edge-speed-mps",
+        type=float,
+        default=0.05,
+        help=(
+            "settled-speed threshold used for the exact extraction edges "
+            "(default 0.05 m/s)"
+        ),
+    )
+    auto_extract.add_argument(
+        "--pause-seconds",
+        type=float,
+        default=8.0,
+        help="minimum detected pause duration (default 8s for an intended ~10s pause)",
+    )
+    auto_extract.add_argument(
+        "--target-pause-seconds",
+        type=float,
+        default=10.0,
+        help="preferred intentional pause duration used to rank pairs (default 10s)",
+    )
+    auto_extract.add_argument(
+        "--same-place-radius-m",
+        type=float,
+        default=1.0,
+        help="maximum distance between start/end pause centroids (default 1.0m)",
+    )
+    auto_extract.add_argument(
+        "--minimum-lap-seconds",
+        type=float,
+        default=30.0,
+        help="minimum driven time between the two pauses (default 30s)",
+    )
+    auto_extract.set_defaults(handler=run_auto_extract)
+
     import_map = subparsers.add_parser(
         "import-map",
         help="import one polygon from GeoJSON, KML, or KMZ",
@@ -718,6 +955,22 @@ def main() -> int:
         parser.error("--min-spacing-m must be positive")
     if getattr(args, "start_row", 1) < 1:
         parser.error("--start-row must be at least 1")
+    if getattr(args, "stationary_speed_mps", 0.0) < 0:
+        parser.error("--stationary-speed-mps cannot be negative")
+    if getattr(args, "pause_edge_speed_mps", 0.0) < 0:
+        parser.error("--pause-edge-speed-mps cannot be negative")
+    if getattr(args, "pause_edge_speed_mps", 0.0) > getattr(
+        args, "stationary_speed_mps", math.inf
+    ):
+        parser.error("--pause-edge-speed-mps cannot exceed --stationary-speed-mps")
+    if getattr(args, "pause_seconds", 1.0) <= 0:
+        parser.error("--pause-seconds must be positive")
+    if getattr(args, "target_pause_seconds", 1.0) <= 0:
+        parser.error("--target-pause-seconds must be positive")
+    if getattr(args, "same_place_radius_m", 1.0) <= 0:
+        parser.error("--same-place-radius-m must be positive")
+    if getattr(args, "minimum_lap_seconds", 0.0) < 0:
+        parser.error("--minimum-lap-seconds cannot be negative")
     if getattr(args, "simplify_m", 0.0) < 0:
         parser.error("--simplify-m cannot be negative")
     if getattr(args, "safety_margin_m", 0.0) < 0:

@@ -47,7 +47,7 @@ post-run analysis tools live in `field_testing_analysis/`.
 
 | File | Purpose |
 |---|---|
-| `site_boundary_from_log_20260724.py` | Extract a logged boundary or import a GeoJSON/KML/KMZ polygon, finalize it, and fit optional circular obstacles |
+| `site_boundary_from_log_20260724.py` | Automatically trim/extract a logged boundary (or use explicit rows), import a GeoJSON/KML/KMZ polygon, finalize it, and fit optional circular obstacles |
 | `site_coverage_planner_20260724.py` | Compare angles, preview coverage, and build a candidate mission |
 | `validate_site_mission_20260724.py` | Independently audit and plot the five-column mission |
 | `archive_site_mission_20260724.py` | Verify PASS and archive the reviewed deployment/audit package into Git |
@@ -158,23 +158,20 @@ The current field logger has GPS-only operation, so the Teensy does not need to
 be connected for a walking survey or other controlled capture. Its dedicated
 GPS logging feed is UDP 6009.
 
+Run the logger on the tractor RPi:
+
 ```bash
-cd ~/repos/tractor2025/tractor_rpi
+cd ~/tractor2025/tractor_rpi
 python3 field_test_logger_20260717.py \
   --output ~/field_plans/site_01/00_boundary_log.csv
-```
-
-The equivalent Windows 10 command is:
-
-```powershell
-Set-Location "$repo\tractor_rpi"
-python field_test_logger_20260717.py `
-  --output "$site\00_boundary_log.csv"
 ```
 
 Recommended capture practice:
 
 - Wait for `RTK Fixed` before starting the useful lap.
+- At the intended start/end point, remain stopped for approximately 10 seconds.
+  Drive the perimeter once, return to the same point, and stop there for
+  approximately 10 seconds again. `auto-extract` uses these matching pauses.
 - Drive or walk one ordered, closed perimeter without doubling back.
 - A second lap is useful evidence, but select one lap for the polygon rather
   than mixing both laps into one sequence.
@@ -183,10 +180,43 @@ Recommended capture practice:
   clearance.
 - Stop the logger with `Ctrl+C` so the CSV is closed cleanly.
 
-If the CSV contains setup time, multiple laps, or the drive back to the trailer,
-open it in Excel first and note the useful data-row range. `--start-row` and
-`--end-row` count data rows after the header. The candidate output also records
-the actual source CSV row.
+#### Copy the completed tractor log to Windows 10
+
+The logger runs on the tractor, so its CSV is not automatically present on the
+Windows laptop. Open Windows PowerShell, define the local working folders, and
+copy the file over ZeroTier:
+
+```powershell
+$repo = 'C:\Repos\tractor2025'
+$planner = Join-Path $repo 'tractor_rpi\pure-pursuit\mission_planning'
+$site = Join-Path $env:USERPROFILE 'Documents\field_plans\site_01'
+New-Item -ItemType Directory -Force $site
+scp al@192.168.193.76:/home/al/field_plans/site_01/00_boundary_log.csv "$site\00_boundary_log.csv"
+```
+
+Use the actual site directory name on both machines. If ZeroTier is unavailable
+but the tractor is on the same LAN, substitute its current LAN address for
+`192.168.193.76`.
+
+Verify that the Windows copy has the same line count as the tractor copy:
+
+```powershell
+(Get-Content "$site\00_boundary_log.csv" | Measure-Object -Line).Lines
+ssh al@192.168.193.76 "wc -l /home/al/field_plans/site_01/00_boundary_log.csv"
+```
+
+Reactivate the Windows planner environment in every new PowerShell window:
+
+```powershell
+Set-Location $planner
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\.venv\Scripts\Activate.ps1
+```
+
+If automatic pause matching is unavailable or inappropriate, `extract` still
+accepts explicit `--start-row` and `--end-row` values. These are CSV data-row
+numbers after the header; the corresponding Excel row is one greater. The
+candidate output records the original Excel/CSV source row.
 
 ### Optional alternative to 1A and 1B: draw one polygon on a map
 
@@ -263,22 +293,60 @@ matter to a mower. Treat a map polygon as a draft, use a conservative
 workflow is to draw the coarse polygon on the laptop, then replace or adjust
 critical vertices with RTK-logged evidence.
 
-### 1B. Extract a candidate boundary
+### 1B. Automatically trim the lap and extract a candidate boundary
+
+The preferred route for a manually driven perimeter is `auto-extract`. It:
+
+1. finds contiguous pauses below `0.10 m/s` lasting at least 8 seconds;
+2. favors pause pairs close to the intended 10-second duration;
+3. requires both pause centroids to be within 1.0 m;
+4. uses the last fully settled sample (`≤0.05 m/s`) before departure and the
+   first fully settled sample after return as the extraction limits; and
+5. immediately feeds those limits into the normal RTK filtering and
+   spatial-thinning extractor.
+
+Windows 10 PowerShell (one line to avoid accidental trailing backticks):
+
+```powershell
+python .\site_boundary_from_log_20260724.py auto-extract "$site\00_boundary_log.csv" --output "$site\01_boundary_candidates.csv" --plot "$site\01_boundary_candidates.png" --stationary-speed-mps 0.10 --pause-edge-speed-mps 0.05 --pause-seconds 8 --target-pause-seconds 10 --same-place-radius-m 1.0 --minimum-lap-seconds 30 --min-spacing-m 0.50 --fix-quality "RTK Fixed"
+```
+
+The command prints every qualifying pause, the selected pair, extractor
+data-row limits, and corresponding Excel rows. Always inspect the generated PNG
+before accepting the automatic choice.
+
+RPi5NAS:
 
 ```bash
 cd ~/repos/tractor2025/tractor_rpi/pure-pursuit/mission_planning
 source .venv/bin/activate
 
-python3 site_boundary_from_log_20260724.py extract \
+python3 site_boundary_from_log_20260724.py auto-extract \
   ~/field_plans/site_01/00_boundary_log.csv \
   --output ~/field_plans/site_01/01_boundary_candidates.csv \
   --plot ~/field_plans/site_01/01_boundary_candidates.png \
-  --start-row 1 \
+  --stationary-speed-mps 0.10 \
+  --pause-edge-speed-mps 0.05 \
+  --pause-seconds 8 \
+  --target-pause-seconds 10 \
+  --same-place-radius-m 1.0 \
+  --minimum-lap-seconds 30 \
   --min-spacing-m 0.50 \
   --fix-quality "RTK Fixed"
 ```
 
-Optional filters:
+Manual fallback for a known row range:
+
+```powershell
+$startRow = 766
+$endRow = 2264
+python .\site_boundary_from_log_20260724.py extract "$site\00_boundary_log.csv" --output "$site\01_boundary_candidates.csv" --plot "$site\01_boundary_candidates.png" --start-row $startRow --end-row $endRow --min-spacing-m 0.50 --fix-quality "RTK Fixed"
+```
+
+The values above are the worked Collins Drive example; replace them with the
+detected or reviewed data-row limits for another capture.
+
+Optional extraction filters:
 
 - `--end-row N` limits the end of the chosen lap.
 - `--max-hdop 1.0` rejects blank or worse HDOP values.
@@ -306,12 +374,7 @@ In the CSV:
 Windows 10 PowerShell:
 
 ```powershell
-python site_boundary_from_log_20260724.py finalize `
-  "$site\01_boundary_candidates.csv" `
-  --output "$site\01_boundary_final.csv" `
-  --plot "$site\01_boundary_final.png" `
-  --simplify-m 0.10
-
+python .\site_boundary_from_log_20260724.py finalize "$site\01_boundary_candidates.csv" --output "$site\01_boundary_final.csv" --plot "$site\01_boundary_final.png" --simplify-m 0.10
 Invoke-Item "$site\01_boundary_final.png"
 Invoke-Item "$site\01_boundary_final.csv"
 ```
