@@ -39,7 +39,7 @@ if [ ! -d "$SCRIPT_DIR" ]; then
 fi
 
 # Verify Python scripts exist
-SCRIPTS=("rtcm_server_20260617.py" "teensy_serial_bridge_20260310.py" "led_status_controller.py")
+SCRIPTS=("rtcm_server_20260617.py" "teensy_serial_bridge_20260728.py" "led_status_controller.py")
 for script in "${SCRIPTS[@]}"; do
     if [ ! -f "$SCRIPT_DIR/$script" ]; then
         echo -e "${RED}Error: Script not found: $SCRIPT_DIR/$script${NC}"
@@ -104,7 +104,7 @@ Wants=rtcm-server.service
 Type=simple
 User=$USER
 WorkingDirectory=$SCRIPT_DIR
-ExecStart=$PYTHON_BIN $SCRIPT_DIR/teensy_serial_bridge_20260310.py
+ExecStart=$PYTHON_BIN $SCRIPT_DIR/teensy_serial_bridge_20260728.py
 Restart=always
 RestartSec=5
 

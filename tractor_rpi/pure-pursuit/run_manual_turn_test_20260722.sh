@@ -33,7 +33,7 @@ TRACTOR_RPI_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 CONTROLLER="pure_pursuit_controller_20260714.py"
 MISSION="mission_manual_turn_test_20260722.txt"
-LOGGER="field_test_logger_20260717.py"
+LOGGER="field_test_logger_20260728.py"
 
 # ---- file existence checks ------------------------------------------------
 if [[ ! -f "${SCRIPT_DIR}/${CONTROLLER}" ]]; then

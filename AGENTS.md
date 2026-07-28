@@ -49,7 +49,7 @@ Full documentation: `obsidian_vault/00-project-overview.md`
 ### Current Firmware
 | Board | File |
 |-------|------|
-| Tractor Teensy 4.1 | `tractor_teensy/src/teensy_main_20260518.cpp` |
+| Tractor Teensy 4.1 | `tractor_teensy/src/teensy_main_20260728.cpp` |
 | Handheld RC (Teensy 3.2) | `radiocontrol_nrf24radio/src/Rccntrl_rf24_20260517.cpp` |
 
 ### Active Development Focus (as of 2026-05-20)
@@ -81,7 +81,7 @@ tractor2025/
 │   ├── 05-future-ideas/         ← deferred work (IBT-2 Gen2, etc.)
 │   └── attachments/             ← all images
 ├── tractor_teensy/              ← Teensy 4.1 firmware (PlatformIO)
-│   └── src/teensy_main_20260518.cpp
+│   └── src/teensy_main_20260728.cpp
 ├── radiocontrol_nrf24radio/     ← Handheld RC unit firmware (Teensy 3.2)
 ├── tractor_rpi/                 ← RPi 5 scripts and testing utilities
 │   ├── f9p/                     ← dual F9P RTK scripts

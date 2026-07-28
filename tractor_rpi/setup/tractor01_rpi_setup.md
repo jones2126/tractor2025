@@ -172,7 +172,7 @@ Three services run on boot to operate the robot:
 | Service | Script | Purpose |
 |---------|--------|---------|
 | `rtcm-server` | `rtcm_server_20260727.py` | Receives RTCM GPS correction data and publishes independent feeds for the Teensy bridge (6002), field logger (6009), and Pure Pursuit (6010) |
-| `teensy-bridge` | `teensy_serial_bridge_20260310.py` | Serial bridge between RPi and Teensy 4.1 (starts after rtcm-server) |
+| `teensy-bridge` | `teensy_serial_bridge_20260728.py` | Serial bridge between RPi and Teensy 4.1 (starts after rtcm-server) |
 | `led-controller` | `led_status_controller.py` | LED tower status display (starts after both above) |
 
 ### Install all three services

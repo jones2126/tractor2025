@@ -99,7 +99,7 @@ Local clone: `~/tractor2025/`
 See `firmware_versions.md` for flash history and commit tracking.
 
 ### Tractor Teensy 4.1 Firmware
-**Current:** `tractor_teensy/src/teensy_main_20260609.cpp`
+**Current:** `tractor_teensy/src/teensy_main_20260728.cpp`
 Steering PID, transmission (JRK G2), NRF24 radio receive, e-stop relay, serial bridge to RPi.
 Archive of older versions: `tractor_teensy/src/archive/`
 
@@ -108,7 +108,7 @@ Archive of older versions: `tractor_teensy/src/archive/`
 NRF24 transmit at 10 Hz, ACK receive, 4× PL9823 LEDs, mode switch, pots.
 
 ### Teensy Serial Bridge (RPi)
-**Current:** `tractor_rpi/teensy_serial_bridge_20260310.py`
+**Current:** `tractor_rpi/teensy_serial_bridge_20260728.py`
 Bidirectional serial↔UDP bridge, GPS status forwarding to Teensy, cmd_vel relay.
 
 ### RTCM Server / GPS Pipeline (Tractor RPi)

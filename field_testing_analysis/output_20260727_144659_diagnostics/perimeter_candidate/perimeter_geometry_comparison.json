@@ -1,0 +1,40 @@
+{
+  "candidate_route_contained_in_finalized_boundary": true,
+  "candidate_route_outside_boundary_length_m": 0.0,
+  "outer_pass_to_finalized_boundary": {
+    "minimum_m": 4.1504537889149064e-16,
+    "mean_m": 0.0026241933748145352,
+    "maximum_m": 0.10200763084597593,
+    "within_0.05m_pct": 99.26829268292683,
+    "within_0.10m_pct": 99.7560975609756
+  },
+  "original_outer_pass_to_finalized_boundary": {
+    "minimum_m": 1.2433523233581047,
+    "mean_m": 1.254745786836549,
+    "maximum_m": 1.782889857254358,
+    "within_0.05m_pct": 0.0,
+    "within_0.10m_pct": 0.0
+  },
+  "second_pass_to_finalized_boundary": {
+    "minimum_m": 2.2339999999999973,
+    "mean_m": 2.246882752852917,
+    "maximum_m": 2.7736470949641387,
+    "within_0.05m_pct": 0.0,
+    "within_0.10m_pct": 0.0
+  },
+  "candidate_vs_original_second_pass_hausdorff_m": 0.0,
+  "candidate_outer_vs_boundary_hausdorff_m": 0.1359004003139768,
+  "headland_speeds_mps": {
+    "1": [
+      0.5
+    ],
+    "2": [
+      0.75
+    ]
+  },
+  "minimum_local_radius_by_headland_pass_m": {
+    "1": 0.473,
+    "2": 1.736
+  },
+  "waypoints": 4136
+}

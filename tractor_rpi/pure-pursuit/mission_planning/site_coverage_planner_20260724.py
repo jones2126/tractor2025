@@ -204,15 +204,31 @@ def make_headland_paths(
     passes: int,
     spacing_m: float,
     turn_radius_m: float,
+    outer_boundary=None,
 ):
+    """Build perimeter paths.
+
+    ``outer_boundary`` is an opt-in centerline for pass 1.  It is intended for
+    a finalized, manually driven boundary that already includes the required
+    property/homeowner safety buffer.  Later passes retain the established
+    drive-area inset geometry.
+    """
     paths: list[dict[str, object]] = []
     for pass_index in range(passes):
-        inset = (pass_index + 0.5) * spacing_m
-        geometry = drive_area.buffer(-inset, join_style="round")
-        # An inward offset of a rectangular polygon still has mathematically
-        # sharp convex corners. Morphological opening rounds those corners
-        # inward with the configured tractor radius and remains inside the
-        # unsmoothed center-path polygon.
+        follows_boundary = pass_index == 0 and outer_boundary is not None
+        if follows_boundary:
+            # The finalized boundary CSV is a sparse sample of a path that was
+            # physically driven. Follow its edges with no uniform inset, but
+            # round sampled polygon vertices inward to the tractor's configured
+            # radius instead of commanding artificial chord-to-chord corners.
+            geometry = outer_boundary
+        else:
+            inset = (pass_index + 0.5) * spacing_m
+            geometry = drive_area.buffer(-inset, join_style="round")
+        # An offset or sparsely sampled polygon can have mathematically sharp
+        # convex corners. Morphological opening rounds those corners inward with
+        # the configured tractor radius and remains inside the unsmoothed
+        # center-path polygon.
         eroded = geometry.buffer(-turn_radius_m, join_style="round")
         if eroded.is_empty:
             raise ValueError(
@@ -226,6 +242,7 @@ def make_headland_paths(
                     "kind": "headland",
                     "label": f"headland_{pass_index + 1}_outer_{component_index}",
                     "pass": pass_index + 1,
+                    "follows_boundary": follows_boundary,
                     "points": list(polygon.exterior.coords),
                 }
             )
@@ -238,6 +255,7 @@ def make_headland_paths(
                             f"{component_index}_{hole_index}"
                         ),
                         "pass": pass_index + 1,
+                        "follows_boundary": follows_boundary,
                         "points": list(interior.coords),
                     }
                 )
@@ -590,6 +608,7 @@ def settings_from_args(
         "angle_degrees": args.angle_degrees % 180.0,
         "lane_spacing_m": args.lane_spacing_m,
         "boundary_clearance_m": args.boundary_clearance_m,
+        "outer_headland_follows_boundary": args.outer_headland_follows_boundary,
         "headland_passes": args.headland_passes,
         "minimum_segment_m": args.minimum_segment_m,
         "stripe_end_trim_m": args.stripe_end_trim_m,
@@ -633,6 +652,9 @@ def run_preview(args: argparse.Namespace) -> int:
         args.headland_passes,
         args.lane_spacing_m,
         args.turn_radius_m,
+        outer_boundary=(
+            boundary if args.outer_headland_follows_boundary else None
+        ),
     )
     stripes = make_stripes(
         stripe_area,
@@ -785,6 +807,27 @@ def settings_geometry(settings: dict[str, object]):
         float(settings["lane_spacing_m"]),
         frame=frame,
     )
+
+
+def mission_containment_area(
+    boundary,
+    drive_area,
+    obstacle_shapes,
+    outer_headland_follows_boundary: bool,
+):
+    """Return the area allowed for the complete route.
+
+    Normal plans retain the clearance-inset drive area.  When pass 1 is
+    explicitly the already-buffered finalized boundary, the finalized boundary
+    becomes the route containment limit while obstacle exclusions remain in
+    force.
+    """
+    if not outer_headland_follows_boundary:
+        return drive_area
+    area = boundary
+    for _obstacle, _center, shape in obstacle_shapes:
+        area = area.difference(shape)
+    return area
 
 
 def read_reviewed_stripes(
@@ -1147,6 +1190,15 @@ def run_build(args: argparse.Namespace) -> int:
     frame, boundary, drive_area, stripe_area, obstacle_shapes = settings_geometry(
         settings
     )
+    outer_headland_follows_boundary = bool(
+        settings.get("outer_headland_follows_boundary", False)
+    )
+    containment_area = mission_containment_area(
+        boundary,
+        drive_area,
+        obstacle_shapes,
+        outer_headland_follows_boundary,
+    )
     segments_path = args.segments
     if not segments_path:
         segments_path = str(settings["outputs"]["segments_csv"])
@@ -1156,6 +1208,9 @@ def run_build(args: argparse.Namespace) -> int:
         int(settings["headland_passes"]),
         float(settings["lane_spacing_m"]),
         float(settings["turn_radius_m"]),
+        outer_boundary=(
+            boundary if outer_headland_follows_boundary else None
+        ),
     )
 
     turn_radius_m = float(settings["turn_radius_m"])
@@ -1177,7 +1232,7 @@ def run_build(args: argparse.Namespace) -> int:
             anchor,
             path_start_pose(stripes[0]["points"]),
             clockwise,
-            drive_area,
+            containment_area,
             turn_radius_m,
             spacing_m,
         )
@@ -1294,9 +1349,9 @@ def run_build(args: argparse.Namespace) -> int:
     from shapely.geometry import LineString
 
     route_line = LineString(route_xy)
-    if not drive_area.buffer(0.03).covers(route_line):
+    if not containment_area.buffer(0.03).covers(route_line):
         raise ValueError(
-            "Final route leaves the safe drive area. No mission was written; "
+            "Final route leaves the configured containment area. No mission was written; "
             "check manual segment edits and clearances."
         )
 
@@ -1391,7 +1446,13 @@ def run_build(args: argparse.Namespace) -> int:
             ),
             "configured_turn_radius_m": turn_radius_m,
             "curvature_warning": curvature_warning,
-            "contained_in_safe_drive_area": True,
+            "contained_in_safe_drive_area": (
+                not outer_headland_follows_boundary
+            ),
+            "contained_in_finalized_boundary": True,
+            "outer_headland_follows_boundary": (
+                outer_headland_follows_boundary
+            ),
             "controller_format": "lat lon yaw_rad lookahead_m speed_mps",
         },
     )
@@ -1596,6 +1657,15 @@ def build_parser() -> argparse.ArgumentParser:
         help=(
             "optional speed for headland pass 1; later passes use "
             "--headland-speed-mps"
+        ),
+    )
+    preview.add_argument(
+        "--outer-headland-follows-boundary",
+        action="store_true",
+        help=(
+            "use the finalized logged boundary itself as headland pass 1; "
+            "only use when that boundary already includes the required "
+            "property/homeowner safety buffer"
         ),
     )
     preview.set_defaults(handler=run_preview)

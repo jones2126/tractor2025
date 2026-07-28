@@ -1,6 +1,13 @@
 /*********************************************************************
-  teensy_main_20260714.cpp
+  teensy_main_20260728.cpp
   --------------------------------------------------------------
+  * CHANGED 20260728: Steering telemetry now publishes once per 10 Hz
+  *   steering-control cycle instead of one cached snapshot every 2 seconds.
+  *   Existing STEER keys remain backward compatible. New fields expose PID
+  *   terms, the integral accumulator, applied left/right PWM, deadband,
+  *   minimum-PWM clamping, output saturation, command age, and sequence.
+  *   This is telemetry-only: control timing and output behavior are unchanged.
+  * --------------------------------------------------------------
   * Date: July 14, 2026 (rev 2)
   * CHANGED: Mode numbering renumbered to match physical switch intuition.
   *   DOWN  = Auto  = mode 0  (was mode 2)
@@ -134,6 +141,14 @@ float steer_error_sum = 0;
 float steer_last_error = 0;
 unsigned long steer_last_time = 0;
 
+// Most recent low-level PID details for telemetry only.
+float steer_pid_dt_s = 0.0f;
+float steer_pid_derivative = 0.0f;
+float steer_pid_p_term = 0.0f;
+float steer_pid_i_term = 0.0f;
+float steer_pid_d_term = 0.0f;
+float steer_pid_output = 0.0f;
+
 // Transmission vars
 uint16_t currentTransmissionOutput = transmissionNeutralPos;
 int bucket = 5;
@@ -221,8 +236,6 @@ const unsigned long controlTransmissionInterval = 100;   // 10 Hz
 
 unsigned long lastSteeringControlRun = 0;
 const unsigned long controlSteeringInterval = 100;       // 10 Hz (change to 50 for 20 Hz)
-unsigned long lastSteeringPrint = 0;
-const unsigned long steeringPrintInterval = 2000;
 
 // -------------------------------------------------------------------
 // cmd_vel
@@ -636,9 +649,18 @@ float calculateSteerPID() {
     float d_error = (steer_error - steer_last_error) / dt;
     steer_last_error = steer_error;
 
-    return steer_kp * steer_error +
-           steer_ki * steer_error_sum +
-           steer_kd * d_error;
+    // Retain each component for telemetry. The returned output is
+    // mathematically identical to the previous implementation.
+    steer_pid_dt_s = dt;
+    steer_pid_derivative = d_error;
+    steer_pid_p_term = steer_kp * steer_error;
+    steer_pid_i_term = steer_ki * steer_error_sum;
+    steer_pid_d_term = steer_kd * d_error;
+    steer_pid_output = steer_pid_p_term +
+                       steer_pid_i_term +
+                       steer_pid_d_term;
+
+    return steer_pid_output;
 }
 
 // -------------------------------------------------------------------
@@ -687,6 +709,75 @@ float mapNormalizedSteer(float n) {
     }
 }
 
+// Publish one machine-readable steering record per control iteration. This
+// intentionally bypasses safeTextLog(), whose shared 2-second limiter is for
+// human-readable messages and previously hid the steering dynamics.
+//
+// Existing keys retained for bridge compatibility:
+//   m mode, sp setpoint, c current, e error, d direction, p PWM magnitude,
+//   z normalized Pure Pursuit command.
+//
+// New keys:
+//   q sequence, st state, lp/rp applied channel PWM, pa PID active,
+//   db deadband active, mc minimum-PWM clamp, sat output saturation,
+//   pdt PID interval, es integral sum, de error derivative,
+//   pt/it/dt PID terms, out signed PID output, ca cmd_vel age in ms.
+void publishSteeringTelemetry(
+    const char* state,
+    const char* dir,
+    int pwmValue,
+    int leftPwm,
+    int rightPwm,
+    bool pidActive,
+    bool deadbandActive,
+    bool minClampApplied,
+    bool pwmSaturated
+) {
+    static unsigned long sequence = 0;
+    sequence++;
+
+    const float reportedError = steer_setpoint - steer_current;
+    const long cmdAgeMs = cmdVel.timestamp > 0
+        ? (long)(currentMillis - cmdVel.timestamp)
+        : -1L;
+
+    char buf[256];
+    snprintf(
+        buf,
+        sizeof(buf),
+        "1,%lu,STEER,q=%lu,m=%d,st=%s,sp=%.0f,c=%.0f,e=%.0f,"
+        "d=%s,p=%d,lp=%d,rp=%d,z=%.3f,pa=%d,db=%d,mc=%d,sat=%d,"
+        "pdt=%.3f,es=%.1f,de=%.1f,pt=%.1f,it=%.1f,dt=%.1f,"
+        "out=%.1f,ca=%ld",
+        currentMillis,
+        sequence,
+        radioStats.signalGood ? radioData.control_mode : 9,
+        state,
+        steer_setpoint,
+        steer_current,
+        reportedError,
+        dir,
+        pwmValue,
+        leftPwm,
+        rightPwm,
+        cmdVel.angular_z,
+        pidActive ? 1 : 0,
+        deadbandActive ? 1 : 0,
+        minClampApplied ? 1 : 0,
+        pwmSaturated ? 1 : 0,
+        pidActive ? steer_pid_dt_s : 0.0f,
+        steer_error_sum,
+        pidActive ? steer_pid_derivative : 0.0f,
+        pidActive ? steer_pid_p_term : 0.0f,
+        pidActive ? steer_pid_i_term : 0.0f,
+        pidActive ? steer_pid_d_term : 0.0f,
+        pidActive ? steer_pid_output : 0.0f,
+        cmdAgeMs
+    );
+
+    Serial.println(buf);
+}
+
 void controlSteering() {
     if (currentMillis - lastSteeringControlRun < controlSteeringInterval) return;
 
@@ -696,20 +787,24 @@ void controlSteering() {
     if (!radioStats.signalGood) {
         analogWrite(RPWM_Output, 0);
         analogWrite(LPWM_Output, 0);
-        if (currentMillis - lastSteeringPrint >= steeringPrintInterval) {
-            char buf[48];
-            snprintf(buf, sizeof(buf), "1,%lu,STEER,st=NO_SIG,pot=%.0f",
-                     currentMillis, steer_current);
-            safeTextLog(buf);
-            lastSteeringPrint = currentMillis;
-        }
+        publishSteeringTelemetry(
+            "NO_SIG", "NS", 0, 0, 0,
+            false, false, false, false
+        );
         lastSteeringControlRun = currentMillis;
         //sendSteeringBinary(0);
         return;
     }
 
     int pwmValue = 0;
+    int leftPwm = 0;
+    int rightPwm = 0;
     const char* dir = "N";
+    const char* state = "OK";
+    bool pidActive = false;
+    bool deadbandActive = false;
+    bool minClampApplied = false;
+    bool pwmSaturated = false;
 
     switch (radioData.control_mode) {
         case 0:  // Auto (cmd_vel) -- DOWN position on RC switch
@@ -719,23 +814,31 @@ void controlSteering() {
                 // (Was: raw pot/PWM value passed straight into the setpoint.)
                 steer_setpoint = mapNormalizedSteer(cmdVel.angular_z);
                 float out = calculateSteerPID();
+                pidActive = true;
                 if (abs(steer_error) <= STEER_DEADBAND) {
                     pwmValue = 0;
+                    deadbandActive = true;
                     dir = "AN";
                     analogWrite(RPWM_Output, 0);
                     analogWrite(LPWM_Output, 0);
                 } else {
+                    pwmSaturated = out > 255.0f || out < -255.0f;
                     pwmValue = constrain(abs((int)out), 0, 255);
-                    if (pwmValue > 0 && pwmValue < STEER_MIN_PWM) pwmValue = STEER_MIN_PWM;
+                    if (pwmValue > 0 && pwmValue < STEER_MIN_PWM) {
+                        pwmValue = STEER_MIN_PWM;
+                        minClampApplied = true;
+                    }
                     if (out > 0) {
                         // Positive error → steer LEFT → drive LPWM
                         analogWrite(RPWM_Output, 0);
                         analogWrite(LPWM_Output, pwmValue);
+                        leftPwm = pwmValue;
                         dir = "AL";
                     } else {
                         // Negative error → steer RIGHT → drive RPWM
                         analogWrite(LPWM_Output, 0);
                         analogWrite(RPWM_Output, pwmValue);
+                        rightPwm = pwmValue;
                         dir = "AR";
                     }
                 }
@@ -744,6 +847,7 @@ void controlSteering() {
                 analogWrite(RPWM_Output, 0);
                 analogWrite(LPWM_Output, 0);
                 dir = "AH";
+                state = "NO_CMD";
             }
             break;
 
@@ -752,23 +856,31 @@ void controlSteering() {
 
             {
                 float out = calculateSteerPID();
+                pidActive = true;
                 if (abs(steer_error) <= STEER_DEADBAND) {
                     pwmValue = 0;
+                    deadbandActive = true;
                     dir = "N";
                     analogWrite(RPWM_Output, 0);
                     analogWrite(LPWM_Output, 0);
                 } else {
+                    pwmSaturated = out > 255.0f || out < -255.0f;
                     pwmValue = constrain(abs((int)out), 0, 255);
-                    if (pwmValue > 0 && pwmValue < STEER_MIN_PWM) pwmValue = STEER_MIN_PWM;
+                    if (pwmValue > 0 && pwmValue < STEER_MIN_PWM) {
+                        pwmValue = STEER_MIN_PWM;
+                        minClampApplied = true;
+                    }
                     if (out > 0) {
                         // Positive error → pot needs to increase → steer LEFT → drive LPWM
                         analogWrite(RPWM_Output, 0);
                         analogWrite(LPWM_Output, pwmValue);
+                        leftPwm = pwmValue;
                         dir = "L";
                     } else {
                         // Negative error → pot needs to decrease → steer RIGHT → drive RPWM
                         analogWrite(LPWM_Output, 0);
                         analogWrite(RPWM_Output, pwmValue);
+                        rightPwm = pwmValue;
                         dir = "R";
                     }
                 }
@@ -780,34 +892,21 @@ void controlSteering() {
             analogWrite(LPWM_Output, 0);
             steer_setpoint = steer_current;
             dir = "P";
+            state = "PAUSE";
             break;
 
         default:
             analogWrite(RPWM_Output, 0);
             analogWrite(LPWM_Output, 0);
             dir = "E";
+            state = "MODE_ERR";
             break;
     }
 
-    // ---- Human readable status (rate limited) ----
-    if (currentMillis - lastSteeringPrint >= steeringPrintInterval) {
-        char buf[96];
-        if (radioData.control_mode == 0) {  // CHANGED: 2->0 (Auto is now mode 0)
-            snprintf(buf, sizeof(buf),
-                     "1,%lu,STEER,m=%d,sp=%.0f,c=%.0f,e=%.0f,d=%s,p=%d,z=%.2f",
-                     currentMillis, radioData.control_mode,
-                     steer_setpoint, steer_current, steer_error,
-                     dir, pwmValue, cmdVel.angular_z);
-        } else {
-            snprintf(buf, sizeof(buf),
-                     "1,%lu,STEER,m=%d,sp=%.0f,c=%.0f,e=%.0f,d=%s,p=%d",
-                     currentMillis, radioData.control_mode,
-                     steer_setpoint, steer_current, steer_error,
-                     dir, pwmValue);
-        }
-        safeTextLog(buf);
-        lastSteeringPrint = currentMillis;
-    }
+    publishSteeringTelemetry(
+        state, dir, pwmValue, leftPwm, rightPwm,
+        pidActive, deadbandActive, minClampApplied, pwmSaturated
+    );
 
     lastSteeringControlRun = currentMillis;
     //sendSteeringBinary(pwmValue);          // <<< BINARY PACKET

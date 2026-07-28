@@ -2,7 +2,7 @@
 
 This workflow replaces `Site_01_path_planning_tool_v4.ipynb` for the current
 non-ROS tractor stack. It starts with decimal-degree latitude/longitude recorded
-by `field_test_logger_20260717.py` and ends with the exact five-column mission
+by `field_test_logger_20260728.py` and ends with the exact five-column mission
 format read by `pure_pursuit_controller_20260714.py`:
 
 ```text
@@ -162,7 +162,7 @@ Run the logger on the tractor RPi:
 
 ```bash
 cd ~/tractor2025/tractor_rpi
-python3 field_test_logger_20260717.py \
+python3 field_test_logger_20260728.py \
   --output ~/field_plans/site_01/00_boundary_log.csv
 ```
 
@@ -557,6 +557,7 @@ Outputs:
 | `lane-spacing-m` | Center-to-center cut spacing. The selected 39-inch spacing is `0.9906 m`, giving about 3 inches of nominal overlap with the 42-inch deck. Verify actual cut width and GPS tracking. |
 | `boundary-clearance-m` | Distance from the logged perimeter to the tractor reference point. Set it from deck/body overhang, survey meaning, GPS error, and desired safety margin. |
 | `headland-passes` | Perimeter coverage passes before interior stripes. This creates working room but does not by itself guarantee a feasible U-turn. |
+| `outer-headland-follows-boundary` | Opt-in only when the finalized, manually driven boundary already includes the required property/homeowner safety buffer. Pass 1 follows that boundary with tractor-radius corner rounding and no uniform inset. Later perimeter passes retain their normal inset geometry. |
 | `stripe-end-trim-m` | Distance removed from both ends of every clipped stripe to leave turning room. This replaces the notebook’s separate “shorten stripes” script and is visible in the editable CSV/plot. |
 | `turn-radius-m` | Common minimum planning radius for left and right turns. Manual circle tests measured approximately 1.05 m full-left and 1.63 m full-right. This site uses 1.90 m: 0.27 m (about 17%) gentler than the weaker measured right turn. Do not plan at the measured limit without repeatability tests. |
 | `stripe-turn-policy` | `keyhole` constrains adjacent-row transitions to compact three-arc agricultural omega turns. `shortest-dubins` is retained for engineering comparison and must not be used merely to force a build. |

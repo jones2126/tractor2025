@@ -7,7 +7,7 @@ The Teensy Serial Bridge (`teensy_serial_bridge.py`) is a Python application tha
 **Primary Functions:**
 1. Reads serial data from Teensy microcontroller
 2. Parses structured messages from multiple subsystems
-3. Broadcasts consolidated status via UDP at 5 Hz
+3. Broadcasts consolidated status via UDP at 10 Hz
 4. Provides real-time monitoring of steering, transmission, and radio systems
 
 **Version:** 1.0  
@@ -28,7 +28,7 @@ The Teensy Serial Bridge (`teensy_serial_bridge.py`) is a Python application tha
                               └──────────┬──────────┘
                                          │ UDP Broadcast
                                          │ Port 6003
-                                         │ 5 Hz
+                                         │ 10 Hz
                                          ▼
                               ┌─────────────────────┐
                               │ Monitoring Clients  │
@@ -65,7 +65,7 @@ The Teensy sends messages in this CSV format:
 
 ### Bridge → Monitors (UDP)
 
-The bridge broadcasts JSON-formatted status at 5 Hz:
+The bridge broadcasts JSON-formatted status at 10 Hz:
 
 ```json
 {
@@ -121,7 +121,7 @@ SUBSYSTEM=="tty", ATTRS{idVendor}=="16c0", ATTRS{idProduct}=="0483", SYMLINK+="t
 ```python
 UDP_BROADCAST_IP = '255.255.255.255'  # Broadcast to all interfaces
 UDP_PORT = 6003                        # UDP port for status broadcasts
-BROADCAST_RATE = 5                     # Hz (5 broadcasts per second)
+BROADCAST_RATE = 10                    # expected STEER source Hz and log cadence
 ```
 
 ---
@@ -279,7 +279,7 @@ python3 teensy_serial_bridge.py
 2025-01-15 10:30:45 - INFO - Serial connected to /dev/teensy at 115200 baud
 2025-01-15 10:30:45 - INFO - UDP broadcast configured on port 6003
 2025-01-15 10:30:45 - INFO - Teensy Serial Bridge starting...
-2025-01-15 10:30:45 - INFO - Broadcasting on UDP port 6003 at 5 Hz
+2025-01-15 10:30:45 - INFO - Broadcasting on UDP port 6003 at 10 Hz
 2025-01-15 10:30:50 - INFO - Broadcast #25: Radio=GOOD, Steer_mode=2, Trans_mode=2
 2025-01-15 10:31:15 - INFO - Statistics - Received: 1523, Parsed: 1520, Broadcasts: 150, Errors: 0
 ```
@@ -529,14 +529,14 @@ void loop() {
 
 - **Serial Messages Received:** ~50-100 Hz (from Teensy)
 - **Parse Success Rate:** > 95%
-- **UDP Broadcasts:** Exactly 5 Hz (rate-limited)
+- **UDP Broadcasts:** One duplicate-protected pair per fresh 10 Hz STEER sequence
 - **CPU Usage:** < 5% on Raspberry Pi 5
 - **Memory Usage:** ~15-20 MB
 
 ### Network Bandwidth
 
 - **Per Broadcast:** ~300-500 bytes (JSON)
-- **Total Rate:** ~1.5-2.5 KB/s (5 Hz × 400 bytes)
+- **Total Rate:** Approximately 16-18 KB/s for an ~810-byte expanded status payload sent twice per 10 Hz steering sequence
 - **Very low bandwidth** - suitable for WiFi/Ethernet
 
 ---
@@ -592,7 +592,7 @@ class TeensyStatusSubscriber(Node):
 - Initial release
 - Serial to UDP bridge functionality
 - Support for RADIO, STEER, TRANS, SYSTEM subsystems
-- 5 Hz broadcast rate
+- 10 Hz broadcast rate
 - Statistics and error tracking
 
 ---

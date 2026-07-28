@@ -40,3 +40,4 @@ field_testing_analysis/tractor-path-map.html
 field_testing_analysis/*_run_analysis_*.json
 field_testing_analysis/*_run_map_data_*.json
 field_testing_analysis/*_run_map_*.html
+field_testing_analysis/**/*.inspect.ndjson

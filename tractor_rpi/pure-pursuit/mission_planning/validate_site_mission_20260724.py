@@ -88,6 +88,10 @@ def safe_area_from_settings(settings: dict[str, object]):
         -float(settings["boundary_clearance_m"]),
         join_style="round",
     )
+    outer_headland_follows_boundary = bool(
+        settings.get("outer_headland_follows_boundary", False)
+    )
+    containment_area = boundary if outer_headland_follows_boundary else safe_area
     obstacle_shapes = []
     obstacle_file = settings.get("obstacles_file")
     for obstacle in load_obstacles(str(obstacle_file) if obstacle_file else None):
@@ -95,7 +99,8 @@ def safe_area_from_settings(settings: dict[str, object]):
         shape = Point(*center).buffer(obstacle.exclusion_radius_m, resolution=32)
         obstacle_shapes.append((obstacle, shape))
         safe_area = safe_area.difference(shape)
-    return frame, boundary, safe_area, obstacle_shapes
+        containment_area = containment_area.difference(shape)
+    return frame, boundary, containment_area, obstacle_shapes
 
 
 def run_validation(args: argparse.Namespace) -> int:

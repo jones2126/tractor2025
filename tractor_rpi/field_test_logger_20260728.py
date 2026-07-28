@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-field_test_logger_20260717.py
+field_test_logger_20260728.py
 ==============================
-Field test data logger for tractor manual drive sessions.
+Field test data logger for tractor manual and autonomous drive sessions.
 
 Listens on:
   UDP 6009 - dedicated GPS/RTK logging feed (from rtcm_server)
@@ -10,7 +10,9 @@ Listens on:
   TCP 6005 - GL router WiFi signal strength (from wifi_publish.sh on router)
 
 Merges latest values from all three sources by wall-clock timestamp.
-Writes one CSV row per 6003 broadcast (~5 Hz) when Teensy bridge is running.
+Writes one CSV row for each new 10 Hz Teensy steering sequence received in
+the bridge's UDP 6003 status broadcast. Duplicate UDP copies and repeated
+cached steering sequences are ignored.
 
 CHANGED 20260622: GPS-only mode — if UDP 6003 is silent for GPS_ONLY_TIMEOUT
 seconds (e.g. no Teensy connected), rows are driven by UDP 6009 instead.
@@ -23,17 +25,24 @@ wlan0 wifi_ssid/rssi columns which reflect the RPi's own wlan0 interface
   wifi_ssid/rssi_dbm/signal_label    = RPi wlan0 -> Mofi
   router_wifi_ssid/rssi_dbm/signal_label = GL router -> upstream hotspot
 
+CHANGED 20260728:
+  - Full 10 Hz steering telemetry path.
+  - One row per unique Teensy steering sequence; duplicate UDP copies and
+    repeated bridge cache values are suppressed.
+  - Added low-level PID, PWM-channel, clamp, saturation, state, and timing
+    columns from teensy_main_20260728.cpp via teensy_serial_bridge_20260728.py.
+
 CSV is TimescaleDB-ready:
   - 'time' column is ISO-8601 UTC (hypertable partition key)
   - All other columns are plain numerics or short strings
   - Ingest with: \\COPY field_test FROM 'file.csv' CSV HEADER
 
 Usage:
-  python3 field_test_logger_20260717.py
-  python3 field_test_logger_20260717.py --output /home/al/field_logs/run2.csv
+  python3 field_test_logger_20260728.py
+  python3 field_test_logger_20260728.py --output /home/al/field_logs/run2.csv
 
 Output file auto-named by datetime if --output not specified:
-  /home/al/field_logs/field_test_20260710_143022.csv
+  /home/al/field_logs/field_test_20260728_143022.csv
 """
 
 import argparse
@@ -55,7 +64,7 @@ UDP_GPS_PORT     = 6009   # from rtcm_server -- dedicated logging feed, no longe
 UDP_STATUS_PORT  = 6003   # from teensy_serial_bridge
 TCP_ROUTER_PORT  = 6005   # NEW 20260710: GL router upstream WiFi signal (from wifi_publish.sh)
 LOG_DIR          = "/home/al/field_logs"
-LOG_HZ           = 5      # rows per second (driven by 6003 or 6009 in GPS-only mode)
+LOG_HZ           = 10     # rows per second (driven by new steering sequences on UDP 6003)
 
 # CHANGED 20260622: if 6003 is silent longer than this, switch to GPS-only mode
 GPS_ONLY_TIMEOUT = 2.0    # seconds
@@ -75,6 +84,26 @@ CSV_COLUMNS = [
     "steer_error",        # setpoint - current
     "steer_pwm",          # IBT-2 PWM value
     "steer_mode",         # steering mode (mirrors trans_mode)
+    "steer_sequence",             # Teensy steering control-cycle sequence
+    "steer_teensy_timestamp_ms",  # Teensy millis() when control cycle ran
+    "steer_state",                # OK / NO_CMD / NO_SIG / PAUSE / MODE_ERR
+    "steer_direction",            # AL/AR etc.; direction associated with applied PWM
+    "steer_left_pwm",             # actual LPWM channel value written
+    "steer_right_pwm",            # actual RPWM channel value written
+    "steer_normalized_command",   # Pure Pursuit normalized steer command
+    "steer_pid_active",           # 1 when PID calculated during this cycle
+    "steer_deadband_active",      # 1 when output suppressed by deadband
+    "steer_min_pwm_clamped",      # 1 when raw output was raised to minimum PWM
+    "steer_pwm_saturated",        # 1 when raw PID magnitude exceeded 255
+    "steer_pid_dt_s",             # PID calculation interval, seconds
+    "steer_integral_sum",         # accumulated error before Ki multiplication
+    "steer_error_derivative",     # change in pot-count error per second
+    "steer_p_term",               # proportional contribution
+    "steer_i_term",               # integral contribution
+    "steer_d_term",               # derivative contribution
+    "steer_pid_output",           # signed raw PID output before PWM clamps
+    "steer_cmd_age_ms",           # age of most recent cmd_vel on Teensy
+    "steer_bridge_age_s",         # age of cached STEER record in bridge
     # --- GPS ---
     "lat",                # decimal degrees
     "lon",                # decimal degrees
@@ -109,6 +138,40 @@ latest_router_wifi = {}   # NEW 20260710: data from GL router TCP port 6005
 state_lock    = threading.Lock()
 running       = True
 last_6003_time = 0.0      # CHANGED 20260622: track when 6003 was last received
+last_steering_sequence = None  # NEW 20260728: suppress duplicate/cached UDP rows
+
+# ---------------------------------------------------------------------------
+# Status merge / deduplication
+# ---------------------------------------------------------------------------
+
+def merge_status_packet(parsed: dict) -> bool:
+    """Merge one bridge packet and return True only for a loggable new row.
+
+    The bridge transmits each UDP status packet twice. A July 28 steering
+    sequence identifies both copies and also identifies a cached sequence
+    repeated on a later bridge cycle. Older packets without a sequence retain
+    the legacy packet-driven behavior.
+    """
+    global last_6003_time, last_steering_sequence
+
+    with state_lock:
+        steering = parsed.get('steering', {})
+        sequence = steering.get('sequence')
+        latest_status.update(parsed)
+
+        is_new_row = (
+            sequence is None or
+            sequence != last_steering_sequence
+        )
+
+        if is_new_row:
+            latest_status['_new_row'] = True
+            if sequence is not None:
+                last_steering_sequence = sequence
+
+        last_6003_time = time.time()
+
+    return is_new_row
 
 # ---------------------------------------------------------------------------
 # UDP listener threads
@@ -143,8 +206,7 @@ def gps_listener():
 
 
 def status_listener():
-    """Listen on 6003, update latest_status. Also signals the logger thread."""
-    global last_6003_time    # CHANGED 20260622
+    """Listen on 6003 and signal one row per new steering sequence."""
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind(('', UDP_STATUS_PORT))
@@ -156,10 +218,7 @@ def status_listener():
             try:
                 data, _ = sock.recvfrom(4096)
                 parsed = json.loads(data.decode())
-                with state_lock:
-                    latest_status.update(parsed)
-                    latest_status['_new_row'] = True
-                    last_6003_time = time.time()   # CHANGED 20260622
+                merge_status_packet(parsed)
             except Exception as e:
                 print(f"[Status listener] error: {e}")
     sock.close()
@@ -237,6 +296,26 @@ def build_row(start_time: float) -> dict:
         "steer_error":    steer.get('error', ''),
         "steer_pwm":      steer.get('pwm', ''),
         "steer_mode":     steer.get('mode', ''),
+        "steer_sequence":             steer.get('sequence', ''),
+        "steer_teensy_timestamp_ms":  steer.get('teensy_timestamp_ms', ''),
+        "steer_state":                steer.get('state', ''),
+        "steer_direction":            steer.get('direction', ''),
+        "steer_left_pwm":             steer.get('left_pwm', ''),
+        "steer_right_pwm":            steer.get('right_pwm', ''),
+        "steer_normalized_command":   steer.get('normalized_command', ''),
+        "steer_pid_active":           steer.get('pid_active', ''),
+        "steer_deadband_active":      steer.get('deadband_active', ''),
+        "steer_min_pwm_clamped":      steer.get('min_pwm_clamped', ''),
+        "steer_pwm_saturated":        steer.get('pwm_saturated', ''),
+        "steer_pid_dt_s":             steer.get('pid_dt_s', ''),
+        "steer_integral_sum":         steer.get('integral_sum', ''),
+        "steer_error_derivative":     steer.get('error_derivative', ''),
+        "steer_p_term":               steer.get('p_term', ''),
+        "steer_i_term":               steer.get('i_term', ''),
+        "steer_d_term":               steer.get('d_term', ''),
+        "steer_pid_output":           steer.get('pid_output', ''),
+        "steer_cmd_age_ms":           steer.get('cmd_age_ms', ''),
+        "steer_bridge_age_s":         steer.get('age', ''),
 
         # GPS
         "lat":           gps.get('lat', ''),

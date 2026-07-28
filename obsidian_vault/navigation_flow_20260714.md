@@ -247,7 +247,7 @@ transmission linear actuator to the corresponding position, setting ground speed
 |------|----------|---------|
 | `rtcm_server_20260702.py` | `tractor_rpi/` | F9P fusion → UDP 6002 |
 | `pure_pursuit_controller_20260714.py` | `tractor_rpi/pure-pursuit/` | Navigation controller |
-| `teensy_serial_bridge_20260709.py` | `tractor_rpi/` | UDP 6004 → serial bridge |
-| `teensy_main_20260714.cpp` | `tractor_teensy/src/` | Teensy firmware |
+| `teensy_serial_bridge_20260728.py` | `tractor_rpi/` | UDP 6004 → serial bridge |
+| `teensy_main_20260728.cpp` | `tractor_teensy/src/` | Teensy firmware |
 | `mission_out_and_back_20260713.txt` | `tractor_rpi/pure-pursuit/` | Test mission file |
 | `make_mission_20260713.py` | `tractor_rpi/pure-pursuit/` | Mission generator |

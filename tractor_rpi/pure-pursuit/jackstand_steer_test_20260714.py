@@ -52,7 +52,7 @@ CONTROLLER_FILE = "pure_pursuit_controller_20260714.py"
 
 # Teensy pot calibration -- FOR DISPLAY ONLY (predicting the sp= value you
 # should see on the Teensy STEER status line). The authoritative map lives
-# in teensy_main_20260714.cpp::mapNormalizedSteer().
+# in teensy_main_20260728.cpp::mapNormalizedSteer().
 POT_RIGHT, POT_CENTER, POT_LEFT = 197, 447, 815
 
 MODE_NAMES = {0: "AUTO", 1: "MANUAL", 2: "PAUSE", 9: "NO RADIO SIGNAL"}

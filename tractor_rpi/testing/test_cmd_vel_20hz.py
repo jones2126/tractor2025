@@ -98,7 +98,7 @@ class HighRateTester:
         print("UDP Broadcast Diagnostic Mode")
         print("="*70)
         print(f"Listening for {duration} seconds...")
-        print(f"Broadcasts expected: ~{duration * 5} (at 5 Hz)")
+        print(f"Broadcasts expected: ~{duration * 10} (at 10 Hz)")
         print("-"*70)
         
         broadcasts = []
