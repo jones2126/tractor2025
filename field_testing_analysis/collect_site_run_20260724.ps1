@@ -7,6 +7,14 @@ Downloads and verifies one completed Pure Pursuit field run.
   -RunId 20260724_172543 `
   -SiteName 62_Collins_Dr
 
+.EXAMPLE
+.\collect_site_run_20260724.ps1 `
+  -RunId 20260727_144659 `
+  -SiteName 62_Collins_polygon_1 `
+  -PursuitFileName pursuit_log_20260727_144659.csv `
+  -FieldFileName 62_Collins_polygon_1_20260727_144657.csv `
+  -SkipMissionPackage
+
 .DESCRIPTION
 Run this script on the Windows analysis computer. It copies the Pure Pursuit
 log, field-test logger CSV, and the site mission package present on tractor01
@@ -33,6 +41,12 @@ param(
     [ValidatePattern('^[A-Za-z0-9_.-]+$')]
     [string]$TractorUser = 'al',
 
+    [ValidatePattern('^pursuit_log_\d{8}_\d{6}\.csv$')]
+    [string]$PursuitFileName,
+
+    [ValidatePattern('^[A-Za-z0-9_.-]+_\d{8}_\d{6}\.csv$')]
+    [string]$FieldFileName,
+
     [ValidateNotNullOrEmpty()]
     [string]$DestinationRoot = (Join-Path $HOME 'Documents\field_plans'),
 
@@ -49,8 +63,16 @@ foreach ($command in @('ssh', 'scp')) {
 
 $remote = "${TractorUser}@${TractorHost}"
 $destination = Join-Path $DestinationRoot "$SiteName\runs\$RunId"
-$pursuitName = "pursuit_log_$RunId.csv"
-$fieldName = "field_test_$RunId.csv"
+$pursuitName = if ($PursuitFileName) {
+    $PursuitFileName
+} else {
+    "pursuit_log_$RunId.csv"
+}
+$fieldName = if ($FieldFileName) {
+    $FieldFileName
+} else {
+    "field_test_$RunId.csv"
+}
 $remotePursuit = "/home/$TractorUser/repos/field-testing-data/$pursuitName"
 $remoteField = "/home/$TractorUser/field_logs/$fieldName"
 $remoteMission = (
