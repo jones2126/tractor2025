@@ -93,7 +93,7 @@ normally remain outside the source-code directory:
 mkdir -p ~/field_plans/site_01
 ```
 
-## Optional one-time setup on Windows 10
+## One-time setup on Windows 10
 
 Use PowerShell from the Windows 10 laptop. The examples assume the repository
 is at `C:\Repos\tractor2025`, which is the current location on this laptop.
@@ -112,6 +112,7 @@ also covers command and app-execution-alias troubleshooting.
 ```powershell
 cd C:\Repos\tractor2025\tractor_rpi\pure-pursuit\mission_planning
 python -m venv .venv
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 python -m pip install -r requirements_site_planner_20260724.txt
@@ -121,7 +122,7 @@ If PowerShell refuses to run `Activate.ps1`, allow local script execution only
 for the current PowerShell window, then activate again:
 
 ```powershell
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
 .\.venv\Scripts\Activate.ps1
 ```
 
@@ -238,14 +239,25 @@ $site = $selectedSite.FullName
 $siteName = $selectedSite.Name
 
 Set-Location $planner
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-.\.venv\Scripts\Activate.ps1
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
+
+if (-not (Test-Path '.\.venv\Scripts\Activate.ps1')) {
+    Write-Host 'Creating the Windows planner environment (one-time setup)...'
+    python -m venv .venv
+    .\.venv\Scripts\Activate.ps1
+    python -m pip install --upgrade pip
+    python -m pip install -r requirements_site_planner_20260724.txt
+} else {
+    .\.venv\Scripts\Activate.ps1
+}
 ```
 
 Choose one site in the selection window and click **OK**. When activation
 succeeds, the PowerShell prompt begins with `(.venv)`. If it already does, the
 environment is active and the activation commands do not need to be repeated
 in that window, although the selection block can be rerun to change `$site`.
+The first run takes longer because it creates `.venv` and installs the planner
+dependencies. Later PowerShell windows only activate the existing environment.
 
 If automatic pause matching is unavailable or inappropriate, `extract` still
 accepts explicit `--start-row` and `--end-row` values. These are CSV data-row
