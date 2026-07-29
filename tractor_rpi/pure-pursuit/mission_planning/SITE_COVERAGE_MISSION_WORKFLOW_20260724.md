@@ -43,7 +43,8 @@ corners are additionally rounded inward using the configured turn radius.
 
 Mission-planning tools live in
 `tractor_rpi/pure-pursuit/mission_planning/`. Windows collection and
-post-run analysis tools live in `field_testing_analysis/`.
+post-run analysis tools live in `field_testing/tools/`, while saved field-test
+artifacts live in `field_testing/sites/`.
 
 | File | Purpose |
 |---|---|
@@ -51,10 +52,10 @@ post-run analysis tools live in `field_testing_analysis/`.
 | `site_coverage_planner_20260724.py` | Compare angles, preview coverage, and build a candidate mission |
 | `validate_site_mission_20260724.py` | Independently audit and plot the five-column mission |
 | `archive_site_mission_20260724.py` | Verify PASS and archive the reviewed deployment/audit package into Git |
-| `field_testing_analysis/field_test_analysis_menu_20260726.ps1` | Menu for collecting RTK-base data, collecting tractor run data, and generating the final analysis/map |
-| `field_testing_analysis/collect_site_run_20260724.ps1` | Download and remotely verify completed-run logs plus the tractor mission-package snapshot |
-| `field_testing_analysis/collect_rtkbase_esp32_20260724.ps1` | Trigger the RTK-base ESP32 download and collect its verified CSV on Windows |
-| `field_testing_analysis/analyze_run_20260726.py` | Calculate time-weighted CTE results and generate the standalone interactive HTML map |
+| `field_testing/tools/field_test_analysis_menu_20260726.ps1` | Menu for collecting RTK-base data, collecting tractor run data, and generating the final analysis/map |
+| `field_testing/tools/collect_site_run_20260724.ps1` | Download and remotely verify completed-run logs plus the tractor mission-package snapshot |
+| `field_testing/tools/collect_rtkbase_esp32_20260724.ps1` | Trigger the RTK-base ESP32 download and collect its verified CSV on Windows |
+| `field_testing/tools/analyze_run_20260726.py` | Calculate time-weighted CTE results and generate the standalone interactive HTML map |
 | `site_planner_common_20260724.py` | Shared projection, CSV, curvature, and Dubins helpers |
 | `requirements_site_planner_20260724.txt` | Shapely and Matplotlib dependencies |
 
@@ -837,7 +838,7 @@ their logs, note the common timestamp printed in the two filenames. From the
 repository root on Windows, start the menu:
 
 ```powershell
-.\field_testing_analysis\field_test_analysis_menu_20260726.ps1
+.\field_testing\tools\field_test_analysis_menu_20260726.ps1
 ```
 
 Choose the site by number from the complete mission-package folders under
@@ -886,7 +887,7 @@ default.
 Option 3 requires Python 3, NumPy, and pandas. One-time setup:
 
 ```powershell
-python -m pip install -r .\field_testing_analysis\requirements_field_testing_analysis_20260726.txt
+python -m pip install -r .\field_testing\tools\requirements_field_testing_analysis_20260726.txt
 ```
 
 The analyzer reads the collected logs and mission package, calculates
@@ -906,15 +907,15 @@ The underlying tools can still be run directly when advanced host or path
 overrides are needed:
 
 ```powershell
-.\field_testing_analysis\collect_site_run_20260724.ps1 `
+.\field_testing\tools\collect_site_run_20260724.ps1 `
   -RunId 20260724_172543 `
   -SiteName 62_Collins_Dr
 
-.\field_testing_analysis\collect_rtkbase_esp32_20260724.ps1 `
+.\field_testing\tools\collect_rtkbase_esp32_20260724.ps1 `
   -RunId 20260724_172543 `
   -SiteName 62_Collins_Dr
 
-python .\field_testing_analysis\analyze_run_20260726.py `
+python .\field_testing\tools\analyze_run_20260726.py `
   --site-name 62_Collins_Dr `
   --run-id 20260724_172543 `
   --open-map

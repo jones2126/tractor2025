@@ -1,9 +1,12 @@
-# Field testing analysis
+# Field testing
+
+Reusable collection and analysis scripts live in `tools/`. Saved field-test
+artifacts live in `sites/`.
 
 Run the Windows menu from the repository root:
 
 ```powershell
-.\field_testing_analysis\field_test_analysis_menu_20260726.ps1
+.\field_testing\tools\field_test_analysis_menu_20260726.ps1
 ```
 
 The menu lists complete mission-package folders found under
@@ -29,13 +32,13 @@ Files are stored under:
 The analysis option requires Python 3, NumPy, and pandas:
 
 ```powershell
-python -m pip install -r .\field_testing_analysis\requirements_field_testing_analysis_20260726.txt
+python -m pip install -r .\field_testing\tools\requirements_field_testing_analysis_20260726.txt
 ```
 
 The analysis can also be run without the menu:
 
 ```powershell
-python .\field_testing_analysis\analyze_run_20260726.py `
+python .\field_testing\tools\analyze_run_20260726.py `
   --site-name 62_Collins_Dr `
   --run-id 20260724_172543 `
   --open-map
