@@ -131,7 +131,7 @@ locations for this session:
 ```powershell
 $repo = 'C:\Repos\tractor2025'
 $planner = Join-Path $repo 'tractor_rpi\pure-pursuit\mission_planning'
-$site = Join-Path $env:USERPROFILE 'Documents\field_plans\site_01'
+$site = Join-Path $repo 'field_testing\sites\site_01'
 
 Set-Location $planner
 .\.venv\Scripts\Activate.ps1
@@ -148,8 +148,10 @@ On Windows:
 | `~/field_plans/site_01/file.csv` | `"$site\file.csv"` |
 | trailing `\` for a continued command | trailing backtick `` ` `` |
 
-Keep site artifacts outside the Git repository unless there is a deliberate
-reason to version a reviewed boundary or mission.
+Store site-planning artifacts under `field_testing\sites\<site-name>` in the
+Git repository so the source log, reviewed boundary, plots, and generated
+mission files stay together. Replace `site_01` in the examples with the actual
+site directory name.
 
 ## Step 1 — Capture and review the site outline
 
@@ -190,14 +192,16 @@ copy the file over ZeroTier:
 ```powershell
 $repo = 'C:\Repos\tractor2025'
 $planner = Join-Path $repo 'tractor_rpi\pure-pursuit\mission_planning'
-$site = Join-Path $env:USERPROFILE 'Documents\field_plans\site_01'
+$site = Join-Path $repo 'field_testing\sites\site_01'
 New-Item -ItemType Directory -Force $site
 scp al@192.168.193.76:/home/al/field_plans/site_01/00_boundary_log.csv "$site\00_boundary_log.csv"
 ```
 
-Use the actual site directory name on both machines. If ZeroTier is unavailable
-but the tractor is on the same LAN, substitute its current LAN address for
-`192.168.193.76`.
+The Windows destination is
+`C:\Repos\tractor2025\field_testing\sites\site_01\00_boundary_log.csv`. Use the
+actual site directory name in both `$site` and the tractor source path. If
+ZeroTier is unavailable but the tractor is on the same LAN, substitute its
+current LAN address for `192.168.193.76`.
 
 Verify that the Windows copy has the same line count as the tractor copy:
 
