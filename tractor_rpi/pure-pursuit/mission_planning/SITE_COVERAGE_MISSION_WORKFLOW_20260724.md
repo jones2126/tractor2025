@@ -452,6 +452,8 @@ In the CSV:
 
 ### 1C. Finalize and validate the polygon
 
+Step 1C converts the reviewed candidate points into the official boundary polygon that the coverage planner will use.
+
 Windows 10 PowerShell:
 
 ```powershell
