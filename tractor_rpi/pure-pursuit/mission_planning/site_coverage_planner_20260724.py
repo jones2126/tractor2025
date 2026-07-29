@@ -1018,6 +1018,16 @@ def run_preview(args: argparse.Namespace) -> int:
             ),
         )
         plotted_headland_passes.add(pass_number)
+    # Pass 1 may intentionally follow the logged boundary exactly. Draw the
+    # dashed survey line last so both coincident paths remain distinguishable.
+    ax.plot(
+        boundary_x,
+        boundary_y,
+        color="#212121",
+        linestyle="--",
+        linewidth=1.5,
+        zorder=4,
+    )
     included_stripes = [
         (sequence, stripe)
         for sequence, stripe in enumerate(stripes, 1)
