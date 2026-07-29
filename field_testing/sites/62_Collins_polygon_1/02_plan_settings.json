@@ -1,8 +1,8 @@
 {
-  "angle_degrees": 15.0,
+  "angle_degrees": 20.0,
   "boundary_clearance_m": 0.75,
   "boundary_file": "C:\\Repos\\tractor2025\\field_testing\\sites\\62_Collins_polygon_1\\01_boundary_final.csv",
-  "created_utc": "2026-07-29T15:20:20.268391+00:00",
+  "created_utc": "2026-07-29T16:30:29.995398+00:00",
   "first_stripe_direction": "reverse",
   "format_version": 1,
   "frame": {

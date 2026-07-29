@@ -633,7 +633,12 @@ keyhole turn geometry itself is generated and reviewed.
 Outputs:
 
 - `02_plan_settings.json` — records every geometric and controller parameter.
-- `02_coverage_segments.csv` — editable stripe checkpoint.
+- `02_coverage_segments.csv` — the straight-line reference table, kept
+  separate from all later keyhole/Dubins turn geometry. It contains one row
+  for every numbered line in the preview, including auto-excluded short lines,
+  with `sequence`, `include`, start/end latitude and longitude, local
+  east/north coordinates, and length. These endpoints can be used later as the
+  reference segments for per-line cross-track-error analysis.
 - `02_coverage_preview.png` — boundary, safe area, headlands, obstacles,
   numbered stripe arrows, and the preferred splice anchor.
 

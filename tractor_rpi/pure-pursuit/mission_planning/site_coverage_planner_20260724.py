@@ -554,7 +554,8 @@ def run_compare_angles(args: argparse.Namespace) -> int:
         compass_b = float(row["compass_bearing_b"])
         label = "  •  FEWEST ROWS" if angle == fewest_row_angle else ""
         axis.set_title(
-            f"{angle:.0f}° math  =  {compass_a:.0f}°/{compass_b:.0f}° compass"
+            f"$angle = {angle:.0f}  |  "
+            f"{compass_a:.0f}°/{compass_b:.0f}° compass"
             f"{label}\n"
             f"{row['included_stripes']} rows, "
             f"{row['turns_between_stripes']} end turns, "
