@@ -131,11 +131,17 @@ locations for this session:
 ```powershell
 $repo = 'C:\Repos\tractor2025'
 $planner = Join-Path $repo 'tractor_rpi\pure-pursuit\mission_planning'
-$site = Join-Path $repo 'field_testing\sites\site_01'
+$sitesRoot = Join-Path $repo 'field_testing\sites'
+$selectedSite = Get-ChildItem $sitesRoot -Directory |
+    Sort-Object Name |
+    Select-Object Name, FullName |
+    Out-GridView -Title 'Select the field-testing site' -OutputMode Single
+if ($null -eq $selectedSite) { throw 'No site was selected.' }
+$site = $selectedSite.FullName
+$siteName = $selectedSite.Name
 
 Set-Location $planner
 .\.venv\Scripts\Activate.ps1
-New-Item -ItemType Directory -Force $site
 ```
 
 The Linux commands later in this guide remain the primary RPi5NAS examples.
@@ -150,8 +156,9 @@ On Windows:
 
 Store site-planning artifacts under `field_testing\sites\<site-name>` in the
 Git repository so the source log, reviewed boundary, plots, and generated
-mission files stay together. Replace `site_01` in the examples with the actual
-site directory name.
+mission files stay together. The selection window lists the existing site
+folders. Create a new folder under `field_testing\sites` before running the
+selection block when beginning work on a new site.
 
 ## Step 1 — Capture and review the site outline
 
@@ -192,31 +199,53 @@ copy the file over ZeroTier:
 ```powershell
 $repo = 'C:\Repos\tractor2025'
 $planner = Join-Path $repo 'tractor_rpi\pure-pursuit\mission_planning'
-$site = Join-Path $repo 'field_testing\sites\site_01'
-New-Item -ItemType Directory -Force $site
-scp al@192.168.193.76:/home/al/field_plans/site_01/00_boundary_log.csv "$site\00_boundary_log.csv"
+$sitesRoot = Join-Path $repo 'field_testing\sites'
+$selectedSite = Get-ChildItem $sitesRoot -Directory |
+    Sort-Object Name |
+    Select-Object Name, FullName |
+    Out-GridView -Title 'Select the field-testing site' -OutputMode Single
+if ($null -eq $selectedSite) { throw 'No site was selected.' }
+$site = $selectedSite.FullName
+$siteName = $selectedSite.Name
+
+scp "al@192.168.193.76:/home/al/field_plans/$siteName/00_boundary_log.csv" "$site\00_boundary_log.csv"
 ```
 
-The Windows destination is
-`C:\Repos\tractor2025\field_testing\sites\site_01\00_boundary_log.csv`. Use the
-actual site directory name in both `$site` and the tractor source path. If
-ZeroTier is unavailable but the tractor is on the same LAN, substitute its
-current LAN address for `192.168.193.76`.
+The selected folder becomes `$site`, and its folder name becomes `$siteName`.
+The same name is therefore used automatically in both the Windows destination
+and the tractor source path. If ZeroTier is unavailable but the tractor is on
+the same LAN, substitute its current LAN address for `192.168.193.76`.
 
 Verify that the Windows copy has the same line count as the tractor copy:
 
 ```powershell
 (Get-Content "$site\00_boundary_log.csv" | Measure-Object -Line).Lines
-ssh al@192.168.193.76 "wc -l /home/al/field_plans/site_01/00_boundary_log.csv"
+ssh al@192.168.193.76 "wc -l /home/al/field_plans/$siteName/00_boundary_log.csv"
 ```
 
 Reactivate the Windows planner environment in every new PowerShell window:
 
 ```powershell
+$repo = 'C:\Repos\tractor2025'
+$planner = Join-Path $repo 'tractor_rpi\pure-pursuit\mission_planning'
+$sitesRoot = Join-Path $repo 'field_testing\sites'
+$selectedSite = Get-ChildItem $sitesRoot -Directory |
+    Sort-Object Name |
+    Select-Object Name, FullName |
+    Out-GridView -Title 'Select the field-testing site' -OutputMode Single
+if ($null -eq $selectedSite) { throw 'No site was selected.' }
+$site = $selectedSite.FullName
+$siteName = $selectedSite.Name
+
 Set-Location $planner
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 .\.venv\Scripts\Activate.ps1
 ```
+
+Choose one site in the selection window and click **OK**. When activation
+succeeds, the PowerShell prompt begins with `(.venv)`. If it already does, the
+environment is active and the activation commands do not need to be repeated
+in that window, although the selection block can be rerun to change `$site`.
 
 If automatic pause matching is unavailable or inappropriate, `extract` still
 accepts explicit `--start-row` and `--end-row` values. These are CSV data-row
@@ -315,7 +344,14 @@ Windows 10 PowerShell (one line to avoid accidental trailing backticks):
 ```powershell
 $repo = 'C:\Repos\tractor2025'
 $planner = Join-Path $repo 'tractor_rpi\pure-pursuit\mission_planning'
-$site = Join-Path $repo 'field_testing\sites\62_Collins_polygon_1'
+$sitesRoot = Join-Path $repo 'field_testing\sites'
+$selectedSite = Get-ChildItem $sitesRoot -Directory |
+    Sort-Object Name |
+    Select-Object Name, FullName |
+    Out-GridView -Title 'Select the field-testing site' -OutputMode Single
+if ($null -eq $selectedSite) { throw 'No site was selected.' }
+$site = $selectedSite.FullName
+$siteName = $selectedSite.Name
 Set-Location $planner
 
 python .\site_boundary_from_log_20260724.py auto-extract "$site\00_boundary_log.csv" --output "$site\01_boundary_candidates.csv" --plot "$site\01_boundary_candidates.png" --original-plot "$site\01_original_driven_path.png" --stationary-speed-mps 0.10 --pause-edge-speed-mps 0.05 --pause-seconds 8 --target-pause-seconds 10 --same-place-radius-m 1.0 --minimum-lap-seconds 30 --min-spacing-m 0.50 --fix-quality "RTK Fixed"
