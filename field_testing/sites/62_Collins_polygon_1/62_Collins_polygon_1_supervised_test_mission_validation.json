@@ -1,0 +1,21 @@
+{
+  "configured_turn_radius_m": 1.9,
+  "duplicate_consecutive_points": 0,
+  "errors": [],
+  "gap_limit_m": 0.8,
+  "maximum_gap_m": 0.5000198166120406,
+  "maximum_speed_mps": 0.75,
+  "maximum_yaw_error_degrees": 0.49648247765371967,
+  "minimum_distance_to_safe_area_edge_m": 0.0,
+  "minimum_lookahead_m": 1.5,
+  "minimum_sampled_radius_m": 0.7733010071257653,
+  "minimum_speed_mps": 0.5,
+  "mission_file": "C:\\Users\\al532\\Documents\\field_plans\\62_Collins_polygon_1\\62_Collins_polygon_1_supervised_test_mission.txt",
+  "route_length_m": 1879.8188740708354,
+  "settings_file": "C:\\Users\\al532\\Documents\\field_plans\\62_Collins_polygon_1\\02_plan_settings.json",
+  "status": "REVIEW",
+  "warnings": [
+    "Sampled path radius 0.77 m is below 90% of configured 1.90 m. Inspect the marked corner."
+  ],
+  "waypoints": 4163
+}

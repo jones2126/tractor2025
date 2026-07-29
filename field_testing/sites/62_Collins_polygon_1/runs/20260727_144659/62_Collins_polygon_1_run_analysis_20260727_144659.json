@@ -1,0 +1,343 @@
+{
+  "site_name": "62_Collins_polygon_1",
+  "run_id": "20260727_144659",
+  "run_directory": "C:\\Users\\al532\\Documents\\field_plans\\62_Collins_polygon_1\\runs\\20260727_144659",
+  "definitions": {
+    "auto_mode_value": 0,
+    "auto_mode_source": "field_test trans_mode; current tractor firmware defines mode 0 as Auto",
+    "primary_population": "Pure Pursuit cycles with valid CTE, position, controller driving=True, and nearest field logger trans_mode=0 within 0.15 s",
+    "controller_cte": "cross_track_err_m = abs(yt_m)",
+    "geometric_cte": "minimum local XY distance from actual position to nearby mission polyline segments",
+    "percent_time_method": "Each 20 Hz controller sample is weighted by time to the next sample; gaps over 0.20 s receive zero weight"
+  },
+  "source_rows": {
+    "pursuit_rows": 70676,
+    "field_rows": 17881,
+    "aligned_without_mode": 0,
+    "auto_driving_cte_samples": 57888
+  },
+  "timing": {
+    "pursuit_start_epoch_s": 1785178019.684,
+    "pursuit_end_epoch_s": 1785181558.134,
+    "pursuit_elapsed_s": 3538.4500000476837,
+    "analyzed_auto_driving_duration_s": 2898.2430000305176,
+    "aligned_auto_mode_duration_s": 3110.28200006485,
+    "auto_driving_availability_pct": 93.1826438879204,
+    "auto_wait_head_invalid_s": 212.03900003433228,
+    "mode_intervals": [
+      {
+        "mode": 1,
+        "start_epoch_s": 1785178018.212,
+        "end_epoch_s": 1785178203.571,
+        "duration_s": 185.35900020599365,
+        "samples": 938
+      },
+      {
+        "mode": 0,
+        "start_epoch_s": 1785178203.772,
+        "end_epoch_s": 1785181313.829,
+        "duration_s": 3110.0569999217987,
+        "samples": 15711
+      },
+      {
+        "mode": 1,
+        "start_epoch_s": 1785181314.029,
+        "end_epoch_s": 1785181558.151,
+        "duration_s": 244.12199997901917,
+        "samples": 1232
+      }
+    ]
+  },
+  "mode_counts_field_samples": {
+    "0": 15711,
+    "1": 2170
+  },
+  "controller_logged_lateral_error_auto_driving": {
+    "samples": 57888,
+    "duration_s": 2898.2430000305176,
+    "mean_abs_cte_m": 0.44195291311471085,
+    "median_abs_cte_m": 0.3091,
+    "p90_abs_cte_m": 0.9777500000000015,
+    "p95_abs_cte_m": 1.4993,
+    "p99_abs_cte_m": 3.1514,
+    "max_abs_cte_m": 3.7183,
+    "rms_cte_m": 0.7099253148472604,
+    "signed_bias_m": -0.2912046775676407,
+    "within_0.05m_pct_time": 16.894476933574552,
+    "within_0.05m_pct_samples": 16.89469320066335,
+    "within_0.10m_pct_time": 27.059256180896877,
+    "within_0.10m_pct_samples": 27.059148700939744,
+    "within_0.15m_pct_time": 32.892756101482675,
+    "within_0.15m_pct_samples": 32.89282752902156,
+    "within_0.25m_pct_time": 42.88053136404547,
+    "within_0.25m_pct_samples": 42.88108070757325,
+    "within_0.50m_pct_time": 73.06826936127274,
+    "within_0.50m_pct_samples": 73.06868435599779,
+    "within_1.00m_pct_time": 90.37599679912398,
+    "within_1.00m_pct_samples": 90.37624378109453
+  },
+  "geometric_path_error_auto_driving": {
+    "samples": 57888,
+    "duration_s": 2898.2430000305176,
+    "mean_m": 0.25812411231939225,
+    "median_m": 0.16272805912649674,
+    "p90_m": 0.4573947244054817,
+    "p95_m": 0.5846359090366714,
+    "p99_m": 2.2705115086226906,
+    "max_m": 5.115602159081568,
+    "rms_m": 0.45346714361104956,
+    "within_0.05m_pct_time": 17.86033811510207,
+    "within_0.10m_pct_time": 35.56213198784912,
+    "within_0.15m_pct_time": 47.87924970920933,
+    "within_0.25m_pct_time": 62.02844277825705,
+    "within_0.50m_pct_time": 92.46460706082354,
+    "within_1.00m_pct_time": 96.80416717653911
+  },
+  "by_path_kind": {
+    "connector": {
+      "controller_lateral_error": {
+        "samples": 23087,
+        "duration_s": 1155.882999420166,
+        "mean_abs_cte_m": 0.6457183746172865,
+        "median_abs_cte_m": 0.4098,
+        "p90_abs_cte_m": 1.5752,
+        "p95_abs_cte_m": 2.5807,
+        "p99_abs_cte_m": 3.380523999999999,
+        "max_abs_cte_m": 3.7183,
+        "rms_cte_m": 0.9850446686216792,
+        "signed_bias_m": -0.37294753294028726,
+        "within_0.05m_pct_time": 12.2144712875421,
+        "within_0.05m_pct_samples": 12.214666262398753,
+        "within_0.10m_pct_time": 17.02196486494326,
+        "within_0.10m_pct_samples": 17.02256681249188,
+        "within_0.15m_pct_time": 20.219001347599004,
+        "within_0.15m_pct_samples": 20.219170962013255,
+        "within_0.25m_pct_time": 30.18454287329171,
+        "within_0.25m_pct_samples": 30.185818859098195,
+        "within_0.50m_pct_time": 60.137055410650774,
+        "within_0.50m_pct_samples": 60.13773985359726,
+        "within_1.00m_pct_time": 82.06756228543601,
+        "within_1.00m_pct_samples": 82.06783038073374
+      },
+      "geometric_path_error": {
+        "samples": 23087,
+        "duration_s": 1155.882999420166,
+        "mean_m": 0.34250887831674504,
+        "median_m": 0.21826475462997919,
+        "p90_m": 0.6567937663474572,
+        "p95_m": 1.424620231749196,
+        "p99_m": 2.686151894439329,
+        "max_m": 2.951814162510913,
+        "rms_m": 0.5926978286973165,
+        "within_0.05m_pct_time": 15.277065250265691,
+        "within_0.10m_pct_time": 29.01660434769742,
+        "within_0.15m_pct_time": 39.893397622119906,
+        "within_0.25m_pct_time": 53.92656522368717,
+        "within_0.50m_pct_time": 87.6857779157845,
+        "within_1.00m_pct_time": 92.54561220559103
+      }
+    },
+    "headland": {
+      "controller_lateral_error": {
+        "samples": 8216,
+        "duration_s": 411.3479998111725,
+        "mean_abs_cte_m": 0.1080798800703333,
+        "median_abs_cte_m": 0.048850000000000005,
+        "p90_abs_cte_m": 0.26565,
+        "p95_abs_cte_m": 0.4747,
+        "p99_abs_cte_m": 0.8974150000000007,
+        "max_abs_cte_m": 1.3181,
+        "rms_cte_m": 0.201833047821498,
+        "signed_bias_m": -0.05214221856365921,
+        "within_0.05m_pct_time": 50.790814798404064,
+        "within_0.05m_pct_samples": 50.79113924050633,
+        "within_0.10m_pct_time": 74.44134897937842,
+        "within_0.10m_pct_samples": 74.44011684518014,
+        "within_0.15m_pct_time": 81.51273369393724,
+        "within_0.15m_pct_samples": 81.51168451801362,
+        "within_0.25m_pct_time": 88.92349046026405,
+        "within_0.25m_pct_samples": 88.92405063291139,
+        "within_0.50m_pct_time": 95.41167081897521,
+        "within_0.50m_pct_samples": 95.41139240506328,
+        "within_1.00m_pct_time": 99.35480419375143,
+        "within_1.00m_pct_samples": 99.35491723466407
+      },
+      "geometric_path_error": {
+        "samples": 8216,
+        "duration_s": 411.3479998111725,
+        "mean_m": 0.1409091468294548,
+        "median_m": 0.08013347068182763,
+        "p90_m": 0.17124532993614155,
+        "p95_m": 0.2211948166061083,
+        "p99_m": 2.654311585978462,
+        "max_m": 5.115602159081568,
+        "rms_m": 0.4669714729211636,
+        "within_0.05m_pct_time": 22.091270135011317,
+        "within_0.10m_pct_time": 66.77338927671804,
+        "within_0.15m_pct_time": 87.31779440933053,
+        "within_0.25m_pct_time": 96.47062830155225,
+        "within_0.50m_pct_time": 98.23507103625253,
+        "within_1.00m_pct_time": 98.42979669886019
+      }
+    },
+    "stripe": {
+      "controller_lateral_error": {
+        "samples": 26585,
+        "duration_s": 1331.012000799179,
+        "mean_abs_cte_m": 0.3681812052509345,
+        "median_abs_cte_m": 0.3182,
+        "p90_abs_cte_m": 0.7425200000000004,
+        "p95_abs_cte_m": 1.0161599999999995,
+        "p99_abs_cte_m": 1.539496,
+        "max_abs_cte_m": 3.2574,
+        "rms_cte_m": 0.4921386717338734,
+        "signed_bias_m": -0.29409923260516946,
+        "within_0.05m_pct_time": 10.483075824449937,
+        "within_0.05m_pct_samples": 10.483355275531315,
+        "within_0.10m_pct_time": 21.13249165702501,
+        "within_0.10m_pct_samples": 21.132217415835996,
+        "within_0.15m_pct_time": 28.872993040388515,
+        "within_0.15m_pct_samples": 28.873424863644914,
+        "within_0.25m_pct_time": 39.67650174616059,
+        "within_0.25m_pct_samples": 39.676509309761144,
+        "within_0.50m_pct_time": 77.39284108964843,
+        "within_0.50m_pct_samples": 77.39326687981945,
+        "within_1.00m_pct_time": 94.81635025961066,
+        "within_1.00m_pct_samples": 94.81662591687041
+      },
+      "geometric_path_error": {
+        "samples": 26585,
+        "duration_s": 1331.012000799179,
+        "mean_m": 0.2210675156887438,
+        "median_m": 0.20587682036051005,
+        "p90_m": 0.4513690279054033,
+        "p95_m": 0.502350445516734,
+        "p99_m": 0.584057617724089,
+        "max_m": 0.7909618644392221,
+        "rms_m": 0.27440451926208304,
+        "within_0.05m_pct_time": 18.796149184313474,
+        "within_0.10m_pct_time": 31.600616890527682,
+        "within_0.15m_pct_time": 42.625911790160295,
+        "within_0.25m_pct_time": 58.419984257569155,
+        "within_0.50m_pct_time": 94.8313013879353,
+        "within_1.00m_pct_time": 100.0
+      }
+    }
+  },
+  "quality": {
+    "rtk_fixed_pct_time": 100.0,
+    "valid_heading_pct_time": 100.0,
+    "commanded_speed_counts": {
+      "0.75": 30087,
+      "0.50": 27801
+    },
+    "actual_speed_mps_auto_field": {
+      "mean": 0.59875310292152,
+      "median": 0.634,
+      "p95": 0.85,
+      "max": 1.367
+    }
+  },
+  "worst_10_auto_driving": [
+    {
+      "elapsed_s": 3205.758,
+      "lat": 40.48558283,
+      "lon": -80.33244867,
+      "waypoint_idx": 4033,
+      "kind": "connector",
+      "cte_m": 3.7183,
+      "signed_cte_m": -3.7183,
+      "speed_cmd_mps": 0.5
+    },
+    {
+      "elapsed_s": 3205.808,
+      "lat": 40.48558283,
+      "lon": -80.33244867,
+      "waypoint_idx": 4033,
+      "kind": "connector",
+      "cte_m": 3.7183,
+      "signed_cte_m": -3.7183,
+      "speed_cmd_mps": 0.5
+    },
+    {
+      "elapsed_s": 3205.558,
+      "lat": 40.48558233,
+      "lon": -80.33244733,
+      "waypoint_idx": 4033,
+      "kind": "connector",
+      "cte_m": 3.7105,
+      "signed_cte_m": -3.7105,
+      "speed_cmd_mps": 0.5
+    },
+    {
+      "elapsed_s": 3205.608,
+      "lat": 40.48558233,
+      "lon": -80.33244733,
+      "waypoint_idx": 4033,
+      "kind": "connector",
+      "cte_m": 3.7105,
+      "signed_cte_m": -3.7105,
+      "speed_cmd_mps": 0.5
+    },
+    {
+      "elapsed_s": 3205.908,
+      "lat": 40.48558317,
+      "lon": -80.33244917,
+      "waypoint_idx": 4033,
+      "kind": "connector",
+      "cte_m": 3.7095,
+      "signed_cte_m": -3.7095,
+      "speed_cmd_mps": 0.5
+    },
+    {
+      "elapsed_s": 3205.507,
+      "lat": 40.48558217,
+      "lon": -80.33244683,
+      "waypoint_idx": 4033,
+      "kind": "connector",
+      "cte_m": 3.7092,
+      "signed_cte_m": -3.7092,
+      "speed_cmd_mps": 0.5
+    },
+    {
+      "elapsed_s": 3205.708,
+      "lat": 40.48558267,
+      "lon": -80.332448,
+      "waypoint_idx": 4033,
+      "kind": "connector",
+      "cte_m": 3.7083,
+      "signed_cte_m": -3.7083,
+      "speed_cmd_mps": 0.5
+    },
+    {
+      "elapsed_s": 3205.307,
+      "lat": 40.48558167,
+      "lon": -80.3324455,
+      "waypoint_idx": 4033,
+      "kind": "connector",
+      "cte_m": 3.7082,
+      "signed_cte_m": -3.7082,
+      "speed_cmd_mps": 0.5
+    },
+    {
+      "elapsed_s": 3206.108,
+      "lat": 40.48558367,
+      "lon": -80.33245017,
+      "waypoint_idx": 4033,
+      "kind": "connector",
+      "cte_m": 3.7063,
+      "signed_cte_m": -3.7063,
+      "speed_cmd_mps": 0.5
+    },
+    {
+      "elapsed_s": 3205.858,
+      "lat": 40.48558317,
+      "lon": -80.33244917,
+      "waypoint_idx": 4033,
+      "kind": "connector",
+      "cte_m": 3.7055,
+      "signed_cte_m": -3.7055,
+      "speed_cmd_mps": 0.5
+    }
+  ]
+}

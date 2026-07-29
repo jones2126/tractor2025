@@ -1,0 +1,20 @@
+{
+    "run_id":  "20260727_144659",
+    "site_name":  "62_Collins_polygon_1",
+    "tractor":  "al@192.168.193.76",
+    "collected_utc":  "2026-07-27T19:51:43.5126215Z",
+    "destination":  "C:\\Users\\al532\\Documents\\field_plans\\62_Collins_polygon_1\\runs\\20260727_144659",
+    "pursuit_log":  "pursuit_log_20260727_144659.csv",
+    "pursuit_data_rows":  70677,
+    "pursuit_sha256":  "BA77CC50E257EFB8CEB57962F6E950BE69B206FE1F5833F5D293A2397BBEE042",
+    "pursuit_reused":  false,
+    "field_log":  "62_Collins_polygon_1_20260727_144657.csv",
+    "field_log_data_rows":  17881,
+    "field_log_sha256":  "778F2BE5E9C953910BB6A05AB0DD396194213EDB1F1F85CBF50A0A9FF46A677E",
+    "field_log_reused":  false,
+    "mission_package_copied":  false,
+    "mission_package_reused":  false,
+    "mission_manifest_sha256":  null,
+    "mission_package_note":  "Snapshot of the site mission directory present on tractor01 at collection time; collect immediately after the run.",
+    "checksum_manifest":  "file_hashes.csv"
+}
