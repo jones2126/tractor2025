@@ -715,18 +715,42 @@ marks each boundary-constrained fallback requiring special attention.
 Windows 10 PowerShell:
 
 ```powershell
-$mission = Join-Path $site '62_Collins_Dr_mission.txt'
+$repo = 'C:\Repos\tractor2025'
+$planner = Join-Path $repo 'tractor_rpi\pure-pursuit\mission_planning'
+$sitesRoot = Join-Path $repo 'field_testing\sites'
+$selectedSite = Get-ChildItem $sitesRoot -Directory |
+    Where-Object {
+        (Test-Path (Join-Path $_.FullName '02_plan_settings.json')) -and
+        (Test-Path (Join-Path $_.FullName '02_coverage_segments.csv'))
+    } |
+    Sort-Object Name |
+    Select-Object Name, FullName |
+    Out-GridView -Title 'Select a site ready for Step 4A' -OutputMode Single
+if ($null -eq $selectedSite) { throw 'No Step 4A site was selected.' }
+$site = $selectedSite.FullName
+$siteName = $selectedSite.Name
+$missionStem = "${siteName}_mission"
+$mission = Join-Path $site "${missionStem}.txt"
+
+Set-Location $planner
+.\.venv\Scripts\Activate.ps1
 
 python site_coverage_planner_20260724.py build --settings "$site\02_plan_settings.json" --segments "$site\02_coverage_segments.csv" --output $mission --strict-curvature
 
 if ($LASTEXITCODE -eq 0) {
-  Invoke-Item "$site\62_Collins_Dr_mission_preview.png"
-  Invoke-Item "$site\62_Collins_Dr_mission_audit.csv"
-  Get-Content "$site\62_Collins_Dr_mission_build_report.json" -Raw
+  Invoke-Item (Join-Path $site "${missionStem}_preview.png")
+  Invoke-Item (Join-Path $site "${missionStem}_audit.csv")
+  Get-Content (Join-Path $site "${missionStem}_build_report.json") -Raw
 } else {
   Write-Warning "Build failed; no mission artifacts were written."
 }
 ```
+
+The selection window only lists folders containing both required Step 3
+outputs. The mission filename is derived from the selected folder; for example,
+selecting `62_Collins_polygon_1` creates
+`62_Collins_polygon_1_mission.txt` and matching preview, audit, and report
+filenames.
 
 RPi5NAS:
 
@@ -781,8 +805,8 @@ Windows 10 PowerShell:
 ```powershell
 python validate_site_mission_20260724.py $mission --settings "$site\02_plan_settings.json"
 
-Invoke-Item "$site\62_Collins_Dr_mission_validation.png"
-Get-Content "$site\62_Collins_Dr_mission_validation.json" -Raw
+Invoke-Item (Join-Path $site "${missionStem}_validation.png")
+Get-Content (Join-Path $site "${missionStem}_validation.json") -Raw
 ```
 
 Optional hard curvature gate:
