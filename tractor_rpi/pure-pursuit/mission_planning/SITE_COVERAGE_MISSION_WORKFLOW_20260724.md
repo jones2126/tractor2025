@@ -358,13 +358,15 @@ $repo = 'C:\Repos\tractor2025'
 $planner = Join-Path $repo 'tractor_rpi\pure-pursuit\mission_planning'
 $sitesRoot = Join-Path $repo 'field_testing\sites'
 $selectedSite = Get-ChildItem $sitesRoot -Directory |
+    Where-Object { Test-Path (Join-Path $_.FullName '00_boundary_log.csv') } |
     Sort-Object Name |
     Select-Object Name, FullName |
-    Out-GridView -Title 'Select the field-testing site' -OutputMode Single
-if ($null -eq $selectedSite) { throw 'No site was selected.' }
+    Out-GridView -Title 'Select a site containing 00_boundary_log.csv' -OutputMode Single
+if ($null -eq $selectedSite) { throw 'No site containing 00_boundary_log.csv was selected.' }
 $site = $selectedSite.FullName
 $siteName = $selectedSite.Name
 Set-Location $planner
+.\.venv\Scripts\Activate.ps1
 
 python .\site_boundary_from_log_20260724.py auto-extract "$site\00_boundary_log.csv" --output "$site\01_boundary_candidates.csv" --plot "$site\01_boundary_candidates.png" --original-plot "$site\01_original_driven_path.png" --stationary-speed-mps 0.10 --pause-edge-speed-mps 0.05 --pause-seconds 8 --target-pause-seconds 10 --same-place-radius-m 1.0 --minimum-lap-seconds 30 --min-spacing-m 0.50 --fix-quality "RTK Fixed"
 ```
