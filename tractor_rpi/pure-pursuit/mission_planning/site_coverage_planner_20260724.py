@@ -210,8 +210,9 @@ def make_headland_paths(
 
     ``outer_boundary`` is an opt-in centerline for pass 1.  It is intended for
     a finalized, manually driven boundary that already includes the required
-    property/homeowner safety buffer.  Later passes retain the established
-    drive-area inset geometry.
+    property/homeowner safety buffer. Later passes are spaced inward from that
+    driven centerline by one ``spacing_m`` increment per pass and intersected
+    with the safe drive area.
     """
     paths: list[dict[str, object]] = []
     for pass_index in range(passes):
@@ -222,6 +223,15 @@ def make_headland_paths(
             # round sampled polygon vertices inward to the tractor's configured
             # radius instead of commanding artificial chord-to-chord corners.
             geometry = outer_boundary
+        elif outer_boundary is not None:
+            # Pass 1 already occupies the driven boundary centerline. Therefore
+            # pass 2 belongs one cutting-lane spacing inward, pass 3 belongs two
+            # spacings inward, and so on. Do not add the normal drive-area
+            # clearance and half-lane offset again.
+            inset = pass_index * spacing_m
+            geometry = outer_boundary.buffer(
+                -inset, join_style="round"
+            ).intersection(drive_area)
         else:
             inset = (pass_index + 0.5) * spacing_m
             geometry = drive_area.buffer(-inset, join_style="round")
@@ -704,6 +714,7 @@ def run_preview(args: argparse.Namespace) -> int:
     settings_path = output_dir / "02_plan_settings.json"
     segments_path = output_dir / "02_coverage_segments.csv"
     plot_path = output_dir / "02_coverage_preview.png"
+    perimeter_plot_path = output_dir / "02_perimeter_paths.png"
     write_json(settings_path, settings)
     write_csv(segments_path, SEGMENT_COLUMNS, segment_rows)
 
@@ -779,10 +790,56 @@ def run_preview(args: argparse.Namespace) -> int:
     fig.savefig(plot_path, dpi=170)
     plt.close(fig)
 
+    fig, ax = plt.subplots(figsize=(10, 8))
+    draw_polygon(
+        ax,
+        boundary,
+        facecolor="#eeeeee",
+        edgecolor="#9e9e9e",
+        alpha=0.35,
+        label="Original driven boundary",
+    )
+    plotted_passes: set[int] = set()
+    for path in headlands:
+        pass_number = int(path["pass"])
+        points = path["points"]
+        color = "#1565c0" if pass_number == 1 else "#6a1b9a"
+        ax.plot(
+            [point[0] for point in points],
+            [point[1] for point in points],
+            color=color,
+            linewidth=2.2,
+            label=(
+                f"Perimeter pass {pass_number}"
+                if pass_number not in plotted_passes
+                else None
+            ),
+        )
+        plotted_passes.add(pass_number)
+    ax.scatter(
+        *anchor_xy,
+        color="#00c853",
+        edgecolor="black",
+        marker="*",
+        s=220,
+        label="Start anchor",
+        zorder=5,
+    )
+    ax.set_aspect("equal", adjustable="datalim")
+    ax.set_xlabel("East (m)")
+    ax.set_ylabel("North (m)")
+    ax.set_title("Planned perimeter passes")
+    ax.grid(True, alpha=0.3)
+    ax.legend(loc="best")
+    fig.tight_layout()
+    fig.savefig(perimeter_plot_path, dpi=170)
+    plt.close(fig)
+
     included_count = sum(is_included(row["include"]) for row in segment_rows)
     print(f"Safe drive area      : {drive_area.area:.1f} m²")
     print(f"Interior stripe area : {stripe_area.area:.1f} m²")
     print(f"Headland path pieces : {len(headlands)}")
+    print(f"Perimeter paths plot : {perimeter_plot_path}")
     print(f"Stripe segments      : {len(stripes)} ({included_count} auto-included)")
     print(f"Settings             : {settings_path}")
     print(f"Editable segments    : {segments_path}")

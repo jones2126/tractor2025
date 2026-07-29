@@ -309,7 +309,12 @@ The preferred route for a manually driven perimeter is `auto-extract`. It:
 Windows 10 PowerShell (one line to avoid accidental trailing backticks):
 
 ```powershell
-python .\site_boundary_from_log_20260724.py auto-extract "$site\00_boundary_log.csv" --output "$site\01_boundary_candidates.csv" --plot "$site\01_boundary_candidates.png" --stationary-speed-mps 0.10 --pause-edge-speed-mps 0.05 --pause-seconds 8 --target-pause-seconds 10 --same-place-radius-m 1.0 --minimum-lap-seconds 30 --min-spacing-m 0.50 --fix-quality "RTK Fixed"
+$repo = 'C:\Repos\tractor2025'
+$planner = Join-Path $repo 'tractor_rpi\pure-pursuit\mission_planning'
+$site = Join-Path $repo 'field_testing\sites\62_Collins_polygon_1'
+Set-Location $planner
+
+python .\site_boundary_from_log_20260724.py auto-extract "$site\00_boundary_log.csv" --output "$site\01_boundary_candidates.csv" --plot "$site\01_boundary_candidates.png" --original-plot "$site\01_original_driven_path.png" --stationary-speed-mps 0.10 --pause-edge-speed-mps 0.05 --pause-seconds 8 --target-pause-seconds 10 --same-place-radius-m 1.0 --minimum-lap-seconds 30 --min-spacing-m 0.50 --fix-quality "RTK Fixed"
 ```
 
 The command prints every qualifying pause, the selected pair, extractor
@@ -326,6 +331,7 @@ python3 site_boundary_from_log_20260724.py auto-extract \
   ~/field_plans/site_01/00_boundary_log.csv \
   --output ~/field_plans/site_01/01_boundary_candidates.csv \
   --plot ~/field_plans/site_01/01_boundary_candidates.png \
+  --original-plot ~/field_plans/site_01/01_original_driven_path.png \
   --stationary-speed-mps 0.10 \
   --pause-edge-speed-mps 0.05 \
   --pause-seconds 8 \
@@ -358,7 +364,27 @@ Open both outputs:
 
 - `01_boundary_candidates.png` shows all accepted fixes in gray and the
   spatially thinned candidates in blue.
+- `01_original_driven_path.png` shows only the auto-trimmed original lap,
+  including its detected start and end.
 - `01_boundary_candidates.csv` is the manual checkpoint.
+
+For a repository-managed site, these files are written beneath:
+
+```text
+C:\Repos\tractor2025\field_testing\sites\<site-name>\
+```
+
+For this worked example, open and review them with:
+
+```powershell
+Invoke-Item "$site\01_original_driven_path.png"
+Invoke-Item "$site\01_boundary_candidates.png"
+Invoke-Item "$site\01_boundary_candidates.csv"
+```
+
+`01_original_driven_path.png` confirms that the pause detector selected one
+clean lap. `01_boundary_candidates.png` compares that accepted lap with the
+spatially thinned candidate points. Review the CSV in Excel before Step 1C.
 
 In the CSV:
 
@@ -423,11 +449,11 @@ the circle unsafely.
 
 Screen angles before generating the reviewed stripe table:
 
-Windows 10 PowerShell, with the requested 39-inch (`0.9906 m`) row spacing and
+Windows 10 PowerShell, with the requested 38-inch (`0.9652 m`) row spacing and
 no obstacle file:
 
 ```powershell
-python site_coverage_planner_20260724.py compare-angles "$site\01_boundary_final.csv" --output-dir "$site" --angles 0:175:5 --lane-spacing-m 0.9906 --stripe-end-trim-m 3.0 --boundary-clearance-m 0.75 --headland-passes 2
+python site_coverage_planner_20260724.py compare-angles "$site\01_boundary_final.csv" --output-dir "$site" --angles 0:175:5 --lane-spacing-m 0.9652 --stripe-end-trim-m 3.0 --boundary-clearance-m 0.75 --headland-passes 2
 
 Invoke-Item "$site\01_angle_comparison.png"
 Invoke-Item "$site\01_angle_comparison.csv"
@@ -441,7 +467,7 @@ python3 site_coverage_planner_20260724.py compare-angles \
   --obstacles ~/field_plans/site_01/01_obstacles.csv \
   --output-dir ~/field_plans/site_01 \
   --angles 0:175:5 \
-  --lane-spacing-m 0.9906 \
+  --lane-spacing-m 0.9652 \
   --stripe-end-trim-m 3.0 \
   --boundary-clearance-m 0.75 \
   --headland-passes 2
@@ -501,9 +527,10 @@ the Collins Drive site, the selected value is `105`:
 ```powershell
 $angle = 105
 
-python site_coverage_planner_20260724.py preview "$site\01_boundary_final.csv" --output-dir "$site" --angle-degrees $angle --lane-spacing-m 0.9906 --stripe-end-trim-m 3.0 --boundary-clearance-m 0.75 --headland-passes 2 --turn-radius-m 1.90 --stripe-turn-policy keyhole --waypoint-spacing-m 0.50 --straight-speed-mps 0.75 --outer-headland-speed-mps 0.50 --headland-speed-mps 0.75 --turn-speed-mps 0.50 --scan-from low --first-stripe-direction reverse --ring-direction clockwise
+python site_coverage_planner_20260724.py preview "$site\01_boundary_final.csv" --output-dir "$site" --angle-degrees $angle --lane-spacing-m 0.9652 --stripe-end-trim-m 3.0 --boundary-clearance-m 0.75 --headland-passes 2 --turn-radius-m 1.90 --stripe-turn-policy keyhole --waypoint-spacing-m 0.50 --straight-speed-mps 0.75 --outer-headland-speed-mps 0.50 --headland-speed-mps 0.75 --turn-speed-mps 0.50 --scan-from low --first-stripe-direction reverse --ring-direction clockwise --outer-headland-follows-boundary
 
 Invoke-Item "$site\02_coverage_preview.png"
+Invoke-Item "$site\02_perimeter_paths.png"
 Invoke-Item "$site\02_coverage_segments.csv"
 ```
 
@@ -514,7 +541,7 @@ the selected radius and turn policy:
 Get-Content "$site\02_plan_settings.json" -Raw | ConvertFrom-Json | Select-Object angle_degrees, lane_spacing_m, turn_radius_m, stripe_turn_policy, straight_speed_mps, outer_headland_speed_mps, headland_speed_mps, turn_speed_mps
 ```
 
-For Collins Drive, the expected values are `105`, `0.9906`, `1.9`, and
+For Collins Drive, the expected values are `105`, `0.9652`, `1.9`, and
 `keyhole`. If `turn_radius_m` still reports `3.0` or the policy is blank, Step 3
 was not rerun with the current command; do not start Step 4.
 
@@ -526,7 +553,7 @@ python3 site_coverage_planner_20260724.py preview \
   --obstacles ~/field_plans/site_01/01_obstacles.csv \
   --output-dir ~/field_plans/site_01 \
   --angle-degrees 105 \
-  --lane-spacing-m 0.9906 \
+  --lane-spacing-m 0.9652 \
   --stripe-end-trim-m 3.0 \
   --boundary-clearance-m 0.75 \
   --headland-passes 2 \
@@ -535,7 +562,8 @@ python3 site_coverage_planner_20260724.py preview \
   --waypoint-spacing-m 0.50 \
   --scan-from low \
   --first-stripe-direction reverse \
-  --ring-direction clockwise
+  --ring-direction clockwise \
+  --outer-headland-follows-boundary
 ```
 
 For `105°`, `reverse` makes the first stripe heading approximately `165°`
@@ -551,14 +579,24 @@ Outputs:
 - `02_coverage_preview.png` — boundary, safe area, headlands, obstacles,
   numbered stripe arrows, and the preferred splice anchor.
 
+- `02_perimeter_paths.png` shows the start anchor plus the two perimeter
+  centerlines without the interior stripes. Pass 1 follows the reviewed manual
+  path and pass 2 is one `lane-spacing-m` inward.
+
+These files are stored in the same directory selected by `$site`, which is
+`C:\Repos\tractor2025\field_testing\sites\<site-name>\` for repository-managed
+sites. Review `02_perimeter_paths.png` first to confirm the start and cutting
+overlap, then review `02_coverage_preview.png`, `02_coverage_segments.csv`, and
+`02_plan_settings.json` before building a mission.
+
 ### Parameters that must be measured/reviewed
 
 | Parameter | Meaning |
 |---|---|
-| `lane-spacing-m` | Center-to-center cut spacing. The selected 39-inch spacing is `0.9906 m`, giving about 3 inches of nominal overlap with the 42-inch deck. Verify actual cut width and GPS tracking. |
+| `lane-spacing-m` | Center-to-center cut spacing. The selected 38-inch spacing is `0.9652 m`, giving about 4 inches of nominal overlap with the 42-inch (`1.0668 m`) deck. Verify actual cut width and GPS tracking. |
 | `boundary-clearance-m` | Distance from the logged perimeter to the tractor reference point. Set it from deck/body overhang, survey meaning, GPS error, and desired safety margin. |
 | `headland-passes` | Perimeter coverage passes before interior stripes. This creates working room but does not by itself guarantee a feasible U-turn. |
-| `outer-headland-follows-boundary` | Opt-in only when the finalized, manually driven boundary already includes the required property/homeowner safety buffer. Pass 1 follows that boundary with tractor-radius corner rounding and no uniform inset. Later perimeter passes retain their normal inset geometry. |
+| `outer-headland-follows-boundary` | Opt-in only when the finalized, manually driven boundary already includes the required property/homeowner safety buffer. Pass 1 follows that boundary with tractor-radius corner rounding and no uniform inset. Pass 2 is one `lane-spacing-m` inward, pass 3 is two spacings inward, and so on. |
 | `stripe-end-trim-m` | Distance removed from both ends of every clipped stripe to leave turning room. This replaces the notebook’s separate “shorten stripes” script and is visible in the editable CSV/plot. |
 | `turn-radius-m` | Common minimum planning radius for left and right turns. Manual circle tests measured approximately 1.05 m full-left and 1.63 m full-right. This site uses 1.90 m: 0.27 m (about 17%) gentler than the weaker measured right turn. Do not plan at the measured limit without repeatability tests. |
 | `stripe-turn-policy` | `keyhole` constrains adjacent-row transitions to compact three-arc agricultural omega turns. `shortest-dubins` is retained for engineering comparison and must not be used merely to force a build. |
@@ -595,7 +633,7 @@ Useful orientation controls:
 ### Required keyhole-turn policy checkpoint
 
 With `stripe-turn-policy` set to `keyhole`, adjacent rows use compact
-three-arc omega turns. Because the 39-inch row spacing is less than twice the
+three-arc omega turns. Because the 38-inch row spacing is less than twice the
 tractor's turn radius, a forward-only left-then-right two-arc path cannot finish
 aligned with the adjacent row. The third, smaller correcting arc is
 kinematically necessary.

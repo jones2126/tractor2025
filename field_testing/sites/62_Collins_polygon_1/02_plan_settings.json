@@ -1,8 +1,8 @@
 {
   "angle_degrees": 15.0,
   "boundary_clearance_m": 0.75,
-  "boundary_file": "C:\\Users\\al532\\Documents\\field_plans\\62_Collins_polygon_1\\01_boundary_final.csv",
-  "created_utc": "2026-07-27T16:39:22.665741+00:00",
+  "boundary_file": "C:\\Repos\\tractor2025\\field_testing\\sites\\62_Collins_polygon_1\\01_boundary_final.csv",
+  "created_utc": "2026-07-29T15:20:20.268391+00:00",
   "first_stripe_direction": "reverse",
   "format_version": 1,
   "frame": {
@@ -12,13 +12,14 @@
   "headland_lookahead_m": 2.0,
   "headland_passes": 2,
   "headland_speed_mps": 0.75,
-  "outer_headland_speed_mps": 0.5,
-  "lane_spacing_m": 0.9906,
+  "lane_spacing_m": 0.9652,
   "minimum_segment_m": 2.0,
   "obstacles_file": null,
+  "outer_headland_follows_boundary": true,
+  "outer_headland_speed_mps": 0.5,
   "outputs": {
-    "preview_plot": "C:\\Users\\al532\\Documents\\field_plans\\62_Collins_polygon_1\\02_coverage_preview.png",
-    "segments_csv": "C:\\Users\\al532\\Documents\\field_plans\\62_Collins_polygon_1\\02_coverage_segments.csv"
+    "preview_plot": "C:\\Repos\\tractor2025\\field_testing\\sites\\62_Collins_polygon_1\\02_coverage_preview.png",
+    "segments_csv": "C:\\Repos\\tractor2025\\field_testing\\sites\\62_Collins_polygon_1\\02_coverage_segments.csv"
   },
   "ring_direction": "clockwise",
   "scan_from": "low",

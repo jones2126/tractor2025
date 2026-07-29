@@ -355,6 +355,31 @@ def run_extract(args: argparse.Namespace) -> int:
     write_csv(csv_path, CANDIDATE_COLUMNS, candidates)
 
     plt = plot_setup()
+    original_plot = (
+        Path(args.original_plot) if getattr(args, "original_plot", None) else None
+    )
+    if original_plot is not None:
+        fig, ax = plt.subplots(figsize=(10, 8))
+        ax.plot(
+            [point[0] for point in all_xy],
+            [point[1] for point in all_xy],
+            color="#1565c0",
+            linewidth=1.5,
+            label=f"Original driven path ({len(all_xy)} fixes)",
+        )
+        ax.scatter(*all_xy[0], s=90, color="#2e7d32", label="Start")
+        ax.scatter(*all_xy[-1], s=90, marker="x", color="#c62828", label="End")
+        ax.set_aspect("equal", adjustable="datalim")
+        ax.set_xlabel("East of first accepted fix (m)")
+        ax.set_ylabel("North of first accepted fix (m)")
+        ax.set_title("Auto-trimmed original driven perimeter")
+        ax.grid(True, alpha=0.3)
+        ax.legend()
+        fig.tight_layout()
+        original_plot.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(original_plot, dpi=160)
+        plt.close(fig)
+
     fig, ax = plt.subplots(figsize=(10, 8))
     ax.plot(
         [point[0] for point in all_xy],
@@ -392,6 +417,8 @@ def run_extract(args: argparse.Namespace) -> int:
     print(f"Rejected rows     : {rejected}")
     print(f"Candidate CSV     : {csv_path}")
     print(f"Checkpoint plot   : {plot_path}")
+    if original_plot is not None:
+        print(f"Original path plot: {original_plot}")
     print(
         "\nNext: review include/sequence/notes in the candidate CSV, then run "
         "the finalize subcommand."
@@ -800,6 +827,10 @@ def build_parser() -> argparse.ArgumentParser:
     extract.add_argument("--output", help="candidate CSV output path")
     extract.add_argument("--plot", help="checkpoint PNG output path")
     extract.add_argument(
+        "--original-plot",
+        help="optional PNG showing only the accepted original driven path",
+    )
+    extract.add_argument(
         "--fix-quality",
         default="RTK Fixed",
         help="exact fix quality to retain; use an empty string for any quality",
@@ -837,6 +868,10 @@ def build_parser() -> argparse.ArgumentParser:
     auto_extract.add_argument("field_log")
     auto_extract.add_argument("--output", help="candidate CSV output path")
     auto_extract.add_argument("--plot", help="checkpoint PNG output path")
+    auto_extract.add_argument(
+        "--original-plot",
+        help="optional PNG showing only the auto-trimmed original driven path",
+    )
     auto_extract.add_argument(
         "--fix-quality",
         default="RTK Fixed",
