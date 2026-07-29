@@ -18,7 +18,7 @@
   "minimum_segment_m": 2.0,
   "obstacles_file": null,
   "outputs": {
-    "preview_plot": "C:\\Repos\\tractor2025\\field_testing_analysis\\output_20260727_144659_diagnostics\\perimeter_candidate\\02_coverage_preview.png",
+    "preview_plot": "C:\\Repos\\tractor2025\\field_testing\\sites\\output_20260727_144659_diagnostics\\perimeter_candidate\\02_coverage_preview.png",
     "segments_csv": "C:\\Users\\al532\\Documents\\field_plans\\62_Collins_polygon_1\\02_coverage_segments.csv"
   },
   "ring_direction": "clockwise",

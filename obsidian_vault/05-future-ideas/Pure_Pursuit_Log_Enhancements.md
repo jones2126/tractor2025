@@ -147,7 +147,7 @@ Suggested label:
 
 ## Related Files
 
-- `field_testing_analysis/analyze_pure_pursuit.py`
+- `field_testing/tools/analyze_pure_pursuit.py`
 - `tractor_rpi/pure-pursuit/pure_pursuit_controller_20260714.py`
 - `tractor_rpi/pure-pursuit/mission_manual_turn_test_20260722.txt`
 - `tractor_rpi/pure-pursuit/run_manual_turn_test_20260722.sh`

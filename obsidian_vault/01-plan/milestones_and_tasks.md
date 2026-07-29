@@ -34,7 +34,7 @@
 - [ ] On the Windows analysis computer, open PowerShell at the repository root:
   ```powershell
   Set-Location C:\Repos\tractor2025
-  .\field_testing_analysis\field_test_analysis_menu_20260726.ps1
+  .\field_testing\tools\field_test_analysis_menu_20260726.ps1
   ```
 - [ ] Select the correct site and run ID. Choose **N** to enter a new run ID if it has not been downloaded before.
 - [ ] Choose menu option **2 — Download tractor logs and mission package** while tractor01 is still powered on.

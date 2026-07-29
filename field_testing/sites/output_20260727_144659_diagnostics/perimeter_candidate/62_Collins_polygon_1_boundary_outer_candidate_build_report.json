@@ -472,10 +472,10 @@
   "curvature_warning": true,
   "keyhole_boundary_fallback_count": 10,
   "minimum_sampled_radius_m": 0.47282046370500497,
-  "mission_file": "C:\\Repos\\tractor2025\\field_testing_analysis\\output_20260727_144659_diagnostics\\perimeter_candidate\\62_Collins_polygon_1_boundary_outer_candidate_mission.txt",
+  "mission_file": "C:\\Repos\\tractor2025\\field_testing\\sites\\output_20260727_144659_diagnostics\\perimeter_candidate\\62_Collins_polygon_1_boundary_outer_candidate_mission.txt",
   "outer_headland_follows_boundary": true,
   "route_length_m": 1889.654190415391,
   "segments_file": "C:\\Users\\al532\\Documents\\field_plans\\62_Collins_polygon_1\\02_coverage_segments.csv",
-  "settings_file": "C:\\Repos\\tractor2025\\field_testing_analysis\\output_20260727_144659_diagnostics\\perimeter_candidate\\02_plan_settings_boundary_outer.json",
+  "settings_file": "C:\\Repos\\tractor2025\\field_testing\\sites\\output_20260727_144659_diagnostics\\perimeter_candidate\\02_plan_settings_boundary_outer.json",
   "waypoints": 4136
 }

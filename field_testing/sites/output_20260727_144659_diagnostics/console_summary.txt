@@ -1,4 +1,4 @@
-﻿{
+{
   "site_name": "62_Collins_polygon_1",
   "run_id": "20260727_144659",
   "stripe_samples": 26585,
