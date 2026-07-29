@@ -64,7 +64,19 @@ SEGMENT_COLUMNS = [
     "end_east_m",
     "end_north_m",
     "length_m",
+    "start_turn_trim_m",
+    "end_turn_trim_m",
     "notes",
+]
+
+TURN_FIT_COLUMNS = [
+    "from_sequence",
+    "to_sequence",
+    "initial_mode",
+    "final_mode",
+    "outgoing_end_trim_m",
+    "incoming_start_trim_m",
+    "status",
 ]
 
 ANGLE_COLUMNS = [
@@ -355,6 +367,147 @@ def make_stripes(
     return result
 
 
+def shorten_stripe_end(
+    stripe: dict[str, object],
+    amount_m: float,
+) -> tuple[float, float]:
+    start = stripe["start"]
+    end = stripe["end"]
+    length_m = distance(start, end)  # type: ignore[arg-type]
+    return (
+        end[0] + amount_m * (start[0] - end[0]) / length_m,
+        end[1] + amount_m * (start[1] - end[1]) / length_m,
+    )
+
+
+def shorten_stripe_start(
+    stripe: dict[str, object],
+    amount_m: float,
+) -> tuple[float, float]:
+    start = stripe["start"]
+    end = stripe["end"]
+    length_m = distance(start, end)  # type: ignore[arg-type]
+    return (
+        start[0] + amount_m * (end[0] - start[0]) / length_m,
+        start[1] + amount_m * (end[1] - start[1]) / length_m,
+    )
+
+
+def fit_preferred_keyhole_turns(
+    stripes: list[dict[str, object]],
+    drive_area,
+    minimum_segment_m: float,
+    turn_radius_m: float,
+    waypoint_spacing_m: float,
+    step_m: float,
+    maximum_trim_m: float,
+    containment_margin_m: float,
+) -> list[dict[str, object]]:
+    fit_area = drive_area.buffer(-containment_margin_m)
+    if fit_area.is_empty:
+        raise ValueError(
+            "Turn-fit containment margin removes the entire drive area"
+        )
+
+    for stripe in stripes:
+        stripe["start_turn_trim_m"] = 0.0
+        stripe["end_turn_trim_m"] = 0.0
+
+    included = [
+        (sequence, stripe)
+        for sequence, stripe in enumerate(stripes, 1)
+        if float(stripe["length_m"]) >= minimum_segment_m
+    ]
+    report_rows = []
+    for (from_sequence, outgoing), (to_sequence, incoming) in zip(
+        included, included[1:]
+    ):
+        initial = keyhole_connector(
+            path_end_pose([outgoing["start"], outgoing["end"]]),
+            path_start_pose([incoming["start"], incoming["end"]]),
+            fit_area,
+            turn_radius_m,
+            waypoint_spacing_m,
+        )
+        initial_mode = str(initial["mode"]) if initial else "none"
+        if initial is not None and initial_mode.endswith("-keyhole"):
+            report_rows.append(
+                {
+                    "from_sequence": from_sequence,
+                    "to_sequence": to_sequence,
+                    "initial_mode": initial_mode,
+                    "final_mode": initial_mode,
+                    "outgoing_end_trim_m": "0.000",
+                    "incoming_start_trim_m": "0.000",
+                    "status": "already-preferred",
+                }
+            )
+            continue
+
+        fitted = None
+        step_count = int(math.floor(maximum_trim_m / step_m + 1e-9))
+        for step_index in range(1, step_count + 1):
+            amount_m = step_index * step_m
+            if (
+                float(outgoing["length_m"]) - amount_m < minimum_segment_m
+                or float(incoming["length_m"]) - amount_m < minimum_segment_m
+            ):
+                break
+            candidate_end = shorten_stripe_end(outgoing, amount_m)
+            candidate_start = shorten_stripe_start(incoming, amount_m)
+            candidate = keyhole_connector(
+                path_end_pose([outgoing["start"], candidate_end]),
+                path_start_pose([candidate_start, incoming["end"]]),
+                fit_area,
+                turn_radius_m,
+                waypoint_spacing_m,
+            )
+            if candidate is not None and str(candidate["mode"]).endswith("-keyhole"):
+                fitted = (amount_m, candidate_end, candidate_start, candidate)
+                break
+
+        if fitted is None:
+            final = keyhole_connector(
+                path_end_pose([outgoing["start"], outgoing["end"]]),
+                path_start_pose([incoming["start"], incoming["end"]]),
+                drive_area,
+                turn_radius_m,
+                waypoint_spacing_m,
+            )
+            report_rows.append(
+                {
+                    "from_sequence": from_sequence,
+                    "to_sequence": to_sequence,
+                    "initial_mode": initial_mode,
+                    "final_mode": str(final["mode"]) if final else "none",
+                    "outgoing_end_trim_m": "0.000",
+                    "incoming_start_trim_m": "0.000",
+                    "status": "unresolved",
+                }
+            )
+            continue
+
+        amount_m, candidate_end, candidate_start, candidate = fitted
+        outgoing["end"] = candidate_end
+        incoming["start"] = candidate_start
+        outgoing["length_m"] = distance(outgoing["start"], outgoing["end"])
+        incoming["length_m"] = distance(incoming["start"], incoming["end"])
+        outgoing["end_turn_trim_m"] = amount_m
+        incoming["start_turn_trim_m"] = amount_m
+        report_rows.append(
+            {
+                "from_sequence": from_sequence,
+                "to_sequence": to_sequence,
+                "initial_mode": initial_mode,
+                "final_mode": str(candidate["mode"]),
+                "outgoing_end_trim_m": f"{amount_m:.3f}",
+                "incoming_start_trim_m": f"{amount_m:.3f}",
+                "status": "selectively-fitted",
+            }
+        )
+    return report_rows
+
+
 def air_connector_length(stripes: Sequence[dict[str, object]]) -> float:
     total = 0.0
     for first, second in zip(stripes, stripes[1:]):
@@ -626,6 +779,10 @@ def settings_from_args(
         "scan_from": args.scan_from,
         "first_stripe_direction": args.first_stripe_direction,
         "stripe_turn_policy": args.stripe_turn_policy,
+        "selective_turn_fitting": args.selective_turn_fitting,
+        "turn_fit_step_m": args.turn_fit_step_m,
+        "maximum_turn_end_trim_m": args.maximum_turn_end_trim_m,
+        "turn_fit_containment_margin_m": args.turn_fit_containment_margin_m,
         "ring_direction": args.ring_direction,
         "start_anchor": {"lat": start_lat, "lon": start_lon},
         "turn_radius_m": args.turn_radius_m,
@@ -644,6 +801,8 @@ def settings_from_args(
         "outputs": {
             "segments_csv": str((output_dir / "02_coverage_segments.csv").resolve()),
             "preview_plot": str((output_dir / "02_coverage_preview.png").resolve()),
+            "turn_fit_csv": str((output_dir / "02_turn_fit_report.csv").resolve()),
+            "turn_fit_plot": str((output_dir / "02_turn_fit_preview.png").resolve()),
         },
     }
 
@@ -675,6 +834,22 @@ def run_preview(args: argparse.Namespace) -> int:
         args.scan_from,
         args.first_stripe_direction,
     )
+    turn_fit_rows = []
+    if args.selective_turn_fitting:
+        if args.stripe_turn_policy != "keyhole":
+            raise ValueError(
+                "--selective-turn-fitting requires --stripe-turn-policy keyhole"
+            )
+        turn_fit_rows = fit_preferred_keyhole_turns(
+            stripes,
+            drive_area,
+            args.minimum_segment_m,
+            args.turn_radius_m,
+            args.waypoint_spacing_m,
+            args.turn_fit_step_m,
+            args.maximum_turn_end_trim_m,
+            args.turn_fit_containment_margin_m,
+        )
 
     segment_rows = []
     for sequence, stripe in enumerate(stripes, 1):
@@ -698,6 +873,12 @@ def run_preview(args: argparse.Namespace) -> int:
                 "end_east_m": f"{end[0]:.3f}",
                 "end_north_m": f"{end[1]:.3f}",
                 "length_m": f"{float(stripe['length_m']):.3f}",
+                "start_turn_trim_m": (
+                    f"{float(stripe.get('start_turn_trim_m', 0.0)):.3f}"
+                ),
+                "end_turn_trim_m": (
+                    f"{float(stripe.get('end_turn_trim_m', 0.0)):.3f}"
+                ),
                 "notes": (
                     (
                         f"auto-excluded after {float(stripe['end_trim_m']):.2f} m "
@@ -705,7 +886,10 @@ def run_preview(args: argparse.Namespace) -> int:
                         f"{args.minimum_segment_m:.2f} m"
                     )
                     if short else (
-                        f"trimmed {float(stripe['end_trim_m']):.2f} m at each end"
+                        f"base trim {float(stripe['end_trim_m']):.2f} m; "
+                        f"selective start/end turn trims "
+                        f"{float(stripe.get('start_turn_trim_m', 0.0)):.2f}/"
+                        f"{float(stripe.get('end_turn_trim_m', 0.0)):.2f} m"
                     )
                 ),
             }
@@ -716,8 +900,11 @@ def run_preview(args: argparse.Namespace) -> int:
     segments_path = output_dir / "02_coverage_segments.csv"
     plot_path = output_dir / "02_coverage_preview.png"
     perimeter_plot_path = output_dir / "02_perimeter_paths.png"
+    turn_fit_path = output_dir / "02_turn_fit_report.csv"
+    turn_fit_plot_path = output_dir / "02_turn_fit_preview.png"
     write_json(settings_path, settings)
     write_csv(segments_path, SEGMENT_COLUMNS, segment_rows)
+    write_csv(turn_fit_path, TURN_FIT_COLUMNS, turn_fit_rows)
 
     plt = plot_setup()
     fig, ax = plt.subplots(figsize=(12, 10))
@@ -791,6 +978,88 @@ def run_preview(args: argparse.Namespace) -> int:
     fig.savefig(plot_path, dpi=170)
     plt.close(fig)
 
+    fig, ax = plt.subplots(figsize=(12, 10))
+    draw_polygon(
+        ax,
+        drive_area,
+        facecolor="#e8f5e9",
+        edgecolor="#424242",
+        alpha=0.65,
+        label="Keyhole containment area",
+    )
+    included_stripes = [
+        (sequence, stripe)
+        for sequence, stripe in enumerate(stripes, 1)
+        if float(stripe["length_m"]) >= args.minimum_segment_m
+    ]
+    for sequence, stripe in included_stripes:
+        start, end = stripe["start"], stripe["end"]
+        ax.annotate(
+            "",
+            xy=end,
+            xytext=start,
+            arrowprops={"arrowstyle": "->", "color": "#1565c0", "lw": 1.2},
+        )
+        midpoint = ((start[0] + end[0]) / 2, (start[1] + end[1]) / 2)
+        ax.text(
+            *midpoint,
+            str(sequence),
+            fontsize=7,
+            color="white",
+            ha="center",
+            va="center",
+            bbox={
+                "boxstyle": "circle,pad=0.14",
+                "fc": "#1565c0",
+                "ec": "none",
+            },
+        )
+    plotted_preferred = False
+    plotted_fallback = False
+    for (_from_sequence, outgoing), (_to_sequence, incoming) in zip(
+        included_stripes, included_stripes[1:]
+    ):
+        connector = keyhole_connector(
+            path_end_pose([outgoing["start"], outgoing["end"]]),
+            path_start_pose([incoming["start"], incoming["end"]]),
+            drive_area,
+            args.turn_radius_m,
+            args.waypoint_spacing_m,
+        )
+        if connector is None:
+            continue
+        preferred = str(connector["mode"]).endswith("-keyhole")
+        points = connector["points"]
+        ax.plot(
+            [point[0] for point in points],
+            [point[1] for point in points],
+            color="#ef6c00" if preferred else "#c62828",
+            linewidth=1.8,
+            label=(
+                "Preferred compact keyhole"
+                if preferred and not plotted_preferred
+                else (
+                    "Boundary fallback—review"
+                    if not preferred and not plotted_fallback
+                    else None
+                )
+            ),
+        )
+        plotted_preferred = plotted_preferred or preferred
+        plotted_fallback = plotted_fallback or not preferred
+    ax.set_aspect("equal", adjustable="datalim")
+    ax.set_xlabel("East (m)")
+    ax.set_ylabel("North (m)")
+    ax.set_title(
+        "Selective keyhole-turn fit\n"
+        "Blue arrows: reviewed straight lines; orange: preferred; red: fallback"
+    )
+    ax.grid(True, alpha=0.3)
+    ax.legend(loc="best")
+    fig.tight_layout()
+    fig.savefig(turn_fit_plot_path, dpi=170)
+    plt.close(fig)
+
     fig, ax = plt.subplots(figsize=(10, 8))
     draw_polygon(
         ax,
@@ -844,6 +1113,8 @@ def run_preview(args: argparse.Namespace) -> int:
     print(f"Stripe segments      : {len(stripes)} ({included_count} auto-included)")
     print(f"Settings             : {settings_path}")
     print(f"Editable segments    : {segments_path}")
+    print(f"Turn-fit report      : {turn_fit_path}")
+    print(f"Turn-fit plot        : {turn_fit_plot_path}")
     print(f"Checkpoint plot      : {plot_path}")
     print(
         "\nNext: inspect the plot and edit include/reverse/sequence/notes in the "
@@ -1702,6 +1973,32 @@ def build_parser() -> argparse.ArgumentParser:
             "or unconstrained shortest contained Dubins path (default keyhole)"
         ),
     )
+    preview.add_argument(
+        "--selective-turn-fitting",
+        action="store_true",
+        help=(
+            "selectively shorten only adjoining stripe endpoints until the "
+            "preferred contained keyhole fits; records every adjustment"
+        ),
+    )
+    preview.add_argument(
+        "--turn-fit-step-m",
+        type=float,
+        default=0.05,
+        help="selective endpoint-trim search increment (default 0.05 m)",
+    )
+    preview.add_argument(
+        "--maximum-turn-end-trim-m",
+        type=float,
+        default=3.0,
+        help="maximum additional trim at each adjoining endpoint (default 3.0 m)",
+    )
+    preview.add_argument(
+        "--turn-fit-containment-margin-m",
+        type=float,
+        default=0.05,
+        help="extra inward containment margin for fitted keyholes (default 0.05 m)",
+    )
     preview.add_argument("--waypoint-spacing-m", type=float, default=0.50)
     preview.add_argument("--straight-lookahead-m", type=float, default=3.0)
     preview.add_argument("--straight-speed-mps", type=float, default=0.50)
@@ -1753,7 +2050,8 @@ def main() -> int:
     for name in (
         "lane_spacing_m", "boundary_clearance_m", "minimum_segment_m",
         "turn_radius_m", "waypoint_spacing_m", "straight_lookahead_m",
-        "turn_lookahead_m", "headland_lookahead_m",
+        "turn_lookahead_m", "headland_lookahead_m", "turn_fit_step_m",
+        "maximum_turn_end_trim_m",
     ):
         if hasattr(args, name):
             try:
@@ -1764,6 +2062,11 @@ def main() -> int:
         parser.error("--stripe-end-trim-m cannot be negative")
     if hasattr(args, "headland_passes") and args.headland_passes < 0:
         parser.error("--headland-passes cannot be negative")
+    if (
+        hasattr(args, "turn_fit_containment_margin_m")
+        and args.turn_fit_containment_margin_m < 0
+    ):
+        parser.error("--turn-fit-containment-margin-m cannot be negative")
     if hasattr(args, "start_lat") and ((args.start_lat is None) != (args.start_lon is None)):
         parser.error("--start-lat and --start-lon must be supplied together")
     for name in (

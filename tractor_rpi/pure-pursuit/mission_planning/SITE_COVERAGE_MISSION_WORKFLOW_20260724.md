@@ -585,23 +585,27 @@ panel is `20°`, so set `$angle` to `20`:
 ```powershell
 $angle = 20
 
-python site_coverage_planner_20260724.py preview "$site\01_boundary_final.csv" --output-dir "$site" --angle-degrees $angle --lane-spacing-m 0.9652 --stripe-end-trim-m 3.0 --boundary-clearance-m 0.75 --headland-passes 2 --turn-radius-m 1.90 --stripe-turn-policy keyhole --waypoint-spacing-m 0.50 --straight-speed-mps 0.75 --outer-headland-speed-mps 0.50 --headland-speed-mps 0.75 --turn-speed-mps 0.50 --scan-from low --first-stripe-direction reverse --ring-direction clockwise --outer-headland-follows-boundary
+python site_coverage_planner_20260724.py preview "$site\01_boundary_final.csv" --output-dir "$site" --angle-degrees $angle --lane-spacing-m 0.9652 --stripe-end-trim-m 3.0 --boundary-clearance-m 0.75 --headland-passes 2 --turn-radius-m 1.90 --stripe-turn-policy keyhole --selective-turn-fitting --turn-fit-step-m 0.05 --maximum-turn-end-trim-m 3.0 --turn-fit-containment-margin-m 0.05 --waypoint-spacing-m 0.50 --straight-speed-mps 0.85 --outer-headland-speed-mps 0.85 --headland-speed-mps 0.85 --turn-speed-mps 0.85 --scan-from low --first-stripe-direction reverse --ring-direction clockwise --outer-headland-follows-boundary
 
 Invoke-Item "$site\02_coverage_preview.png"
 Invoke-Item "$site\02_perimeter_paths.png"
+Invoke-Item "$site\02_turn_fit_preview.png"
 Invoke-Item "$site\02_coverage_segments.csv"
+Invoke-Item "$site\02_turn_fit_report.csv"
 ```
 
 Before proceeding to Step 4, verify that the newly written settings contain
 the selected radius and turn policy:
 
 ```powershell
-Get-Content "$site\02_plan_settings.json" -Raw | ConvertFrom-Json | Select-Object angle_degrees, lane_spacing_m, turn_radius_m, stripe_turn_policy, straight_speed_mps, outer_headland_speed_mps, headland_speed_mps, turn_speed_mps
+Get-Content "$site\02_plan_settings.json" -Raw | ConvertFrom-Json | Select-Object angle_degrees, lane_spacing_m, turn_radius_m, stripe_turn_policy, selective_turn_fitting, turn_fit_step_m, maximum_turn_end_trim_m, turn_fit_containment_margin_m, straight_speed_mps, outer_headland_speed_mps, headland_speed_mps, turn_speed_mps
 ```
 
-For this Collins Drive test, the expected values are `20`, `0.9652`, `1.9`, and
-`keyhole`. If `turn_radius_m` still reports `3.0` or the policy is blank, Step 3
-was not rerun with the current command; do not start Step 4.
+For this Collins Drive test, the expected geometry values are `20`, `0.9652`,
+`1.9`, `keyhole`, and `selective_turn_fitting = True`. All four speed fields
+should be `0.85`. If the radius still reports `3.0`, selective fitting is
+false, or the policy is blank, Step 3 was not rerun with the current command;
+do not start Step 4.
 
 RPi5NAS, with an optional obstacle file:
 
@@ -617,6 +621,10 @@ python3 site_coverage_planner_20260724.py preview \
   --headland-passes 2 \
   --turn-radius-m 1.90 \
   --stripe-turn-policy keyhole \
+  --selective-turn-fitting \
+  --turn-fit-step-m 0.05 \
+  --maximum-turn-end-trim-m 3.0 \
+  --turn-fit-containment-margin-m 0.05 \
   --waypoint-spacing-m 0.50 \
   --scan-from low \
   --first-stripe-direction reverse \
@@ -639,6 +647,13 @@ Outputs:
   with `sequence`, `include`, start/end latitude and longitude, local
   east/north coordinates, and length. These endpoints can be used later as the
   reference segments for per-line cross-track-error analysis.
+- `02_turn_fit_report.csv` — one row per adjacent included stripe pair. It
+  records the initial/final connector mode, extra trim applied to the outgoing
+  end and incoming start, and whether the preferred keyhole was fitted or
+  remains unresolved.
+- `02_turn_fit_preview.png` — numbered straight lines with travel-direction
+  arrows plus fitted connectors. Orange connectors are preferred compact
+  keyholes; red connectors are boundary fallbacks requiring review.
 - `02_coverage_preview.png` — boundary, safe area, headlands, obstacles,
   numbered stripe arrows, and the preferred splice anchor.
 
@@ -663,6 +678,10 @@ overlap, then review `02_coverage_preview.png`, `02_coverage_segments.csv`, and
 | `stripe-end-trim-m` | Distance removed from both ends of every clipped stripe to leave turning room. This replaces the notebook’s separate “shorten stripes” script and is visible in the editable CSV/plot. |
 | `turn-radius-m` | Common minimum planning radius for left and right turns. Manual circle tests measured approximately 1.05 m full-left and 1.63 m full-right. This site uses 1.90 m: 0.27 m (about 17%) gentler than the weaker measured right turn. Do not plan at the measured limit without repeatability tests. |
 | `stripe-turn-policy` | `keyhole` constrains adjacent-row transitions to compact three-arc agricultural omega turns. `shortest-dubins` is retained for engineering comparison and must not be used merely to force a build. |
+| `selective-turn-fitting` | Keeps the common base stripe trim, then shortens only the outgoing end and incoming start for a transition that cannot use the preferred contained keyhole. |
+| `turn-fit-step-m` | Increment used while searching for the smallest symmetric endpoint adjustment. The worked command uses `0.05 m`. |
+| `maximum-turn-end-trim-m` | Maximum additional amount allowed at each adjoining endpoint. The minimum-segment rule still prevents a fitted stripe from becoming shorter than `minimum-segment-m`. |
+| `turn-fit-containment-margin-m` | Additional inward margin required while fitting preferred keyholes. It is separate from the ordinary numerical containment tolerance. |
 | `outer-headland-speed-mps` | Optional speed for perimeter pass 1. If omitted, pass 1 uses `headland-speed-mps` like the other perimeter passes. |
 | `headland-speed-mps` | Speed for perimeter pass 2 and any later perimeter passes. |
 | `waypoint-spacing-m` | Maximum sampling gap. 0.50 m is denser than the current controller’s historical 1 m examples. |
@@ -675,6 +694,9 @@ Open `02_coverage_segments.csv` in Excel:
 - `reverse`: set to `y` to swap that segment’s endpoints.
 - `start_lat/lon`, `end_lat/lon`: authoritative endpoints. They may be trimmed
   manually, but every edit must remain inside the plotted safe area.
+- `start_turn_trim_m`, `end_turn_trim_m`: extra selective adjustment applied
+  after the common base trim. These values explain exactly why a straight-line
+  endpoint moved.
 - local east/north columns are inspection aids and are recalculated from
   lat/lon during build.
 
@@ -735,7 +757,7 @@ $mission = Join-Path $site "${missionStem}.txt"
 Set-Location $planner
 .\.venv\Scripts\Activate.ps1
 
-python site_coverage_planner_20260724.py build --settings "$site\02_plan_settings.json" --segments "$site\02_coverage_segments.csv" --output $mission --strict-curvature
+python site_coverage_planner_20260724.py build --settings "$site\02_plan_settings.json" --segments "$site\02_coverage_segments.csv" --output $mission
 
 if ($LASTEXITCODE -eq 0) {
   Invoke-Item (Join-Path $site "${missionStem}_preview.png")

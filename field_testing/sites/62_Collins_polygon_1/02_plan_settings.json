@@ -2,7 +2,7 @@
   "angle_degrees": 20.0,
   "boundary_clearance_m": 0.75,
   "boundary_file": "C:\\Repos\\tractor2025\\field_testing\\sites\\62_Collins_polygon_1\\01_boundary_final.csv",
-  "created_utc": "2026-07-29T16:53:54.522858+00:00",
+  "created_utc": "2026-07-29T18:35:43.959974+00:00",
   "first_stripe_direction": "reverse",
   "format_version": 1,
   "frame": {
@@ -13,16 +13,20 @@
   "headland_passes": 2,
   "headland_speed_mps": 0.85,
   "lane_spacing_m": 0.9652,
+  "maximum_turn_end_trim_m": 3.0,
   "minimum_segment_m": 2.0,
   "obstacles_file": null,
   "outer_headland_follows_boundary": true,
   "outer_headland_speed_mps": 0.85,
   "outputs": {
     "preview_plot": "C:\\Repos\\tractor2025\\field_testing\\sites\\62_Collins_polygon_1\\02_coverage_preview.png",
-    "segments_csv": "C:\\Repos\\tractor2025\\field_testing\\sites\\62_Collins_polygon_1\\02_coverage_segments.csv"
+    "segments_csv": "C:\\Repos\\tractor2025\\field_testing\\sites\\62_Collins_polygon_1\\02_coverage_segments.csv",
+    "turn_fit_csv": "C:\\Repos\\tractor2025\\field_testing\\sites\\62_Collins_polygon_1\\02_turn_fit_report.csv",
+    "turn_fit_plot": "C:\\Repos\\tractor2025\\field_testing\\sites\\62_Collins_polygon_1\\02_turn_fit_preview.png"
   },
   "ring_direction": "clockwise",
   "scan_from": "low",
+  "selective_turn_fitting": true,
   "start_anchor": {
     "lat": 40.4856295,
     "lon": -80.332346333
@@ -31,6 +35,8 @@
   "straight_speed_mps": 0.85,
   "stripe_end_trim_m": 3.0,
   "stripe_turn_policy": "keyhole",
+  "turn_fit_containment_margin_m": 0.05,
+  "turn_fit_step_m": 0.05,
   "turn_lookahead_m": 1.5,
   "turn_radius_m": 1.9,
   "turn_speed_mps": 0.85,
