@@ -566,22 +566,24 @@ preview/build work. Also consider:
 - positive angles rotate counterclockwise from east;
 - values repeat every 180° because a stripe is an undirected axis.
 
-The notebook’s important value remains a normal input:
+For example, selecting the panel labeled `20°` means passing that same value:
 
 ```text
---angle-degrees 19
+--angle-degrees 20
 ```
 
-A 19° math-frame forward heading is a 71° compass heading; the opposite stripe
-direction is 251° compass.
+A `20°` math-frame stripe axis corresponds to compass headings of `70°` and
+`250°`. You do not need to convert the selected panel angle before giving it to
+the planner.
 
 ## Step 3 — Preview and edit the coverage plan
 
-Carry the selected Step 2 angle into `preview` through `--angle-degrees`. For
-the Collins Drive site, the selected value is `105`:
+Carry the exact angle printed on the selected Step 2 panel into `preview`
+through `--angle-degrees`. For the current Collins Drive test, the selected
+panel is `20°`, so set `$angle` to `20`:
 
 ```powershell
-$angle = 105
+$angle = 20
 
 python site_coverage_planner_20260724.py preview "$site\01_boundary_final.csv" --output-dir "$site" --angle-degrees $angle --lane-spacing-m 0.9652 --stripe-end-trim-m 3.0 --boundary-clearance-m 0.75 --headland-passes 2 --turn-radius-m 1.90 --stripe-turn-policy keyhole --waypoint-spacing-m 0.50 --straight-speed-mps 0.75 --outer-headland-speed-mps 0.50 --headland-speed-mps 0.75 --turn-speed-mps 0.50 --scan-from low --first-stripe-direction reverse --ring-direction clockwise --outer-headland-follows-boundary
 
@@ -597,7 +599,7 @@ the selected radius and turn policy:
 Get-Content "$site\02_plan_settings.json" -Raw | ConvertFrom-Json | Select-Object angle_degrees, lane_spacing_m, turn_radius_m, stripe_turn_policy, straight_speed_mps, outer_headland_speed_mps, headland_speed_mps, turn_speed_mps
 ```
 
-For Collins Drive, the expected values are `105`, `0.9652`, `1.9`, and
+For this Collins Drive test, the expected values are `20`, `0.9652`, `1.9`, and
 `keyhole`. If `turn_radius_m` still reports `3.0` or the policy is blank, Step 3
 was not rerun with the current command; do not start Step 4.
 
@@ -608,7 +610,7 @@ python3 site_coverage_planner_20260724.py preview \
   ~/field_plans/site_01/01_boundary_final.csv \
   --obstacles ~/field_plans/site_01/01_obstacles.csv \
   --output-dir ~/field_plans/site_01 \
-  --angle-degrees 105 \
+  --angle-degrees 20 \
   --lane-spacing-m 0.9652 \
   --stripe-end-trim-m 3.0 \
   --boundary-clearance-m 0.75 \
@@ -622,10 +624,10 @@ python3 site_coverage_planner_20260724.py preview \
   --outer-headland-follows-boundary
 ```
 
-For `105°`, `reverse` makes the first stripe heading approximately `165°`
-compass (south-southeast). With `scan-from low`, the following stripe is on the
-tractor's right and is driven at approximately `345°` compass
-(north-northwest). This matches the requested alternating-row setup before the
+For `20°`, `reverse` makes the first stripe heading approximately `250°`
+compass (west-southwest). With `scan-from low`, the following stripe is on the
+tractor's right and is driven at approximately `70°` compass
+(east-northeast). This matches the requested alternating-row setup before the
 keyhole turn geometry itself is generated and reviewed.
 
 Outputs:
