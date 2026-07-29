@@ -585,11 +585,12 @@ panel is `20°`, so set `$angle` to `20`:
 ```powershell
 $angle = 20
 
-python site_coverage_planner_20260724.py preview "$site\01_boundary_final.csv" --output-dir "$site" --angle-degrees $angle --lane-spacing-m 0.9652 --stripe-end-trim-m 3.0 --boundary-clearance-m 0.75 --headland-passes 2 --turn-radius-m 1.90 --stripe-turn-policy keyhole --selective-turn-fitting --turn-fit-step-m 0.05 --maximum-turn-end-trim-m 3.0 --turn-fit-containment-margin-m 0.05 --waypoint-spacing-m 0.50 --straight-speed-mps 0.85 --outer-headland-speed-mps 0.85 --headland-speed-mps 0.85 --turn-speed-mps 0.85 --scan-from low --first-stripe-direction reverse --ring-direction clockwise --outer-headland-follows-boundary
+python site_coverage_planner_20260724.py preview "$site\01_boundary_final.csv" --output-dir "$site" --angle-degrees $angle --lane-spacing-m 0.9652 --deck-width-m 1.0668 --stripe-end-trim-m 3.0 --boundary-clearance-m 0.75 --headland-passes 2 --turn-radius-m 1.90 --stripe-turn-policy keyhole --selective-turn-fitting --turn-fit-step-m 0.05 --maximum-turn-end-trim-m 3.0 --turn-fit-containment-margin-m 0.05 --waypoint-spacing-m 0.50 --straight-speed-mps 0.85 --outer-headland-speed-mps 0.85 --headland-speed-mps 0.85 --turn-speed-mps 0.85 --scan-from low --first-stripe-direction reverse --ring-direction clockwise --outer-headland-follows-boundary
 
 Invoke-Item "$site\02_coverage_preview.png"
 Invoke-Item "$site\02_perimeter_paths.png"
 Invoke-Item "$site\02_turn_fit_preview.png"
+Invoke-Item "$site\02_mower_deck_coverage.png"
 Invoke-Item "$site\02_coverage_segments.csv"
 Invoke-Item "$site\02_turn_fit_report.csv"
 ```
@@ -598,11 +599,12 @@ Before proceeding to Step 4, verify that the newly written settings contain
 the selected radius and turn policy:
 
 ```powershell
-Get-Content "$site\02_plan_settings.json" -Raw | ConvertFrom-Json | Select-Object angle_degrees, lane_spacing_m, turn_radius_m, stripe_turn_policy, selective_turn_fitting, turn_fit_step_m, maximum_turn_end_trim_m, turn_fit_containment_margin_m, straight_speed_mps, outer_headland_speed_mps, headland_speed_mps, turn_speed_mps
+Get-Content "$site\02_plan_settings.json" -Raw | ConvertFrom-Json | Select-Object angle_degrees, lane_spacing_m, deck_width_m, headland_passes, turn_radius_m, stripe_turn_policy, selective_turn_fitting, turn_fit_step_m, maximum_turn_end_trim_m, turn_fit_containment_margin_m, straight_speed_mps, outer_headland_speed_mps, headland_speed_mps, turn_speed_mps
 ```
 
 For this Collins Drive test, the expected geometry values are `20`, `0.9652`,
-`1.9`, `keyhole`, and `selective_turn_fitting = True`. All four speed fields
+`1.0668`, `2` perimeter passes, `1.9`, `keyhole`, and
+`selective_turn_fitting = True`. All four speed fields
 should be `0.85`. If the radius still reports `3.0`, selective fitting is
 false, or the policy is blank, Step 3 was not rerun with the current command;
 do not start Step 4.
@@ -616,6 +618,7 @@ python3 site_coverage_planner_20260724.py preview \
   --output-dir ~/field_plans/site_01 \
   --angle-degrees 20 \
   --lane-spacing-m 0.9652 \
+  --deck-width-m 1.0668 \
   --stripe-end-trim-m 3.0 \
   --boundary-clearance-m 0.75 \
   --headland-passes 2 \
@@ -652,8 +655,15 @@ Outputs:
   end and incoming start, and whether the preferred keyhole was fitted or
   remains unresolved.
 - `02_turn_fit_preview.png` — numbered straight lines with travel-direction
-  arrows plus fitted connectors. Orange connectors are preferred compact
-  keyholes; red connectors are boundary fallbacks requiring review.
+  arrows plus fitted connectors. It also shows the dashed original boundary
+  and separately colored perimeter-pass centerlines; its title states the
+  configured number of perimeter passes. Orange connectors are preferred
+  compact keyholes; red connectors are boundary fallbacks requiring review.
+- `02_mower_deck_coverage.png` — pro-forma 42-inch cutting coverage. It
+  separately colors perimeter pass 1, perimeter pass 2, and the interior
+  stripes/keyholes; outlines the original logged boundary; and marks presumed
+  uncut gaps in red. This is a conservative Step 3 model because small splice
+  connectors added during Step 4 are not yet available.
 - `02_coverage_preview.png` — boundary, safe area, headlands, obstacles,
   numbered stripe arrows, and the preferred splice anchor.
 
@@ -672,6 +682,7 @@ overlap, then review `02_coverage_preview.png`, `02_coverage_segments.csv`, and
 | Parameter | Meaning |
 |---|---|
 | `lane-spacing-m` | Center-to-center cut spacing. The selected 38-inch spacing is `0.9652 m`, giving about 4 inches of nominal overlap with the 42-inch (`1.0668 m`) deck. Verify actual cut width and GPS tracking. |
+| `deck-width-m` | Cutting width used only for the pro-forma coverage/gap plot. The current 42-inch deck is `1.0668 m`. This does not alter the planned centerline paths. |
 | `boundary-clearance-m` | Distance from the logged perimeter to the tractor reference point. Set it from deck/body overhang, survey meaning, GPS error, and desired safety margin. |
 | `headland-passes` | Perimeter coverage passes before interior stripes. This creates working room but does not by itself guarantee a feasible U-turn. |
 | `outer-headland-follows-boundary` | Opt-in only when the finalized, manually driven boundary already includes the required property/homeowner safety buffer. Pass 1 follows that boundary with tractor-radius corner rounding and no uniform inset. Pass 2 is one `lane-spacing-m` inward, pass 3 is two spacings inward, and so on. |

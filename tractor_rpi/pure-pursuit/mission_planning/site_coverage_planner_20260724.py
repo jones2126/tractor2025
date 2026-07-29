@@ -774,6 +774,7 @@ def settings_from_args(
         "boundary_clearance_m": args.boundary_clearance_m,
         "outer_headland_follows_boundary": args.outer_headland_follows_boundary,
         "headland_passes": args.headland_passes,
+        "deck_width_m": args.deck_width_m,
         "minimum_segment_m": args.minimum_segment_m,
         "stripe_end_trim_m": args.stripe_end_trim_m,
         "scan_from": args.scan_from,
@@ -803,6 +804,9 @@ def settings_from_args(
             "preview_plot": str((output_dir / "02_coverage_preview.png").resolve()),
             "turn_fit_csv": str((output_dir / "02_turn_fit_report.csv").resolve()),
             "turn_fit_plot": str((output_dir / "02_turn_fit_preview.png").resolve()),
+            "mower_deck_coverage_plot": str(
+                (output_dir / "02_mower_deck_coverage.png").resolve()
+            ),
         },
     }
 
@@ -902,6 +906,7 @@ def run_preview(args: argparse.Namespace) -> int:
     perimeter_plot_path = output_dir / "02_perimeter_paths.png"
     turn_fit_path = output_dir / "02_turn_fit_report.csv"
     turn_fit_plot_path = output_dir / "02_turn_fit_preview.png"
+    mower_coverage_plot_path = output_dir / "02_mower_deck_coverage.png"
     write_json(settings_path, settings)
     write_csv(segments_path, SEGMENT_COLUMNS, segment_rows)
     write_csv(turn_fit_path, TURN_FIT_COLUMNS, turn_fit_rows)
@@ -987,6 +992,32 @@ def run_preview(args: argparse.Namespace) -> int:
         alpha=0.65,
         label="Keyhole containment area",
     )
+    boundary_x, boundary_y = boundary.exterior.xy
+    ax.plot(
+        boundary_x,
+        boundary_y,
+        color="#212121",
+        linestyle="--",
+        linewidth=1.5,
+        label="Original logged boundary",
+    )
+    plotted_headland_passes: set[int] = set()
+    for path in headlands:
+        pass_number = int(path["pass"])
+        points = path["points"]
+        color = "#2e7d32" if pass_number == 1 else "#6a1b9a"
+        ax.plot(
+            [point[0] for point in points],
+            [point[1] for point in points],
+            color=color,
+            linewidth=2.2,
+            label=(
+                f"Perimeter pass {pass_number} centerline"
+                if pass_number not in plotted_headland_passes
+                else None
+            ),
+        )
+        plotted_headland_passes.add(pass_number)
     included_stripes = [
         (sequence, stripe)
         for sequence, stripe in enumerate(stripes, 1)
@@ -1051,13 +1082,108 @@ def run_preview(args: argparse.Namespace) -> int:
     ax.set_xlabel("East (m)")
     ax.set_ylabel("North (m)")
     ax.set_title(
-        "Selective keyhole-turn fit\n"
+        f"Selective keyhole-turn fit — {args.headland_passes} perimeter passes\n"
         "Blue arrows: reviewed straight lines; orange: preferred; red: fallback"
     )
     ax.grid(True, alpha=0.3)
     ax.legend(loc="best")
     fig.tight_layout()
     fig.savefig(turn_fit_plot_path, dpi=170)
+    plt.close(fig)
+
+    # Pro-forma mower-deck swaths. This intentionally uses the Step 3 geometry;
+    # small splice connectors that are created during build are not yet known.
+    from shapely.geometry import LineString
+    from shapely.ops import unary_union
+
+    deck_radius_m = args.deck_width_m / 2.0
+    headland_swaths: dict[int, object] = {}
+    for pass_number in sorted({int(path["pass"]) for path in headlands}):
+        pass_lines = [
+            LineString(path["points"])
+            for path in headlands
+            if int(path["pass"]) == pass_number
+        ]
+        headland_swaths[pass_number] = unary_union(pass_lines).buffer(deck_radius_m)
+
+    stripe_lines = [
+        LineString([stripe["start"], stripe["end"]])
+        for _sequence, stripe in included_stripes
+    ]
+    connector_lines = []
+    for (_from_sequence, outgoing), (_to_sequence, incoming) in zip(
+        included_stripes, included_stripes[1:]
+    ):
+        connector = keyhole_connector(
+            path_end_pose([outgoing["start"], outgoing["end"]]),
+            path_start_pose([incoming["start"], incoming["end"]]),
+            drive_area,
+            args.turn_radius_m,
+            args.waypoint_spacing_m,
+        )
+        if connector is not None:
+            connector_lines.append(LineString(connector["points"]))
+    interior_swath = unary_union(stripe_lines + connector_lines).buffer(deck_radius_m)
+    all_swaths = unary_union([*headland_swaths.values(), interior_swath])
+    presumed_gaps = boundary.difference(all_swaths)
+    gap_percent = 100.0 * presumed_gaps.area / boundary.area
+
+    fig, ax = plt.subplots(figsize=(12, 10))
+    draw_polygon(
+        ax, boundary, facecolor="#fafafa", edgecolor="#212121",
+        alpha=1.0, label="Area inside original logged boundary",
+    )
+    pass_colors = {1: "#43a047", 2: "#8e24aa"}
+    for pass_number, swath in headland_swaths.items():
+        draw_polygon(
+            ax,
+            swath.intersection(boundary),
+            facecolor=pass_colors.get(pass_number, "#00897b"),
+            edgecolor=pass_colors.get(pass_number, "#00897b"),
+            alpha=0.38,
+            label=f"Perimeter pass {pass_number} — deck swath",
+        )
+    draw_polygon(
+        ax,
+        interior_swath.intersection(boundary),
+        facecolor="#42a5f5",
+        edgecolor="#1565c0",
+        alpha=0.32,
+        label="Stripes + fitted keyholes — deck swath",
+    )
+    if not presumed_gaps.is_empty:
+        draw_polygon(
+            ax,
+            presumed_gaps,
+            facecolor="#ef5350",
+            edgecolor="#b71c1c",
+            alpha=0.72,
+            label=f"Presumed uncut gaps ({gap_percent:.1f}%)",
+        )
+    ax.plot(
+        boundary_x, boundary_y, color="#212121", linestyle="--",
+        linewidth=1.5, label="Original logged boundary",
+    )
+    for path in headlands:
+        pass_number = int(path["pass"])
+        points = path["points"]
+        ax.plot(
+            [point[0] for point in points],
+            [point[1] for point in points],
+            color=pass_colors.get(pass_number, "#00695c"),
+            linewidth=1.3,
+        )
+    ax.set_aspect("equal", adjustable="datalim")
+    ax.set_xlabel("East (m)")
+    ax.set_ylabel("North (m)")
+    ax.set_title(
+        f"Pro-forma cutting coverage — {args.headland_passes} perimeter passes\n"
+        f"{args.deck_width_m:.4f} m (42 in) deck; red is presumed uncut"
+    )
+    ax.grid(True, alpha=0.25)
+    ax.legend(loc="best")
+    fig.tight_layout()
+    fig.savefig(mower_coverage_plot_path, dpi=170)
     plt.close(fig)
 
     fig, ax = plt.subplots(figsize=(10, 8))
@@ -1115,6 +1241,8 @@ def run_preview(args: argparse.Namespace) -> int:
     print(f"Editable segments    : {segments_path}")
     print(f"Turn-fit report      : {turn_fit_path}")
     print(f"Turn-fit plot        : {turn_fit_plot_path}")
+    print(f"Mower coverage plot  : {mower_coverage_plot_path}")
+    print(f"Presumed uncut area  : {presumed_gaps.area:.1f} m² ({gap_percent:.1f}%)")
     print(f"Checkpoint plot      : {plot_path}")
     print(
         "\nNext: inspect the plot and edit include/reverse/sequence/notes in the "
@@ -1897,6 +2025,12 @@ def add_geometry_arguments(parser: argparse.ArgumentParser) -> None:
         help="number of perimeter coverage passes before stripes (default 2)",
     )
     parser.add_argument(
+        "--deck-width-m",
+        type=float,
+        default=1.0668,
+        help="modeled mower-deck cutting width (default 1.0668 m / 42 in)",
+    )
+    parser.add_argument(
         "--minimum-segment-m",
         type=float,
         default=2.0,
@@ -2051,7 +2185,7 @@ def main() -> int:
         "lane_spacing_m", "boundary_clearance_m", "minimum_segment_m",
         "turn_radius_m", "waypoint_spacing_m", "straight_lookahead_m",
         "turn_lookahead_m", "headland_lookahead_m", "turn_fit_step_m",
-        "maximum_turn_end_trim_m",
+        "maximum_turn_end_trim_m", "deck_width_m",
     ):
         if hasattr(args, name):
             try:

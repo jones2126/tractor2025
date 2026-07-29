@@ -2,7 +2,8 @@
   "angle_degrees": 20.0,
   "boundary_clearance_m": 0.75,
   "boundary_file": "C:\\Repos\\tractor2025\\field_testing\\sites\\62_Collins_polygon_1\\01_boundary_final.csv",
-  "created_utc": "2026-07-29T18:35:43.959974+00:00",
+  "created_utc": "2026-07-29T18:54:37.631285+00:00",
+  "deck_width_m": 1.0668,
   "first_stripe_direction": "reverse",
   "format_version": 1,
   "frame": {
@@ -19,6 +20,7 @@
   "outer_headland_follows_boundary": true,
   "outer_headland_speed_mps": 0.85,
   "outputs": {
+    "mower_deck_coverage_plot": "C:\\Repos\\tractor2025\\field_testing\\sites\\62_Collins_polygon_1\\02_mower_deck_coverage.png",
     "preview_plot": "C:\\Repos\\tractor2025\\field_testing\\sites\\62_Collins_polygon_1\\02_coverage_preview.png",
     "segments_csv": "C:\\Repos\\tractor2025\\field_testing\\sites\\62_Collins_polygon_1\\02_coverage_segments.csv",
     "turn_fit_csv": "C:\\Repos\\tractor2025\\field_testing\\sites\\62_Collins_polygon_1\\02_turn_fit_report.csv",
