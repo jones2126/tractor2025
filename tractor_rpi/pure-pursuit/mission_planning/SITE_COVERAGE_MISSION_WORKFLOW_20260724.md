@@ -661,8 +661,10 @@ Outputs:
   compact keyholes; red connectors are boundary fallbacks requiring review.
 - `02_mower_deck_coverage.png` — pro-forma 42-inch cutting coverage. It
   separately colors perimeter pass 1, perimeter pass 2, and the interior
-  stripes/keyholes; outlines the original logged boundary; and marks presumed
-  uncut gaps in red. This is a conservative Step 3 model because small splice
+  stripes/keyholes; shows the original logged GPS path as the pass 1
+  centerline; and marks presumed uncut gaps in red. The intended cutting area
+  extends one half-deck width (21 inches) outward from the manually driven
+  pass 1 centerline. This is a conservative Step 3 model because small splice
   connectors added during Step 4 are not yet available.
 - `02_coverage_preview.png` — boundary, safe area, headlands, obstacles,
   numbered stripe arrows, and the preferred splice anchor.
@@ -682,7 +684,7 @@ overlap, then review `02_coverage_preview.png`, `02_coverage_segments.csv`, and
 | Parameter | Meaning |
 |---|---|
 | `lane-spacing-m` | Center-to-center cut spacing. The selected 38-inch spacing is `0.9652 m`, giving about 4 inches of nominal overlap with the 42-inch (`1.0668 m`) deck. Verify actual cut width and GPS tracking. |
-| `deck-width-m` | Cutting width used only for the pro-forma coverage/gap plot. The current 42-inch deck is `1.0668 m`. This does not alter the planned centerline paths. |
+| `deck-width-m` | Cutting width used only for the pro-forma coverage/gap plot. The current 42-inch deck is `1.0668 m`, centered on the rear-axle GPS/base_link. The logged boundary is the manually driven pass 1 centerline, so the modeled intended cutting area extends 21 inches outward from it. This does not alter the planned centerline paths. |
 | `boundary-clearance-m` | Distance from the logged perimeter to the tractor reference point. Set it from deck/body overhang, survey meaning, GPS error, and desired safety margin. |
 | `headland-passes` | Perimeter coverage passes before interior stripes. This creates working room but does not by itself guarantee a feasible U-turn. |
 | `outer-headland-follows-boundary` | Opt-in only when the finalized, manually driven boundary already includes the required property/homeowner safety buffer. Pass 1 follows that boundary with tractor-radius corner rounding and no uniform inset. Pass 2 is one `lane-spacing-m` inward, pass 3 is two spacings inward, and so on. |

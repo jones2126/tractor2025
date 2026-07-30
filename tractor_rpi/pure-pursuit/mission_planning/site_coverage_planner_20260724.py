@@ -1135,19 +1135,23 @@ def run_preview(args: argparse.Namespace) -> int:
             connector_lines.append(LineString(connector["points"]))
     interior_swath = unary_union(stripe_lines + connector_lines).buffer(deck_radius_m)
     all_swaths = unary_union([*headland_swaths.values(), interior_swath])
-    presumed_gaps = boundary.difference(all_swaths)
-    gap_percent = 100.0 * presumed_gaps.area / boundary.area
+    # The logged boundary is the manually driven pass-1 GPS/base_link
+    # centerline, not the outer cutting edge. The intended cut area therefore
+    # extends one half-deck width outward from that centerline.
+    intended_cut_area = boundary.buffer(deck_radius_m, join_style="round")
+    presumed_gaps = intended_cut_area.difference(all_swaths)
+    gap_percent = 100.0 * presumed_gaps.area / intended_cut_area.area
 
     fig, ax = plt.subplots(figsize=(12, 10))
     draw_polygon(
-        ax, boundary, facecolor="#fafafa", edgecolor="#212121",
-        alpha=1.0, label="Area inside original logged boundary",
+        ax, intended_cut_area, facecolor="#fafafa", edgecolor="#616161",
+        alpha=1.0, label="Intended cut area (21 in outside pass 1 centerline)",
     )
     pass_colors = {1: "#43a047", 2: "#8e24aa"}
     for pass_number, swath in headland_swaths.items():
         draw_polygon(
             ax,
-            swath.intersection(boundary),
+            swath.intersection(intended_cut_area),
             facecolor=pass_colors.get(pass_number, "#00897b"),
             edgecolor=pass_colors.get(pass_number, "#00897b"),
             alpha=0.38,
@@ -1155,7 +1159,7 @@ def run_preview(args: argparse.Namespace) -> int:
         )
     draw_polygon(
         ax,
-        interior_swath.intersection(boundary),
+        interior_swath.intersection(intended_cut_area),
         facecolor="#42a5f5",
         edgecolor="#1565c0",
         alpha=0.32,
@@ -1172,7 +1176,7 @@ def run_preview(args: argparse.Namespace) -> int:
         )
     ax.plot(
         boundary_x, boundary_y, color="#212121", linestyle="--",
-        linewidth=1.5, label="Original logged boundary",
+        linewidth=1.5, label="Manual GPS path / pass 1 centerline",
     )
     for path in headlands:
         pass_number = int(path["pass"])
