@@ -1,0 +1,21 @@
+{
+  "configured_turn_radius_m": 1.9,
+  "duplicate_consecutive_points": 0,
+  "errors": [],
+  "gap_limit_m": 0.8,
+  "maximum_gap_m": 0.5005876688699082,
+  "maximum_speed_mps": 0.85,
+  "maximum_yaw_error_degrees": 0.2507519085918571,
+  "minimum_distance_to_safe_area_edge_m": 0.023374693200927454,
+  "minimum_lookahead_m": 1.5,
+  "minimum_sampled_radius_m": 0.4593106734841366,
+  "minimum_speed_mps": 0.85,
+  "mission_file": "C:\\Repos\\tractor2025\\field_testing\\sites\\62_Collins_polygon_1\\62_Collins_polygon_1_mission.txt",
+  "route_length_m": 2106.5301647776573,
+  "settings_file": "C:\\Repos\\tractor2025\\field_testing\\sites\\62_Collins_polygon_1\\02_plan_settings.json",
+  "status": "REVIEW",
+  "warnings": [
+    "Sampled path radius 0.46 m is below 90% of configured 1.90 m. Inspect the marked corner."
+  ],
+  "waypoints": 4526
+}

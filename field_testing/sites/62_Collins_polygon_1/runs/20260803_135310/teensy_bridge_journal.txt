@@ -1,0 +1,284 @@
+Aug 03 13:30:25 raspberrypi teensy-bridge[1566]: 2026-08-03 13:30:25,771 - INFO - ✓ STEER-SYNC BROADCAST (1020 bytes, GPS=3, q=0)
+Aug 03 13:30:49 raspberrypi teensy-bridge[1566]: 2026-08-03 13:30:49,776 - INFO - ✓ STEER-SYNC BROADCAST (1020 bytes, GPS=3, q=0)
+Aug 03 13:31:15 raspberrypi teensy-bridge[1566]: 2026-08-03 13:31:15,773 - INFO - ✓ STEER-SYNC BROADCAST (1015 bytes, GPS=3, q=0)
+Aug 03 13:31:39 raspberrypi teensy-bridge[1566]: 2026-08-03 13:31:39,778 - INFO - ✓ STEER-SYNC BROADCAST (1018 bytes, GPS=3, q=0)
+Aug 03 13:32:05 raspberrypi teensy-bridge[1566]: 2026-08-03 13:32:05,771 - INFO - ✓ STEER-SYNC BROADCAST (1016 bytes, GPS=3, q=0)
+Aug 03 13:32:29 raspberrypi teensy-bridge[1566]: 2026-08-03 13:32:29,776 - INFO - ✓ STEER-SYNC BROADCAST (1021 bytes, GPS=3, q=0)
+Aug 03 13:32:55 raspberrypi teensy-bridge[1566]: 2026-08-03 13:32:55,773 - INFO - ✓ STEER-SYNC BROADCAST (1019 bytes, GPS=3, q=0)
+Aug 03 13:33:19 raspberrypi teensy-bridge[1566]: 2026-08-03 13:33:19,777 - INFO - ✓ STEER-SYNC BROADCAST (1019 bytes, GPS=3, q=0)
+Aug 03 13:33:45 raspberrypi teensy-bridge[1566]: 2026-08-03 13:33:45,777 - INFO - ✓ STEER-SYNC BROADCAST (1018 bytes, GPS=3, q=0)
+Aug 03 13:34:09 raspberrypi teensy-bridge[1566]: 2026-08-03 13:34:09,774 - INFO - ✓ STEER-SYNC BROADCAST (1018 bytes, GPS=3, q=0)
+Aug 03 13:34:35 raspberrypi teensy-bridge[1566]: 2026-08-03 13:34:35,772 - INFO - ✓ STEER-SYNC BROADCAST (1021 bytes, GPS=3, q=0)
+Aug 03 13:34:59 raspberrypi teensy-bridge[1566]: 2026-08-03 13:34:59,779 - INFO - ✓ STEER-SYNC BROADCAST (1016 bytes, GPS=3, q=0)
+Aug 03 13:35:25 raspberrypi teensy-bridge[1566]: 2026-08-03 13:35:25,775 - INFO - ✓ STEER-SYNC BROADCAST (1020 bytes, GPS=3, q=0)
+Aug 03 13:35:49 raspberrypi teensy-bridge[1566]: 2026-08-03 13:35:49,773 - INFO - ✓ STEER-SYNC BROADCAST (1015 bytes, GPS=3, q=0)
+Aug 03 13:36:15 raspberrypi teensy-bridge[1566]: 2026-08-03 13:36:15,770 - INFO - ✓ STEER-SYNC BROADCAST (1019 bytes, GPS=3, q=0)
+Aug 03 13:36:39 raspberrypi teensy-bridge[1566]: 2026-08-03 13:36:39,774 - INFO - ✓ STEER-SYNC BROADCAST (1020 bytes, GPS=3, q=0)
+Aug 03 13:37:05 raspberrypi teensy-bridge[1566]: 2026-08-03 13:37:05,771 - INFO - ✓ STEER-SYNC BROADCAST (1014 bytes, GPS=3, q=0)
+Aug 03 13:37:29 raspberrypi teensy-bridge[1566]: 2026-08-03 13:37:29,777 - INFO - ✓ STEER-SYNC BROADCAST (1020 bytes, GPS=3, q=0)
+Aug 03 13:37:55 raspberrypi teensy-bridge[1566]: 2026-08-03 13:37:55,773 - INFO - ✓ STEER-SYNC BROADCAST (1020 bytes, GPS=3, q=0)
+Aug 03 13:38:19 raspberrypi teensy-bridge[1566]: 2026-08-03 13:38:19,771 - INFO - ✓ STEER-SYNC BROADCAST (1021 bytes, GPS=3, q=0)
+Aug 03 13:38:45 raspberrypi teensy-bridge[1566]: 2026-08-03 13:38:45,776 - INFO - ✓ STEER-SYNC BROADCAST (1018 bytes, GPS=3, q=0)
+Aug 03 13:39:09 raspberrypi teensy-bridge[1566]: 2026-08-03 13:39:09,772 - INFO - ✓ STEER-SYNC BROADCAST (1020 bytes, GPS=3, q=0)
+Aug 03 13:39:35 raspberrypi teensy-bridge[1566]: 2026-08-03 13:39:35,769 - INFO - ✓ STEER-SYNC BROADCAST (1019 bytes, GPS=3, q=0)
+Aug 03 13:39:59 raspberrypi teensy-bridge[1566]: 2026-08-03 13:39:59,776 - INFO - ✓ STEER-SYNC BROADCAST (1020 bytes, GPS=3, q=0)
+Aug 03 13:40:25 raspberrypi teensy-bridge[1566]: 2026-08-03 13:40:25,774 - INFO - ✓ STEER-SYNC BROADCAST (1017 bytes, GPS=3, q=0)
+Aug 03 13:40:49 raspberrypi teensy-bridge[1566]: 2026-08-03 13:40:49,770 - INFO - ✓ STEER-SYNC BROADCAST (1018 bytes, GPS=3, q=0)
+Aug 03 13:41:15 raspberrypi teensy-bridge[1566]: 2026-08-03 13:41:15,776 - INFO - ✓ STEER-SYNC BROADCAST (1021 bytes, GPS=3, q=0)
+Aug 03 13:41:22 raspberrypi teensy-bridge[1566]: 2026-08-03 13:41:22,319 - INFO - GPS: 3 → 1
+Aug 03 13:41:39 raspberrypi teensy-bridge[1566]: 2026-08-03 13:41:39,776 - INFO - ✓ STEER-SYNC BROADCAST (1020 bytes, GPS=1, q=0)
+Aug 03 13:42:05 raspberrypi teensy-bridge[1566]: 2026-08-03 13:42:05,771 - INFO - ✓ STEER-SYNC BROADCAST (1021 bytes, GPS=1, q=0)
+Aug 03 13:42:29 raspberrypi teensy-bridge[1566]: 2026-08-03 13:42:29,769 - INFO - ✓ STEER-SYNC BROADCAST (1022 bytes, GPS=1, q=0)
+Aug 03 13:42:55 raspberrypi teensy-bridge[1566]: 2026-08-03 13:42:55,768 - INFO - ✓ STEER-SYNC BROADCAST (1020 bytes, GPS=1, q=0)
+Aug 03 13:43:19 raspberrypi teensy-bridge[1566]: 2026-08-03 13:43:19,776 - INFO - ✓ STEER-SYNC BROADCAST (1023 bytes, GPS=1, q=0)
+Aug 03 13:43:45 raspberrypi teensy-bridge[1566]: 2026-08-03 13:43:45,772 - INFO - ✓ STEER-SYNC BROADCAST (1018 bytes, GPS=1, q=0)
+Aug 03 13:44:09 raspberrypi teensy-bridge[1566]: 2026-08-03 13:44:09,770 - INFO - ✓ STEER-SYNC BROADCAST (1023 bytes, GPS=1, q=0)
+Aug 03 13:44:35 raspberrypi teensy-bridge[1566]: 2026-08-03 13:44:35,769 - INFO - ✓ STEER-SYNC BROADCAST (1022 bytes, GPS=1, q=0)
+Aug 03 13:44:59 raspberrypi teensy-bridge[1566]: 2026-08-03 13:44:59,776 - INFO - ✓ STEER-SYNC BROADCAST (1022 bytes, GPS=1, q=0)
+Aug 03 13:45:25 raspberrypi teensy-bridge[1566]: 2026-08-03 13:45:25,774 - INFO - ✓ STEER-SYNC BROADCAST (1016 bytes, GPS=1, q=0)
+Aug 03 13:45:49 raspberrypi teensy-bridge[1566]: 2026-08-03 13:45:49,772 - INFO - ✓ STEER-SYNC BROADCAST (1021 bytes, GPS=1, q=0)
+Aug 03 13:46:11 raspberrypi teensy-bridge[1566]: 2026-08-03 13:46:11,831 - INFO - GPS: 1 → 2
+Aug 03 13:46:15 raspberrypi teensy-bridge[1566]: 2026-08-03 13:46:15,769 - INFO - ✓ STEER-SYNC BROADCAST (1020 bytes, GPS=2, q=0)
+Aug 03 13:46:19 raspberrypi teensy-bridge[1566]: 2026-08-03 13:46:19,505 - INFO - GPS: 2 → 3
+Aug 03 13:46:39 raspberrypi teensy-bridge[1566]: 2026-08-03 13:46:39,770 - INFO - ✓ STEER-SYNC BROADCAST (1018 bytes, GPS=3, q=0)
+Aug 03 13:47:05 raspberrypi teensy-bridge[1566]: 2026-08-03 13:47:05,766 - INFO - ✓ STEER-SYNC BROADCAST (1020 bytes, GPS=3, q=0)
+Aug 03 13:47:29 raspberrypi teensy-bridge[1566]: 2026-08-03 13:47:29,774 - INFO - ✓ STEER-SYNC BROADCAST (1020 bytes, GPS=3, q=0)
+Aug 03 13:47:55 raspberrypi teensy-bridge[1566]: 2026-08-03 13:47:55,775 - INFO - ✓ STEER-SYNC BROADCAST (1021 bytes, GPS=3, q=0)
+Aug 03 13:48:19 raspberrypi teensy-bridge[1566]: 2026-08-03 13:48:19,771 - INFO - ✓ STEER-SYNC BROADCAST (1020 bytes, GPS=3, q=0)
+Aug 03 13:48:45 raspberrypi teensy-bridge[1566]: 2026-08-03 13:48:45,772 - INFO - ✓ STEER-SYNC BROADCAST (1020 bytes, GPS=3, q=0)
+Aug 03 13:49:09 raspberrypi teensy-bridge[1566]: 2026-08-03 13:49:09,769 - INFO - ✓ STEER-SYNC BROADCAST (1021 bytes, GPS=3, q=0)
+Aug 03 13:49:35 raspberrypi teensy-bridge[1566]: 2026-08-03 13:49:35,765 - INFO - ✓ STEER-SYNC BROADCAST (1020 bytes, GPS=3, q=0)
+Aug 03 13:49:59 raspberrypi teensy-bridge[1566]: 2026-08-03 13:49:59,775 - INFO - ✓ STEER-SYNC BROADCAST (1021 bytes, GPS=3, q=0)
+Aug 03 13:50:25 raspberrypi teensy-bridge[1566]: 2026-08-03 13:50:25,775 - INFO - ✓ STEER-SYNC BROADCAST (1016 bytes, GPS=3, q=0)
+Aug 03 13:50:49 raspberrypi teensy-bridge[1566]: 2026-08-03 13:50:49,772 - INFO - ✓ STEER-SYNC BROADCAST (1021 bytes, GPS=3, q=0)
+Aug 03 13:51:15 raspberrypi teensy-bridge[1566]: 2026-08-03 13:51:15,769 - INFO - ✓ STEER-SYNC BROADCAST (1020 bytes, GPS=3, q=0)
+Aug 03 13:51:39 raspberrypi teensy-bridge[1566]: 2026-08-03 13:51:39,766 - INFO - ✓ STEER-SYNC BROADCAST (1020 bytes, GPS=3, q=0)
+Aug 03 13:52:05 raspberrypi teensy-bridge[1566]: 2026-08-03 13:52:05,774 - INFO - ✓ STEER-SYNC BROADCAST (1021 bytes, GPS=3, q=0)
+Aug 03 13:52:29 raspberrypi teensy-bridge[1566]: 2026-08-03 13:52:29,770 - INFO - ✓ STEER-SYNC BROADCAST (1017 bytes, GPS=3, q=0)
+Aug 03 13:52:55 raspberrypi teensy-bridge[1566]: 2026-08-03 13:52:55,768 - INFO - ✓ STEER-SYNC BROADCAST (1020 bytes, GPS=3, q=0)
+Aug 03 13:53:19 raspberrypi teensy-bridge[1566]: 2026-08-03 13:53:19,770 - INFO - ✓ STEER-SYNC BROADCAST (1030 bytes, GPS=3, q=0)
+Aug 03 13:53:45 raspberrypi teensy-bridge[1566]: 2026-08-03 13:53:45,766 - INFO - ✓ STEER-SYNC BROADCAST (1029 bytes, GPS=3, q=0)
+Aug 03 13:54:09 raspberrypi teensy-bridge[1566]: 2026-08-03 13:54:09,767 - INFO - ✓ STEER-SYNC BROADCAST (1031 bytes, GPS=3, q=0)
+Aug 03 13:54:35 raspberrypi teensy-bridge[1566]: 2026-08-03 13:54:35,770 - INFO - ✓ STEER-SYNC BROADCAST (1033 bytes, GPS=3, q=0)
+Aug 03 13:54:59 raspberrypi teensy-bridge[1566]: 2026-08-03 13:54:59,769 - INFO - ✓ STEER-SYNC BROADCAST (1048 bytes, GPS=3, q=0)
+Aug 03 13:55:25 raspberrypi teensy-bridge[1566]: 2026-08-03 13:55:25,773 - INFO - ✓ STEER-SYNC BROADCAST (1046 bytes, GPS=3, q=0)
+Aug 03 13:55:49 raspberrypi teensy-bridge[1566]: 2026-08-03 13:55:49,773 - INFO - ✓ STEER-SYNC BROADCAST (1047 bytes, GPS=3, q=0)
+Aug 03 13:56:15 raspberrypi teensy-bridge[1566]: 2026-08-03 13:56:15,767 - INFO - ✓ STEER-SYNC BROADCAST (1051 bytes, GPS=3, q=0)
+Aug 03 13:56:39 raspberrypi teensy-bridge[1566]: 2026-08-03 13:56:39,772 - INFO - ✓ STEER-SYNC BROADCAST (1054 bytes, GPS=3, q=0)
+Aug 03 13:57:05 raspberrypi teensy-bridge[1566]: 2026-08-03 13:57:05,766 - INFO - ✓ STEER-SYNC BROADCAST (1046 bytes, GPS=3, q=0)
+Aug 03 13:57:09 raspberrypi teensy-bridge[1566]: 2026-08-03 13:57:09,579 - INFO - GPS: 3 → 1
+Aug 03 13:57:10 raspberrypi teensy-bridge[1566]: 2026-08-03 13:57:10,632 - INFO - GPS: 1 → 2
+Aug 03 13:57:11 raspberrypi teensy-bridge[1566]: 2026-08-03 13:57:11,836 - INFO - GPS: 2 → 3
+Aug 03 13:57:15 raspberrypi teensy-bridge[1566]: 2026-08-03 13:57:15,797 - INFO - GPS: 3 → 1
+Aug 03 13:57:16 raspberrypi teensy-bridge[1566]: 2026-08-03 13:57:16,700 - INFO - GPS: 1 → 3
+Aug 03 13:57:18 raspberrypi teensy-bridge[1566]: 2026-08-03 13:57:18,204 - INFO - GPS: 3 → 1
+Aug 03 13:57:19 raspberrypi teensy-bridge[1566]: 2026-08-03 13:57:19,508 - INFO - GPS: 1 → 3
+Aug 03 13:57:29 raspberrypi teensy-bridge[1566]: 2026-08-03 13:57:29,769 - INFO - ✓ STEER-SYNC BROADCAST (1050 bytes, GPS=3, q=0)
+Aug 03 13:57:51 raspberrypi teensy-bridge[1566]: 2026-08-03 13:57:51,606 - INFO - GPS: 3 → 1
+Aug 03 13:57:53 raspberrypi teensy-bridge[1566]: 2026-08-03 13:57:53,611 - INFO - GPS: 1 → 2
+Aug 03 13:57:55 raspberrypi teensy-bridge[1566]: 2026-08-03 13:57:55,765 - INFO - ✓ STEER-SYNC BROADCAST (1028 bytes, GPS=2, q=0)
+Aug 03 13:57:55 raspberrypi teensy-bridge[1566]: 2026-08-03 13:57:55,818 - INFO - GPS: 2 → 3
+Aug 03 13:58:07 raspberrypi teensy-bridge[1566]: 2026-08-03 13:58:07,505 - INFO - GPS: 3 → 1
+Aug 03 13:58:09 raspberrypi teensy-bridge[1566]: 2026-08-03 13:58:09,612 - INFO - GPS: 1 → 3
+Aug 03 13:58:19 raspberrypi teensy-bridge[1566]: 2026-08-03 13:58:19,772 - INFO - ✓ STEER-SYNC BROADCAST (1050 bytes, GPS=3, q=0)
+Aug 03 13:58:23 raspberrypi teensy-bridge[1566]: 2026-08-03 13:58:23,102 - INFO - GPS: 3 → 2
+Aug 03 13:58:24 raspberrypi teensy-bridge[1566]: 2026-08-03 13:58:24,907 - INFO - GPS: 2 → 3
+Aug 03 13:58:45 raspberrypi teensy-bridge[1566]: 2026-08-03 13:58:45,768 - INFO - ✓ STEER-SYNC BROADCAST (1055 bytes, GPS=3, q=0)
+Aug 03 13:58:46 raspberrypi teensy-bridge[1566]: 2026-08-03 13:58:46,775 - INFO - GPS: 3 → 1
+Aug 03 13:58:48 raspberrypi teensy-bridge[1566]: 2026-08-03 13:58:48,581 - INFO - GPS: 1 → 2
+Aug 03 13:58:49 raspberrypi teensy-bridge[1566]: 2026-08-03 13:58:49,784 - INFO - GPS: 2 → 3
+Aug 03 13:58:51 raspberrypi teensy-bridge[1566]: 2026-08-03 13:58:51,640 - INFO - GPS: 3 → 2
+Aug 03 13:58:54 raspberrypi teensy-bridge[1566]: 2026-08-03 13:58:54,799 - INFO - GPS: 2 → 3
+Aug 03 13:59:08 raspberrypi teensy-bridge[1566]: 2026-08-03 13:59:08,240 - INFO - GPS: 3 → 1
+Aug 03 13:59:09 raspberrypi teensy-bridge[1566]: 2026-08-03 13:59:09,594 - INFO - GPS: 1 → 3
+Aug 03 13:59:09 raspberrypi teensy-bridge[1566]: 2026-08-03 13:59:09,774 - INFO - ✓ STEER-SYNC BROADCAST (1057 bytes, GPS=3, q=0)
+Aug 03 13:59:12 raspberrypi teensy-bridge[1566]: 2026-08-03 13:59:12,002 - INFO - GPS: 3 → 1
+Aug 03 13:59:13 raspberrypi teensy-bridge[1566]: 2026-08-03 13:59:13,607 - INFO - GPS: 1 → 3
+Aug 03 13:59:35 raspberrypi teensy-bridge[1566]: 2026-08-03 13:59:35,770 - INFO - ✓ STEER-SYNC BROADCAST (1048 bytes, GPS=3, q=0)
+Aug 03 13:59:59 raspberrypi teensy-bridge[1566]: 2026-08-03 13:59:59,770 - INFO - ✓ STEER-SYNC BROADCAST (1031 bytes, GPS=3, q=0)
+Aug 03 14:00:15 raspberrypi teensy-bridge[1566]: 2026-08-03 14:00:15,093 - INFO - GPS: 3 → 1
+Aug 03 14:00:15 raspberrypi teensy-bridge[1566]: 2026-08-03 14:00:15,896 - INFO - GPS: 1 → 3
+Aug 03 14:00:25 raspberrypi teensy-bridge[1566]: 2026-08-03 14:00:25,775 - INFO - ✓ STEER-SYNC BROADCAST (1050 bytes, GPS=3, q=0)
+Aug 03 14:00:49 raspberrypi teensy-bridge[1566]: 2026-08-03 14:00:49,765 - INFO - ✓ STEER-SYNC BROADCAST (1049 bytes, GPS=3, q=0)
+Aug 03 14:01:15 raspberrypi teensy-bridge[1566]: 2026-08-03 14:01:15,770 - INFO - ✓ STEER-SYNC BROADCAST (1051 bytes, GPS=3, q=0)
+Aug 03 14:01:19 raspberrypi teensy-bridge[1566]: 2026-08-03 14:01:19,291 - INFO - GPS: 3 → 2
+Aug 03 14:01:19 raspberrypi teensy-bridge[1566]: 2026-08-03 14:01:19,692 - INFO - GPS: 2 → 3
+Aug 03 14:01:39 raspberrypi teensy-bridge[1566]: 2026-08-03 14:01:39,770 - INFO - ✓ STEER-SYNC BROADCAST (1052 bytes, GPS=3, q=0)
+Aug 03 14:02:05 raspberrypi teensy-bridge[1566]: 2026-08-03 14:02:05,775 - INFO - ✓ STEER-SYNC BROADCAST (1048 bytes, GPS=3, q=0)
+Aug 03 14:02:29 raspberrypi teensy-bridge[1566]: 2026-08-03 14:02:29,774 - INFO - ✓ STEER-SYNC BROADCAST (1036 bytes, GPS=3, q=0)
+Aug 03 14:02:55 raspberrypi teensy-bridge[1566]: 2026-08-03 14:02:55,767 - INFO - ✓ STEER-SYNC BROADCAST (1053 bytes, GPS=3, q=0)
+Aug 03 14:03:19 raspberrypi teensy-bridge[1566]: 2026-08-03 14:03:19,766 - INFO - ✓ STEER-SYNC BROADCAST (1053 bytes, GPS=3, q=0)
+Aug 03 14:03:45 raspberrypi teensy-bridge[1566]: 2026-08-03 14:03:45,770 - INFO - ✓ STEER-SYNC BROADCAST (1050 bytes, GPS=3, q=0)
+Aug 03 14:04:09 raspberrypi teensy-bridge[1566]: 2026-08-03 14:04:09,770 - INFO - ✓ STEER-SYNC BROADCAST (1038 bytes, GPS=3, q=0)
+Aug 03 14:04:35 raspberrypi teensy-bridge[1566]: 2026-08-03 14:04:35,774 - INFO - ✓ STEER-SYNC BROADCAST (1035 bytes, GPS=3, q=0)
+Aug 03 14:04:59 raspberrypi teensy-bridge[1566]: 2026-08-03 14:04:59,775 - INFO - ✓ STEER-SYNC BROADCAST (1053 bytes, GPS=3, q=0)
+Aug 03 14:05:25 raspberrypi teensy-bridge[1566]: 2026-08-03 14:05:25,771 - INFO - ✓ STEER-SYNC BROADCAST (1054 bytes, GPS=3, q=0)
+Aug 03 14:05:28 raspberrypi teensy-bridge[1566]: 2026-08-03 14:05:28,595 - INFO - GPS: 3 → 1
+Aug 03 14:05:28 raspberrypi teensy-bridge[1566]: 2026-08-03 14:05:28,896 - INFO - GPS: 1 → 3
+Aug 03 14:05:36 raspberrypi teensy-bridge[1566]: 2026-08-03 14:05:36,970 - INFO - GPS: 3 → 1
+Aug 03 14:05:38 raspberrypi teensy-bridge[1566]: 2026-08-03 14:05:38,023 - INFO - GPS: 1 → 2
+Aug 03 14:05:39 raspberrypi teensy-bridge[1566]: 2026-08-03 14:05:39,026 - INFO - GPS: 2 → 3
+Aug 03 14:05:41 raspberrypi teensy-bridge[1566]: 2026-08-03 14:05:41,285 - INFO - GPS: 3 → 2
+Aug 03 14:05:41 raspberrypi teensy-bridge[1566]: 2026-08-03 14:05:41,385 - INFO - GPS: 2 → 1
+Aug 03 14:05:43 raspberrypi teensy-bridge[1566]: 2026-08-03 14:05:43,792 - INFO - GPS: 1 → 3
+Aug 03 14:05:49 raspberrypi teensy-bridge[1566]: 2026-08-03 14:05:49,767 - INFO - ✓ STEER-SYNC BROADCAST (1035 bytes, GPS=3, q=0)
+Aug 03 14:06:15 raspberrypi teensy-bridge[1566]: 2026-08-03 14:06:15,772 - INFO - ✓ STEER-SYNC BROADCAST (1057 bytes, GPS=3, q=0)
+Aug 03 14:06:39 raspberrypi teensy-bridge[1566]: 2026-08-03 14:06:39,773 - INFO - ✓ STEER-SYNC BROADCAST (1049 bytes, GPS=3, q=0)
+Aug 03 14:07:05 raspberrypi teensy-bridge[1566]: 2026-08-03 14:07:05,769 - INFO - ✓ STEER-SYNC BROADCAST (1053 bytes, GPS=3, q=0)
+Aug 03 14:07:29 raspberrypi teensy-bridge[1566]: 2026-08-03 14:07:29,771 - INFO - ✓ STEER-SYNC BROADCAST (1056 bytes, GPS=3, q=0)
+Aug 03 14:07:55 raspberrypi teensy-bridge[1566]: 2026-08-03 14:07:55,766 - INFO - ✓ STEER-SYNC BROADCAST (1035 bytes, GPS=3, q=0)
+Aug 03 14:08:19 raspberrypi teensy-bridge[1566]: 2026-08-03 14:08:19,766 - INFO - ✓ STEER-SYNC BROADCAST (1053 bytes, GPS=3, q=0)
+Aug 03 14:08:27 raspberrypi teensy-bridge[1566]: 2026-08-03 14:08:27,289 - INFO - GPS: 3 → 2
+Aug 03 14:08:28 raspberrypi teensy-bridge[1566]: 2026-08-03 14:08:28,191 - INFO - GPS: 2 → 3
+Aug 03 14:08:45 raspberrypi teensy-bridge[1566]: 2026-08-03 14:08:45,774 - INFO - ✓ STEER-SYNC BROADCAST (1054 bytes, GPS=3, q=0)
+Aug 03 14:08:45 raspberrypi teensy-bridge[1566]: 2026-08-03 14:08:45,997 - INFO - GPS: 3 → 0
+Aug 03 14:08:46 raspberrypi teensy-bridge[1566]: 2026-08-03 14:08:46,147 - INFO - GPS: 0 → 1
+Aug 03 14:08:47 raspberrypi teensy-bridge[1566]: 2026-08-03 14:08:47,201 - INFO - GPS: 1 → 3
+Aug 03 14:08:52 raspberrypi teensy-bridge[1566]: 2026-08-03 14:08:52,015 - INFO - GPS: 3 → 1
+Aug 03 14:08:54 raspberrypi teensy-bridge[1566]: 2026-08-03 14:08:54,221 - INFO - GPS: 1 → 3
+Aug 03 14:09:09 raspberrypi teensy-bridge[1566]: 2026-08-03 14:09:09,769 - INFO - ✓ STEER-SYNC BROADCAST (1055 bytes, GPS=3, q=0)
+Aug 03 14:09:32 raspberrypi teensy-bridge[1566]: 2026-08-03 14:09:32,287 - INFO - GPS: 3 → 1
+Aug 03 14:09:33 raspberrypi teensy-bridge[1566]: 2026-08-03 14:09:33,290 - INFO - GPS: 1 → 0
+Aug 03 14:09:33 raspberrypi teensy-bridge[1566]: 2026-08-03 14:09:33,390 - INFO - GPS: 0 → 2
+Aug 03 14:09:35 raspberrypi teensy-bridge[1566]: 2026-08-03 14:09:35,497 - INFO - GPS: 2 → 1
+Aug 03 14:09:35 raspberrypi teensy-bridge[1566]: 2026-08-03 14:09:35,767 - INFO - ✓ STEER-SYNC BROADCAST (1032 bytes, GPS=1, q=0)
+Aug 03 14:09:37 raspberrypi teensy-bridge[1566]: 2026-08-03 14:09:37,202 - INFO - GPS: 1 → 3
+Aug 03 14:09:59 raspberrypi teensy-bridge[1566]: 2026-08-03 14:09:59,771 - INFO - ✓ STEER-SYNC BROADCAST (1052 bytes, GPS=3, q=0)
+Aug 03 14:10:25 raspberrypi teensy-bridge[1566]: 2026-08-03 14:10:25,768 - INFO - ✓ STEER-SYNC BROADCAST (1036 bytes, GPS=3, q=0)
+Aug 03 14:10:49 raspberrypi teensy-bridge[1566]: 2026-08-03 14:10:49,769 - INFO - ✓ STEER-SYNC BROADCAST (1054 bytes, GPS=3, q=0)
+Aug 03 14:11:15 raspberrypi teensy-bridge[1566]: 2026-08-03 14:11:15,766 - INFO - ✓ STEER-SYNC BROADCAST (1054 bytes, GPS=3, q=0)
+Aug 03 14:11:16 raspberrypi teensy-bridge[1566]: 2026-08-03 14:11:16,404 - INFO - GPS: 3 → 1
+Aug 03 14:11:18 raspberrypi teensy-bridge[1566]: 2026-08-03 14:11:18,511 - INFO - GPS: 1 → 0
+Aug 03 14:11:18 raspberrypi teensy-bridge[1566]: 2026-08-03 14:11:18,611 - INFO - GPS: 0 → 1
+Aug 03 14:11:22 raspberrypi teensy-bridge[1566]: 2026-08-03 14:11:22,322 - INFO - GPS: 1 → 3
+Aug 03 14:11:35 raspberrypi teensy-bridge[1566]: 2026-08-03 14:11:35,563 - INFO - GPS: 3 → 1
+Aug 03 14:11:35 raspberrypi teensy-bridge[1566]: 2026-08-03 14:11:35,964 - INFO - GPS: 1 → 0
+Aug 03 14:11:36 raspberrypi teensy-bridge[1566]: 2026-08-03 14:11:36,114 - INFO - GPS: 0 → 1
+Aug 03 14:11:36 raspberrypi teensy-bridge[1566]: 2026-08-03 14:11:36,315 - INFO - GPS: 1 → 0
+Aug 03 14:11:36 raspberrypi teensy-bridge[1566]: 2026-08-03 14:11:36,415 - INFO - GPS: 0 → 1
+Aug 03 14:11:38 raspberrypi teensy-bridge[1566]: 2026-08-03 14:11:38,521 - INFO - GPS: 1 → 3
+Aug 03 14:11:39 raspberrypi teensy-bridge[1566]: 2026-08-03 14:11:39,675 - INFO - GPS: 3 → 1
+Aug 03 14:11:39 raspberrypi teensy-bridge[1566]: 2026-08-03 14:11:39,770 - INFO - ✓ STEER-SYNC BROADCAST (1038 bytes, GPS=1, q=0)
+Aug 03 14:11:40 raspberrypi teensy-bridge[1566]: 2026-08-03 14:11:40,778 - INFO - GPS: 1 → 0
+Aug 03 14:11:40 raspberrypi teensy-bridge[1566]: 2026-08-03 14:11:40,878 - INFO - GPS: 0 → 1
+Aug 03 14:11:42 raspberrypi teensy-bridge[1566]: 2026-08-03 14:11:42,483 - INFO - GPS: 1 → 3
+Aug 03 14:11:46 raspberrypi teensy-bridge[1566]: 2026-08-03 14:11:46,897 - INFO - GPS: 3 → 1
+Aug 03 14:11:48 raspberrypi teensy-bridge[1566]: 2026-08-03 14:11:48,502 - INFO - GPS: 1 → 3
+Aug 03 14:12:05 raspberrypi teensy-bridge[1566]: 2026-08-03 14:12:05,769 - INFO - ✓ STEER-SYNC BROADCAST (1054 bytes, GPS=3, q=0)
+Aug 03 14:12:06 raspberrypi teensy-bridge[1566]: 2026-08-03 14:12:06,807 - INFO - GPS: 3 → 1
+Aug 03 14:12:07 raspberrypi teensy-bridge[1566]: 2026-08-03 14:12:07,108 - INFO - GPS: 1 → 0
+Aug 03 14:12:07 raspberrypi teensy-bridge[1566]: 2026-08-03 14:12:07,209 - INFO - GPS: 0 → 1
+Aug 03 14:12:08 raspberrypi teensy-bridge[1566]: 2026-08-03 14:12:08,512 - INFO - GPS: 1 → 2
+Aug 03 14:12:08 raspberrypi teensy-bridge[1566]: 2026-08-03 14:12:08,713 - INFO - GPS: 2 → 3
+Aug 03 14:12:10 raspberrypi teensy-bridge[1566]: 2026-08-03 14:12:10,669 - INFO - GPS: 3 → 1
+Aug 03 14:12:12 raspberrypi teensy-bridge[1566]: 2026-08-03 14:12:12,525 - INFO - GPS: 1 → 3
+Aug 03 14:12:29 raspberrypi teensy-bridge[1566]: 2026-08-03 14:12:29,772 - INFO - ✓ STEER-SYNC BROADCAST (1056 bytes, GPS=3, q=0)
+Aug 03 14:12:31 raspberrypi teensy-bridge[1566]: 2026-08-03 14:12:31,182 - INFO - GPS: 3 → 1
+Aug 03 14:12:32 raspberrypi teensy-bridge[1566]: 2026-08-03 14:12:32,587 - INFO - GPS: 1 → 3
+Aug 03 14:12:32 raspberrypi teensy-bridge[1566]: 2026-08-03 14:12:32,687 - INFO - GPS: 3 → 1
+Aug 03 14:12:35 raspberrypi teensy-bridge[1566]: 2026-08-03 14:12:35,596 - INFO - GPS: 1 → 3
+Aug 03 14:12:36 raspberrypi teensy-bridge[1566]: 2026-08-03 14:12:36,097 - INFO - GPS: 3 → 1
+Aug 03 14:12:36 raspberrypi teensy-bridge[1566]: 2026-08-03 14:12:36,298 - INFO - GPS: 1 → 0
+Aug 03 14:12:36 raspberrypi teensy-bridge[1566]: 2026-08-03 14:12:36,398 - INFO - GPS: 0 → 1
+Aug 03 14:12:37 raspberrypi teensy-bridge[1566]: 2026-08-03 14:12:37,602 - INFO - GPS: 1 → 3
+Aug 03 14:12:40 raspberrypi teensy-bridge[1566]: 2026-08-03 14:12:40,711 - INFO - GPS: 3 → 1
+Aug 03 14:12:42 raspberrypi teensy-bridge[1566]: 2026-08-03 14:12:42,717 - INFO - GPS: 1 → 3
+Aug 03 14:12:45 raspberrypi teensy-bridge[1566]: 2026-08-03 14:12:45,125 - INFO - GPS: 3 → 1
+Aug 03 14:12:45 raspberrypi teensy-bridge[1566]: 2026-08-03 14:12:45,627 - INFO - GPS: 1 → 0
+Aug 03 14:12:45 raspberrypi teensy-bridge[1566]: 2026-08-03 14:12:45,727 - INFO - GPS: 0 → 1
+Aug 03 14:12:46 raspberrypi teensy-bridge[1566]: 2026-08-03 14:12:46,831 - INFO - GPS: 1 → 3
+Aug 03 14:12:55 raspberrypi teensy-bridge[1566]: 2026-08-03 14:12:55,772 - INFO - ✓ STEER-SYNC BROADCAST (1052 bytes, GPS=3, q=0)
+Aug 03 14:13:19 raspberrypi teensy-bridge[1566]: 2026-08-03 14:13:19,764 - INFO - ✓ STEER-SYNC BROADCAST (1051 bytes, GPS=3, q=0)
+Aug 03 14:13:24 raspberrypi teensy-bridge[1566]: 2026-08-03 14:13:24,695 - INFO - GPS: 3 → 1
+Aug 03 14:13:26 raspberrypi teensy-bridge[1566]: 2026-08-03 14:13:26,802 - INFO - GPS: 1 → 3
+Aug 03 14:13:45 raspberrypi teensy-bridge[1566]: 2026-08-03 14:13:45,772 - INFO - ✓ STEER-SYNC BROADCAST (1053 bytes, GPS=3, q=0)
+Aug 03 14:14:09 raspberrypi teensy-bridge[1566]: 2026-08-03 14:14:09,773 - INFO - ✓ STEER-SYNC BROADCAST (1034 bytes, GPS=3, q=0)
+Aug 03 14:14:32 raspberrypi teensy-bridge[1566]: 2026-08-03 14:14:32,499 - INFO - GPS: 3 → 1
+Aug 03 14:14:34 raspberrypi teensy-bridge[1566]: 2026-08-03 14:14:34,004 - INFO - GPS: 1 → 3
+Aug 03 14:14:35 raspberrypi teensy-bridge[1566]: 2026-08-03 14:14:35,770 - INFO - ✓ STEER-SYNC BROADCAST (1052 bytes, GPS=3, q=0)
+Aug 03 14:14:47 raspberrypi teensy-bridge[1566]: 2026-08-03 14:14:47,596 - INFO - GPS: 3 → 1
+Aug 03 14:14:47 raspberrypi teensy-bridge[1566]: 2026-08-03 14:14:47,796 - INFO - GPS: 1 → 0
+Aug 03 14:14:47 raspberrypi teensy-bridge[1566]: 2026-08-03 14:14:47,897 - INFO - GPS: 0 → 1
+Aug 03 14:14:50 raspberrypi teensy-bridge[1566]: 2026-08-03 14:14:50,003 - INFO - GPS: 1 → 3
+Aug 03 14:14:50 raspberrypi teensy-bridge[1566]: 2026-08-03 14:14:50,304 - INFO - GPS: 3 → 1
+Aug 03 14:14:50 raspberrypi teensy-bridge[1566]: 2026-08-03 14:14:50,504 - INFO - GPS: 1 → 0
+Aug 03 14:14:50 raspberrypi teensy-bridge[1566]: 2026-08-03 14:14:50,605 - INFO - GPS: 0 → 1
+Aug 03 14:14:53 raspberrypi teensy-bridge[1566]: 2026-08-03 14:14:53,012 - INFO - GPS: 1 → 3
+Aug 03 14:14:55 raspberrypi teensy-bridge[1566]: 2026-08-03 14:14:55,469 - INFO - GPS: 3 → 1
+Aug 03 14:14:58 raspberrypi teensy-bridge[1566]: 2026-08-03 14:14:58,027 - INFO - GPS: 1 → 3
+Aug 03 14:14:59 raspberrypi teensy-bridge[1566]: 2026-08-03 14:14:59,764 - INFO - ✓ STEER-SYNC BROADCAST (1056 bytes, GPS=3, q=0)
+Aug 03 14:15:00 raspberrypi teensy-bridge[1566]: 2026-08-03 14:15:00,133 - INFO - GPS: 3 → 1
+Aug 03 14:15:02 raspberrypi teensy-bridge[1566]: 2026-08-03 14:15:02,089 - INFO - GPS: 1 → 3
+Aug 03 14:15:06 raspberrypi teensy-bridge[1566]: 2026-08-03 14:15:06,101 - INFO - GPS: 3 → 1
+Aug 03 14:15:08 raspberrypi teensy-bridge[1566]: 2026-08-03 14:15:08,007 - INFO - GPS: 1 → 3
+Aug 03 14:15:25 raspberrypi teensy-bridge[1566]: 2026-08-03 14:15:25,770 - INFO - ✓ STEER-SYNC BROADCAST (1056 bytes, GPS=3, q=0)
+Aug 03 14:15:49 raspberrypi teensy-bridge[1566]: 2026-08-03 14:15:49,764 - INFO - ✓ STEER-SYNC BROADCAST (1053 bytes, GPS=3, q=0)
+Aug 03 14:16:03 raspberrypi teensy-bridge[1566]: 2026-08-03 14:16:03,227 - INFO - GPS: 3 → 1
+Aug 03 14:16:03 raspberrypi teensy-bridge[1566]: 2026-08-03 14:16:03,377 - INFO - GPS: 1 → 0
+Aug 03 14:16:03 raspberrypi teensy-bridge[1566]: 2026-08-03 14:16:03,578 - INFO - GPS: 0 → 1
+Aug 03 14:16:04 raspberrypi teensy-bridge[1566]: 2026-08-03 14:16:04,982 - INFO - GPS: 1 → 2
+Aug 03 14:16:05 raspberrypi teensy-bridge[1566]: 2026-08-03 14:16:05,233 - INFO - GPS: 2 → 3
+Aug 03 14:16:12 raspberrypi teensy-bridge[1566]: 2026-08-03 14:16:12,003 - INFO - GPS: 3 → 1
+Aug 03 14:16:12 raspberrypi teensy-bridge[1566]: 2026-08-03 14:16:12,103 - INFO - GPS: 1 → 3
+Aug 03 14:16:13 raspberrypi teensy-bridge[1566]: 2026-08-03 14:16:13,006 - INFO - GPS: 3 → 1
+Aug 03 14:16:13 raspberrypi teensy-bridge[1566]: 2026-08-03 14:16:13,106 - INFO - GPS: 1 → 3
+Aug 03 14:16:15 raspberrypi teensy-bridge[1566]: 2026-08-03 14:16:15,769 - INFO - ✓ STEER-SYNC BROADCAST (1039 bytes, GPS=3, q=0)
+Aug 03 14:16:30 raspberrypi teensy-bridge[1566]: 2026-08-03 14:16:30,609 - INFO - GPS: 3 → 1
+Aug 03 14:16:32 raspberrypi teensy-bridge[1566]: 2026-08-03 14:16:32,013 - INFO - GPS: 1 → 3
+Aug 03 14:16:39 raspberrypi teensy-bridge[1566]: 2026-08-03 14:16:39,772 - INFO - ✓ STEER-SYNC BROADCAST (1034 bytes, GPS=3, q=0)
+Aug 03 14:17:02 raspberrypi teensy-bridge[1566]: 2026-08-03 14:17:02,305 - INFO - GPS: 3 → 1
+Aug 03 14:17:03 raspberrypi teensy-bridge[1566]: 2026-08-03 14:17:03,107 - INFO - GPS: 1 → 3
+Aug 03 14:17:05 raspberrypi teensy-bridge[1566]: 2026-08-03 14:17:05,765 - INFO - ✓ STEER-SYNC BROADCAST (1037 bytes, GPS=3, q=0)
+Aug 03 14:17:18 raspberrypi teensy-bridge[1566]: 2026-08-03 14:17:18,955 - INFO - GPS: 3 → 1
+Aug 03 14:17:21 raspberrypi teensy-bridge[1566]: 2026-08-03 14:17:21,212 - INFO - GPS: 1 → 3
+Aug 03 14:17:29 raspberrypi teensy-bridge[1566]: 2026-08-03 14:17:29,767 - INFO - ✓ STEER-SYNC BROADCAST (1056 bytes, GPS=3, q=0)
+Aug 03 14:17:29 raspberrypi teensy-bridge[1566]: 2026-08-03 14:17:29,788 - INFO - GPS: 3 → 1
+Aug 03 14:17:31 raspberrypi teensy-bridge[1566]: 2026-08-03 14:17:31,243 - INFO - GPS: 1 → 3
+Aug 03 14:17:34 raspberrypi teensy-bridge[1566]: 2026-08-03 14:17:34,202 - INFO - GPS: 3 → 1
+Aug 03 14:17:36 raspberrypi teensy-bridge[1566]: 2026-08-03 14:17:36,208 - INFO - GPS: 1 → 3
+Aug 03 14:17:55 raspberrypi teensy-bridge[1566]: 2026-08-03 14:17:55,764 - INFO - ✓ STEER-SYNC BROADCAST (1041 bytes, GPS=3, q=0)
+Aug 03 14:18:19 raspberrypi teensy-bridge[1566]: 2026-08-03 14:18:19,767 - INFO - ✓ STEER-SYNC BROADCAST (1041 bytes, GPS=3, q=0)
+Aug 03 14:18:45 raspberrypi teensy-bridge[1566]: 2026-08-03 14:18:45,769 - INFO - ✓ STEER-SYNC BROADCAST (1041 bytes, GPS=3, q=0)
+Aug 03 14:19:09 raspberrypi teensy-bridge[1566]: 2026-08-03 14:19:09,770 - INFO - ✓ STEER-SYNC BROADCAST (1040 bytes, GPS=3, q=0)
+Aug 03 14:19:35 raspberrypi teensy-bridge[1566]: 2026-08-03 14:19:35,765 - INFO - ✓ STEER-SYNC BROADCAST (1039 bytes, GPS=3, q=0)
+Aug 03 14:19:59 raspberrypi teensy-bridge[1566]: 2026-08-03 14:19:59,764 - INFO - ✓ STEER-SYNC BROADCAST (1039 bytes, GPS=3, q=0)
+Aug 03 14:20:25 raspberrypi teensy-bridge[1566]: 2026-08-03 14:20:25,769 - INFO - ✓ STEER-SYNC BROADCAST (1039 bytes, GPS=3, q=0)
+Aug 03 14:20:49 raspberrypi teensy-bridge[1566]: 2026-08-03 14:20:49,763 - INFO - ✓ STEER-SYNC BROADCAST (1051 bytes, GPS=3, q=0)
+Aug 03 14:21:15 raspberrypi teensy-bridge[1566]: 2026-08-03 14:21:15,767 - INFO - ✓ STEER-SYNC BROADCAST (1052 bytes, GPS=3, q=0)
+Aug 03 14:21:39 raspberrypi teensy-bridge[1566]: 2026-08-03 14:21:39,767 - INFO - ✓ STEER-SYNC BROADCAST (1053 bytes, GPS=3, q=0)
+Aug 03 14:21:46 raspberrypi teensy-bridge[1566]: 2026-08-03 14:21:46,176 - INFO - GPS: 3 → 1
+Aug 03 14:21:47 raspberrypi teensy-bridge[1566]: 2026-08-03 14:21:47,430 - INFO - GPS: 1 → 3
+Aug 03 14:22:05 raspberrypi teensy-bridge[1566]: 2026-08-03 14:22:05,763 - INFO - ✓ STEER-SYNC BROADCAST (1052 bytes, GPS=3, q=0)
+Aug 03 14:22:29 raspberrypi teensy-bridge[1566]: 2026-08-03 14:22:29,764 - INFO - ✓ STEER-SYNC BROADCAST (1038 bytes, GPS=3, q=0)
+Aug 03 14:22:55 raspberrypi teensy-bridge[1566]: 2026-08-03 14:22:55,762 - INFO - ✓ STEER-SYNC BROADCAST (1037 bytes, GPS=3, q=0)
+Aug 03 14:23:19 raspberrypi teensy-bridge[1566]: 2026-08-03 14:23:19,763 - INFO - ✓ STEER-SYNC BROADCAST (1035 bytes, GPS=3, q=0)
+Aug 03 14:23:45 raspberrypi teensy-bridge[1566]: 2026-08-03 14:23:45,769 - INFO - ✓ STEER-SYNC BROADCAST (1036 bytes, GPS=3, q=0)
+Aug 03 14:24:09 raspberrypi teensy-bridge[1566]: 2026-08-03 14:24:09,770 - INFO - ✓ STEER-SYNC BROADCAST (1038 bytes, GPS=3, q=0)
+Aug 03 14:24:35 raspberrypi teensy-bridge[1566]: 2026-08-03 14:24:35,764 - INFO - ✓ STEER-SYNC BROADCAST (1036 bytes, GPS=3, q=0)
+Aug 03 14:24:59 raspberrypi teensy-bridge[1566]: 2026-08-03 14:24:59,764 - INFO - ✓ STEER-SYNC BROADCAST (1032 bytes, GPS=3, q=0)
+Aug 03 14:25:25 raspberrypi teensy-bridge[1566]: 2026-08-03 14:25:25,768 - INFO - ✓ STEER-SYNC BROADCAST (1032 bytes, GPS=3, q=0)
+Aug 03 14:25:49 raspberrypi teensy-bridge[1566]: 2026-08-03 14:25:49,770 - INFO - ✓ STEER-SYNC BROADCAST (1028 bytes, GPS=3, q=0)
+Aug 03 14:26:15 raspberrypi teensy-bridge[1566]: 2026-08-03 14:26:15,763 - INFO - ✓ STEER-SYNC BROADCAST (1035 bytes, GPS=3, q=0)
+Aug 03 14:26:39 raspberrypi teensy-bridge[1566]: 2026-08-03 14:26:39,768 - INFO - ✓ STEER-SYNC BROADCAST (1034 bytes, GPS=3, q=0)
+Aug 03 14:26:56 raspberrypi teensy-bridge[1566]: 2026-08-03 14:26:56,572 - INFO - GPS: 3 → 2
+Aug 03 14:26:56 raspberrypi teensy-bridge[1566]: 2026-08-03 14:26:56,923 - INFO - GPS: 2 → 3
+Aug 03 14:26:59 raspberrypi teensy-bridge[1566]: 2026-08-03 14:26:59,732 - INFO - GPS: 3 → 2
+Aug 03 14:26:59 raspberrypi teensy-bridge[1566]: 2026-08-03 14:26:59,883 - INFO - GPS: 2 → 3
+Aug 03 14:27:00 raspberrypi teensy-bridge[1566]: 2026-08-03 14:27:00,183 - INFO - GPS: 3 → 2
+Aug 03 14:27:05 raspberrypi teensy-bridge[1566]: 2026-08-03 14:27:05,768 - INFO - ✓ STEER-SYNC BROADCAST (1034 bytes, GPS=2, q=0)
+Aug 03 14:27:08 raspberrypi teensy-bridge[1566]: 2026-08-03 14:27:08,010 - INFO - GPS: 2 → 3
+Aug 03 14:27:09 raspberrypi teensy-bridge[1566]: 2026-08-03 14:27:09,915 - INFO - GPS: 3 → 2
+Aug 03 14:27:29 raspberrypi teensy-bridge[1566]: 2026-08-03 14:27:29,766 - INFO - ✓ STEER-SYNC BROADCAST (1034 bytes, GPS=2, q=0)
+Aug 03 14:27:55 raspberrypi teensy-bridge[1566]: 2026-08-03 14:27:55,770 - INFO - ✓ STEER-SYNC BROADCAST (1032 bytes, GPS=2, q=0)
+Aug 03 14:28:14 raspberrypi teensy-bridge[1566]: 2026-08-03 14:28:14,108 - INFO - GPS: 2 → 3
+Aug 03 14:28:19 raspberrypi teensy-bridge[1566]: 2026-08-03 14:28:19,771 - INFO - ✓ STEER-SYNC BROADCAST (1035 bytes, GPS=3, q=0)
+Aug 03 14:28:45 raspberrypi teensy-bridge[1566]: 2026-08-03 14:28:45,770 - INFO - ✓ STEER-SYNC BROADCAST (1035 bytes, GPS=3, q=0)
+Aug 03 14:29:09 raspberrypi teensy-bridge[1566]: 2026-08-03 14:29:09,769 - INFO - ✓ STEER-SYNC BROADCAST (1033 bytes, GPS=3, q=0)
+Aug 03 14:29:35 raspberrypi teensy-bridge[1566]: 2026-08-03 14:29:35,764 - INFO - ✓ STEER-SYNC BROADCAST (1032 bytes, GPS=3, q=0)
+Aug 03 14:29:59 raspberrypi teensy-bridge[1566]: 2026-08-03 14:29:59,766 - INFO - ✓ STEER-SYNC BROADCAST (1035 bytes, GPS=3, q=0)
+Aug 03 14:30:25 raspberrypi teensy-bridge[1566]: 2026-08-03 14:30:25,769 - INFO - ✓ STEER-SYNC BROADCAST (1034 bytes, GPS=3, q=0)
+Aug 03 14:30:49 raspberrypi teensy-bridge[1566]: 2026-08-03 14:30:49,772 - INFO - ✓ STEER-SYNC BROADCAST (1032 bytes, GPS=3, q=0)
+Aug 03 14:31:15 raspberrypi teensy-bridge[1566]: 2026-08-03 14:31:15,771 - INFO - ✓ STEER-SYNC BROADCAST (1031 bytes, GPS=3, q=0)
+Aug 03 14:31:39 raspberrypi teensy-bridge[1566]: 2026-08-03 14:31:39,768 - INFO - ✓ STEER-SYNC BROADCAST (1031 bytes, GPS=3, q=0)
+Aug 03 14:32:05 raspberrypi teensy-bridge[1566]: 2026-08-03 14:32:05,767 - INFO - ✓ STEER-SYNC BROADCAST (1028 bytes, GPS=3, q=0)
+Aug 03 14:32:29 raspberrypi teensy-bridge[1566]: 2026-08-03 14:32:29,766 - INFO - ✓ STEER-SYNC BROADCAST (1032 bytes, GPS=3, q=0)

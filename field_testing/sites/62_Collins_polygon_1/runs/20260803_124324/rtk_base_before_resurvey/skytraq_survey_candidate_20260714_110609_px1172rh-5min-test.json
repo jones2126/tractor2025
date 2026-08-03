@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "record_type": "px1125r_static_base_survey_candidate",
+  "candidate_status": "not_committed",
+  "base": {
+    "name": "px1172rh-5min-test",
+    "receiver_model": "SkyTraq RTK receiver",
+    "reference_station_id": 0
+  },
+  "coordinate": {
+    "datum": "WGS 84",
+    "latitude_deg": 40.4856560584117,
+    "longitude_deg": -80.3325711392306,
+    "ellipsoid_height_m": 322.7098206812516,
+    "mean_sea_level_height_m": null,
+    "geoid_model": null,
+    "ecef_m": {
+      "x": 815818.3937,
+      "y": -4789125.183300001,
+      "z": 4119358.0991
+    }
+  },
+  "coordinate_source": {
+    "method": "SkyTraq RTK Base Survey followed by confirmed run-time Static state and three identical CRC-valid RTCM 1005 messages",
+    "survey_duration_seconds": 300,
+    "survey_standard_deviation_parameter_m": 30,
+    "configuration_persistence": "SRAM only; not written to Flash",
+    "survey_started_local": "2026-07-14T11:06:14-04:00",
+    "static_detected_local": "2026-07-14T11:11:49-04:00",
+    "raw_capture_file": "skytraq_survey_20260714_110609_px1172rh-5min-test.bin",
+    "raw_capture_path": "/home/al/tractor2025/RTKBase/setup/skytraq_survey_20260714_110609_px1172rh-5min-test.bin",
+    "post_static_1005_frames_confirmed": 3,
+    "post_static_1005_identical_within_m": 0.001
+  },
+  "receiver_configuration": {
+    "rtk_mode": "base",
+    "saved_operational_state": "survey",
+    "runtime_operational_state": "static",
+    "serial_port": "/dev/skytraq",
+    "baud": 115200
+  },
+  "rtcm_output": {
+    "message_types_observed": [
+      1005,
+      1019,
+      1020,
+      1033,
+      1042,
+      1046,
+      1074,
+      1084,
+      1094,
+      1124,
+      1230
+    ],
+    "message_counts_observed": {
+      "1005": 337,
+      "1019": 204,
+      "1020": 104,
+      "1033": 34,
+      "1042": 170,
+      "1046": 186,
+      "1074": 330,
+      "1084": 330,
+      "1094": 331,
+      "1124": 331,
+      "1230": 34
+    },
+    "required_message_types_for_rover": [
+      1005,
+      1074,
+      1094,
+      1124
+    ],
+    "expected_1005_rate_hz": 1.0
+  },
+  "notes": [
+    "The static-base commit command must use coordinate.ellipsoid_height_m. It must not use a generic altitude or MSL elevation.",
+    "This file is a candidate record, not authorization to write Flash. Review the coordinate, source details, and optional comparison before calling the JSON-driven commit script with --commit.",
+    "For a serious survey, change SURVEY_SECONDS to 86400 and preserve this candidate file as an immutable record of the derived coordinate."
+  ],
+  "audit_log": [
+    {
+      "timestamp_local": "2026-07-14T11:11:49-04:00",
+      "event": "survey_candidate_created",
+      "details": "Survey completed; SkyTraq receiver reported run-time Static; three repeat RTCM 1005 frames matched."
+    }
+  ]
+}
