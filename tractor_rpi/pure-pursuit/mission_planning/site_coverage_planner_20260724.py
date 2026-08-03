@@ -159,6 +159,7 @@ def make_geometry(
     boundary_clearance_m: float,
     headland_passes: int,
     lane_spacing_m: float,
+    boundary_outset_m: float = 0.0,
     frame: LocalFrame | None = None,
 ):
     require_shapely()
@@ -174,7 +175,10 @@ def make_geometry(
     if boundary.area <= 0:
         raise ValueError("Boundary polygon has zero area")
 
-    drive_area = boundary.buffer(-boundary_clearance_m, join_style="round")
+    drive_area = boundary.buffer(
+        boundary_outset_m - boundary_clearance_m,
+        join_style="round",
+    )
     if drive_area.is_empty:
         raise ValueError(
             "Boundary clearance removes the entire site; reduce "
@@ -446,24 +450,39 @@ def fit_preferred_keyhole_turns(
 
         fitted = None
         step_count = int(math.floor(maximum_trim_m / step_m + 1e-9))
-        for step_index in range(1, step_count + 1):
-            amount_m = step_index * step_m
-            if (
-                float(outgoing["length_m"]) - amount_m < minimum_segment_m
-                or float(incoming["length_m"]) - amount_m < minimum_segment_m
-            ):
-                break
-            candidate_end = shorten_stripe_end(outgoing, amount_m)
-            candidate_start = shorten_stripe_start(incoming, amount_m)
-            candidate = keyhole_connector(
-                path_end_pose([outgoing["start"], candidate_end]),
-                path_start_pose([candidate_start, incoming["end"]]),
-                fit_area,
-                turn_radius_m,
-                waypoint_spacing_m,
-            )
-            if candidate is not None and str(candidate["mode"]).endswith("-keyhole"):
-                fitted = (amount_m, candidate_end, candidate_start, candidate)
+        for total_steps in range(1, 2 * step_count + 1):
+            for outgoing_steps in range(0, total_steps + 1):
+                incoming_steps = total_steps - outgoing_steps
+                if outgoing_steps > step_count or incoming_steps > step_count:
+                    continue
+                outgoing_trim_m = outgoing_steps * step_m
+                incoming_trim_m = incoming_steps * step_m
+                if (
+                    float(outgoing["length_m"]) - outgoing_trim_m
+                    < minimum_segment_m
+                    or float(incoming["length_m"]) - incoming_trim_m
+                    < minimum_segment_m
+                ):
+                    continue
+                candidate_end = shorten_stripe_end(outgoing, outgoing_trim_m)
+                candidate_start = shorten_stripe_start(incoming, incoming_trim_m)
+                candidate = keyhole_connector(
+                    path_end_pose([outgoing["start"], candidate_end]),
+                    path_start_pose([candidate_start, incoming["end"]]),
+                    fit_area,
+                    turn_radius_m,
+                    waypoint_spacing_m,
+                )
+                if candidate is not None and str(candidate["mode"]).endswith("-keyhole"):
+                    fitted = (
+                        outgoing_trim_m,
+                        incoming_trim_m,
+                        candidate_end,
+                        candidate_start,
+                        candidate,
+                    )
+                    break
+            if fitted is not None:
                 break
 
         if fitted is None:
@@ -487,21 +506,21 @@ def fit_preferred_keyhole_turns(
             )
             continue
 
-        amount_m, candidate_end, candidate_start, candidate = fitted
+        outgoing_trim_m, incoming_trim_m, candidate_end, candidate_start, candidate = fitted
         outgoing["end"] = candidate_end
         incoming["start"] = candidate_start
         outgoing["length_m"] = distance(outgoing["start"], outgoing["end"])
         incoming["length_m"] = distance(incoming["start"], incoming["end"])
-        outgoing["end_turn_trim_m"] = amount_m
-        incoming["start_turn_trim_m"] = amount_m
+        outgoing["end_turn_trim_m"] = outgoing_trim_m
+        incoming["start_turn_trim_m"] = incoming_trim_m
         report_rows.append(
             {
                 "from_sequence": from_sequence,
                 "to_sequence": to_sequence,
                 "initial_mode": initial_mode,
                 "final_mode": str(candidate["mode"]),
-                "outgoing_end_trim_m": f"{amount_m:.3f}",
-                "incoming_start_trim_m": f"{amount_m:.3f}",
+                "outgoing_end_trim_m": f"{outgoing_trim_m:.3f}",
+                "incoming_start_trim_m": f"{incoming_trim_m:.3f}",
                 "status": "selectively-fitted",
             }
         )
@@ -586,21 +605,20 @@ def gallery_angles(
 
 
 def draw_polygon(ax, geometry, facecolor, edgecolor, alpha, label=None):
+    from shapely.plotting import plot_polygon
+
     first = True
     for polygon in polygon_parts(geometry):
-        x, y = polygon.exterior.xy
-        ax.fill(
-            x,
-            y,
+        plot_polygon(
+            polygon,
+            ax=ax,
+            add_points=False,
             facecolor=facecolor,
             edgecolor=edgecolor,
             alpha=alpha,
             label=label if first else None,
         )
         first = False
-        for interior in polygon.interiors:
-            hx, hy = interior.xy
-            ax.fill(hx, hy, facecolor="white", edgecolor=edgecolor, alpha=1.0)
 
 
 def run_compare_angles(args: argparse.Namespace) -> int:
@@ -612,6 +630,7 @@ def run_compare_angles(args: argparse.Namespace) -> int:
         args.boundary_clearance_m,
         args.headland_passes,
         args.lane_spacing_m,
+        args.boundary_outset_m,
     )
     angles = parse_angle_spec(args.angles)
     rows = []
@@ -772,6 +791,7 @@ def settings_from_args(
         "angle_degrees": args.angle_degrees % 180.0,
         "lane_spacing_m": args.lane_spacing_m,
         "boundary_clearance_m": args.boundary_clearance_m,
+        "boundary_outset_m": args.boundary_outset_m,
         "outer_headland_follows_boundary": args.outer_headland_follows_boundary,
         "headland_passes": args.headland_passes,
         "deck_width_m": args.deck_width_m,
@@ -820,6 +840,7 @@ def run_preview(args: argparse.Namespace) -> int:
         args.boundary_clearance_m,
         args.headland_passes,
         args.lane_spacing_m,
+        args.boundary_outset_m,
     )
     headlands = make_headland_paths(
         drive_area,
@@ -1276,6 +1297,7 @@ def settings_geometry(settings: dict[str, object]):
         float(settings["boundary_clearance_m"]),
         int(settings["headland_passes"]),
         float(settings["lane_spacing_m"]),
+        float(settings.get("boundary_outset_m", 0.0)),
         frame=frame,
     )
 
@@ -1288,12 +1310,12 @@ def mission_containment_area(
 ):
     """Return the area allowed for the complete route.
 
-    Normal plans retain the clearance-inset drive area.  When pass 1 is
-    explicitly the already-buffered finalized boundary, the finalized boundary
-    becomes the route containment limit while obstacle exclusions remain in
-    force.
+    Normal plans retain the configured drive area. When pass 1 follows the
+    finalized boundary and the drive area is an inset, that boundary becomes
+    the route limit. An explicit outward containment area remains the route
+    limit so reviewed turns can use the configured outset.
     """
-    if not outer_headland_follows_boundary:
+    if not outer_headland_follows_boundary or not boundary.covers(drive_area):
         return drive_area
     area = boundary
     for _obstacle, _center, shape in obstacle_shapes:
@@ -1918,9 +1940,12 @@ def run_build(args: argparse.Namespace) -> int:
             "configured_turn_radius_m": turn_radius_m,
             "curvature_warning": curvature_warning,
             "contained_in_safe_drive_area": (
-                not outer_headland_follows_boundary
+                drive_area.buffer(0.03).covers(route_line)
             ),
-            "contained_in_finalized_boundary": True,
+            "contained_in_finalized_boundary": (
+                boundary.buffer(0.03).covers(route_line)
+            ),
+            "boundary_outset_m": float(settings.get("boundary_outset_m", 0.0)),
             "outer_headland_follows_boundary": (
                 outer_headland_follows_boundary
             ),
@@ -2031,6 +2056,15 @@ def add_geometry_arguments(parser: argparse.ArgumentParser) -> None:
         type=float,
         default=0.75,
         help="tractor reference-point clearance inside logged boundary (default 0.75 m)",
+    )
+    parser.add_argument(
+        "--boundary-outset-m",
+        type=float,
+        default=0.0,
+        help=(
+            "tractor-center containment distance outside the logged boundary; "
+            "net buffer is outset minus clearance (default 0 m)"
+        ),
     )
     parser.add_argument(
         "--headland-passes",
@@ -2196,7 +2230,7 @@ def main() -> int:
     parser = build_parser()
     args = parser.parse_args()
     for name in (
-        "lane_spacing_m", "boundary_clearance_m", "minimum_segment_m",
+        "lane_spacing_m", "minimum_segment_m",
         "turn_radius_m", "waypoint_spacing_m", "straight_lookahead_m",
         "turn_lookahead_m", "headland_lookahead_m", "turn_fit_step_m",
         "maximum_turn_end_trim_m", "deck_width_m",
@@ -2206,6 +2240,9 @@ def main() -> int:
                 validate_positive(f"--{name.replace('_', '-')}", float(getattr(args, name)))
             except ValueError as exc:
                 parser.error(str(exc))
+    for name in ("boundary_clearance_m", "boundary_outset_m"):
+        if hasattr(args, name) and float(getattr(args, name)) < 0:
+            parser.error(f"--{name.replace('_', '-')} cannot be negative")
     if hasattr(args, "stripe_end_trim_m") and args.stripe_end_trim_m < 0:
         parser.error("--stripe-end-trim-m cannot be negative")
     if hasattr(args, "headland_passes") and args.headland_passes < 0:

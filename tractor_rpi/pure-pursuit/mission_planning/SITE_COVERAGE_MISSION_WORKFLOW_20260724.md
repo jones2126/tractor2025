@@ -585,7 +585,7 @@ panel is `20°`, so set `$angle` to `20`:
 ```powershell
 $angle = 20
 
-python site_coverage_planner_20260724.py preview "$site\01_boundary_final.csv" --output-dir "$site" --angle-degrees $angle --lane-spacing-m 0.9652 --deck-width-m 1.0668 --stripe-end-trim-m 3.0 --boundary-clearance-m 0.75 --headland-passes 2 --turn-radius-m 1.90 --stripe-turn-policy keyhole --selective-turn-fitting --turn-fit-step-m 0.05 --maximum-turn-end-trim-m 3.0 --turn-fit-containment-margin-m 0.05 --waypoint-spacing-m 0.50 --straight-speed-mps 0.85 --outer-headland-speed-mps 0.85 --headland-speed-mps 0.85 --turn-speed-mps 0.85 --scan-from low --first-stripe-direction reverse --ring-direction clockwise --outer-headland-follows-boundary
+python site_coverage_planner_20260724.py preview "$site\01_boundary_final.csv" --output-dir "$site" --angle-degrees $angle --lane-spacing-m 0.9652 --deck-width-m 1.0668 --stripe-end-trim-m 3.0 --boundary-clearance-m 0 --boundary-outset-m 0.381 --headland-passes 2 --turn-radius-m 1.90 --stripe-turn-policy keyhole --selective-turn-fitting --turn-fit-step-m 0.05 --maximum-turn-end-trim-m 4.0 --turn-fit-containment-margin-m 0.05 --waypoint-spacing-m 0.50 --straight-speed-mps 0.85 --outer-headland-speed-mps 0.85 --headland-speed-mps 0.85 --turn-speed-mps 0.85 --scan-from low --first-stripe-direction reverse --ring-direction clockwise --outer-headland-follows-boundary
 
 Invoke-Item "$site\02_coverage_preview.png"
 Invoke-Item "$site\02_perimeter_paths.png"
@@ -599,11 +599,11 @@ Before proceeding to Step 4, verify that the newly written settings contain
 the selected radius and turn policy:
 
 ```powershell
-Get-Content "$site\02_plan_settings.json" -Raw | ConvertFrom-Json | Select-Object angle_degrees, lane_spacing_m, deck_width_m, headland_passes, turn_radius_m, stripe_turn_policy, selective_turn_fitting, turn_fit_step_m, maximum_turn_end_trim_m, turn_fit_containment_margin_m, straight_speed_mps, outer_headland_speed_mps, headland_speed_mps, turn_speed_mps
+Get-Content "$site\02_plan_settings.json" -Raw | ConvertFrom-Json | Select-Object angle_degrees, lane_spacing_m, deck_width_m, boundary_clearance_m, boundary_outset_m, headland_passes, turn_radius_m, stripe_turn_policy, selective_turn_fitting, turn_fit_step_m, maximum_turn_end_trim_m, turn_fit_containment_margin_m, straight_speed_mps, outer_headland_speed_mps, headland_speed_mps, turn_speed_mps
 ```
 
 For this Collins Drive test, the expected geometry values are `20`, `0.9652`,
-`1.0668`, `2` perimeter passes, `1.9`, `keyhole`, and
+`1.0668`, `0` clearance, `0.381` outset, `2` perimeter passes, `1.9`, `keyhole`, and
 `selective_turn_fitting = True`. All four speed fields
 should be `0.85`. If the radius still reports `3.0`, selective fitting is
 false, or the policy is blank, Step 3 was not rerun with the current command;
@@ -620,13 +620,14 @@ python3 site_coverage_planner_20260724.py preview \
   --lane-spacing-m 0.9652 \
   --deck-width-m 1.0668 \
   --stripe-end-trim-m 3.0 \
-  --boundary-clearance-m 0.75 \
+  --boundary-clearance-m 0 \
+  --boundary-outset-m 0.381 \
   --headland-passes 2 \
   --turn-radius-m 1.90 \
   --stripe-turn-policy keyhole \
   --selective-turn-fitting \
   --turn-fit-step-m 0.05 \
-  --maximum-turn-end-trim-m 3.0 \
+  --maximum-turn-end-trim-m 4.0 \
   --turn-fit-containment-margin-m 0.05 \
   --waypoint-spacing-m 0.50 \
   --scan-from low \
@@ -685,14 +686,15 @@ overlap, then review `02_coverage_preview.png`, `02_coverage_segments.csv`, and
 |---|---|
 | `lane-spacing-m` | Center-to-center cut spacing. The selected 38-inch spacing is `0.9652 m`, giving about 4 inches of nominal overlap with the 42-inch (`1.0668 m`) deck. Verify actual cut width and GPS tracking. |
 | `deck-width-m` | Cutting width used only for the pro-forma coverage/gap plot. The current 42-inch deck is `1.0668 m`, centered on the rear-axle GPS/base_link. The logged boundary is the manually driven pass 1 centerline, so the modeled intended cutting area extends 21 inches outward from it. This does not alter the planned centerline paths. |
-| `boundary-clearance-m` | Distance from the logged perimeter to the tractor reference point. Set it from deck/body overhang, survey meaning, GPS error, and desired safety margin. |
+| `boundary-clearance-m` | Inward distance from the logged perimeter to the tractor-center containment area. The Collins test sets this to `0` because it uses an explicit outset instead. |
+| `boundary-outset-m` | Outward tractor-center containment allowance. The Collins test uses `0.381 m` (15 inches). With a centered 42-inch deck, the deck can extend as much as 36 inches outside the logged GPS centerline during a turn, so verify that exterior space is physically clear before testing. |
 | `headland-passes` | Perimeter coverage passes before interior stripes. This creates working room but does not by itself guarantee a feasible U-turn. |
 | `outer-headland-follows-boundary` | Opt-in only when the finalized, manually driven boundary already includes the required property/homeowner safety buffer. Pass 1 follows that boundary with tractor-radius corner rounding and no uniform inset. Pass 2 is one `lane-spacing-m` inward, pass 3 is two spacings inward, and so on. |
 | `stripe-end-trim-m` | Distance removed from both ends of every clipped stripe to leave turning room. This replaces the notebook’s separate “shorten stripes” script and is visible in the editable CSV/plot. |
 | `turn-radius-m` | Common minimum planning radius for left and right turns. Manual circle tests measured approximately 1.05 m full-left and 1.63 m full-right. This site uses 1.90 m: 0.27 m (about 17%) gentler than the weaker measured right turn. Do not plan at the measured limit without repeatability tests. |
 | `stripe-turn-policy` | `keyhole` constrains adjacent-row transitions to compact three-arc agricultural omega turns. `shortest-dubins` is retained for engineering comparison and must not be used merely to force a build. |
 | `selective-turn-fitting` | Keeps the common base stripe trim, then shortens only the outgoing end and incoming start for a transition that cannot use the preferred contained keyhole. |
-| `turn-fit-step-m` | Increment used while searching for the smallest symmetric endpoint adjustment. The worked command uses `0.05 m`. |
+| `turn-fit-step-m` | Increment used while searching for the smallest total endpoint adjustment. The outgoing and incoming trims may differ when corner geometry requires it. The worked command uses `0.05 m`. |
 | `maximum-turn-end-trim-m` | Maximum additional amount allowed at each adjoining endpoint. The minimum-segment rule still prevents a fitted stripe from becoming shorter than `minimum-segment-m`. |
 | `turn-fit-containment-margin-m` | Additional inward margin required while fitting preferred keyholes. It is separate from the ordinary numerical containment tolerance. |
 | `outer-headland-speed-mps` | Optional speed for perimeter pass 1. If omitted, pass 1 uses `headland-speed-mps` like the other perimeter passes. |

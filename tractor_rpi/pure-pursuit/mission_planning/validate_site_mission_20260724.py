@@ -58,21 +58,20 @@ def polygon_parts(geometry):
 
 
 def draw_polygon(ax, geometry, facecolor, edgecolor, alpha, label=None):
+    from shapely.plotting import plot_polygon
+
     first = True
     for polygon in polygon_parts(geometry):
-        x, y = polygon.exterior.xy
-        ax.fill(
-            x,
-            y,
+        plot_polygon(
+            polygon,
+            ax=ax,
+            add_points=False,
             facecolor=facecolor,
             edgecolor=edgecolor,
             alpha=alpha,
             label=label if first else None,
         )
         first = False
-        for interior in polygon.interiors:
-            hx, hy = interior.xy
-            ax.fill(hx, hy, facecolor="white", edgecolor=edgecolor, alpha=1.0)
 
 
 def safe_area_from_settings(settings: dict[str, object]):
@@ -85,13 +84,18 @@ def safe_area_from_settings(settings: dict[str, object]):
     )
     boundary = Polygon(boundary_xy)
     safe_area = boundary.buffer(
-        -float(settings["boundary_clearance_m"]),
+        float(settings.get("boundary_outset_m", 0.0))
+        - float(settings["boundary_clearance_m"]),
         join_style="round",
     )
     outer_headland_follows_boundary = bool(
         settings.get("outer_headland_follows_boundary", False)
     )
-    containment_area = boundary if outer_headland_follows_boundary else safe_area
+    containment_area = (
+        boundary
+        if outer_headland_follows_boundary and boundary.covers(safe_area)
+        else safe_area
+    )
     obstacle_shapes = []
     obstacle_file = settings.get("obstacles_file")
     for obstacle in load_obstacles(str(obstacle_file) if obstacle_file else None):
