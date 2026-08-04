@@ -1,0 +1,20 @@
+[Unit]
+Description=Tractor01 RTCM Journal Monitor with ntfy Notifications
+Documentation=https://github.com/jones2126/tractor2025
+After=network-online.target zerotier-one.service rtcm-server.service
+Wants=network-online.target rtcm-server.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/home/al/tractor2025
+ExecStart=/usr/bin/python3 -u /home/al/tractor2025/tractor_rpi/testing/inspect_rtcm_server_20260804.py --follow --notify-topic rpi-tractor01-jones2126
+Restart=always
+RestartSec=5
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=rtcm-journal-monitor
+
+[Install]
+WantedBy=multi-user.target

@@ -112,6 +112,18 @@ motion, sustained PWM without pot movement, or an IBT-2 latch.
 The site launcher now uses `field_test_logger_20260804.py`, configured for the
 20 Hz steering sequence.
 
+First run the combined fail-closed mission preflight:
+
+```bash
+cd /home/al/tractor2025
+sudo python3 tractor_rpi/testing/mission_preflight_20260804.py
+```
+
+Do not continue unless it ends with `MISSION PREFLIGHT PASS`. This checks the
+three key services, device paths, recent nonzero RTCM forwarding, RTK Fixed and
+differential age, valid fixed-carrier heading, 20 Hz steering telemetry, and a
+safe Pause state.
+
 ```bash
 cd /home/al/tractor2025/field_testing/sites/62_Collins_polygon_1
 ./run_62_Collins_polygon_1_mission.sh

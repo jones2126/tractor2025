@@ -1,0 +1,77 @@
+{
+  "source_boundary_log": "C:\\Repos\\tractor2025\\field_testing\\sites\\62_Collins_polygon_1\\00_boundary_log_20260804_115620.csv",
+  "source_data_rows": [
+    3734,
+    8686
+  ],
+  "boundary_fix_quality_note": "Geometry uses the complete driven lap, including RTK Float/DGPS gaps. Test endpoints are conservatively inset and require field review.",
+  "ref_lat": 40.48556283333333,
+  "ref_lon": -80.33234033333333,
+  "safety_inset_m": 3.0,
+  "north_offsets_m": [
+    6.0,
+    8.0
+  ],
+  "tests": [
+    {
+      "id": "1E",
+      "line": 1,
+      "direction": "east",
+      "mission_file": "north_line_1_east_20260804.txt",
+      "length_m": 20.520505170372182,
+      "waypoints": 43,
+      "start_lat": 40.48561622100597,
+      "start_lon": -80.33263164413476,
+      "end_lat": 40.48561622100597,
+      "end_lon": -80.33238927579096,
+      "yaw_math_rad": 0.0,
+      "speed_mps": 0.5,
+      "lookahead_m": 2.0
+    },
+    {
+      "id": "1W",
+      "line": 1,
+      "direction": "west",
+      "mission_file": "north_line_1_west_20260804.txt",
+      "length_m": 20.520505170372182,
+      "waypoints": 43,
+      "start_lat": 40.48561622100597,
+      "start_lon": -80.33238927579096,
+      "end_lat": 40.48561622100597,
+      "end_lon": -80.33263164413476,
+      "yaw_math_rad": 3.141592653589793,
+      "speed_mps": 0.5,
+      "lookahead_m": 2.0
+    },
+    {
+      "id": "2E",
+      "line": 2,
+      "direction": "east",
+      "mission_file": "north_line_2_east_20260804.txt",
+      "length_m": 25.510028893141524,
+      "waypoints": 53,
+      "start_lat": 40.48559812800796,
+      "start_lon": -80.33268612395787,
+      "end_lat": 40.48559812800796,
+      "end_lon": -80.33238482418957,
+      "yaw_math_rad": 0.0,
+      "speed_mps": 0.5,
+      "lookahead_m": 2.0
+    },
+    {
+      "id": "2W",
+      "line": 2,
+      "direction": "west",
+      "mission_file": "north_line_2_west_20260804.txt",
+      "length_m": 25.510028893141524,
+      "waypoints": 53,
+      "start_lat": 40.48559812800796,
+      "start_lon": -80.33238482418957,
+      "end_lat": 40.48559812800796,
+      "end_lon": -80.33268612395787,
+      "yaw_math_rad": 3.141592653589793,
+      "speed_mps": 0.5,
+      "lookahead_m": 2.0
+    }
+  ]
+}
