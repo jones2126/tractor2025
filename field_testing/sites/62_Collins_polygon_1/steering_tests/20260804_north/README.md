@@ -10,6 +10,8 @@ northern slope before attempting another coverage mission.
 | `1W` | West | 20.5 m | 0.50 m/s | 270° |
 | `2E` | East | 25.5 m | 0.50 m/s | 090° |
 | `2W` | West | 25.5 m | 0.50 m/s | 270° |
+| `2E85` | East | 25.5 m | 0.85 m/s | 090° |
+| `2W85` | West | 25.5 m | 0.85 m/s | 270° |
 
 The lines are 6 m and 8 m south of the newly recorded northernmost point. Both
 endpoints are generated from an area inset 3.0 m from the complete manually
@@ -36,6 +38,10 @@ polygon.
 
 Recommended sequence: `1E`, `1W`, `2E`, `2W`. Stop after the first pair if the
 steering response is unsafe or the IBT-2 latches.
+
+For a controlled speed comparison on the longer line, run `2E85` followed by
+`2W85`. These use exactly the same coordinates and lookahead as `2E`/`2W`; only
+the mission speed and controller cap change from 0.50 to 0.85 m/s.
 
 Each test writes a uniquely named 20 Hz field log under `/home/al/field_logs`.
 The Pure Pursuit controller independently writes its 20 Hz pursuit log under

@@ -8,19 +8,21 @@ TRACTOR_REPO="${TRACTOR_REPO:-/home/al/tractor2025}"
 CONTROLLER="${TRACTOR_REPO}/tractor_rpi/pure-pursuit/pure_pursuit_controller_20260714.py"
 LOGGER="${TRACTOR_REPO}/tractor_rpi/field_test_logger_20260804.py"
 TEST_ID="${1:-}"
-MAX_SPEED_MPS="0.50"
 
 case "${TEST_ID^^}" in
-    1E) mission="north_line_1_east_20260804.txt"; direction="EAST"; heading="090" ;;
-    1W) mission="north_line_1_west_20260804.txt"; direction="WEST"; heading="270" ;;
-    2E) mission="north_line_2_east_20260804.txt"; direction="EAST"; heading="090" ;;
-    2W) mission="north_line_2_west_20260804.txt"; direction="WEST"; heading="270" ;;
+    1E) mission="north_line_1_east_20260804.txt"; direction="EAST"; heading="090"; speed="0.50" ;;
+    1W) mission="north_line_1_west_20260804.txt"; direction="WEST"; heading="270"; speed="0.50" ;;
+    2E) mission="north_line_2_east_20260804.txt"; direction="EAST"; heading="090"; speed="0.50" ;;
+    2W) mission="north_line_2_west_20260804.txt"; direction="WEST"; heading="270"; speed="0.50" ;;
+    2E85) mission="north_line_2_east_085_20260804.txt"; direction="EAST"; heading="090"; speed="0.85" ;;
+    2W85) mission="north_line_2_west_085_20260804.txt"; direction="WEST"; heading="270"; speed="0.85" ;;
     *)
-        echo "Usage: $0 {1E|1W|2E|2W}" >&2
+        echo "Usage: $0 {1E|1W|2E|2W|2E85|2W85}" >&2
         echo "Each choice is a separate straight mission with no automatic turn." >&2
         exit 2
         ;;
 esac
+MAX_SPEED_MPS="${speed}"
 
 MISSION="${SCRIPT_DIR}/${mission}"
 for required in "${MISSION}" "${CONTROLLER}" "${LOGGER}"; do
@@ -100,4 +102,3 @@ python3 -u "${CONTROLLER}" \
     --ip 127.0.0.1 \
     --port 6004 \
     --max-speed "${MAX_SPEED_MPS}"
-
