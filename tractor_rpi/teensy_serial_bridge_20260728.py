@@ -266,7 +266,7 @@ class TeensySerialBridge:
         message = {
             'timestamp': current_time,
             'source': 'teensy_bridge',
-            'version': '2.4',
+            'version': '2.5',
             'radio': {}, 'steering': {}, 'transmission': {}, 'system': {},
             'cmd_vel': {}, 'gps': {}
         }
@@ -313,8 +313,23 @@ class TeensySerialBridge:
             message['transmission'] = {
                 'mode': int(d.get('m', 0)),
                 'bucket': int(d.get('b', 5)),
-                'target': d.get('tgt', 2985),
-                'current': d.get('cur', 2985),
+                'target': d.get('tgt', 2836),
+                'current': d.get('cur', 2836),
+                'actual_target': d.get('at', 2836),
+                'scaled_feedback': d.get('sfb', 2836),
+                'integral': d.get('it', 0),
+                'duty_cycle_target': d.get('dtt', 0),
+                'duty_cycle': d.get('dc', 0),
+                'errors_halting': d.get('eh', 0),
+                'errors_occurred': d.get('eo', 0),
+                'jrk_sequence': d.get('jq', 0),
+                'jrk_valid': int(d.get('jv', 0)),
+                'jrk_read_latency_ms': d.get('jl', 0),
+                'jrk_timeouts': d.get('jto', 0),
+                'jrk_discarded_bytes': d.get('jdb', 0),
+                'radio_transmission_raw': d.get('rv', 0),
+                'cmd_vel_mps': d.get('x', 0.0),
+                'cmd_vel_age_ms': d.get('ca', -1),
                 'age': current_time - d.get('last_update', current_time)
             }
         if 'SYSTEM' in self.latest_data:

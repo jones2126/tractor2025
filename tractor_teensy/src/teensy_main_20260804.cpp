@@ -7,6 +7,10 @@
   *   with a monotonically increasing q sequence number.
   *   Serial load is bounded by the 256-byte record buffer: at most about
   *   5.1 kB/s at 20 Hz versus about 46 kB/s usable at 460800 baud.
+  * CHANGED 20260804: Transmission diagnostics now read the JRK's actual
+  *   Target, raw/scaled feedback, duty-cycle target, applied duty cycle,
+  *   and error flags. This distinguishes a Teensy-requested target from
+  *   what the JRK accepted and from motion caused by its feedback loop.
   * --------------------------------------------------------------
   * CHANGED 20260728: Steering telemetry now publishes once per 10 Hz
   *   steering-control cycle instead of one cached snapshot every 2 seconds.
@@ -159,6 +163,23 @@ float steer_pid_output = 0.0f;
 // Transmission vars
 uint16_t currentTransmissionOutput = transmissionNeutralPos;
 int bucket = 5;
+
+struct JrkDiagnostics {
+    uint16_t requestedTarget = transmissionNeutralPos;
+    uint16_t actualTarget = transmissionNeutralPos;
+    uint16_t feedback = transmissionNeutralPos;
+    uint16_t scaledFeedback = transmissionNeutralPos;
+    int16_t integral = 0;
+    int16_t dutyCycleTarget = 0;
+    int16_t dutyCycle = 0;
+    uint16_t errorsHalting = 0;
+    uint16_t errorsOccurred = 0;
+    uint32_t sequence = 0;
+    uint32_t timeouts = 0;
+    uint32_t discardedBytes = 0;
+    uint16_t readLatencyMs = 0;
+    bool valid = false;
+} jrkDiagnostics;
 
 // NeoPixel (not used)
 #define NUM_LEDS 1
@@ -350,19 +371,75 @@ void updateGpsStatus(byte newStatus) {
 }
 
 // -------------------------------------------------------------------
-// JRK feedback (return neutral on timeout)
-uint16_t readFeedback() {
-    Serial3.write(0xE5);
-    Serial3.write(0x04);
-    Serial3.write(0x02);
+// JRK diagnostic read. Multi-byte variables are little-endian. The JRK's
+// Get Variables command permits at most 15 response bytes. Preserve the last
+// valid snapshot on timeout so a communication failure is not mistaken for
+// a real movement to neutral.
+bool readJrkVariables(uint8_t offset, uint8_t length, uint8_t *buffer) {
+    if (length == 0 || length > 15) return false;
+
+    uint16_t discarded = 0;
+    while (Serial3.available() > 0) {
+        Serial3.read();
+        discarded++;
+    }
+    jrkDiagnostics.discardedBytes += discarded;
 
     unsigned long start = millis();
-    while (Serial3.available() < 2) {
-        if (millis() - start > 15) return transmissionNeutralPos;
+    Serial3.write(0xE5);
+    Serial3.write(offset);
+    Serial3.write(length);
+    Serial3.flush();
+
+    while (Serial3.available() < length) {
+        if (millis() - start > 30) {
+            jrkDiagnostics.timeouts++;
+            jrkDiagnostics.readLatencyMs = millis() - start;
+            return false;
+        }
     }
-    uint8_t lo = Serial3.read();
-    uint8_t hi = Serial3.read();
-    return (hi << 8) | lo;
+    for (uint8_t i = 0; i < length; i++) buffer[i] = Serial3.read();
+    jrkDiagnostics.readLatencyMs = millis() - start;
+    return true;
+}
+
+uint16_t readU16LE(const uint8_t *p) {
+    return (uint16_t)p[0] | ((uint16_t)p[1] << 8);
+}
+
+int16_t readI16LE(const uint8_t *p) {
+    return (int16_t)readU16LE(p);
+}
+
+void updateJrkDiagnostics() {
+    // Offset 0x02 through 0x0D: Target, Feedback, Scaled feedback,
+    // Integral, Duty cycle target, and Duty cycle.
+    uint8_t values[12];
+    if (!readJrkVariables(0x02, sizeof(values), values)) {
+        jrkDiagnostics.valid = false;
+        return;
+    }
+
+    jrkDiagnostics.actualTarget = readU16LE(values + 0);
+    jrkDiagnostics.feedback = readU16LE(values + 2);
+    jrkDiagnostics.scaledFeedback = readU16LE(values + 4);
+    jrkDiagnostics.integral = readI16LE(values + 6);
+    jrkDiagnostics.dutyCycleTarget = readI16LE(values + 8);
+    jrkDiagnostics.dutyCycle = readI16LE(values + 10);
+    jrkDiagnostics.sequence++;
+    jrkDiagnostics.valid = true;
+
+    // Error flags change slowly; read them once per second to limit blocking
+    // serial work on the 9600-baud JRK link.
+    static unsigned long lastErrorRead = 0;
+    if (currentMillis - lastErrorRead >= 1000) {
+        uint8_t errors[4];
+        if (readJrkVariables(0x12, sizeof(errors), errors)) {
+            jrkDiagnostics.errorsHalting = readU16LE(errors + 0);
+            jrkDiagnostics.errorsOccurred = readU16LE(errors + 2);
+        }
+        lastErrorRead = currentMillis;
+    }
 }
 
 // -------------------------------------------------------------------
@@ -371,6 +448,7 @@ void setJrkTarget(uint16_t target) {
     if (target > 4095) target = 4095;
     Serial3.write(0xC0 + (target & 0x1F));
     Serial3.write((target >> 5) & 0x7F);
+    jrkDiagnostics.requestedTarget = target;
 
     static unsigned long lastJrkPrint = 0;
     if (currentMillis - lastJrkPrint >= 5000) {
@@ -557,18 +635,13 @@ void controlTransmission() {
     // Continue commanding the JRK at the normal transmission-control rate.
     setJrkTarget(requestedTarget);
 
-    // Poll actual JRK actuator feedback at 5 Hz. Static locals keep this
-    // replacement self-contained without requiring new global declarations.
+    // Poll a coherent JRK diagnostic snapshot at 5 Hz.
     static unsigned long lastJrkFeedbackRead = 0;
     static const unsigned long jrkFeedbackInterval = 200;
 
     if (currentMillis - lastJrkFeedbackRead >= jrkFeedbackInterval) {
-        // Discard stale response bytes before issuing a new JRK query.
-        while (Serial3.available() > 0) {
-            Serial3.read();
-        }
-
-        currentTransmissionOutput = readFeedback();
+        updateJrkDiagnostics();
+        currentTransmissionOutput = jrkDiagnostics.feedback;
         lastJrkFeedbackRead = currentMillis;
     }
 
@@ -578,17 +651,33 @@ void controlTransmission() {
     static const unsigned long transStatusInterval = 200;
 
     if (currentMillis - lastTransStatusPrint >= transStatusInterval) {
-        char buf[80];
+        char buf[320];
 
         snprintf(
             buf,
             sizeof(buf),
-            "1,%lu,TRANS,m=%d,b=%d,tgt=%u,cur=%u",
+            "1,%lu,TRANS,m=%d,b=%d,tgt=%u,cur=%u,at=%u,sfb=%u,"
+            "it=%d,dtt=%d,dc=%d,eh=%u,eo=%u,jq=%lu,jv=%d,jl=%u,jto=%lu,jdb=%lu,rv=%d,x=%.3f,ca=%lu",
             currentMillis,
             radioData.control_mode,
             bucket,
             requestedTarget,
-            currentTransmissionOutput
+            currentTransmissionOutput,
+            jrkDiagnostics.actualTarget,
+            jrkDiagnostics.scaledFeedback,
+            jrkDiagnostics.integral,
+            jrkDiagnostics.dutyCycleTarget,
+            jrkDiagnostics.dutyCycle,
+            jrkDiagnostics.errorsHalting,
+            jrkDiagnostics.errorsOccurred,
+            (unsigned long)jrkDiagnostics.sequence,
+            jrkDiagnostics.valid ? 1 : 0,
+            jrkDiagnostics.readLatencyMs,
+            (unsigned long)jrkDiagnostics.timeouts,
+            (unsigned long)jrkDiagnostics.discardedBytes,
+            (int)radioData.transmission_val,
+            cmdVel.linear_x,
+            cmdVel.received ? currentMillis - cmdVel.timestamp : 999999UL
         );
 
         Serial.println(buf);

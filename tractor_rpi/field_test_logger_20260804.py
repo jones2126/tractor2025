@@ -83,7 +83,22 @@ CSV_COLUMNS = [
     "bucket",             # 0-9 transmission bucket
     "jrk_target",         # JRK commanded position
     "jrk_current",        # JRK feedback position
-    "trans_mode",         # 0=pause 1=manual 2=auto
+    "jrk_actual_target",          # target read back from the JRK
+    "jrk_scaled_feedback",        # JRK feedback after configured scaling
+    "jrk_integral",               # JRK PID integral accumulator
+    "jrk_duty_cycle_target",      # signed desired motor duty (-600..600 nominal)
+    "jrk_duty_cycle",             # signed applied motor duty (-600..600)
+    "jrk_errors_halting",         # active error bitmask
+    "jrk_errors_occurred",        # latched error bitmask
+    "jrk_sequence",               # successful diagnostic snapshot counter
+    "jrk_valid",                  # 1 when latest diagnostic read succeeded
+    "jrk_read_latency_ms",        # blocking JRK diagnostic read duration
+    "jrk_timeouts",               # cumulative JRK read timeouts
+    "jrk_discarded_bytes",        # cumulative stale bytes discarded before reads
+    "radio_transmission_raw",     # handheld transmission potentiometer value
+    "trans_cmd_vel_mps",          # speed value most recently received by Teensy
+    "trans_cmd_vel_age_ms",       # Teensy age of current speed command
+    "trans_mode",         # 0=auto 1=manual 2=pause 9=radio loss
     # --- Steering ---
     "steer_setpoint",     # pot counts commanded
     "steer_current",      # pot counts actual
@@ -294,6 +309,21 @@ def build_row(start_time: float) -> dict:
         "bucket":        trans.get('bucket', ''),
         "jrk_target":    trans.get('target', ''),
         "jrk_current":   trans.get('current', ''),
+        "jrk_actual_target":       trans.get('actual_target', ''),
+        "jrk_scaled_feedback":     trans.get('scaled_feedback', ''),
+        "jrk_integral":            trans.get('integral', ''),
+        "jrk_duty_cycle_target":   trans.get('duty_cycle_target', ''),
+        "jrk_duty_cycle":          trans.get('duty_cycle', ''),
+        "jrk_errors_halting":      trans.get('errors_halting', ''),
+        "jrk_errors_occurred":     trans.get('errors_occurred', ''),
+        "jrk_sequence":            trans.get('jrk_sequence', ''),
+        "jrk_valid":               trans.get('jrk_valid', ''),
+        "jrk_read_latency_ms":     trans.get('jrk_read_latency_ms', ''),
+        "jrk_timeouts":            trans.get('jrk_timeouts', ''),
+        "jrk_discarded_bytes":     trans.get('jrk_discarded_bytes', ''),
+        "radio_transmission_raw":  trans.get('radio_transmission_raw', ''),
+        "trans_cmd_vel_mps":       trans.get('cmd_vel_mps', ''),
+        "trans_cmd_vel_age_ms":    trans.get('cmd_vel_age_ms', ''),
         "trans_mode":    trans.get('mode', ''),
 
         # Steering
