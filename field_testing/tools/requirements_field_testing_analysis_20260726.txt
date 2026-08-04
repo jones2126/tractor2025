@@ -1,2 +1,4 @@
+folium
+matplotlib
 numpy
 pandas

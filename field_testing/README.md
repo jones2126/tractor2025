@@ -3,6 +3,9 @@
 Reusable collection and analysis scripts live in `tools/`. Saved field-test
 artifacts live in `sites/`.
 
+See [`tools/README.md`](tools/README.md) for tool selection, repository-local
+commands, required inputs, and generated outputs.
+
 Run the Windows menu from the repository root:
 
 ```powershell

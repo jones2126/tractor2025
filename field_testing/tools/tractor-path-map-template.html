@@ -166,7 +166,7 @@
 
     <section class="run-stats" aria-label="Run tracking summary">
       <div class="card">
-        <div class="stat-label">Controller lateral error &le; 0.10 m</div>
+        <div class="stat-label">Lookahead target lateral offset &le; 0.10 m</div>
         <div class="stat-value" id="logged-stat"></div>
         <div class="stat-note">Auto + driving</div>
       </div>
@@ -187,7 +187,7 @@
         Color actual path by
         <select id="error-metric">
           <option value="geometric">Geometric path error</option>
-          <option value="controller">Controller lateral error</option>
+          <option value="controller">Lookahead target lateral offset</option>
         </select>
       </label>
       <label>
@@ -218,7 +218,7 @@
     </footer>
   </main>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+  <script id="leaflet-script" async src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
   <script>
   (() => {
     const DATA = /*__MAP_DATA__*/;
@@ -249,12 +249,7 @@
       foreground: "#111827",
     };
 
-    if (!window.L) {
-      root.querySelector("#run-map").textContent =
-        "Leaflet could not load. Check the internet connection and reopen this file.";
-      return;
-    }
-
+    const buildMap = () => {
     const map = L.map(root.querySelector("#run-map"), {
       preferCanvas: true,
       zoomControl: true,
@@ -304,6 +299,7 @@
     const buildActual = (metric) => {
       actualGroup.clearLayers();
       const metricIndex = metric === "geometric" ? 3 : 2;
+      const segmentIndex = 6;
       let points = [DATA.actual[0].slice(0, 2)];
       let currentCategory = category(DATA.actual[0][metricIndex]);
       let start = DATA.actual[0];
@@ -318,7 +314,7 @@
         const metricLabel =
           metric === "geometric"
             ? "Geometric path error"
-            : "Controller lateral error";
+            : "Lookahead target lateral offset";
         line.bindPopup(
           `<strong>${metricLabel}</strong><br>` +
           `Elapsed: ${start[4].toFixed(1)}&ndash;${end[4].toFixed(1)} s<br>` +
@@ -330,6 +326,14 @@
 
       for (let index = 1; index < DATA.actual.length; index += 1) {
         const row = DATA.actual[index];
+        if (row[segmentIndex] !== DATA.actual[index - 1][segmentIndex]) {
+          if (points.length > 1) addGroup(DATA.actual[index - 1]);
+          points = [row.slice(0, 2)];
+          currentCategory = category(row[metricIndex]);
+          start = row;
+          maxError = row[metricIndex];
+          continue;
+        }
         const rowCategory = category(row[metricIndex]);
         points.push(row.slice(0, 2));
         maxError = Math.max(maxError, row[metricIndex]);
@@ -341,7 +345,7 @@
           maxError = row[metricIndex];
         }
       }
-      addGroup(DATA.actual[DATA.actual.length - 1]);
+      if (points.length > 1) addGroup(DATA.actual[DATA.actual.length - 1]);
     };
 
     buildActual("geometric");
@@ -363,6 +367,20 @@
     ]);
     map.fitBounds(bounds.pad(0.08));
     window.setTimeout(() => map.invalidateSize(), 0);
+    };
+
+    if (window.L) {
+      buildMap();
+    } else {
+      const mapElement = root.querySelector("#run-map");
+      mapElement.textContent = "Loading the interactive map library...";
+      const leafletScript = document.getElementById("leaflet-script");
+      leafletScript.addEventListener("load", buildMap, { once: true });
+      leafletScript.addEventListener("error", () => {
+        mapElement.textContent =
+          "Leaflet could not load. Check the internet connection and reopen this file.";
+      }, { once: true });
+    }
   })();
   </script>
 </body>

@@ -14,7 +14,10 @@ import pandas as pd
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 AUTO_MODE = 0
-MODE_ALIGNMENT_TOLERANCE_S = 0.15
+# The field logger receives bridge status in 20 Hz bursts separated by as much
+# as about eight seconds. Radio mode is a state, so carry the last observation
+# forward rather than retaining only pursuit cycles near a burst.
+MODE_ALIGNMENT_TOLERANCE_S = 8.5
 THRESHOLDS_M = (0.05, 0.10, 0.15, 0.25, 0.50, 1.00)
 MAP_DATA_MARKER = "/*__MAP_DATA__*/"
 RUN_ID_PATTERN = re.compile(r"^\d{8}_\d{6}$")
@@ -71,6 +74,11 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         help="output directory; defaults to the selected run directory",
     )
+    parser.add_argument("--pursuit-file", type=Path, help="override pursuit CSV")
+    parser.add_argument("--field-file", type=Path, help="override field logger CSV")
+    parser.add_argument("--mission-file", type=Path, help="override mission TXT")
+    parser.add_argument("--audit-file", type=Path, help="override mission audit CSV")
+    parser.add_argument("--boundary-file", type=Path, help="override boundary CSV")
     parser.add_argument(
         "--template",
         type=Path,
@@ -110,15 +118,28 @@ def resolve_paths(args: argparse.Namespace) -> RunPaths:
     mission_dir = run_dir / site_name
     output_stem = f"{site_name}_run"
 
+    def selected(override: Path | None, default: Path) -> Path:
+        return override.expanduser().resolve() if override else default
+
     paths = RunPaths(
         site_name=site_name,
         run_id=run_id,
         run_dir=run_dir,
-        pursuit_path=run_dir / f"pursuit_log_{run_id}.csv",
-        field_path=run_dir / f"field_test_{run_id}.csv",
-        mission_path=mission_dir / f"{site_name}_mission.txt",
-        audit_path=mission_dir / f"{site_name}_mission_audit.csv",
-        boundary_path=mission_dir / "01_boundary_final.csv",
+        pursuit_path=selected(
+            args.pursuit_file, run_dir / f"pursuit_log_{run_id}.csv"
+        ),
+        field_path=selected(
+            args.field_file, run_dir / f"field_test_{run_id}.csv"
+        ),
+        mission_path=selected(
+            args.mission_file, mission_dir / f"{site_name}_mission.txt"
+        ),
+        audit_path=selected(
+            args.audit_file, mission_dir / f"{site_name}_mission_audit.csv"
+        ),
+        boundary_path=selected(
+            args.boundary_file, mission_dir / "01_boundary_final.csv"
+        ),
         template_path=args.template.expanduser().resolve(),
         output_dir=output_dir,
         analysis_path=output_dir / f"{output_stem}_analysis_{run_id}.json",
@@ -338,7 +359,7 @@ def analyze_run(paths: RunPaths) -> tuple[dict[str, object], dict[str, object]]:
         ),
         left_on="timestamp",
         right_on="field_timestamp",
-        direction="nearest",
+        direction="backward",
         tolerance=MODE_ALIGNMENT_TOLERANCE_S,
     )
 
@@ -454,9 +475,14 @@ def analyze_run(paths: RunPaths) -> tuple[dict[str, object], dict[str, object]]:
             "primary_population": (
                 "Pure Pursuit cycles with valid CTE, position, "
                 "controller driving=True, and nearest field logger "
-                "trans_mode=0 within 0.15 s"
+                "last observed field-logger trans_mode=0 no more than 8.5 s "
+                "earlier"
             ),
-            "controller_cte": "cross_track_err_m = abs(yt_m)",
+            "controller_lookahead_lateral_offset": (
+                "cross_track_err_m = abs(yt_m), where yt_m is the active "
+                "lookahead target's lateral coordinate in the tractor frame; "
+                "this is not perpendicular position-to-path error"
+            ),
             "geometric_cte": (
                 "minimum local XY distance from actual position to nearby "
                 "mission polyline segments"
@@ -543,6 +569,9 @@ def analyze_run(paths: RunPaths) -> tuple[dict[str, object], dict[str, object]]:
     )
     boundary = boundary.sort_values("sequence")
 
+    auto["map_path_segment"] = (
+        auto["timestamp"].diff().gt(0.20).cumsum()
+    )
     actual_map = auto.iloc[::4].copy()
     if actual_map.index[-1] != auto.index[-1]:
         actual_map = pd.concat([actual_map, auto.tail(1)])
@@ -586,6 +615,7 @@ def analyze_run(paths: RunPaths) -> tuple[dict[str, object], dict[str, object]]:
                 round(float(row.geometric_cte_m), 3),
                 round(float(row.elapsed_s), 2),
                 int(row.waypoint_idx),
+                int(row.map_path_segment),
             ]
             for row in actual_map.itertuples()
         ],
@@ -634,7 +664,7 @@ def main() -> int:
         f"{float(controller['duration_s']):.1f} s"
     )
     print(
-        "Controller CTE <= 0.10 : "
+        "Lookahead lateral <= .10: "
         f"{float(controller['within_0.10m_pct_time']):.1f}%"
     )
     print(
