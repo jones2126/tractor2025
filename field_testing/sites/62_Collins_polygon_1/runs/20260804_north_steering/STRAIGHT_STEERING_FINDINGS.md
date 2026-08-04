@@ -58,3 +58,27 @@ review whether the 10-count deadband and 150 minimum PWM remain appropriate.
 Do not infer coverage-mission turn performance from these straight tests. They
 validate steady straight tracking only; path acquisition and keyhole turns are
 separate behaviors.
+
+## Speed comparison on line 2
+
+Line 2 was repeated in both directions with the mission speed and controller
+cap raised from 0.50 to 0.85 m/s. Geometry, waypoint spacing, lookahead, and
+controller code were unchanged. The comparison uses central waypoints 21–42.
+
+| Direction | Mission speed | Mean GPS speed | Mean absolute geometric error | 95th percentile | Mean heading error | Minimum-PWM activity |
+|---|---:|---:|---:|---:|---:|---:|
+| East | 0.50 m/s | 0.33 m/s | 2.62 cm | 8.04 cm | 0.97° | 6.08% |
+| East | 0.85 m/s | 0.80 m/s | 2.41 cm | 4.11 cm | 0.72° | 11.81% |
+| West | 0.50 m/s | 0.52 m/s | 3.50 cm | 8.82 cm | 1.78° | 10.65% |
+| West | 0.85 m/s | 0.84 m/s | 2.43 cm | 5.06 cm | 1.19° | 5.43% |
+
+Increasing speed to 0.85 m/s did not increase steady straight-line error. Both
+directions were slightly tighter, and neither produced PWM saturation. The
+eastbound 0.85 run required more frequent minimum-PWM corrections, but retained
+ample steering authority.
+
+The comparison is not a perfect commanded-speed experiment because the earlier
+eastbound 0.50 mission averaged only 0.33 m/s in the selected window, while the
+0.85 missions closely approached their command. It nevertheless demonstrates
+that approximately 0.8–0.85 m/s straight travel did not degrade tracking on
+this slope. Keep the existing PID gains for subsequent straight travel.
