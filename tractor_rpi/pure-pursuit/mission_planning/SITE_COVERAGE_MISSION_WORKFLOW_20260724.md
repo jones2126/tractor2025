@@ -2,7 +2,7 @@
 
 This workflow replaces `Site_01_path_planning_tool_v4.ipynb` for the current
 non-ROS tractor stack. It starts with decimal-degree latitude/longitude recorded
-by `field_test_logger_20260728.py` and ends with the exact five-column mission
+by `field_test_logger_20260804.py` and ends with the exact five-column mission
 format read by `pure_pursuit_controller_20260714.py`:
 
 ```text
@@ -173,7 +173,7 @@ Run the logger on the tractor RPi:
 
 ```bash
 cd ~/tractor2025/tractor_rpi
-python3 field_test_logger_20260728.py \
+python3 field_test_logger_20260804.py \
   --output ~/field_plans/site_01/00_boundary_log.csv
 ```
 

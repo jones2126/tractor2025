@@ -49,7 +49,7 @@ Full documentation: `obsidian_vault/00-project-overview.md`
 ### Current Firmware
 | Board | File |
 |-------|------|
-| Tractor Teensy 4.1 | `tractor_teensy/src/teensy_main_20260728.cpp` |
+| Tractor Teensy 4.1 | `tractor_teensy/src/teensy_main_20260804.cpp` |
 | Handheld RC (Teensy 3.2) | `radiocontrol_nrf24radio/src/Rccntrl_rf24_20260517.cpp` |
 
 ### Active Development Focus (as of 2026-05-20)

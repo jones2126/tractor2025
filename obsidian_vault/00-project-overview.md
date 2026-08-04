@@ -99,7 +99,7 @@ Local clone: `~/tractor2025/`
 See `firmware_versions.md` for flash history and commit tracking.
 
 ### Tractor Teensy 4.1 Firmware
-**Current:** `tractor_teensy/src/teensy_main_20260728.cpp`
+**Current:** `tractor_teensy/src/teensy_main_20260804.cpp`
 Steering PID, transmission (JRK G2), NRF24 radio receive, e-stop relay, serial bridge to RPi.
 Archive of older versions: `tractor_teensy/src/archive/`
 

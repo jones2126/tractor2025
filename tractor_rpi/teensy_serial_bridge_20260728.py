@@ -4,9 +4,10 @@ teensy_serial_bridge_20260728.py
 Full original functionality + source-synchronized reliable broadcasting.
 
 CHANGED 20260728:
-  - Forward the 10 Hz low-level steering diagnostics emitted by
-    teensy_main_20260728.cpp.
-  - Broadcast consolidated UDP status once for every fresh 10 Hz STEER
+  - Forward each source-timed low-level steering diagnostic. This supports
+    both the original 10 Hz teensy_main_20260728.cpp stream and the 20 Hz
+    teensy_main_20260804.cpp stream without timer-based resampling.
+  - Broadcast consolidated UDP status once for every fresh source STEER
     record, rather than sampling a cache on an independent timer. This avoids
     timer-phase repeats/skips and preserves the source sequence end to end.
   - Preserve the Teensy source timestamp and steering sequence number so
@@ -50,7 +51,7 @@ if _hostname not in _HOSTNAME_BIND_IP:
 UDP_STATUS_PORT = 6003
 UDP_COMMAND_PORT = 6004
 UDP_GPS_PORT = 6002
-BROADCAST_RATE = 10  # expected STEER source rate; also controls status log cadence
+STATUS_LOG_EVERY = 20  # log once per second when the source is running at 20 Hz
 # ================================================
 
 class TeensySerialBridge:
@@ -351,7 +352,7 @@ class TeensySerialBridge:
 
             self.stats['broadcasts_sent'] += 1
             self.broadcast_counter += 1
-            if self.broadcast_counter % BROADCAST_RATE == 0:
+            if self.broadcast_counter % STATUS_LOG_EVERY == 0:
                 logger.info(
                     f"✓ STEER-SYNC BROADCAST ({len(data)} bytes, "
                     f"GPS={status['gps']['status']}, "
