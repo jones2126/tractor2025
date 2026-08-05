@@ -158,7 +158,7 @@
   "turn_radius_m": 1.9,
   "straight_speed_mps": 0.85,
   "turn_speed_mps": 0.5,
-  "lookahead_m": 2.0,
+  "lookahead_m": 1.0,
   "waypoints": 1010,
   "route_length_m": 472.23419399397943,
   "estimated_runtime_minutes": 12.755927251565188,
@@ -170,5 +170,5 @@
   "start_heading_compass_deg": 162.01810220133277,
   "end_lat": 40.48536826412953,
   "end_lon": -80.33244119104883,
-  "mission_sha256": "ce65e97152fee120f1401e3927b54f7c8f516c5dc712d5dbc987199fb5ded970"
+  "mission_sha256": "b9c9ff5b18be1cba7f725b63ba17f561c72769409ee59e2e72fd144b0181c028"
 }

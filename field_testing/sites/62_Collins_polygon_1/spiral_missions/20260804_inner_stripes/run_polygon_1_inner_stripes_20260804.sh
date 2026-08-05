@@ -9,7 +9,7 @@ MISSION="${SCRIPT_DIR}/polygon_1_inner_stripes_38in_20260804.txt"
 REPORT="${SCRIPT_DIR}/polygon_1_inner_stripes_38in_report.json"
 CONTROLLER="${TRACTOR_REPO}/tractor_rpi/pure-pursuit/pure_pursuit_controller_20260714.py"
 LOGGER="${TRACTOR_REPO}/tractor_rpi/field_test_logger_20260804.py"
-EXPECTED_SHA256="ce65e97152fee120f1401e3927b54f7c8f516c5dc712d5dbc987199fb5ded970"
+EXPECTED_SHA256="b9c9ff5b18be1cba7f725b63ba17f561c72769409ee59e2e72fd144b0181c028"
 
 for required in "${MISSION}" "${REPORT}" "${CONTROLLER}" "${LOGGER}"; do
     if [[ ! -f "${required}" ]]; then
@@ -38,6 +38,7 @@ checks = {
     "waypoints": report["waypoints"] == 1010,
     "straight speed": math.isclose(report["straight_speed_mps"], 0.85, abs_tol=1e-9),
     "turn speed": math.isclose(report["turn_speed_mps"], 0.50, abs_tol=1e-9),
+    "lookahead": math.isclose(report["lookahead_m"], 1.00, abs_tol=1e-9),
 }
 failed = [name for name, passed in checks.items() if not passed]
 if failed:
@@ -59,6 +60,7 @@ echo " Stripes          : 20 east/west at 38-inch spacing"
 echo " Straight speed   : 0.85 m/s"
 echo " Keyhole speed    : 0.50 m/s"
 echo " Keyhole radius   : 1.90 m"
+echo " Lookahead        : 1.00 m"
 echo " Route length     : 472.2 m"
 echo " Estimated runtime: 12.8 minutes"
 echo " Start            : 40.485562833, -80.332340333"

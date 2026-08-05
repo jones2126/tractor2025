@@ -6,6 +6,7 @@ This mission fills the inner core left by the clockwise spiral.
 - Straight speed: 0.85 m/s
 - Keyhole speed: 0.50 m/s
 - Keyhole radius: 1.90 m
+- Pure Pursuit lookahead: 1.00 m (changed from 2.00 m for the 2026-08-05 retest)
 - Route length: 472.2 m
 - Estimated runtime: 12.8 minutes
 - 1,010 waypoints

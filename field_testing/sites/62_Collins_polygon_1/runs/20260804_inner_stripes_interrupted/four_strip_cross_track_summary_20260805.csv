@@ -1,0 +1,5 @@
+strip,mission_idx_start,mission_idx_end,direction,analyzed_length_m,samples,within_abs_0_10_percent,mean_signed_cte_m,mae_m,p95_abs_cte_m,max_abs_cte_m,mean_pp_steer_normalized,mean_achieved_steer_normalized,mean_abs_heading_error_deg,mean_controller_abs_yt_m
+13,654,679,west,10.228,225,0.0,0.293,0.293,0.433,0.488,-0.299,-0.301,2.46,0.298
+14,707,731,east,9.542,205,0.0,0.282,0.282,0.298,0.317,-0.304,-0.302,0.64,0.302
+15,759,781,west,8.837,181,0.0,0.330,0.330,0.473,0.511,-0.309,-0.313,1.42,0.307
+16,809,830,east,8.152,166,0.0,0.282,0.282,0.332,0.332,-0.320,-0.312,1.25,0.319
