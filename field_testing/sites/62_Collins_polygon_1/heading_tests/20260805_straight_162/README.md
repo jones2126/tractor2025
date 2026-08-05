@@ -3,11 +3,11 @@
 This is an 8.0 m straight-only diagnostic beginning at the reviewed Polygon 1
 start pose and proceeding at compass heading 162 degrees.
 
-- Speed: 0.25 m/s
+- Speed: 0.50 m/s
 - Lookahead: 2.00 m
 - Waypoint spacing: 0.25 m
 - Autonomous turns: none
-- Expected runtime: approximately 32 seconds
+- Expected runtime: approximately 16 seconds
 - Deck: disengaged
 
 The purpose is to reproduce and measure short `headValid=False` events without

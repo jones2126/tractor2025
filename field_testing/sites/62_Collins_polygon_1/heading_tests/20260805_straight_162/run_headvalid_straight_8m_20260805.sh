@@ -9,7 +9,7 @@ MISSION="${SCRIPT_DIR}/headvalid_straight_8m_20260805.txt"
 CONTROLLER="${TRACTOR_REPO}/tractor_rpi/pure-pursuit/pure_pursuit_controller_20260714.py"
 LOGGER="${TRACTOR_REPO}/tractor_rpi/field_test_logger_20260804.py"
 PREFLIGHT="/home/al/mission_preflight_20260804.py"
-EXPECTED_SHA256="0fa3167b19706177dc5bcba088152e20cc41ee742a7e6816bcfca8cb333299f6"
+EXPECTED_SHA256="2be981fc7fa691af9b5a6ac7199b208edd2f24bf5c425eb927606e649b695cdb"
 
 for required in "${MISSION}" "${CONTROLLER}" "${LOGGER}" "${PREFLIGHT}"; do
     if [[ ! -f "${required}" ]]; then
@@ -39,9 +39,9 @@ echo "============================================================"
 echo " HEADVALID STRAIGHT DIAGNOSTIC"
 echo " Distance         : 8.0 m, straight, no turn"
 echo " Heading          : 162 degrees compass"
-echo " Speed            : 0.25 m/s"
+echo " Speed            : 0.50 m/s"
 echo " Lookahead        : 2.00 m"
-echo " Expected runtime : about 32 seconds"
+echo " Expected runtime : about 16 seconds"
 echo " Start            : 40.485562833, -80.332340333"
 echo "============================================================"
 echo "Keep the mower deck disengaged and radio UP/Pause."
@@ -137,4 +137,4 @@ python3 -u "${CONTROLLER}" \
     --min-fix "RTK Fixed" \
     --ip 127.0.0.1 \
     --port 6004 \
-    --max-speed 0.25
+    --max-speed 0.50
