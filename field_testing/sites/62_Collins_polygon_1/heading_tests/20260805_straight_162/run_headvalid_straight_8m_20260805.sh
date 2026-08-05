@@ -9,7 +9,7 @@ MISSION="${SCRIPT_DIR}/headvalid_straight_8m_20260805.txt"
 CONTROLLER="${TRACTOR_REPO}/tractor_rpi/pure-pursuit/pure_pursuit_controller_20260714.py"
 LOGGER="${TRACTOR_REPO}/tractor_rpi/field_test_logger_20260804.py"
 PREFLIGHT="/home/al/mission_preflight_20260804.py"
-EXPECTED_SHA256="e46a7af2735650be832dac621210f7dbf9c7a6526bd6ff1c1d16eea49ff3ecc3"
+EXPECTED_SHA256="dd9638c28277096baf92a287243424d159e1170a31f24a0ead6132148fa1b62a"
 
 for required in "${MISSION}" "${CONTROLLER}" "${LOGGER}" "${PREFLIGHT}"; do
     if [[ ! -f "${required}" ]]; then
@@ -37,12 +37,12 @@ fi
 
 echo "============================================================"
 echo " HEADVALID STRAIGHT DIAGNOSTIC"
-echo " Distance         : 15.0 m, straight, no turn"
-echo " Heading          : 170 degrees compass"
+echo " Distance         : 20.0 m, straight, no turn"
+echo " Heading          : 168.228 degrees compass"
 echo " Speed            : 0.50 m/s"
 echo " Lookahead        : 2.00 m"
-echo " Expected runtime : about 30 seconds"
-echo " Start            : 40.485562833, -80.332340333"
+echo " Expected runtime : about 40 seconds plus any GPS safety stops"
+echo " Start            : 40.485570667, -80.332361167"
 echo "============================================================"
 echo "Keep the mower deck disengaged and radio UP/Pause."
 echo "This test still exercises the unresolved JRK feedback system."
@@ -54,9 +54,9 @@ python3 "${PREFLIGHT}"
 python3 - <<'PY'
 import json, math, socket, time
 
-START_LAT = 40.485562833
-START_LON = -80.332340333
-START_HEADING = 170.0
+START_LAT = 40.485570667
+START_LON = -80.332361167
+START_HEADING = 168.228
 MAX_DISTANCE_M = 3.0
 MAX_HEADING_ERROR_DEG = 10.0
 
@@ -109,7 +109,7 @@ fi
 
 mkdir -p /home/al/field_logs
 timestamp="$(date '+%Y%m%d_%H%M%S')"
-field_log="/home/al/field_logs/headvalid_straight_15m_${timestamp}.csv"
+field_log="/home/al/field_logs/headvalid_straight_20m_mower_${timestamp}.csv"
 logger_pid=""
 
 cleanup() {
