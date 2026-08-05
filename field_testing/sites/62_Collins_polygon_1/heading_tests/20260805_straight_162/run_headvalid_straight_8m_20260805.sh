@@ -9,7 +9,7 @@ MISSION="${SCRIPT_DIR}/headvalid_straight_8m_20260805.txt"
 CONTROLLER="${TRACTOR_REPO}/tractor_rpi/pure-pursuit/pure_pursuit_controller_20260714.py"
 LOGGER="${TRACTOR_REPO}/tractor_rpi/field_test_logger_20260804.py"
 PREFLIGHT="/home/al/mission_preflight_20260804.py"
-EXPECTED_SHA256="2be981fc7fa691af9b5a6ac7199b208edd2f24bf5c425eb927606e649b695cdb"
+EXPECTED_SHA256="e46a7af2735650be832dac621210f7dbf9c7a6526bd6ff1c1d16eea49ff3ecc3"
 
 for required in "${MISSION}" "${CONTROLLER}" "${LOGGER}" "${PREFLIGHT}"; do
     if [[ ! -f "${required}" ]]; then
@@ -37,11 +37,11 @@ fi
 
 echo "============================================================"
 echo " HEADVALID STRAIGHT DIAGNOSTIC"
-echo " Distance         : 8.0 m, straight, no turn"
-echo " Heading          : 162 degrees compass"
+echo " Distance         : 15.0 m, straight, no turn"
+echo " Heading          : 170 degrees compass"
 echo " Speed            : 0.50 m/s"
 echo " Lookahead        : 2.00 m"
-echo " Expected runtime : about 16 seconds"
+echo " Expected runtime : about 30 seconds"
 echo " Start            : 40.485562833, -80.332340333"
 echo "============================================================"
 echo "Keep the mower deck disengaged and radio UP/Pause."
@@ -56,8 +56,8 @@ import json, math, socket, time
 
 START_LAT = 40.485562833
 START_LON = -80.332340333
-START_HEADING = 162.0
-MAX_DISTANCE_M = 1.0
+START_HEADING = 170.0
+MAX_DISTANCE_M = 3.0
 MAX_HEADING_ERROR_DEG = 10.0
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -67,16 +67,22 @@ if hasattr(socket, "SO_REUSEPORT"):
 sock.bind(("", 6009))
 sock.settimeout(5.0)
 latest = None
+latest_drivable = None
 deadline = time.time() + 5.0
 while time.time() < deadline:
     try:
         payload, _ = sock.recvfrom(65535)
         latest = json.loads(payload)
+        if latest.get("fix_quality") == "RTK Fixed" and latest.get("headValid"):
+            latest_drivable = latest
     except socket.timeout:
         break
 sock.close()
 if latest is None:
     raise SystemExit("ERROR: no GPS packet received on UDP 6009")
+if latest_drivable is None:
+    raise SystemExit("ERROR: no RTK Fixed + headValid packet received during the 5-second start gate")
+latest = latest_drivable
 lat = float(latest["lat"])
 lon = float(latest["lon"])
 heading = float(latest["heading_deg"])
@@ -103,7 +109,7 @@ fi
 
 mkdir -p /home/al/field_logs
 timestamp="$(date '+%Y%m%d_%H%M%S')"
-field_log="/home/al/field_logs/headvalid_straight_8m_${timestamp}.csv"
+field_log="/home/al/field_logs/headvalid_straight_15m_${timestamp}.csv"
 logger_pid=""
 
 cleanup() {
