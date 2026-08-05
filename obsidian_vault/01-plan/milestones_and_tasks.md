@@ -20,6 +20,7 @@
 - [ ] Turn on radio - check radio connectivity
 - [ ] Power on tractor01
 - [ ] Log on to the GL.iNet router and check that the status script is running; or, from tractor01, run `python3 /home/al/tractor2025/tractor_rpi/testing/router_wifi_tcp_listener_TESTING.py`
+- [ ] Run sudo python3 /home/al/mission_preflight_20260804.py  (update location to tractor2025\tractor_rpi\testing - this is a consolidated safety check)
 - [ ] Check LED4 on radio control for green (i.e. RTK Fix)
 - [ ] Check key services are running: $ cd /home/al/tractor2025/tractor_rpi  ; $ ./check_services.sh
 - [ ] Start data logging -- Use nohup with output redirected to a log file: $ nohup python3 /home/al/tractor2025/tractor_rpi/field_test_logger_20260710.py > /home/al/field_logs/logger_console.log 2>&1 & 
