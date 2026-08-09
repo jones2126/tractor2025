@@ -1,8 +1,11 @@
 # IBT-2 Gen2 — Definitive Wiring & Build Guide
 
-**Status:** Ready to build — all circuits specified  
+**Status:** Existing PCB is untested and requires EN-interface review/rework before connection to Teensy 4.1
 **Supersedes:** `05-future-ideas/IBT-2_Next_Generation.md` (planning doc, keep for history)  
 **See also:** [[Teensy41_Pin_Reference]] | [[DROK-12V-to-5V-Buck-Converter]]
+
+> [!WARNING]
+> The original board connects R_EN and L_EN nodes pulled up to 5V directly to Teensy pins 7 and 8. Teensy 4.1 GPIO is not 5V tolerant. Configuring a pin as INPUT does not protect it from an external 5V pull-up. Do not connect the board's original EN outputs directly to the Teensy. The recommended NPN interface below must be added, or the explicitly untested 3.3V alternative must first be validated on the actual IBT-2 module.
 
 ---
 
@@ -43,36 +46,78 @@ All new signal lines route through a perf board containing the required protecti
 |-----------|-----------|-----------|----------------------|
 | RPWM      | **5**     | OUT       | Direct wire (unchanged) |
 | LPWM      | **6**     | OUT       | Direct wire (unchanged) |
-| R_EN      | **7**     | OUT       | Open-drain + 10kΩ pull-up to 5V |
-| L_EN      | **8**     | OUT       | Open-drain + 10kΩ pull-up to 5V |
+| R_EN      | **7**     | OUT       | Recommended: NPN open-collector level shifter; never connect the 5V EN node directly to Teensy |
+| L_EN      | **8**     | OUT       | Recommended: NPN open-collector level shifter; never connect the 5V EN node directly to Teensy |
 | R_IS      | **21 (A7)** | IN (analog) | 10kΩ/10kΩ divider + 100nF filter cap |
 | L_IS      | **22 (A8)** | IN (analog) | 10kΩ/10kΩ divider + 100nF filter cap |
 
 Pins 7, 8, 21, 22 are free — no conflicts with existing firmware (NRF24 uses
-9/10/11/12/13; JRK G2 uses Serial3 = TX14/RX15; steering pot uses A9/23; E-stop uses 32).
+9/10/11/12/13; JRK G2 remains on Serial3 = TX14/RX15; steering pot uses A9/23; E-stop uses pin 30).
+
+There is no reason to move the JRK to Serial4 when installing this board. Keep Teensy TX3 pin 14 connected to JRK RX and Teensy RX3 pin 15 connected to JRK TX.
 
 ---
 
-## Circuit 1 — EN Pin Open-Drain Pull-Up (×2)
+## Circuit 1 — EN Control Interface (×2)
 
-The Teensy 4.1 runs at 3.3V logic. The IBT-2 EN pins expect 5V logic HIGH. Driving
-them directly from a 3.3V Teensy output would conflict with the module's internal 5V
-state. Open-drain with external pull-up solves this cleanly.
+The Teensy 4.1 runs at 3.3V and its GPIO pins are not 5V tolerant. The original
+design directly joined each Teensy pin to an EN node pulled up to 5V. That is unsafe:
+switching the Teensy pin to INPUT makes it high-impedance but still exposes the pin
+to the external 5V level.
+
+### Recommended option — NPN open-collector level shifter
+
+Use one general-purpose NPN transistor for each EN input (for example, 2N3904 or
+2N2222). The transistor keeps the 5V EN node off the Teensy pin.
 
 ```
-5V (DROK) ────── R1 (10kΩ) ────┬──── IBT-2  R_EN
+5V (DROK) ── R1 (10kΩ) ──┬──── IBT-2 R_EN
+                           │
+                           C
+Teensy pin 7 ── R7 (4.7kΩ) ── B  Q1 (2N3904/2N2222)
+                                E
                                 │
-                           Teensy pin 7
+                               GND
 
-5V (DROK) ────── R2 (10kΩ) ────┬──── IBT-2  L_EN
-                                │
-                           Teensy pin 8
+Q1 base ── R9 (100kΩ) ── GND
+
+Repeat with pin 8, R2, R8, R10, and Q2 for L_EN.
 ```
 
 **Operation:**
-- Teensy drives pin LOW (OUTPUT, LOW) → EN = 0V → IBT-2 disabled / fault latch cleared
-- Teensy releases pin (INPUT mode) → pull-up takes EN to 5V → IBT-2 enabled
-- Teensy never sources 5V — it only sinks to GND, which is safe at 3.3V logic
+
+- Teensy HIGH → NPN turns on → EN pulled LOW → IBT-2 channel disabled / fault cleared.
+- Teensy LOW → NPN turns off → 10kΩ pull-up takes EN HIGH to 5V → channel enabled.
+- The 100kΩ base-to-ground resistor keeps the transistor off if the Teensy output is floating.
+- This logic is inverted relative to the original test firmware. Firmware functions and startup sequencing must be changed before testing.
+- With the base pull-down shown, a resetting or unpowered Teensy leaves the IBT-2 enabled. Account for this in the system safety design; PWM must remain zero during startup. A future revision can add default-disabled hardware if required.
+
+For the already-fabricated PCB, cut or omit the traces/wires that directly connect
+R_EN_NODE and L_EN_NODE to the Teensy header. Add Q1/Q2 and their base resistors on a
+small daughterboard or insulated point-to-point rework. Verify with a meter that the
+Teensy-side signals never exceed 3.3V before plugging in the Teensy.
+
+### Untested alternative — direct 3.3V EN drive
+
+The Infineon BTS7960 datasheet specifies a maximum HIGH threshold of 2.15V for INH
+and 2.0V for IN. At the bare IC, 3.3V should therefore be recognized as HIGH. The
+datasheet also describes these inputs as TTL/CMOS-compatible Schmitt-trigger inputs
+that can be driven directly by a microcontroller.
+
+Primary source: [Infineon BTS7960 datasheet](https://www.infineon.com/assets/row/public/documents/10/57/infineon-bts7960-ds-en.pdf), sections 4.4.1 and the control-input electrical characteristics table.
+
+However, the complete IBT-2 module is a third-party assembly whose pull-ups,
+pull-downs, indicator circuitry, and component values can vary. Direct 3.3V operation
+has not been tested on this tractor's module. Treat it as an alternative only after:
+
+1. Disconnecting the Teensy and measuring R_EN and L_EN for any module-generated 5V.
+2. Confirming neither EN terminal rises above 3.3V under any powered condition.
+3. Driving each EN through a current-limiting resistor from a separate 3.3V test source.
+4. Confirming reliable enable/disable operation throughout expected supply voltage and vibration.
+
+If validated, remove the 5V pull-ups and drive EN directly at 0/3.3V. Do not leave a
+5V pull-up connected to a Teensy GPIO. Until this module-specific test is completed,
+the NPN interface is the recommended solution.
 
 ---
 
@@ -152,6 +197,9 @@ All components are through-hole, standard sizes, available at any electronics su
 | R4  | 10kΩ 1/4W | Carbon or metal film resistor | R_IS divider — lower |
 | R5  | 10kΩ 1/4W | Carbon or metal film resistor | L_IS divider — upper |
 | R6  | 10kΩ 1/4W | Carbon or metal film resistor | L_IS divider — lower |
+| R7, R8 | 4.7kΩ 1/4W | Carbon or metal film resistor | Teensy-to-NPN base current limiting |
+| R9, R10 | 100kΩ 1/4W | Carbon or metal film resistor | NPN base pull-down |
+| Q1, Q2 | 2N3904 or 2N2222 NPN | Through-hole transistor | 5V EN-node isolation and low-side pull-down |
 | C1  | 100nF (0.1µF) ceramic disc, 25V+ | Capacitor | R_IS PWM noise filter |
 | C2  | 100nF (0.1µF) ceramic disc, 25V+ | Capacitor | L_IS PWM noise filter |
 | C3  | 100µF / 16V electrolytic | Capacitor | VCC bulk decoupling |
@@ -182,8 +230,8 @@ Row 2:  [5V screw term]   ─── 5V bus  (top rail across full board)  ──
 
      COL:  A          B              C         D              E           F
 
-Row 3:  R_EN in ─── R1(10k) ──── pin 7 out ·  ·               ·           ·
-Row 4:  L_EN in ─── R2(10k) ──── pin 8 out ·  ·               ·           ·
+Row 3:  R_EN in ─── R1(10k) to 5V; EN node must reach Q1 collector, not pin 7 directly
+Row 4:  L_EN in ─── R2(10k) to 5V; EN node must reach Q2 collector, not pin 8 directly
 
 Row 5:  R_IS in ─── R3(10k) ─┬─ A7  out  ·  R4(10k) to GND   C1(100nF) across R4
                                │
@@ -245,8 +293,11 @@ and adjust the multiplier: `amps = vIS × (8450.0 / R_sense_ohms)`.
 - [ ] 12V from blade fuse block to IBT-2 B+ only (high-current, not on perf board)
 - [ ] DROK 5V output to perf board 5V rail and IBT-2 VCC
 - [ ] RPWM/LPWM (pins 5/6) still connected as before
-- [ ] R_EN → perf board → Teensy pin 7
-- [ ] L_EN → perf board → Teensy pin 8
+- [ ] R_EN → 5V pull-up node and Q1 collector; no direct electrical path to Teensy pin 7
+- [ ] L_EN → 5V pull-up node and Q2 collector; no direct electrical path to Teensy pin 8
+- [ ] Teensy pin 7 → 4.7kΩ → Q1 base; Q1 emitter → GND; 100kΩ base-to-GND fitted
+- [ ] Teensy pin 8 → 4.7kΩ → Q2 base; Q2 emitter → GND; 100kΩ base-to-GND fitted
+- [ ] Meter confirms pins 7 and 8 can never be pulled to 5V
 - [ ] R_IS → perf board upper divider → filtered output → Teensy pin 21 (A7)
 - [ ] L_IS → perf board upper divider → filtered output → Teensy pin 22 (A8)
 - [ ] C3 electrolytic polarity correct (+ to 5V)
@@ -256,9 +307,11 @@ and adjust the multiplier: `amps = vIS × (8450.0 / R_sense_ohms)`.
 
 ## Firmware Integration Plan
 
-Before integrating into `teensy_main_20260518.cpp`:
-1. Test with standalone Gen2 test firmware in `tractor_rpi/testing/teensy41_ibt2_gen2/`
-2. Confirm IS readings look reasonable at idle vs. under load vs. stall
-3. Then add `ibt2Enable()`, `ibt2Disable()`, `ibt2ClearFault()` functions to main firmware
-4. Add `ibt2Amps()` and stall detection to `controlSteering()`
-5. Add IS readings to Serial status broadcast so RPi can log current draw
+Before integrating into the current `tractor_teensy/src/teensy_main_20260804.cpp`:
+1. Rework the EN interface with the recommended NPN circuits and continuity/voltage-test it without the Teensy installed.
+2. Update the standalone Gen2 test firmware for inverted EN logic: output HIGH disables and output LOW enables.
+3. Test with standalone Gen2 test firmware in `tractor_rpi/testing/teensy41_ibt2_gen2/`.
+4. Confirm IS readings look reasonable at idle vs. under load vs. stall.
+5. Then add `ibt2Enable()`, `ibt2Disable()`, `ibt2ClearFault()` functions to current main firmware.
+6. Add `ibt2Amps()` and stall detection to `controlSteering()`.
+7. Add IS readings to serial status so the RPi can log current draw.
