@@ -73,7 +73,7 @@ Wants=network.target
 Type=simple
 User=$USER
 WorkingDirectory=$SCRIPT_DIR
-ExecStart=$PYTHON_BIN $SCRIPT_DIR/rtcm_server_20260617.py
+ExecStart=$PYTHON_BIN -u $SCRIPT_DIR/rtcm_server_20260828.py
 Restart=always
 RestartSec=5
 

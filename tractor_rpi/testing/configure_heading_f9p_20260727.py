@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Recover the tractor heading F9P configuration without u-center.
 
-This deliberately changes only the settings needed by rtcm_server_20260727.py:
+This deliberately changes only the settings needed by rtcm_server_20260828.py:
 
 * UART1 enabled at 115200 baud with RTCM3 input enabled
 * UBX output enabled on USB
