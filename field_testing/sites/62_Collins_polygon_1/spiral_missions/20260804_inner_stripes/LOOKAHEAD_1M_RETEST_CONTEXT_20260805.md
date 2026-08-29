@@ -129,7 +129,7 @@ Current relevant files:
 ```text
 tractor_teensy/src/teensy_main_20260804.cpp
 tractor_rpi/teensy_serial_bridge_20260728.py
-tractor_rpi/field_test_logger_20260804.py
+tractor_rpi/archive/field_test_loggers/field_test_logger_20260804.py
 ```
 
 The updated firmware publishes 20 Hz steering PID telemetry and 5 Hz expanded JRK transmission diagnostics. Important transmission fields include:

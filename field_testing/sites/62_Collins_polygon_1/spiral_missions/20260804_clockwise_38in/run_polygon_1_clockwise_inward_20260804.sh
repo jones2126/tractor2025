@@ -8,7 +8,7 @@ TRACTOR_REPO="${TRACTOR_REPO:-/home/al/tractor2025}"
 MISSION="${SCRIPT_DIR}/polygon_1_clockwise_inward_38in_20260804.txt"
 REPORT="${SCRIPT_DIR}/polygon_1_clockwise_inward_38in_report.json"
 CONTROLLER="${TRACTOR_REPO}/tractor_rpi/pure-pursuit/pure_pursuit_controller_20260714.py"
-LOGGER="${TRACTOR_REPO}/tractor_rpi/field_test_logger_20260804.py"
+LOGGER="${TRACTOR_REPO}/tractor_rpi/field_test_logger_20260828.py"
 EXPECTED_SHA256="5fc96fa208c7d797e622be14aed37e117f9e3462502b0a3c67064219392b25a8"
 MAX_SPEED_MPS="0.85"
 
@@ -45,7 +45,7 @@ if failed:
     raise SystemExit("ERROR: reviewed report check failed: " + ", ".join(failed))
 PY
 
-if pgrep -f '[p]ython3.*field_test_logger_20260804.py' >/dev/null; then
+if pgrep -f '[p]ython3.*field_test_logger_20260828.py' >/dev/null; then
     echo "ERROR: a field logger is already running." >&2
     exit 1
 fi
@@ -167,4 +167,3 @@ python3 -u "${CONTROLLER}" \
     --ip 127.0.0.1 \
     --port 6004 \
     --max-speed "${MAX_SPEED_MPS}"
-

@@ -109,7 +109,7 @@ motion, sustained PWM without pot movement, or an IBT-2 latch.
 
 ## 7. Start the Collins mission and logger
 
-The site launcher now uses `field_test_logger_20260804.py`, configured for the
+The site launcher now uses `field_test_logger_20260828.py`, configured for the
 20 Hz steering sequence.
 
 First run the combined fail-closed mission preflight:

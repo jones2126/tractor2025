@@ -6,7 +6,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 TRACTOR_REPO="${TRACTOR_REPO:-/home/al/tractor2025}"
 CONTROLLER="${TRACTOR_REPO}/tractor_rpi/pure-pursuit/pure_pursuit_controller_20260714.py"
-LOGGER="${TRACTOR_REPO}/tractor_rpi/field_test_logger_20260804.py"
+LOGGER="${TRACTOR_REPO}/tractor_rpi/field_test_logger_20260828.py"
 TEST_ID="${1:-}"
 
 case "${TEST_ID^^}" in
@@ -32,7 +32,7 @@ for required in "${MISSION}" "${CONTROLLER}" "${LOGGER}"; do
     fi
 done
 
-if pgrep -f '[p]ython3.*field_test_logger_20260804.py' >/dev/null; then
+if pgrep -f '[p]ython3.*field_test_logger_20260828.py' >/dev/null; then
     echo "ERROR: a field logger is already running." >&2
     exit 1
 fi

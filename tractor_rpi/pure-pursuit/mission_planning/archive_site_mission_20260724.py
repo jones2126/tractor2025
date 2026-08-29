@@ -189,7 +189,7 @@ TRACTOR_RPI_DIR="$(cd "${{PURE_PURSUIT_DIR}}/.." && pwd)"
 MISSION="${{SCRIPT_DIR}}/{mission_name}"
 VALIDATION="${{SCRIPT_DIR}}/{validation_name}"
 CONTROLLER="${{PURE_PURSUIT_DIR}}/pure_pursuit_controller_20260714.py"
-LOGGER="${{TRACTOR_RPI_DIR}}/field_test_logger_20260804.py"
+LOGGER="${{TRACTOR_RPI_DIR}}/field_test_logger_20260828.py"
 EXPECTED_SHA256="{mission_hash}"
 
 for required in "${{MISSION}}" "${{VALIDATION}}" "${{CONTROLLER}}" "${{LOGGER}}"; do

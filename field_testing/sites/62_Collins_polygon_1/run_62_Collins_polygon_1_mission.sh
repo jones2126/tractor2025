@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Supervised launcher for the 15-inch-outset Collins mission.
-# Starts field_test_logger_20260804.py in the background and Pure Pursuit in
+# Starts field_test_logger_20260828.py in the background and Pure Pursuit in
 # the foreground. Ctrl+C stops both cleanly.
 
 set -euo pipefail
@@ -11,7 +11,7 @@ MISSION="${SCRIPT_DIR}/62_Collins_polygon_1_mission.txt"
 VALIDATION="${SCRIPT_DIR}/62_Collins_polygon_1_mission_validation.json"
 SETTINGS="${SCRIPT_DIR}/02_plan_settings.json"
 CONTROLLER="${TRACTOR_REPO}/tractor_rpi/pure-pursuit/pure_pursuit_controller_20260714.py"
-LOGGER="${TRACTOR_REPO}/tractor_rpi/field_test_logger_20260804.py"
+LOGGER="${TRACTOR_REPO}/tractor_rpi/field_test_logger_20260828.py"
 EXPECTED_SHA256="0C5FF51604D67350A43E6AB225A2CA30CD2E147BBAE12CA0DA00A67CB0FDB187"
 MAX_SPEED_MPS="0.85"
 
@@ -62,8 +62,8 @@ if not speeds or any(not math.isclose(speed, 0.85, abs_tol=1e-9) for speed in sp
     raise SystemExit("ERROR: every reviewed mission speed must be 0.85 m/s")
 PY
 
-if pgrep -f '[p]ython3.*field_test_logger_20260804.py' >/dev/null; then
-    echo "ERROR: a field_test_logger_20260804.py process is already running." >&2
+if pgrep -f '[p]ython3.*field_test_logger_20260828.py' >/dev/null; then
+    echo "ERROR: a field_test_logger_20260828.py process is already running." >&2
     exit 1
 fi
 if pgrep -f '[p]ython3.*pure_pursuit_controller_20260714.py' >/dev/null; then

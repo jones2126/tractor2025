@@ -8,7 +8,7 @@ TRACTOR_REPO="${TRACTOR_REPO:-/home/al/tractor2025}"
 MISSION="${SCRIPT_DIR}/polygon_1_inner_stripes_38in_20260804.txt"
 REPORT="${SCRIPT_DIR}/polygon_1_inner_stripes_38in_report.json"
 CONTROLLER="${TRACTOR_REPO}/tractor_rpi/pure-pursuit/pure_pursuit_controller_20260714.py"
-LOGGER="${TRACTOR_REPO}/tractor_rpi/field_test_logger_20260804.py"
+LOGGER="${TRACTOR_REPO}/tractor_rpi/field_test_logger_20260828.py"
 EXPECTED_SHA256="b9c9ff5b18be1cba7f725b63ba17f561c72769409ee59e2e72fd144b0181c028"
 
 for required in "${MISSION}" "${REPORT}" "${CONTROLLER}" "${LOGGER}"; do
@@ -45,7 +45,7 @@ if failed:
     raise SystemExit("ERROR: reviewed report check failed: " + ", ".join(failed))
 PY
 
-if pgrep -f '[p]ython3.*field_test_logger_20260804.py' >/dev/null; then
+if pgrep -f '[p]ython3.*field_test_logger_20260828.py' >/dev/null; then
     echo "ERROR: a field logger is already running." >&2
     exit 1
 fi

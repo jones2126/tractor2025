@@ -23,7 +23,7 @@
 - [ ] Run sudo python3 /home/al/mission_preflight_20260804.py  (update location to tractor2025\tractor_rpi\testing - this is a consolidated safety check)
 - [ ] Check LED4 on radio control for green (i.e. RTK Fix)
 - [ ] Check key services are running: $ cd /home/al/tractor2025/tractor_rpi  ; $ ./check_services.sh
-- [ ] Start data logging -- Use nohup with output redirected to a log file: $ nohup python3 /home/al/tractor2025/tractor_rpi/field_test_logger_20260710.py > /home/al/field_logs/logger_console.log 2>&1 & 
+- [ ] Start data logging -- Use nohup with output redirected to a log file: $ nohup python3 /home/al/tractor2025/tractor_rpi/field_test_logger_20260828.py > /home/al/field_logs/logger_console.log 2>&1 &
 - [ ] Note the PID it prints (e.g. [1] 12345) so you can kill it cleanly later: $ kill 12345
 
 ---
