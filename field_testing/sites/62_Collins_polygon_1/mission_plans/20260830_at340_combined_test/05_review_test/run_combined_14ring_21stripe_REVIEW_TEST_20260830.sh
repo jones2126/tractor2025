@@ -10,8 +10,8 @@ REPORT="${SCRIPT_DIR}/combined_review_test_report_20260830.json"
 VALIDATION="${SCRIPT_DIR}/combined_validation_20260830.json"
 CONTROLLER="${TRACTOR_REPO}/tractor_rpi/pure-pursuit/pure_pursuit_controller_20260714.py"
 LOGGER="${TRACTOR_REPO}/tractor_rpi/field_test_logger_20260828.py"
-EXPECTED_SHA256="912a05e8380c5a8bc84faefaeef77e06b707393544899d24fe16f15ddf4e9337"
-MAX_SPEED_MPS="0.75"
+EXPECTED_SHA256="eae4849dfb988082eb91e5f7b9aae602bbb14938cc450490bd333305d35b5ea7"
+MAX_SPEED_MPS="1.25"
 
 for required in "${MISSION}" "${REPORT}" "${VALIDATION}" "${CONTROLLER}" "${LOGGER}"; do
     if [[ ! -f "${required}" ]]; then
@@ -50,9 +50,11 @@ checks = {
     "route containment": report.get("route_contained_in_site") is True,
     "short gaps": report.get("sub_minimum_consecutive_gaps") == 0,
     "validator duplicates": validation.get("duplicate_consecutive_points") == 0,
-    "turn speed": math.isclose(float(report.get("turn_speed_mps", -1.0)), 0.65, abs_tol=1e-9),
-    "stripe speed": math.isclose(float(report.get("stripe_speed_mps", -1.0)), 0.85, abs_tol=1e-9),
-    "validation minimum speed": math.isclose(float(validation.get("minimum_speed_mps", -1.0)), 0.65, abs_tol=1e-9),
+    "spiral speed": math.isclose(float(report.get("spiral_speed_mps", -1.0)), 1.25, abs_tol=1e-9),
+    "turn speed": math.isclose(float(report.get("turn_speed_mps", -1.0)), 1.25, abs_tol=1e-9),
+    "stripe speed": math.isclose(float(report.get("stripe_speed_mps", -1.0)), 1.25, abs_tol=1e-9),
+    "validation minimum speed": math.isclose(float(validation.get("minimum_speed_mps", -1.0)), 1.25, abs_tol=1e-9),
+    "validation maximum speed": math.isclose(float(validation.get("maximum_speed_mps", -1.0)), 1.25, abs_tol=1e-9),
 }
 failed = [name for name, passed in checks.items() if not passed]
 if failed:
@@ -74,8 +76,9 @@ echo " Static validation : PASS"
 echo " Mission waypoints : 4124"
 echo " Route length      : 2028.5 m"
 echo " Controller cap    : ${MAX_SPEED_MPS} m/s"
-echo " Mission speeds    : 0.65 m/s turns; 0.85 m/s straights"
-echo " Expected duration : approximately 46 minutes at the cap"
+echo " AUTO command      : 1.25 m/s at every waypoint"
+echo " Expected actual   : approximately 1.0 m/s from Manual comparison"
+echo " Expected duration : approximately 34 minutes at measured speed"
 echo " Transition        : 12.30 m contained LRL"
 echo " Minimum radius    : 1.88 m sampled"
 echo "============================================================"

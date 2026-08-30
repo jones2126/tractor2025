@@ -69,8 +69,8 @@ These are starting values, not universal tractor limits:
 | Waypoint spacing | 0.50 m | Independent validator maximum gap <= 0.80 m |
 | Spiral lookahead | 2.0 m | Dry-run before field use |
 | Stripe lookahead | 1.0 m | Prior stripe execution was not fully proven; retest |
-| Spiral/straight speed | 0.85 m/s | Reduce for the first supervised run |
-| Keyhole-turn speed | 0.65 m/s for revised slope test | First 0.50 m/s test could not overcome the slope |
+| Spiral/straight speed | 1.25 m/s AUTO command for full-forward slope test | Expected actual speed is approximately 1.0 m/s |
+| Keyhole-turn speed | 1.25 m/s AUTO command for full-forward slope test | Blades-off REVIEW_TEST only until tracking is measured |
 | Planning turn radius | 1.90 m | Must reflect a measured, repeatable tractor radius plus margin |
 | Boundary simplification | 0.10 m | Plot must preserve corners and topology |
 
@@ -478,10 +478,13 @@ outer-start transit, and added a transition from the actual spiral endpoint:
 - minimum independently sampled radius: 1.88 m; and
 - independent validator: `PASS`, with no warnings.
 
-The first run was stopped because the 0.50 m/s cap could not overcome the
-slope. The revised mission commands 0.65 m/s through turns and the supervised
-launcher caps straight travel at 0.75 m/s, for an estimated 46-minute run. It
-remains `REVIEW_TEST`, blades off.
+Two runs were stopped because the lower AUTO targets could not overcome the
+slope. Log analysis showed that AUTO command 0.75 m/s mapped to JRK target 2429
+and produced only 0.332 m/s median actual speed. Manual full-forward mapped to
+JRK target 2288 and produced 1.001 m/s median actual speed. The firmware maps
+AUTO command 1.25 m/s to the same target 2288, so every waypoint now commands
+1.25 m/s. Expected actual duration is approximately 34 minutes. It remains
+`REVIEW_TEST`, blades off.
 
 ### Combined status
 
@@ -500,7 +503,7 @@ remains `REVIEW_TEST`, blades off.
 
 The combined mission is a real joined route rather than a direct concatenation.
 Its reviewed SHA-256 is
-`912a05e8380c5a8bc84faefaeef77e06b707393544899d24fe16f15ddf4e9337`.
+`eae4849dfb988082eb91e5f7b9aae602bbb14938cc450490bd333305d35b5ea7`.
 
 ## Required implementation work
 

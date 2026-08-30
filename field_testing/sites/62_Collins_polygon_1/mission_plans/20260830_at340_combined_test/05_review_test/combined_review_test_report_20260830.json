@@ -169,11 +169,12 @@
   "minimum_consecutive_gap_m": 0.014220829872639732,
   "maximum_consecutive_gap_m": 0.4999694656339033,
   "turn_radius_m": 1.9,
-  "stripe_speed_mps": 0.85,
-  "turn_speed_mps": 0.65,
+  "spiral_speed_mps": 1.25,
+  "stripe_speed_mps": 1.25,
+  "turn_speed_mps": 1.25,
   "stripe_lookahead_m": 1.0,
   "waypoints": 4124,
   "route_length_m": 2028.5069381929986,
-  "estimated_runtime_minutes": 41.36701421769496,
-  "mission_sha256": "912a05e8380c5a8bc84faefaeef77e06b707393544899d24fe16f15ddf4e9337"
+  "estimated_runtime_minutes": 27.046759175906725,
+  "mission_sha256": "eae4849dfb988082eb91e5f7b9aae602bbb14938cc450490bd333305d35b5ea7"
 }

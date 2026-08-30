@@ -34,6 +34,11 @@ def arguments() -> argparse.Namespace:
     parser.add_argument("--stripe-angle-deg", type=float, default=0.0)
     parser.add_argument("--turn-radius-m", type=float, default=1.90)
     parser.add_argument("--waypoint-spacing-m", type=float, default=0.50)
+    parser.add_argument(
+        "--spiral-speed-mps",
+        type=float,
+        help="override speeds stored in the source spiral mission",
+    )
     parser.add_argument("--stripe-speed-mps", type=float, default=0.85)
     parser.add_argument("--turn-speed-mps", type=float, default=0.50)
     parser.add_argument("--stripe-lookahead-m", type=float, default=1.0)
@@ -231,7 +236,11 @@ def main() -> None:
             [row["xy"]],
             "spiral",
             row["lookahead"],
-            row["speed"],
+            (
+                args.spiral_speed_mps
+                if args.spiral_speed_mps is not None
+                else row["speed"]
+            ),
             args.join_min_gap_m,
         )
     spiral_waypoints = len(route)
@@ -331,6 +340,7 @@ def main() -> None:
         "minimum_consecutive_gap_m": min(gaps),
         "maximum_consecutive_gap_m": max(gaps),
         "turn_radius_m": args.turn_radius_m,
+        "spiral_speed_mps": args.spiral_speed_mps,
         "stripe_speed_mps": args.stripe_speed_mps,
         "turn_speed_mps": args.turn_speed_mps,
         "stripe_lookahead_m": args.stripe_lookahead_m,
