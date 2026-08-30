@@ -1,0 +1,21 @@
+{
+  "configured_turn_radius_m": 1.9,
+  "duplicate_consecutive_points": 1,
+  "errors": [],
+  "gap_limit_m": 0.8,
+  "maximum_gap_m": 0.4998712434741037,
+  "maximum_speed_mps": 0.85,
+  "maximum_yaw_error_degrees": 3.7595586791203335,
+  "minimum_distance_to_safe_area_edge_m": null,
+  "minimum_lookahead_m": 1.0,
+  "minimum_sampled_radius_m": 1.8819010678778811,
+  "minimum_speed_mps": 0.5,
+  "mission_file": "C:\\Repos\\tractor2025\\field_testing\\sites\\62_Collins_polygon_1\\mission_plans\\20260830_at340_combined_test\\03_inner_stripes\\polygon_1_inner_stripes_38in_20260804.txt",
+  "route_length_m": 544.4753589210833,
+  "settings_file": null,
+  "status": "REVIEW",
+  "warnings": [
+    "1 consecutive waypoint gaps are under 1 cm"
+  ],
+  "waypoints": 1163
+}

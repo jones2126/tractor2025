@@ -1,0 +1,181 @@
+{
+  "source_boundary_log": "C:\\Repos\\tractor2025\\field_testing\\sites\\62_Collins_polygon_1\\runs\\20260830_heading_at340\\field_test_20260830_heading_at340_perimeter_1.csv",
+  "source_spiral_mission": "C:\\Repos\\tractor2025\\field_testing\\sites\\62_Collins_polygon_1\\mission_plans\\20260830_at340_combined_test\\02_spiral\\polygon_1_clockwise_inward_38in_20260804.txt",
+  "core_inset_passes": 14,
+  "core_inset_m": 13.512799999999999,
+  "stripe_angle_math_degrees": 0.0,
+  "lane_spacing_m": 0.9652,
+  "included_stripes": 21,
+  "excluded_short_stripes": 1,
+  "excluded_lengths_m": [
+    2.50247920085992
+  ],
+  "connectors": [
+    {
+      "connector": "outer_start_to_stripe_1",
+      "mode": "RSR-outer-start-transit",
+      "length_m": 15.371965140846587,
+      "contained_in_site": true,
+      "length_inside_core_m": 0.0
+    },
+    {
+      "connector": "stripe_1_to_2",
+      "mode": "RLR-keyhole",
+      "length_m": 11.831034413916358,
+      "contained_in_site": true,
+      "length_inside_core_m": 0.0
+    },
+    {
+      "connector": "stripe_2_to_3",
+      "mode": "LRL-keyhole",
+      "length_m": 12.74551341702807,
+      "contained_in_site": true,
+      "length_inside_core_m": 0.0
+    },
+    {
+      "connector": "stripe_3_to_4",
+      "mode": "RLR-keyhole",
+      "length_m": 12.740773071700236,
+      "contained_in_site": true,
+      "length_inside_core_m": 0.0
+    },
+    {
+      "connector": "stripe_4_to_5",
+      "mode": "LRL-keyhole",
+      "length_m": 12.74551341702807,
+      "contained_in_site": true,
+      "length_inside_core_m": 0.0
+    },
+    {
+      "connector": "stripe_5_to_6",
+      "mode": "RLR-keyhole",
+      "length_m": 12.742781292196797,
+      "contained_in_site": true,
+      "length_inside_core_m": 0.0
+    },
+    {
+      "connector": "stripe_6_to_7",
+      "mode": "LRL-keyhole",
+      "length_m": 12.74551341702807,
+      "contained_in_site": true,
+      "length_inside_core_m": 0.0
+    },
+    {
+      "connector": "stripe_7_to_8",
+      "mode": "RLR-keyhole",
+      "length_m": 12.750886365365242,
+      "contained_in_site": true,
+      "length_inside_core_m": 0.0
+    },
+    {
+      "connector": "stripe_8_to_9",
+      "mode": "LRL-keyhole",
+      "length_m": 12.748599353288176,
+      "contained_in_site": true,
+      "length_inside_core_m": 0.0
+    },
+    {
+      "connector": "stripe_9_to_10",
+      "mode": "RLR-keyhole",
+      "length_m": 12.756574638673344,
+      "contained_in_site": true,
+      "length_inside_core_m": 0.0
+    },
+    {
+      "connector": "stripe_10_to_11",
+      "mode": "LRL-keyhole",
+      "length_m": 12.748599353288176,
+      "contained_in_site": true,
+      "length_inside_core_m": 0.0
+    },
+    {
+      "connector": "stripe_11_to_12",
+      "mode": "RLR-keyhole",
+      "length_m": 12.755110105299298,
+      "contained_in_site": true,
+      "length_inside_core_m": 0.0
+    },
+    {
+      "connector": "stripe_12_to_13",
+      "mode": "LRL-keyhole",
+      "length_m": 12.748599353288176,
+      "contained_in_site": true,
+      "length_inside_core_m": 0.0
+    },
+    {
+      "connector": "stripe_13_to_14",
+      "mode": "RLR-keyhole",
+      "length_m": 12.731108137682417,
+      "contained_in_site": true,
+      "length_inside_core_m": 0.0
+    },
+    {
+      "connector": "stripe_14_to_15",
+      "mode": "LRL-keyhole",
+      "length_m": 12.748599353288176,
+      "contained_in_site": true,
+      "length_inside_core_m": 0.0
+    },
+    {
+      "connector": "stripe_15_to_16",
+      "mode": "RLR-keyhole",
+      "length_m": 12.626181587040827,
+      "contained_in_site": true,
+      "length_inside_core_m": 0.0
+    },
+    {
+      "connector": "stripe_16_to_17",
+      "mode": "LRL-keyhole",
+      "length_m": 12.744713226079964,
+      "contained_in_site": true,
+      "length_inside_core_m": 0.0
+    },
+    {
+      "connector": "stripe_17_to_18",
+      "mode": "RLR-keyhole",
+      "length_m": 12.590909097236713,
+      "contained_in_site": true,
+      "length_inside_core_m": 0.0
+    },
+    {
+      "connector": "stripe_18_to_19",
+      "mode": "LRL-keyhole",
+      "length_m": 12.75048060814976,
+      "contained_in_site": true,
+      "length_inside_core_m": 0.0
+    },
+    {
+      "connector": "stripe_19_to_20",
+      "mode": "RLR-keyhole",
+      "length_m": 12.60621637627488,
+      "contained_in_site": true,
+      "length_inside_core_m": 0.0
+    },
+    {
+      "connector": "stripe_20_to_21",
+      "mode": "LRL-keyhole",
+      "length_m": 11.447624665865934,
+      "contained_in_site": true,
+      "length_inside_core_m": 0.0
+    }
+  ],
+  "all_connectors_outside_core": true,
+  "route_contained_in_site": true,
+  "outside_site_length_m": 0.0,
+  "turn_radius_m": 1.9,
+  "straight_speed_mps": 0.85,
+  "turn_speed_mps": 0.5,
+  "lookahead_m": 1.0,
+  "waypoints": 1163,
+  "route_length_m": 544.4753656395698,
+  "estimated_runtime_minutes": 14.340318781537551,
+  "core_area_m2": 272.65674911083283,
+  "presumed_core_uncut_area_m2": 4.798475605551273,
+  "presumed_core_uncut_percent": 1.7598961409169924,
+  "start_lat": 40.485616704,
+  "start_lon": -80.332356671,
+  "start_heading_compass_deg": 163.81250582201875,
+  "end_lat": 40.48535492115348,
+  "end_lon": -80.33254933526332,
+  "mission_sha256": "de628c9a1957ea69f185538237c3cdb145d69ef2e3ae303edca0bd3e53da0dd6"
+}

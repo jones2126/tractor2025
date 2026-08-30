@@ -1,0 +1,262 @@
+{
+  "input": "C:\\Repos\\tractor2025\\field_testing\\sites\\62_Collins_polygon_1\\runs\\20260830_heading_at340\\field_test_20260830_heading_at340_perimeter_1.csv",
+  "lap_selection": {
+    "method": "manual",
+    "start_sec": 184.27,
+    "end_sec": 401.31
+  },
+  "detected_stationary_pauses": [
+    {
+      "start_sec": 0.01,
+      "end_sec": 60.47,
+      "duration_sec": 60.46
+    },
+    {
+      "start_sec": 67.99,
+      "end_sec": 97.81,
+      "duration_sec": 29.820000000000007
+    },
+    {
+      "start_sec": 156.2,
+      "end_sec": 184.39,
+      "duration_sec": 28.189999999999998
+    },
+    {
+      "start_sec": 401.0,
+      "end_sec": 427.52,
+      "duration_sec": 26.519999999999982
+    },
+    {
+      "start_sec": 484.42,
+      "end_sec": 502.72,
+      "duration_sec": 18.30000000000001
+    }
+  ],
+  "filters": {
+    "position_baseline_m": 3.0,
+    "maximum_turn_over_baseline_deg": 12.0,
+    "minimum_speed_mps": 0.25,
+    "require_rtk_fixed_position": true,
+    "require_heading_valid": true
+  },
+  "position_points": 1975,
+  "comparison": {
+    "all": {
+      "samples": 1680,
+      "signed_mean_deg": -2.083589619559639,
+      "absolute_median_deg": 2.0980483596346033,
+      "absolute_mean_deg": 3.060596625569697,
+      "absolute_p90_deg": 7.3962498991511305,
+      "absolute_p95_deg": 9.155595270003252,
+      "absolute_max_deg": 17.035439868341427
+    },
+    "by_carrier": {
+      "fixed": {
+        "samples": 1606,
+        "signed_mean_deg": -2.0290618229648203,
+        "absolute_median_deg": 2.0490311199616826,
+        "absolute_mean_deg": 2.967295872536528,
+        "absolute_p90_deg": 7.0969172187875245,
+        "absolute_p95_deg": 8.975513719822644,
+        "absolute_max_deg": 17.035439868341427,
+        "satellites": {
+          "base_numSV_used": {
+            "count": 1606,
+            "min": 28.0,
+            "median": 31.0,
+            "mean": 30.97758405977584,
+            "max": 32.0
+          },
+          "base_numSV_visible": {
+            "count": 1606,
+            "min": 45.0,
+            "median": 49.0,
+            "mean": 48.4719800747198,
+            "max": 52.0
+          },
+          "base_cno_mean_dbhz": {
+            "count": 1606,
+            "min": 37.6,
+            "median": 40.1,
+            "mean": 39.92017434620175,
+            "max": 42.0
+          },
+          "heading_numSV_used": {
+            "count": 1606,
+            "min": 29.0,
+            "median": 32.0,
+            "mean": 31.26961394769614,
+            "max": 32.0
+          },
+          "heading_numSV_visible": {
+            "count": 1606,
+            "min": 45.0,
+            "median": 50.0,
+            "mean": 49.3200498132005,
+            "max": 52.0
+          },
+          "heading_cno_mean_dbhz": {
+            "count": 1606,
+            "min": 38.4,
+            "median": 41.3,
+            "mean": 41.43437110834371,
+            "max": 44.0
+          }
+        }
+      },
+      "none": {
+        "samples": 74,
+        "signed_mean_deg": -3.2669901780904422,
+        "absolute_median_deg": 3.6862850148345387,
+        "absolute_mean_deg": 5.085475130586855,
+        "absolute_p90_deg": 10.4316597772103,
+        "absolute_p95_deg": 14.350595903822763,
+        "absolute_max_deg": 16.799830522230025,
+        "satellites": {
+          "base_numSV_used": {
+            "count": 74,
+            "min": 21.0,
+            "median": 31.0,
+            "mean": 30.60810810810811,
+            "max": 32.0
+          },
+          "base_numSV_visible": {
+            "count": 74,
+            "min": 45.0,
+            "median": 50.0,
+            "mean": 49.67567567567568,
+            "max": 52.0
+          },
+          "base_cno_mean_dbhz": {
+            "count": 74,
+            "min": 38.2,
+            "median": 39.7,
+            "mean": 40.295945945945945,
+            "max": 41.8
+          },
+          "heading_numSV_used": {
+            "count": 74,
+            "min": 31.0,
+            "median": 32.0,
+            "mean": 31.89189189189189,
+            "max": 32.0
+          },
+          "heading_numSV_visible": {
+            "count": 74,
+            "min": 46.0,
+            "median": 48.0,
+            "mean": 48.17567567567568,
+            "max": 51.0
+          },
+          "heading_cno_mean_dbhz": {
+            "count": 74,
+            "min": 41.1,
+            "median": 41.6,
+            "mean": 42.33513513513514,
+            "max": 44.0
+          }
+        }
+      }
+    }
+  },
+  "satellites_during_lap": {
+    "base_numSV_used": {
+      "count": 4342,
+      "min": 21.0,
+      "median": 31.0,
+      "mean": 30.853293413173652,
+      "max": 32.0
+    },
+    "base_numSV_visible": {
+      "count": 4342,
+      "min": 45.0,
+      "median": 49.0,
+      "mean": 48.44242284661446,
+      "max": 52.0
+    },
+    "base_cno_mean_dbhz": {
+      "count": 4342,
+      "min": 37.4,
+      "median": 40.0,
+      "mean": 39.874666052510364,
+      "max": 42.5
+    },
+    "heading_numSV_used": {
+      "count": 4342,
+      "min": 29.0,
+      "median": 32.0,
+      "mean": 31.272224781206816,
+      "max": 32.0
+    },
+    "heading_numSV_visible": {
+      "count": 4342,
+      "min": 45.0,
+      "median": 50.0,
+      "mean": 49.2551819438047,
+      "max": 52.0
+    },
+    "heading_cno_mean_dbhz": {
+      "count": 4342,
+      "min": 38.4,
+      "median": 41.3,
+      "mean": 41.427798249654536,
+      "max": 44.0
+    }
+  },
+  "carrier_episodes": [
+    {
+      "carrier": "fixed",
+      "start_sec": 184.27,
+      "end_sec": 258.31,
+      "duration_sec": 74.03999999999999
+    },
+    {
+      "carrier": "none",
+      "start_sec": 258.4,
+      "end_sec": 260.92,
+      "duration_sec": 2.5200000000000387
+    },
+    {
+      "carrier": "fixed",
+      "start_sec": 261.0,
+      "end_sec": 261.82,
+      "duration_sec": 0.8199999999999932
+    },
+    {
+      "carrier": "none",
+      "start_sec": 261.87,
+      "end_sec": 264.12,
+      "duration_sec": 2.25
+    },
+    {
+      "carrier": "fixed",
+      "start_sec": 264.2,
+      "end_sec": 290.82,
+      "duration_sec": 26.620000000000005
+    },
+    {
+      "carrier": "none",
+      "start_sec": 290.87,
+      "end_sec": 293.72,
+      "duration_sec": 2.8500000000000227
+    },
+    {
+      "carrier": "fixed",
+      "start_sec": 293.79,
+      "end_sec": 302.71,
+      "duration_sec": 8.919999999999959
+    },
+    {
+      "carrier": "none",
+      "start_sec": 302.8,
+      "end_sec": 304.72,
+      "duration_sec": 1.920000000000016
+    },
+    {
+      "carrier": "fixed",
+      "start_sec": 304.79,
+      "end_sec": 401.31,
+      "duration_sec": 96.51999999999998
+    }
+  ]
+}

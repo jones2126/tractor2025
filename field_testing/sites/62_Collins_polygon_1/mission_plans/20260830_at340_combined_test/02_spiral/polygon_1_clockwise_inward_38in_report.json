@@ -1,0 +1,36 @@
+{
+  "source_boundary_log": "C:\\Repos\\tractor2025\\field_testing\\sites\\62_Collins_polygon_1\\runs\\20260830_heading_at340\\field_test_20260830_heading_at340_perimeter_1.csv",
+  "source_data_rows": [
+    3686,
+    8027
+  ],
+  "source_fix_qualities": {
+    "DGPS": 4,
+    "RTK Fixed": 4283,
+    "RTK Float": 55
+  },
+  "geometry_warning": "Complete driven lap includes RTK Float, DGPS, and two Invalid rows. Mission requires supervised field review.",
+  "lane_spacing_m": 0.9652,
+  "lane_spacing_in": 38.0,
+  "revolutions": 14,
+  "final_inset_m": 13.512799999999999,
+  "waypoint_spacing_m": 0.5,
+  "smoothing_iterations": 60,
+  "waypoints": 2976,
+  "lookahead_m": 2.0,
+  "speed_mps": 0.85,
+  "route_length_m": 1486.8714923254704,
+  "estimated_runtime_minutes": 29.15434298677393,
+  "outside_boundary_length_m_with_2cm_tolerance": 0.0,
+  "minimum_sampled_turn_radius_m": 2.305940519098585,
+  "sampled_turn_radius_p01_m": 3.050072436415735,
+  "boundary_area_m2": 1769.7200838471529,
+  "presumed_uncut_area_m2": 298.04541253299635,
+  "presumed_uncut_percent": 16.841387248376726,
+  "start_lat": 40.485616703537524,
+  "start_lon": -80.33235667131346,
+  "start_heading_compass_deg": 163.80935222871187,
+  "end_lat": 40.485540258897196,
+  "end_lon": -80.33249351348208,
+  "mission_sha256": "a43f534125c27210065bf069c429a1161b775e8c8531bc5418bf5a64474c57cf"
+}
