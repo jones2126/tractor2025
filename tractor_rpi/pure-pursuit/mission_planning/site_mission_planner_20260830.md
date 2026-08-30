@@ -70,7 +70,7 @@ These are starting values, not universal tractor limits:
 | Spiral lookahead | 2.0 m | Dry-run before field use |
 | Stripe lookahead | 1.0 m | Prior stripe execution was not fully proven; retest |
 | Spiral/straight speed | 0.85 m/s | Reduce for the first supervised run |
-| Keyhole-turn speed | 0.50 m/s | Reduce if steering tracking is poor |
+| Keyhole-turn speed | 0.65 m/s for revised slope test | First 0.50 m/s test could not overcome the slope |
 | Planning turn radius | 1.90 m | Must reflect a measured, repeatable tractor radius plus margin |
 | Boundary simplification | 0.10 m | Plot must preserve corners and topology |
 
@@ -472,15 +472,16 @@ outer-start transit, and added a transition from the actual spiral endpoint:
 - transition length inside the uncut core: 0 m;
 - combined waypoints: 4,124;
 - combined route length: 2,028.5 m;
-- configured-speed estimate: 43.40 minutes;
+- revised configured-speed estimate: 41.37 minutes;
 - sub-centimeter consecutive gaps: 0;
 - maximum waypoint gap: 0.50 m;
 - minimum independently sampled radius: 1.88 m; and
 - independent validator: `PASS`, with no warnings.
 
-The supervised launcher caps the first run at 0.50 m/s, so practical duration
-will be approximately 68 minutes rather than 43 minutes. The first run remains
-`REVIEW_TEST`, blades off.
+The first run was stopped because the 0.50 m/s cap could not overcome the
+slope. The revised mission commands 0.65 m/s through turns and the supervised
+launcher caps straight travel at 0.75 m/s, for an estimated 46-minute run. It
+remains `REVIEW_TEST`, blades off.
 
 ### Combined status
 
@@ -499,7 +500,7 @@ will be approximately 68 minutes rather than 43 minutes. The first run remains
 
 The combined mission is a real joined route rather than a direct concatenation.
 Its reviewed SHA-256 is
-`386aa4913ce758a4829ef9809d34ea242cfda6deefc5a33c98316819187a3bb8`.
+`912a05e8380c5a8bc84faefaeef77e06b707393544899d24fe16f15ddf4e9337`.
 
 ## Required implementation work
 

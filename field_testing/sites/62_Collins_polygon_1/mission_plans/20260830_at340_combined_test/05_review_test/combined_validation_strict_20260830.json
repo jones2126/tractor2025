@@ -9,7 +9,7 @@
   "minimum_distance_to_safe_area_edge_m": null,
   "minimum_lookahead_m": 1.0,
   "minimum_sampled_radius_m": 1.8833720570169066,
-  "minimum_speed_mps": 0.5,
+  "minimum_speed_mps": 0.65,
   "mission_file": "C:\\Repos\\tractor2025\\field_testing\\sites\\62_Collins_polygon_1\\mission_plans\\20260830_at340_combined_test\\05_review_test\\62_Collins_combined_14ring_21stripe_REVIEW_TEST_20260830.txt",
   "route_length_m": 2028.5074276310647,
   "settings_file": null,

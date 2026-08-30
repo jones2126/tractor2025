@@ -12,10 +12,10 @@ Status: static validation `PASS`; first supervised field run not yet completed.
 - 12.30 m contained LRL transition from the actual spiral endpoint
 - 21 east/west core stripes
 - 20 contained RLR/LRL keyhole connectors
-- mission speeds: 0.50 to 0.85 m/s
-- first-run controller cap: 0.50 m/s
-- expected first-run duration: approximately 68 minutes
-- SHA-256: `386aa4913ce758a4829ef9809d34ea242cfda6deefc5a33c98316819187a3bb8`
+- mission speeds: 0.65 m/s turns and 0.85 m/s straights
+- revised controller cap after the first slope abort: 0.75 m/s
+- expected revised-run duration: approximately 46 minutes
+- SHA-256: `912a05e8380c5a8bc84faefaeef77e06b707393544899d24fe16f15ddf4e9337`
 
 The first run is blades off and directly supervised. It is intended to collect
 tracking evidence, not mow the site.
@@ -71,7 +71,7 @@ sha256sum "$test_dir/62_Collins_combined_14ring_21stripe_REVIEW_TEST_20260830.tx
 Expected hash:
 
 ```text
-386aa4913ce758a4829ef9809d34ea242cfda6deefc5a33c98316819187a3bb8
+912a05e8380c5a8bc84faefaeef77e06b707393544899d24fe16f15ddf4e9337
 ```
 
 ## Physical setup
@@ -123,7 +123,8 @@ Record or mark the approximate time of:
 
 The most important new evidence is whether the tractor follows the 12.30 m LRL
 transition smoothly and arrives aligned with stripe 1, followed by whether the
-1.90 m nominal keyholes are repeatable at the 0.50 m/s controller cap.
+1.90 m nominal keyholes are repeatable at 0.65 m/s while the controller caps
+straight travel at 0.75 m/s.
 
 ## After the run
 
