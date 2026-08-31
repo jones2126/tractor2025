@@ -1,0 +1,239 @@
+{
+  "status": "REVIEW_TEST",
+  "purpose": "Replace adjacent-row keyholes with contained two-arc skip-row turns",
+  "source_boundary_csv": "C:\\Repos\\tractor2025\\field_testing\\sites\\62_Collins_polygon_1\\mission_plans\\20260830_at340_combined_test\\01_boundary\\01_boundary_final.csv",
+  "source_spiral_mission": "C:\\Repos\\tractor2025\\field_testing\\sites\\62_Collins_polygon_1\\mission_plans\\20260830_at340_combined_test\\02_spiral\\polygon_1_clockwise_inward_38in_20260804.txt",
+  "mission_file": "C:\\Repos\\tractor2025\\field_testing\\sites\\62_Collins_polygon_1\\mission_plans\\20260831_speed_and_skip_turn_tests\\02_four_row_skip\\62_Collins_combined_14ring_four_row_skip_REVIEW_TEST_20260831.txt",
+  "spiral_mode": "last-ring-from-original-start",
+  "source_spiral_waypoints": 2976,
+  "included_spiral_waypoints": 117,
+  "last_ring_source_start_index": 2859,
+  "start_transit": {
+    "mode": "RSL",
+    "length_m": 16.4516796590459,
+    "contained_in_site": true
+  },
+  "stripe_count": 21,
+  "stripe_visit_order": [
+    1,
+    5,
+    9,
+    13,
+    17,
+    21,
+    4,
+    8,
+    12,
+    16,
+    20,
+    3,
+    7,
+    11,
+    15,
+    19,
+    2,
+    6,
+    10,
+    14,
+    18
+  ],
+  "stripe_step": 4,
+  "lane_spacing_m": 0.9652,
+  "nominal_row_jump_m": 3.8608,
+  "turn_radius_m": 1.9,
+  "turn_lookahead_m": 1.5,
+  "stripe_lookahead_m": 2.0,
+  "all_stripe_connectors_are_two_arc_csc": true,
+  "connectors": [
+    {
+      "from_row": 1,
+      "to_row": 5,
+      "rows_advanced_modulo": 4,
+      "mode": "LSL",
+      "length_m": 11.499230021004035,
+      "length_inside_core_m": 0.0,
+      "contained_in_site": true
+    },
+    {
+      "from_row": 5,
+      "to_row": 9,
+      "rows_advanced_modulo": 4,
+      "mode": "RSR",
+      "length_m": 7.085824016057241,
+      "length_inside_core_m": 0.0,
+      "contained_in_site": true
+    },
+    {
+      "from_row": 9,
+      "to_row": 13,
+      "rows_advanced_modulo": 4,
+      "mode": "LSL",
+      "length_m": 6.377374699747466,
+      "length_inside_core_m": 0.0,
+      "contained_in_site": true
+    },
+    {
+      "from_row": 13,
+      "to_row": 17,
+      "rows_advanced_modulo": 4,
+      "mode": "RSR",
+      "length_m": 6.967245879256144,
+      "length_inside_core_m": 0.0,
+      "contained_in_site": true
+    },
+    {
+      "from_row": 17,
+      "to_row": 21,
+      "rows_advanced_modulo": 4,
+      "mode": "LSL",
+      "length_m": 10.007914044744307,
+      "length_inside_core_m": 0.0,
+      "contained_in_site": true
+    },
+    {
+      "from_row": 21,
+      "to_row": 4,
+      "rows_advanced_modulo": 4,
+      "mode": "LSL",
+      "length_m": 18.619528734461536,
+      "length_inside_core_m": 7.159558307988336,
+      "contained_in_site": true
+    },
+    {
+      "from_row": 4,
+      "to_row": 8,
+      "rows_advanced_modulo": 4,
+      "mode": "LSL",
+      "length_m": 7.103220027565287,
+      "length_inside_core_m": 0.0,
+      "contained_in_site": true
+    },
+    {
+      "from_row": 8,
+      "to_row": 12,
+      "rows_advanced_modulo": 4,
+      "mode": "RSR",
+      "length_m": 6.986690241630044,
+      "length_inside_core_m": 0.0,
+      "contained_in_site": true
+    },
+    {
+      "from_row": 12,
+      "to_row": 16,
+      "rows_advanced_modulo": 4,
+      "mode": "LSL",
+      "length_m": 8.608650617904155,
+      "length_inside_core_m": 0.0,
+      "contained_in_site": true
+    },
+    {
+      "from_row": 16,
+      "to_row": 20,
+      "rows_advanced_modulo": 4,
+      "mode": "RSR",
+      "length_m": 6.967245879256144,
+      "length_inside_core_m": 0.0,
+      "contained_in_site": true
+    },
+    {
+      "from_row": 20,
+      "to_row": 3,
+      "rows_advanced_modulo": 4,
+      "mode": "RSR",
+      "length_m": 19.64726769325526,
+      "length_inside_core_m": 11.34915106447928,
+      "contained_in_site": true
+    },
+    {
+      "from_row": 3,
+      "to_row": 7,
+      "rows_advanced_modulo": 4,
+      "mode": "RSR",
+      "length_m": 7.099422687971001,
+      "length_inside_core_m": 0.0,
+      "contained_in_site": true
+    },
+    {
+      "from_row": 7,
+      "to_row": 11,
+      "rows_advanced_modulo": 4,
+      "mode": "LSL",
+      "length_m": 6.2153224004399155,
+      "length_inside_core_m": 0.0,
+      "contained_in_site": true
+    },
+    {
+      "from_row": 11,
+      "to_row": 15,
+      "rows_advanced_modulo": 4,
+      "mode": "RSR",
+      "length_m": 6.967245879256144,
+      "length_inside_core_m": 0.0,
+      "contained_in_site": true
+    },
+    {
+      "from_row": 15,
+      "to_row": 19,
+      "rows_advanced_modulo": 4,
+      "mode": "LSL",
+      "length_m": 10.007914044744307,
+      "length_inside_core_m": 0.0,
+      "contained_in_site": true
+    },
+    {
+      "from_row": 19,
+      "to_row": 2,
+      "rows_advanced_modulo": 4,
+      "mode": "LSL",
+      "length_m": 19.340549846584153,
+      "length_inside_core_m": 0.0,
+      "contained_in_site": true
+    },
+    {
+      "from_row": 2,
+      "to_row": 6,
+      "rows_advanced_modulo": 4,
+      "mode": "LSL",
+      "length_m": 9.145836303800733,
+      "length_inside_core_m": 0.0,
+      "contained_in_site": true
+    },
+    {
+      "from_row": 6,
+      "to_row": 10,
+      "rows_advanced_modulo": 4,
+      "mode": "RSR",
+      "length_m": 7.05277613669389,
+      "length_inside_core_m": 0.0,
+      "contained_in_site": true
+    },
+    {
+      "from_row": 10,
+      "to_row": 14,
+      "rows_advanced_modulo": 4,
+      "mode": "LSL",
+      "length_m": 6.808041625000299,
+      "length_inside_core_m": 0.0,
+      "contained_in_site": true
+    },
+    {
+      "from_row": 14,
+      "to_row": 18,
+      "rows_advanced_modulo": 4,
+      "mode": "RSR",
+      "length_m": 6.967245879256144,
+      "length_inside_core_m": 0.0,
+      "contained_in_site": true
+    }
+  ],
+  "route_contained_in_site": true,
+  "outside_site_length_m": 0.0,
+  "minimum_consecutive_gap_m": 0.017664199809437994,
+  "maximum_consecutive_gap_m": 0.5000000000000014,
+  "waypoints": 1208,
+  "route_length_m": 553.5525379089997,
+  "spiral_speed_mps": 1.25,
+  "stripe_speed_mps": 1.25,
+  "turn_speed_mps": 1.25,
+  "mission_sha256": "5a3346b8887449876883b244d134a324819127dd8b29ee9bdfac269614a13dc1"
+}

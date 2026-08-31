@@ -1,0 +1,19 @@
+{
+  "configured_turn_radius_m": 1.9,
+  "duplicate_consecutive_points": 0,
+  "errors": [],
+  "gap_limit_m": 0.8,
+  "maximum_gap_m": 0.5001075203962635,
+  "maximum_speed_mps": 1.25,
+  "maximum_yaw_error_degrees": 0.1918268686812188,
+  "minimum_distance_to_safe_area_edge_m": null,
+  "minimum_lookahead_m": 1.5,
+  "minimum_sampled_radius_m": 1.8916692238678892,
+  "minimum_speed_mps": 1.25,
+  "mission_file": "C:\\Repos\\tractor2025\\field_testing\\sites\\62_Collins_polygon_1\\mission_plans\\20260831_speed_and_skip_turn_tests\\02_four_row_skip\\62_Collins_combined_14ring_four_row_skip_REVIEW_TEST_20260831.txt",
+  "route_length_m": 553.5527469303781,
+  "settings_file": null,
+  "status": "PASS",
+  "warnings": [],
+  "waypoints": 1208
+}
