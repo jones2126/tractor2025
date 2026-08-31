@@ -1,0 +1,58 @@
+{
+  "status": "REVIEW_TEST",
+  "purpose": "Measure actual ground speed at four JRK targets on the same 13th-ring path",
+  "source_boundary_csv": "C:\\Repos\\tractor2025\\field_testing\\sites\\62_Collins_polygon_1\\mission_plans\\20260830_at340_combined_test\\01_boundary\\01_boundary_final.csv",
+  "source_start_mission": "C:\\Repos\\tractor2025\\field_testing\\sites\\62_Collins_polygon_1\\mission_plans\\20260830_at340_combined_test\\02_spiral\\polygon_1_clockwise_inward_38in_20260804.txt",
+  "mission_file": "C:\\Repos\\tractor2025\\field_testing\\sites\\62_Collins_polygon_1\\mission_plans\\20260831_speed_and_skip_turn_tests\\01_speed_settings\\62_Collins_ring13_four_speed_settings_REVIEW_TEST_20260831.txt",
+  "ring_number": 13,
+  "inset_m": 11.5824,
+  "lap_length_m": 73.38740341122713,
+  "start_transit": {
+    "mode": "RSL",
+    "length_m": 15.855967014126632,
+    "waypoints": 66,
+    "contained_in_site": true
+  },
+  "laps": [
+    {
+      "lap": 1,
+      "waypoint_start_zero_based": 66,
+      "waypoint_end_zero_based": 211,
+      "command_mps": 0.75,
+      "expected_current_firmware_jrk_target": 2429
+    },
+    {
+      "lap": 2,
+      "waypoint_start_zero_based": 212,
+      "waypoint_end_zero_based": 358,
+      "command_mps": 0.94,
+      "expected_current_firmware_jrk_target": 2404
+    },
+    {
+      "lap": 3,
+      "waypoint_start_zero_based": 359,
+      "waypoint_end_zero_based": 505,
+      "command_mps": 1.08,
+      "expected_current_firmware_jrk_target": 2370
+    },
+    {
+      "lap": 4,
+      "waypoint_start_zero_based": 506,
+      "waypoint_end_zero_based": 652,
+      "command_mps": 1.25,
+      "expected_current_firmware_jrk_target": 2288
+    }
+  ],
+  "lookahead_m": 2.0,
+  "waypoint_spacing_m": 0.5,
+  "smoothing_iterations": 50,
+  "waypoints": 653,
+  "route_length_m": 308.82552837443626,
+  "route_contained_in_site": true,
+  "outside_site_length_m": 0.0,
+  "start_lat": 40.485616704,
+  "start_lon": -80.332356671,
+  "start_heading_compass_deg": 163.81250944066483,
+  "important_limit": "JRK target 2288 is the confirmed full-forward endpoint; this mission does not command beyond it.",
+  "mission_sha256": "7546efab90c6d6a1045342ed9a3b30ec306a82e404c68d1314bc3f31c907fa60"
+}

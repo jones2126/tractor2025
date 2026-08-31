@@ -8,6 +8,7 @@ import csv
 import hashlib
 import json
 import math
+import sys
 from pathlib import Path
 
 import matplotlib
@@ -34,6 +35,7 @@ def arguments() -> argparse.Namespace:
         description="Build four clockwise laps on the ring immediately outside ring 14."
     )
     parser.add_argument("boundary_csv", type=Path)
+    parser.add_argument("--start-mission", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--mission-name", default="62_Collins_ring13_four_speed_settings_REVIEW_TEST_20260831.txt")
     parser.add_argument("--lane-spacing-m", type=float, default=0.9652)
@@ -41,6 +43,8 @@ def arguments() -> argparse.Namespace:
     parser.add_argument("--waypoint-spacing-m", type=float, default=0.50)
     parser.add_argument("--smoothing-iterations", type=int, default=50)
     parser.add_argument("--lookahead-m", type=float, default=2.0)
+    parser.add_argument("--transit-lookahead-m", type=float, default=1.5)
+    parser.add_argument("--turn-radius-m", type=float, default=1.90)
     parser.add_argument("--commands-mps", type=float, nargs=4, default=DEFAULT_COMMANDS_MPS)
     return parser.parse_args()
 
@@ -70,7 +74,20 @@ def load_boundary(path: Path):
         polygon = polygon.buffer(0)
     if polygon.geom_type != "Polygon":
         raise ValueError("Reviewed boundary is not one polygon")
-    return orient(polygon, sign=-1.0), to_ll
+    return orient(polygon, sign=-1.0), to_xy, to_ll
+
+
+def load_start_pose(path: Path, to_xy):
+    rows = []
+    for line in path.read_text(encoding="ascii").splitlines():
+        if line.strip():
+            lat, lon, *_ = map(float, line.split())
+            rows.append(to_xy(lat, lon))
+        if len(rows) == 2:
+            break
+    if len(rows) != 2:
+        raise ValueError("Start mission needs at least two waypoints")
+    return rows
 
 
 def rotate_ring_at_anchor(ring: LineString, anchor: Point) -> LineString:
@@ -122,7 +139,11 @@ def main() -> None:
     args = arguments()
     if args.ring_number < 2:
         raise ValueError("--ring-number must be at least 2")
-    boundary, to_ll = load_boundary(args.boundary_csv)
+    planner_dir = Path(__file__).resolve().parents[2] / "tractor_rpi" / "pure-pursuit" / "mission_planning"
+    sys.path.insert(0, str(planner_dir))
+    import site_coverage_planner_20260724 as planner
+
+    boundary, to_xy, to_ll = load_boundary(args.boundary_csv)
     inset_m = (args.ring_number - 1) * args.lane_spacing_m
     ring_polygon = boundary.buffer(-inset_m, join_style="round")
     if ring_polygon.is_empty or ring_polygon.geom_type != "Polygon":
@@ -134,12 +155,49 @@ def main() -> None:
     smoothed_ring = LineString(lap_points + [lap_points[0]])
     lap_points = resample_closed(smoothed_ring, args.waypoint_spacing_m)
 
+    original_start_points = load_start_pose(args.start_mission, to_xy)
+    original_start_pose = planner.path_start_pose(original_start_points)
+    ring_start_pose = planner.path_start_pose(lap_points[:2])
+    transit_candidates = []
+    for candidate in planner.dubins_candidates(
+        original_start_pose,
+        ring_start_pose,
+        args.turn_radius_m,
+        args.waypoint_spacing_m / 2.0,
+    ):
+        points = [(float(point[0]), float(point[1])) for point in candidate["points"]]
+        line = LineString(points)
+        if boundary.buffer(0.03).covers(line):
+            transit_candidates.append({**candidate, "points": points})
+    if not transit_candidates:
+        raise ValueError("No contained transit from the original start to Ring 13")
+    transit = min(transit_candidates, key=lambda candidate: candidate["length_m"])
+
     route = []
+    for point in transit["points"]:
+        if route and math.dist(route[-1]["xy"], point) < 0.01:
+            continue
+        route.append({
+            "xy": point,
+            "kind": "start_transit",
+            "lap": None,
+            "lookahead": args.transit_lookahead_m,
+            "speed": float(args.commands_mps[0]),
+        })
+    transit_waypoints = len(route)
     lap_rows = []
     for lap_number, command_mps in enumerate(args.commands_mps, 1):
         start_index = len(route)
         for point in lap_points:
-            route.append({"xy": point, "lap": lap_number, "speed": float(command_mps)})
+            if route and math.dist(route[-1]["xy"], point) < 0.01:
+                continue
+            route.append({
+                "xy": point,
+                "kind": "speed_lap",
+                "lap": lap_number,
+                "lookahead": args.lookahead_m,
+                "speed": float(command_mps),
+            })
         lap_rows.append({
             "lap": lap_number,
             "waypoint_start_zero_based": start_index,
@@ -153,36 +211,45 @@ def main() -> None:
     with mission_path.open("w", encoding="ascii", newline="\n") as handle:
         for index, row in enumerate(route):
             current = row["xy"]
-            following = route[(index + 1) % len(route)]["xy"]
-            yaw = math.atan2(following[1] - current[1], following[0] - current[0])
+            if index + 1 < len(route):
+                following = route[index + 1]["xy"]
+                yaw = math.atan2(following[1] - current[1], following[0] - current[0])
+            else:
+                previous = route[index - 1]["xy"]
+                yaw = math.atan2(current[1] - previous[1], current[0] - previous[0])
             lat, lon = to_ll(*current)
             handle.write(
-                f"{lat:.9f} {lon:.9f} {yaw:.6f} {args.lookahead_m:.2f} {row['speed']:.2f}\n"
+                f"{lat:.9f} {lon:.9f} {yaw:.6f} {row['lookahead']:.2f} {row['speed']:.2f}\n"
             )
 
-    route_line = LineString([row["xy"] for row in route] + [route[0]["xy"]])
+    route_line = LineString([row["xy"] for row in route])
     start_lat, start_lon = to_ll(*route[0]["xy"])
-    first_yaw = math.atan2(
-        route[1]["xy"][1] - route[0]["xy"][1],
-        route[1]["xy"][0] - route[0]["xy"][0],
-    )
     report = {
         "status": "REVIEW_TEST",
         "purpose": "Measure actual ground speed at four JRK targets on the same 13th-ring path",
         "source_boundary_csv": str(args.boundary_csv.resolve()),
+        "source_start_mission": str(args.start_mission.resolve()),
         "mission_file": str(mission_path.resolve()),
         "ring_number": args.ring_number,
         "inset_m": inset_m,
         "lap_length_m": smoothed_ring.length,
+        "start_transit": {
+            "mode": transit["mode"],
+            "length_m": float(transit["length_m"]),
+            "waypoints": transit_waypoints,
+            "contained_in_site": bool(boundary.buffer(0.03).covers(LineString(transit["points"]))),
+        },
         "laps": lap_rows,
         "lookahead_m": args.lookahead_m,
         "waypoint_spacing_m": args.waypoint_spacing_m,
         "smoothing_iterations": args.smoothing_iterations,
         "waypoints": len(route),
         "route_length_m": route_line.length,
+        "route_contained_in_site": bool(boundary.buffer(0.03).covers(route_line)),
+        "outside_site_length_m": float(route_line.difference(boundary.buffer(0.03)).length),
         "start_lat": start_lat,
         "start_lon": start_lon,
-        "start_heading_compass_deg": (90.0 - math.degrees(first_yaw)) % 360.0,
+        "start_heading_compass_deg": (90.0 - math.degrees(original_start_pose[2])) % 360.0,
         "important_limit": "JRK target 2288 is the confirmed full-forward endpoint; this mission does not command beyond it.",
         "mission_sha256": hashlib.sha256(mission_path.read_bytes()).hexdigest(),
     }
@@ -192,6 +259,14 @@ def main() -> None:
     bx, by = boundary.exterior.xy
     fig, ax = plt.subplots(figsize=(10, 9))
     ax.fill(bx, by, color="#eeeeee", alpha=0.55, label="Reviewed boundary")
+    transit_points = [row["xy"] for row in route if row["kind"] == "start_transit"]
+    ax.plot(
+        [point[0] for point in transit_points],
+        [point[1] for point in transit_points],
+        color="#d81b60",
+        linewidth=2.2,
+        label=f"Original start to Ring 13 ({transit['mode']}, {transit['length_m']:.1f} m)",
+    )
     colors = ("#6a1b9a", "#1565c0", "#2e7d32", "#ef6c00")
     for lap in lap_rows:
         points = [row["xy"] for row in route if row["lap"] == lap["lap"]]
@@ -205,12 +280,13 @@ def main() -> None:
             label=(f"Lap {lap['lap']}: command {lap['command_mps']:.2f} m/s "
                    f"-> JRK {lap['expected_current_firmware_jrk_target']}"),
         )
-    ax.scatter(*route[0]["xy"], color="green", marker="*", s=100, label="Start / lap boundary")
+    ax.scatter(*route[0]["xy"], color="green", marker="*", s=100, label="Known original start")
+    ax.scatter(*lap_points[0], color="#00acc1", marker="D", s=55, label="Ring 13 lap start")
     ax.set_aspect("equal", adjustable="box")
     ax.grid(True, alpha=0.25)
     ax.set_xlabel("East (m)")
     ax.set_ylabel("North (m)")
-    ax.set_title("Ring 13 speed-settings test - four clockwise laps")
+    ax.set_title("Known original start + contained transit + four Ring 13 speed laps")
     ax.legend(loc="best")
     fig.tight_layout()
     preview_path = args.output_dir / "speed_settings_ring13_preview_20260831.png"

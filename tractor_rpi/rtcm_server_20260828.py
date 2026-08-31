@@ -21,6 +21,13 @@ broadcast runs at a fixed rate and contains the following fields:
         "headValid": bool,
         "carrier": string,                # e.g. "float"/"fixed"
         "expectedErrDeg": float,          # expected heading error (1-sigma)
+        "relposned_count": int,           # decoded UBX-NAV-RELPOSNED frames seen
+        "relposned_timestamp": ISO-8601 string,
+        "relpos_length_m": float,         # moving-baseline length
+        "relpos_valid": bool,
+        "relpos_moving": bool,
+        "relpos_ref_pos_miss": bool,
+        "relpos_ref_obs_miss": bool,
         "base_numSV_used": int,           # Base-Link NAV-PVT/NAV-SAT used
         "base_numSV_visible": int,        # Base-Link NAV-SAT records
         "heading_numSV_used": int,        # Heading NAV-PVT/NAV-SAT used
@@ -123,6 +130,18 @@ state = {
     "headValid": None,
     "carrier": None,
     "expectedErrDeg": None,
+    "relposned_count": 0,
+    "relposned_timestamp": None,
+    "relposned_itow_ms": None,
+    "relpos_length_m": None,
+    "relpos_heading_accuracy_deg": None,
+    "relpos_gnss_fix_ok": None,
+    "relpos_diff_solution": None,
+    "relpos_valid": None,
+    "relpos_moving": None,
+    "relpos_ref_pos_miss": None,
+    "relpos_ref_obs_miss": None,
+    "relpos_normalized": None,
     "heading_numSV_used": None,       # Heading NAV-PVT/NAV-SAT satellites used
     "heading_numSV_visible": None,    # Heading NAV-SAT records reported
     "heading_cno_mean_dbhz": None,    # Mean positive NAV-SAT C/N0
@@ -312,6 +331,7 @@ def parse_relposned(payload: bytes):
     carrier = {0: "none", 1: "float", 2: "fixed"}.get((flags >> 3) & 0x3, "unknown")
     headValid = bool(flags & (1 << 8))
     return {
+        "iTOW_ms": iTOW,
         "length_m": length,
         "heading_deg": heading,
         "accN_m": accN_m,
@@ -319,6 +339,13 @@ def parse_relposned(payload: bytes):
         "accHead_deg": accHead_d,
         "carrier": carrier,
         "headValid": headValid,
+        "gnssFixOK": bool(flags & (1 << 0)),
+        "diffSoln": bool(flags & (1 << 1)),
+        "relPosValid": bool(flags & (1 << 2)),
+        "isMoving": bool(flags & (1 << 5)),
+        "refPosMiss": bool(flags & (1 << 6)),
+        "refObsMiss": bool(flags & (1 << 7)),
+        "relPosNormalized": bool(flags & (1 << 9)),
     }
 
 
@@ -585,13 +612,26 @@ def monitor_heading_ubx(serial_conn):
                 d = parse_relposned(payload)
                 if d:
                     err_deg = expected_heading_error_deg(d)  # Assuming this function exists in your script
+                    observed_at = datetime.now(timezone.utc).isoformat()
                     with state_lock:
+                        state["relposned_count"] += 1
+                        state["relposned_timestamp"] = observed_at
+                        state["relposned_itow_ms"] = d["iTOW_ms"]
+                        state["relpos_length_m"] = d["length_m"]
+                        state["relpos_heading_accuracy_deg"] = d["accHead_deg"]
+                        state["relpos_gnss_fix_ok"] = d["gnssFixOK"]
+                        state["relpos_diff_solution"] = d["diffSoln"]
+                        state["relpos_valid"] = d["relPosValid"]
+                        state["relpos_moving"] = d["isMoving"]
+                        state["relpos_ref_pos_miss"] = d["refPosMiss"]
+                        state["relpos_ref_obs_miss"] = d["refObsMiss"]
+                        state["relpos_normalized"] = d["relPosNormalized"]
                         state["headValid"] = d["headValid"]
                         state["carrier"] = d["carrier"]
                         state["expectedErrDeg"] = err_deg
                         if d["headValid"]:
                             state["heading_deg"] = d["heading_deg"]
-                        state["timestamp"] = datetime.now(timezone.utc).isoformat()
+                        state["timestamp"] = observed_at
 
             elif cls_ == CLS_NAV and id_ == ID_PVT:
                 update_satellite_state("heading", id_, payload)
