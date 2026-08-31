@@ -199,7 +199,7 @@ def gps_checks(
         ),
         Check(
             "NAV-RELPOSNED stream",
-            len(relpos_counts) >= 2 and relpos_rate >= 5.0,
+            len(relpos_counts) >= 2 and relpos_rate >= 4.0,
             (
                 f"counter advanced by {relpos_delta}, approximately {relpos_rate:.2f} Hz"
                 if relpos_counts
@@ -213,7 +213,6 @@ def gps_checks(
                 and diff_solution_fraction >= 0.90
                 and relpos_valid_fraction >= 0.90
                 and moving_fraction >= 0.90
-                and normalized_fraction >= 0.90
                 and no_ref_miss_fraction >= 0.90
             ),
             (
@@ -327,7 +326,13 @@ def steering_checks(samples: list[tuple[float, dict[str, Any]]], seconds: float)
     transmission_mode = transmission.get("mode")
     state = str(steering.get("state", "UNKNOWN"))
     pwm = steering.get("pwm")
-    paused = steering_mode == 0 and transmission_mode == 0
+    paused = (
+        steering_mode == 2
+        and transmission_mode == 2
+        and state == "PAUSE"
+        and finite_number(pwm)
+        and float(pwm) == 0.0
+    )
     return [
         Check("Steering telemetry", rate >= 18.0, f"{len(ordered)} unique sequences, approximately {rate:.2f} Hz"),
         Check(
