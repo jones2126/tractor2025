@@ -128,6 +128,15 @@ CSV_COLUMNS = [
     "steer_d_term",               # derivative contribution
     "steer_pid_output",           # signed raw PID output before PWM clamps
     "steer_cmd_age_ms",           # age of most recent cmd_vel on Teensy
+    "steer_response_attempt",      # monotonically increasing response-test attempt
+    "steer_response_state",        # 0 idle, 1 pending, 2 responded, 3 fault
+    "steer_response_elapsed_ms",   # elapsed time in the active response attempt
+    "steer_response_time_ms",      # confirmed command-to-5-count response time; -1 until confirmed
+    "steer_response_movement_counts", # pot movement toward the active command
+    "steer_fault_latched",         # 1 while transmission-neutral steering fault is latched
+    "steer_fault_count",           # cumulative steering-response fault events
+    "steer_recovery_pause_seen",   # Pause acknowledgement recorded after fault
+    "steer_drive_blocked",         # failed direction held at zero until command release/reversal
     "steer_bridge_age_s",         # age of cached STEER record in bridge
     # --- GPS ---
     "lat",                # decimal degrees
@@ -367,6 +376,15 @@ def build_row(start_time: float) -> dict:
         "steer_d_term":               steer.get('d_term', ''),
         "steer_pid_output":           steer.get('pid_output', ''),
         "steer_cmd_age_ms":           steer.get('cmd_age_ms', ''),
+        "steer_response_attempt":      steer.get('response_attempt', ''),
+        "steer_response_state":        steer.get('response_state', ''),
+        "steer_response_elapsed_ms":   steer.get('response_elapsed_ms', ''),
+        "steer_response_time_ms":      steer.get('response_time_ms', ''),
+        "steer_response_movement_counts": steer.get('response_movement_counts', ''),
+        "steer_fault_latched":         steer.get('fault_latched', ''),
+        "steer_fault_count":           steer.get('fault_count', ''),
+        "steer_recovery_pause_seen":   steer.get('recovery_pause_seen', ''),
+        "steer_drive_blocked":         steer.get('drive_blocked', ''),
         "steer_bridge_age_s":         steer.get('age', ''),
 
         # GPS

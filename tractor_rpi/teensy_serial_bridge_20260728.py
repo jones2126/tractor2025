@@ -21,6 +21,9 @@ import json
 import time
 import threading
 import select
+import os
+import queue
+import urllib.request
 from collections import defaultdict
 import logging
 import socket as socket_lib
@@ -52,6 +55,8 @@ UDP_STATUS_PORT = 6003
 UDP_COMMAND_PORT = 6004
 UDP_GPS_PORT = 6002
 STATUS_LOG_EVERY = 20  # log once per second when the source is running at 20 Hz
+NTFY_TOPIC = os.environ.get('TRACTOR_NTFY_TOPIC', 'rpi-tractor01-jones2126')
+NTFY_URL = f'https://ntfy.sh/{NTFY_TOPIC}'
 # ================================================
 
 class TeensySerialBridge:
@@ -67,6 +72,8 @@ class TeensySerialBridge:
         self.cmd_vel_sent_count = 0
         self.cmd_vel_echo_count = 0
         self.broadcast_counter = 0
+        self.last_seen_steering_fault_count = 0
+        self.notification_queue = queue.Queue(maxsize=8)
 
         self.current_gps_status = 1
         self.running = True
@@ -76,6 +83,69 @@ class TeensySerialBridge:
                                     'gps_packets_received', 'errors']}
 
         self.setup()
+
+    def queue_steering_fault_notification(self, steering):
+        """Queue one ntfy event for each new Teensy steering-fault count."""
+        fault_count = int(steering.get('fc', 0))
+        fault_latched = int(steering.get('sf', 0)) == 1
+
+        # A Teensy reboot resets the counter, so allow a future count=1 event.
+        if fault_count == 0:
+            self.last_seen_steering_fault_count = 0
+            return
+        if not fault_latched or fault_count == self.last_seen_steering_fault_count:
+            return
+
+        self.last_seen_steering_fault_count = fault_count
+        event = {
+            'fault_count': fault_count,
+            'mode': int(steering.get('m', 0)),
+            'setpoint': steering.get('sp', 0),
+            'current': steering.get('c', 0),
+            'error': steering.get('e', 0),
+            'response_elapsed_ms': int(steering.get('re', 0)),
+            'movement_counts': int(steering.get('rm', 0)),
+        }
+        try:
+            self.notification_queue.put_nowait(event)
+        except queue.Full:
+            logger.error("ntfy queue full; steering-fault notification dropped")
+
+    def notification_worker(self):
+        """Send ntfy requests away from the timing-sensitive serial loop."""
+        logger.info(f"Steering-fault notifications enabled: {NTFY_TOPIC}")
+        while self.running:
+            try:
+                event = self.notification_queue.get(timeout=0.5)
+            except queue.Empty:
+                continue
+
+            message = (
+                f"Steering control was lost; transmission forced to neutral. "
+                f"fault={event['fault_count']} mode={event['mode']} "
+                f"target={event['setpoint']} pot={event['current']} "
+                f"error={event['error']} no_progress={event['response_elapsed_ms']}ms "
+                f"movement={event['movement_counts']} counts. "
+                "Use Pause, reset/debug the IBT-2, then verify steering in Manual."
+            )
+            request = urllib.request.Request(
+                NTFY_URL,
+                data=message.encode('utf-8'),
+                headers={
+                    'Title': f'{_hostname}: steering control lost',
+                    'Priority': 'high',
+                    'Tags': 'warning,tractor',
+                },
+                method='POST',
+            )
+            try:
+                with urllib.request.urlopen(request, timeout=5) as response:
+                    response.read(64)
+                logger.warning(f"Steering-fault notification sent: fault={event['fault_count']}")
+            except Exception as exc:
+                logger.error(f"Steering-fault ntfy request failed: {exc}")
+            finally:
+                self.notification_queue.task_done()
 
     def create_broadcast_socket(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -190,6 +260,7 @@ class TeensySerialBridge:
                 steer_dict['teensy_timestamp_ms'] = timestamp
                 steer_dict['last_update'] = current_time
                 self.latest_data['STEER'] = steer_dict
+                self.queue_steering_fault_notification(kv_dict)
             elif subsystem in ('JRK', 'TRANS'):
                 trans_dict = self.latest_data.get('TRANS', {})
                 trans_dict.update(kv_dict)
@@ -306,6 +377,15 @@ class TeensySerialBridge:
                 'd_term': d.get('dt', 0.0),
                 'pid_output': d.get('out', 0.0),
                 'cmd_age_ms': d.get('ca', -1),
+                'response_attempt': int(d.get('ra', 0)),
+                'response_state': int(d.get('rs', 0)),
+                'response_elapsed_ms': int(d.get('re', 0)),
+                'response_time_ms': int(d.get('rt', -1)),
+                'response_movement_counts': int(d.get('rm', 0)),
+                'fault_latched': int(d.get('sf', 0)),
+                'fault_count': int(d.get('fc', 0)),
+                'recovery_pause_seen': int(d.get('ps', 0)),
+                'drive_blocked': int(d.get('rb', 0)),
                 'age': current_time - d.get('last_update', current_time)
             }
         if 'TRANS' in self.latest_data:
@@ -381,6 +461,7 @@ class TeensySerialBridge:
 
         threading.Thread(target=self.gps_listener_thread, daemon=True).start()
         threading.Thread(target=self.listen_for_commands, daemon=True).start()
+        threading.Thread(target=self.notification_worker, daemon=True).start()
 
         try:
             while True:

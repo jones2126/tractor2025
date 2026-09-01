@@ -5,7 +5,7 @@
   *   now run together every 50 ms (20 Hz), matching the Pure Pursuit
   *   command rate. Each control result is still published exactly once
   *   with a monotonically increasing q sequence number.
-  *   Serial load is bounded by the 256-byte record buffer: at most about
+  *   Serial load is bounded by the 320-byte record buffer: at most about
   *   5.1 kB/s at 20 Hz versus about 46 kB/s usable at 460800 baud.
   * CHANGED 20260804: Transmission diagnostics now read the JRK's actual
   *   Target, raw/scaled feedback, duty-cycle target, applied duty cycle,
@@ -131,6 +131,22 @@ int LPWM_Output = 6;
 #define STEER_DEADBAND 10
 #define STEER_MIN_PWM  150   // minimum PWM to overcome motor stall (~150 empirically)
 
+// Steering-response watchdog. A drive attempt must move the steering pot at
+// least STEER_RESPONSE_MIN_MOVEMENT counts toward the command before this
+// timeout expires. The 20 Hz telemetry exposes every attempt so the thresholds
+// can be refined from field data.
+const int STEER_RESPONSE_MIN_ERROR = 25;
+const int STEER_RESPONSE_MIN_PWM = 150;
+const int STEER_RESPONSE_MIN_MOVEMENT = 5;
+const unsigned long STEER_RESPONSE_TIMEOUT_MS = 750;
+
+enum SteeringResponseState : uint8_t {
+    STEER_RESPONSE_IDLE = 0,
+    STEER_RESPONSE_PENDING = 1,
+    STEER_RESPONSE_RESPONDED = 2,
+    STEER_RESPONSE_FAULT = 3
+};
+
 float steer_kp = 1.0;
 float steer_ki = 0.0;
 float steer_kd = 0.0;
@@ -159,6 +175,20 @@ float steer_pid_p_term = 0.0f;
 float steer_pid_i_term = 0.0f;
 float steer_pid_d_term = 0.0f;
 float steer_pid_output = 0.0f;
+
+SteeringResponseState steerResponseState = STEER_RESPONSE_IDLE;
+unsigned long steerResponseAttempt = 0;
+unsigned long steerResponseStartMs = 0;
+unsigned long steerResponseElapsedMs = 0;
+long steerResponseTimeMs = -1;
+float steerResponseStartPot = STEER_POT_CENTER;
+int steerResponseMovement = 0;
+int steerResponseDirection = 0;  // +1 left/increasing pot, -1 right/decreasing pot
+bool steerDriveBlocked = false;
+bool steeringFaultLatched = false;
+unsigned long steeringFaultCount = 0;
+bool steeringRecoveryPauseSeen = false;
+bool steeringManualResponseOK = false;
 
 // Transmission vars
 uint16_t currentTransmissionOutput = transmissionNeutralPos;
@@ -577,6 +607,95 @@ void monitorSerialBuffer() {
 }
 
 // -------------------------------------------------------------------
+// Steering-response watchdog and recovery state.
+void beginSteeringResponseAttempt(int direction) {
+    steerResponseAttempt++;
+    steerResponseState = STEER_RESPONSE_PENDING;
+    steerResponseStartMs = currentMillis;
+    steerResponseElapsedMs = 0;
+    steerResponseTimeMs = -1;
+    steerResponseStartPot = steer_current;
+    steerResponseMovement = 0;
+    steerResponseDirection = direction;
+    steerDriveBlocked = false;
+}
+
+void latchSteeringResponseFault() {
+    steerResponseState = STEER_RESPONSE_FAULT;
+    steerResponseElapsedMs = currentMillis - steerResponseStartMs;
+    steerDriveBlocked = true;
+
+    if (!steeringFaultLatched) {
+        steeringFaultLatched = true;
+        steeringFaultCount++;
+        steeringRecoveryPauseSeen = false;
+        steeringManualResponseOK = false;
+    }
+
+    // Do not wait for the next 10 Hz transmission cycle to remove propulsion.
+    setJrkTarget(transmissionNeutralPos);
+}
+
+void clearSteeringFaultAfterManualRecovery() {
+    steeringFaultLatched = false;
+    steeringRecoveryPauseSeen = false;
+    steeringManualResponseOK = false;
+    steerDriveBlocked = false;
+}
+
+// Returns true when the planned steering PWM may be applied. A faulted drive
+// direction remains blocked until the operator releases/reverses the steering
+// command, preventing repeated full-PWM retries into an unresponsive actuator.
+bool updateSteeringResponseWatchdog(int pwmValue, int direction, bool pidActive) {
+    const bool qualifies = pidActive &&
+        pwmValue >= STEER_RESPONSE_MIN_PWM &&
+        abs(steer_error) >= STEER_RESPONSE_MIN_ERROR &&
+        direction != 0;
+
+    if (!qualifies) {
+        steerResponseState = STEER_RESPONSE_IDLE;
+        steerResponseStartMs = 0;
+        steerResponseElapsedMs = 0;
+        steerResponseTimeMs = -1;
+        steerResponseMovement = 0;
+        steerResponseDirection = 0;
+        steerDriveBlocked = false;
+        return true;
+    }
+
+    if (steerDriveBlocked && direction == steerResponseDirection) {
+        steerResponseState = STEER_RESPONSE_FAULT;
+        return false;
+    }
+
+    if (steerResponseStartMs == 0 || direction != steerResponseDirection ||
+        steerResponseState == STEER_RESPONSE_IDLE) {
+        beginSteeringResponseAttempt(direction);
+    }
+
+    steerResponseElapsedMs = currentMillis - steerResponseStartMs;
+    steerResponseMovement = direction * (int)(steer_current - steerResponseStartPot);
+
+    if (steerResponseMovement >= STEER_RESPONSE_MIN_MOVEMENT &&
+        steerResponseState == STEER_RESPONSE_PENDING) {
+        steerResponseState = STEER_RESPONSE_RESPONDED;
+        steerResponseTimeMs = (long)steerResponseElapsedMs;
+        if (radioData.control_mode == 1 && steeringFaultLatched &&
+            steeringRecoveryPauseSeen) {
+            steeringManualResponseOK = true;
+        }
+    }
+
+    if (steerResponseState == STEER_RESPONSE_PENDING &&
+        steerResponseElapsedMs >= STEER_RESPONSE_TIMEOUT_MS) {
+        latchSteeringResponseFault();
+        return false;
+    }
+
+    return true;
+}
+
+// -------------------------------------------------------------------
 // Transmission control (10 Hz) - UPDATED: transmission_val now int
 void controlTransmission() {
     if (currentMillis - lastTransmissionControlRun < controlTransmissionInterval) return;
@@ -628,6 +747,26 @@ void controlTransmission() {
             // Includes mode 9: radio-loss safety.
             requestedTarget = transmissionNeutralPos;
             break;
+    }
+
+    if (steeringFaultLatched) {
+        if (radioData.control_mode == 2) {
+            steeringRecoveryPauseSeen = true;
+        }
+
+        // A successful Manual steering response after Pause proves that the
+        // actuator is available again. Require the transmission command to be
+        // neutral before clearing so recovery cannot cause a surprise launch.
+        const bool recoveryComplete = radioData.control_mode == 1 &&
+            steeringRecoveryPauseSeen && steeringManualResponseOK &&
+            requestedTarget == transmissionNeutralPos;
+
+        if (recoveryComplete) {
+            clearSteeringFaultAfterManualRecovery();
+        } else {
+            requestedTarget = transmissionNeutralPos;
+            bucketTmp = 4;
+        }
     }
 
     bucket = bucketTmp;
@@ -817,7 +956,11 @@ float mapNormalizedSteer(float n) {
 //   q sequence, st state, lp/rp applied channel PWM, pa PID active,
 //   db deadband active, mc minimum-PWM clamp, sat output saturation,
 //   pdt PID interval, es integral sum, de error derivative,
-//   pt/it/dt PID terms, out signed PID output, ca cmd_vel age in ms.
+//   pt/it/dt PID terms, out signed PID output, ca cmd_vel age in ms,
+//   ra response attempt, rs response state (0 idle, 1 pending, 2 responded,
+//   3 fault), re attempt elapsed ms, rt confirmed response time ms,
+//   rm movement counts, sf latched steering fault, fc fault count,
+//   ps Pause acknowledgement seen, rb failed direction blocked.
 void publishSteeringTelemetry(
     const char* state,
     const char* dir,
@@ -837,14 +980,15 @@ void publishSteeringTelemetry(
         ? (long)(currentMillis - cmdVel.timestamp)
         : -1L;
 
-    char buf[256];
+    char buf[320];
     snprintf(
         buf,
         sizeof(buf),
         "1,%lu,STEER,q=%lu,m=%d,st=%s,sp=%.0f,c=%.0f,e=%.0f,"
         "d=%s,p=%d,lp=%d,rp=%d,z=%.3f,pa=%d,db=%d,mc=%d,sat=%d,"
         "pdt=%.3f,es=%.1f,de=%.1f,pt=%.1f,it=%.1f,dt=%.1f,"
-        "out=%.1f,ca=%ld",
+        "out=%.1f,ca=%ld,ra=%lu,rs=%u,re=%lu,rt=%ld,rm=%d,"
+        "sf=%d,fc=%lu,ps=%d,rb=%d",
         currentMillis,
         sequence,
         radioStats.signalGood ? radioData.control_mode : 9,
@@ -868,7 +1012,16 @@ void publishSteeringTelemetry(
         pidActive ? steer_pid_i_term : 0.0f,
         pidActive ? steer_pid_d_term : 0.0f,
         pidActive ? steer_pid_output : 0.0f,
-        cmdAgeMs
+        cmdAgeMs,
+        steerResponseAttempt,
+        (unsigned int)steerResponseState,
+        steerResponseElapsedMs,
+        steerResponseTimeMs,
+        steerResponseMovement,
+        steeringFaultLatched ? 1 : 0,
+        steeringFaultCount,
+        steeringRecoveryPauseSeen ? 1 : 0,
+        steerDriveBlocked ? 1 : 0
     );
 
     Serial.println(buf);
@@ -883,6 +1036,7 @@ void controlSteering() {
     if (!radioStats.signalGood) {
         analogWrite(RPWM_Output, 0);
         analogWrite(LPWM_Output, 0);
+        updateSteeringResponseWatchdog(0, 0, false);
         publishSteeringTelemetry(
             "NO_SIG", "NS", 0, 0, 0,
             false, false, false, false
@@ -915,8 +1069,6 @@ void controlSteering() {
                     pwmValue = 0;
                     deadbandActive = true;
                     dir = "AN";
-                    analogWrite(RPWM_Output, 0);
-                    analogWrite(LPWM_Output, 0);
                 } else {
                     pwmSaturated = out > 255.0f || out < -255.0f;
                     pwmValue = constrain(abs((int)out), 0, 255);
@@ -926,22 +1078,16 @@ void controlSteering() {
                     }
                     if (out > 0) {
                         // Positive error → steer LEFT → drive LPWM
-                        analogWrite(RPWM_Output, 0);
-                        analogWrite(LPWM_Output, pwmValue);
                         leftPwm = pwmValue;
                         dir = "AL";
                     } else {
                         // Negative error → steer RIGHT → drive RPWM
-                        analogWrite(LPWM_Output, 0);
-                        analogWrite(RPWM_Output, pwmValue);
                         rightPwm = pwmValue;
                         dir = "AR";
                     }
                 }
             } else {
                 steer_setpoint = steer_current;
-                analogWrite(RPWM_Output, 0);
-                analogWrite(LPWM_Output, 0);
                 dir = "AH";
                 state = "NO_CMD";
             }
@@ -957,8 +1103,6 @@ void controlSteering() {
                     pwmValue = 0;
                     deadbandActive = true;
                     dir = "N";
-                    analogWrite(RPWM_Output, 0);
-                    analogWrite(LPWM_Output, 0);
                 } else {
                     pwmSaturated = out > 255.0f || out < -255.0f;
                     pwmValue = constrain(abs((int)out), 0, 255);
@@ -968,14 +1112,10 @@ void controlSteering() {
                     }
                     if (out > 0) {
                         // Positive error → pot needs to increase → steer LEFT → drive LPWM
-                        analogWrite(RPWM_Output, 0);
-                        analogWrite(LPWM_Output, pwmValue);
                         leftPwm = pwmValue;
                         dir = "L";
                     } else {
                         // Negative error → pot needs to decrease → steer RIGHT → drive RPWM
-                        analogWrite(LPWM_Output, 0);
-                        analogWrite(RPWM_Output, pwmValue);
                         rightPwm = pwmValue;
                         dir = "R";
                     }
@@ -984,20 +1124,42 @@ void controlSteering() {
             break;
 
         case 2:  // Pause -- UP position on RC switch
-            analogWrite(RPWM_Output, 0);
-            analogWrite(LPWM_Output, 0);
             steer_setpoint = steer_current;
             dir = "P";
             state = "PAUSE";
+            if (steeringFaultLatched) steeringRecoveryPauseSeen = true;
             break;
 
         default:
-            analogWrite(RPWM_Output, 0);
-            analogWrite(LPWM_Output, 0);
             dir = "E";
             state = "MODE_ERR";
             break;
     }
+
+    const int responseDirection = leftPwm > 0 ? 1 : (rightPwm > 0 ? -1 : 0);
+    bool steeringDriveAllowed = true;
+
+    if (steeringFaultLatched && radioData.control_mode == 0) {
+        // Auto cannot resume until Pause acknowledgement plus a successful
+        // stationary Manual steering response clears the latched fault.
+        steeringDriveAllowed = false;
+        state = "STEER_FAULT";
+    } else {
+        steeringDriveAllowed = updateSteeringResponseWatchdog(
+            pwmValue, responseDirection, pidActive
+        );
+        if (!steeringDriveAllowed) state = "STEER_FAULT";
+    }
+
+    if (!steeringDriveAllowed) {
+        pwmValue = 0;
+        leftPwm = 0;
+        rightPwm = 0;
+        dir = "F";
+    }
+
+    analogWrite(LPWM_Output, leftPwm);
+    analogWrite(RPWM_Output, rightPwm);
 
     publishSteeringTelemetry(
         state, dir, pwmValue, leftPwm, rightPwm,
