@@ -28,7 +28,10 @@ constexpr uint16_t TARGET_TOLERANCE = 10;
 // These are thresholds in the JRK's reported milliamps/counts.  The
 // JRK configuration is not changed by this test.
 constexpr uint16_t HIGH_CURRENT_MA = 3000;
-constexpr uint16_t ABSOLUTE_CURRENT_MA = 3500;
+// Two guarded runs measured normal, moving startup transients above 3.8 A,
+// so 3.5 A cannot be used as a current-only cutoff.  This ceiling remains
+// below 5 A; the primary stall cutoff is current PLUS lack of progress.
+constexpr uint16_t ABSOLUTE_CURRENT_MA = 4750;
 constexpr uint16_t PROGRESS_COUNTS = 2;
 constexpr uint32_t HIGH_CURRENT_NO_PROGRESS_MS = 150;
 constexpr uint32_t NO_PROGRESS_MS = 250;
