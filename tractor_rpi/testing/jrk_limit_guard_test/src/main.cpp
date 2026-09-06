@@ -23,10 +23,9 @@ constexpr uint32_t JRK_BAUD = 9600;
 constexpr uint16_t NEUTRAL_TARGET = 2836;
 constexpr uint16_t TARGET_STEP_COUNTS = 40;
 constexpr uint16_t FIRST_PROBE_TARGET = NEUTRAL_TARGET - TARGET_STEP_COUNTS;
-// The guarded 2026-09-06 sweep reached target 2200 / feedback 2208 with
-// no stall and a 2.137 A peak.  Extend only to the historical ~2048 full-
-// forward reference for the next staged sweep.
-constexpr uint16_t LOWEST_ALLOWED_TARGET = 2040;
+// Guarded sweeps reached 2200 and then 2040 without a high-current stall.
+// Extend the next staged sweep by only four additional 40-count pulses.
+constexpr uint16_t LOWEST_ALLOWED_TARGET = 1880;
 constexpr uint16_t TARGET_TOLERANCE = 10;
 
 // These are thresholds in the JRK's reported milliamps/counts.  The
