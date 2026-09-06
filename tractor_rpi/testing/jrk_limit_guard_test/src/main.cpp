@@ -123,10 +123,18 @@ bool operatorAbortRequested() {
     return false;
 }
 
-String readLine() {
+String readLine(const String &promptText) {
     String line;
+    uint32_t lastPromptAt = millis();
     while (true) {
-        if (!Serial.available()) continue;
+        if (!Serial.available()) {
+            if (millis() - lastPromptAt >= 5000) {
+                Serial.println();
+                Serial.print(promptText);
+                lastPromptAt = millis();
+            }
+            continue;
+        }
         const char c = Serial.read();
         if (c == '\r') continue;
         if (c == '\n') {
@@ -147,17 +155,16 @@ String readLine() {
 }
 
 long promptNumber(const char *label, long defaultValue) {
-    Serial.print(label);
-    Serial.print(" [");
-    Serial.print(defaultValue);
-    Serial.print("]: ");
-    const String line = readLine();
+    String promptText = String(label) + " [" + String(defaultValue) + "]: ";
+    Serial.print(promptText);
+    const String line = readLine(promptText);
     return line.length() ? line.toInt() : defaultValue;
 }
 
 bool confirmStart() {
-    Serial.print("Begin guarded limit-data test? [y/N]: ");
-    const String line = readLine();
+    const String promptText = "Begin guarded limit-data test? [y/N]: ";
+    Serial.print(promptText);
+    const String line = readLine(promptText);
     return line.length() && (line[0] == 'y' || line[0] == 'Y');
 }
 
