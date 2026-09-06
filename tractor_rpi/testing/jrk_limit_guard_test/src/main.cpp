@@ -3,7 +3,8 @@
 
   This is a separate, temporary Teensy 4.1 test.  It does not modify
   JRK settings.  It commands one target at a time, records the JRK's
-  current and feedback, and returns to neutral between targets.
+  current and feedback, and advances in small target increments without
+  returning to neutral between successful probes.
 
   Probe cutoff behavior:
     - Immediately command neutral (2836).
@@ -20,7 +21,7 @@
 
 constexpr uint32_t JRK_BAUD = 9600;
 constexpr uint16_t NEUTRAL_TARGET = 2836;
-constexpr uint16_t KNOWN_TARGET = 2288;
+constexpr uint16_t FIRST_PROBE_TARGET = NEUTRAL_TARGET - 20;
 constexpr uint16_t LOWEST_ALLOWED_TARGET = 2200;
 constexpr uint16_t TARGET_TOLERANCE = 10;
 
@@ -31,9 +32,10 @@ constexpr uint16_t ABSOLUTE_CURRENT_MA = 3500;
 constexpr uint16_t PROGRESS_COUNTS = 2;
 constexpr uint32_t HIGH_CURRENT_NO_PROGRESS_MS = 150;
 constexpr uint32_t NO_PROGRESS_MS = 250;
-constexpr uint32_t MAX_MOVE_MS = 1500;
+constexpr uint32_t MAX_PROBE_MOVE_MS = 750;
+constexpr uint32_t MAX_RETURN_MOVE_MS = 2000;
 constexpr uint32_t SAMPLE_INTERVAL_MS = 40;
-constexpr uint32_t BETWEEN_STEPS_MS = 1000;
+constexpr uint32_t INITIAL_NEUTRAL_SETTLE_MS = 1000;
 constexpr uint32_t READ_TIMEOUT_MS = 30;
 
 enum class MoveResult {
@@ -184,7 +186,8 @@ void printSample(const char *phase, uint16_t target, uint16_t currentMa,
 // then sends Stop Motor instead.
 MoveResult moveWithGuard(uint16_t target, const char *phase,
                          bool neutralOnFault, uint16_t &peakMaOut,
-                         uint16_t &finalFeedbackOut) {
+                         uint16_t &finalFeedbackOut,
+                         uint32_t maxMoveMs) {
     uint16_t initialCurrent = 0;
     uint16_t initialFeedback = 0;
     if (!readSnapshot(initialCurrent, initialFeedback)) {
@@ -233,6 +236,11 @@ MoveResult moveWithGuard(uint16_t target, const char *phase,
         if (progress >= PROGRESS_COUNTS) {
             progressAnchor = feedback;
             lastProgressAt = millis();
+        } else if (progress < 0) {
+            // A target reversal can briefly keep moving in the old direction.
+            // Follow that farthest excursion so the first real movement back
+            // toward the new target is recognized as progress.
+            progressAnchor = feedback;
         }
 
         MoveResult fault = MoveResult::reached;
@@ -247,7 +255,7 @@ MoveResult moveWithGuard(uint16_t target, const char *phase,
         } else if (millis() - lastProgressAt >= NO_PROGRESS_MS) {
             fault = MoveResult::no_progress;
             faulted = true;
-        } else if (millis() - moveStarted >= MAX_MOVE_MS) {
+        } else if (millis() - moveStarted >= maxMoveMs) {
             fault = MoveResult::move_timeout;
             faulted = true;
         }
@@ -270,7 +278,8 @@ bool returnToNeutral(const char *reason) {
     uint16_t peakMa = 0;
     uint16_t finalFeedback = 0;
     const MoveResult result = moveWithGuard(
-        NEUTRAL_TARGET, "RETURN", false, peakMa, finalFeedback);
+        NEUTRAL_TARGET, "RETURN", false, peakMa, finalFeedback,
+        MAX_RETURN_MOVE_MS);
     Serial.print("RETURN_RESULT,"); Serial.print(resultName(result));
     Serial.print(",peak_mA="); Serial.print(peakMa);
     Serial.print(",feedback="); Serial.println(finalFeedback);
@@ -308,11 +317,11 @@ void setup() {
         haltForever();
     }
 
-    long firstTarget = promptNumber("First target", KNOWN_TARGET);
+    long firstTarget = promptNumber("First target", FIRST_PROBE_TARGET);
     long lastTarget = promptNumber("Lowest target", LOWEST_ALLOWED_TARGET);
     long stepSize = promptNumber("Target decrement", 20);
 
-    if (firstTarget > NEUTRAL_TARGET || firstTarget < KNOWN_TARGET ||
+    if (firstTarget > FIRST_PROBE_TARGET || firstTarget < LOWEST_ALLOWED_TARGET ||
         lastTarget < LOWEST_ALLOWED_TARGET || lastTarget > firstTarget ||
         stepSize < 1 || stepSize > 50) {
         Serial.println("ABORT: requested range is outside guarded test limits.");
@@ -335,13 +344,18 @@ void setup() {
         haltForever();
     }
 
+    // Establish exact neutral before beginning the small progressive steps.
+    if (!returnToNeutral("INITIALIZE")) haltForever();
+    delay(INITIAL_NEUTRAL_SETTLE_MS);
+
     long target = firstTarget;
     while (true) {
         Serial.print("PROBE_BEGIN,target="); Serial.println(target);
         uint16_t peakMa = 0;
         uint16_t finalFeedback = 0;
         const MoveResult result = moveWithGuard(
-            static_cast<uint16_t>(target), "PROBE", true, peakMa, finalFeedback);
+            static_cast<uint16_t>(target), "PROBE", true, peakMa,
+            finalFeedback, MAX_PROBE_MOVE_MS);
 
         Serial.print("PROBE_RESULT,target="); Serial.print(target);
         Serial.print(",result="); Serial.print(resultName(result));
@@ -356,10 +370,8 @@ void setup() {
             haltForever();
         }
 
-        if (!returnToNeutral("BETWEEN_STEPS")) haltForever();
-        delay(BETWEEN_STEPS_MS);
-
         if (target == lastTarget) {
+            if (!returnToNeutral("RANGE_COMPLETE")) haltForever();
             Serial.println("RANGE COMPLETE: all requested targets were achieved.");
             haltForever();
         }
