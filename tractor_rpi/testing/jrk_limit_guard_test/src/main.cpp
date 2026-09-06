@@ -3,14 +3,14 @@
 
   This is a separate, temporary Teensy 4.1 test.  It does not modify
   JRK settings.  It commands one target at a time, records the JRK's
-  current and feedback, and advances in small target increments without
-  returning to neutral between successful probes.
+  current and feedback, and stops the motor after each small target
+  increment before advancing to the next one.
 
   Probe cutoff behavior:
-    - Immediately command neutral (2836).
+    - Immediately send Stop Motor (0xFF).
     - Stop the entire sweep; never advance to another target.
-    - Supervise the return to neutral with the same protections.
-    - If the return itself cannot make progress, send Stop Motor (0xFF).
+    - Return to neutral through guarded 40-count steps.
+    - If a return step faults, leave the motor stopped.
 
   Run only with engine OFF, tractor secured against movement, and an
   operator watching the actuator/linkage with a physical power cutoff
@@ -21,7 +21,8 @@
 
 constexpr uint32_t JRK_BAUD = 9600;
 constexpr uint16_t NEUTRAL_TARGET = 2836;
-constexpr uint16_t FIRST_PROBE_TARGET = NEUTRAL_TARGET - 20;
+constexpr uint16_t TARGET_STEP_COUNTS = 40;
+constexpr uint16_t FIRST_PROBE_TARGET = NEUTRAL_TARGET - TARGET_STEP_COUNTS;
 constexpr uint16_t LOWEST_ALLOWED_TARGET = 2200;
 constexpr uint16_t TARGET_TOLERANCE = 10;
 
@@ -36,7 +37,7 @@ constexpr uint16_t PROGRESS_COUNTS = 2;
 constexpr uint32_t HIGH_CURRENT_NO_PROGRESS_MS = 150;
 constexpr uint32_t NO_PROGRESS_MS = 250;
 constexpr uint32_t MAX_PROBE_MOVE_MS = 750;
-constexpr uint32_t MAX_RETURN_MOVE_MS = 2000;
+constexpr uint32_t MAX_RETURN_STEP_MS = 750;
 constexpr uint32_t SAMPLE_INTERVAL_MS = 40;
 constexpr uint32_t INITIAL_NEUTRAL_SETTLE_MS = 1000;
 constexpr uint32_t READ_TIMEOUT_MS = 30;
@@ -46,7 +47,7 @@ enum class MoveResult {
     operator_abort,
     absolute_current,
     high_current_no_progress,
-    no_progress,
+    low_current_no_progress,
     move_timeout,
     read_timeout,
 };
@@ -57,7 +58,7 @@ const char *resultName(MoveResult result) {
         case MoveResult::operator_abort: return "OPERATOR_ABORT";
         case MoveResult::absolute_current: return "ABSOLUTE_CURRENT";
         case MoveResult::high_current_no_progress: return "HIGH_CURRENT_NO_PROGRESS";
-        case MoveResult::no_progress: return "NO_PROGRESS";
+        case MoveResult::low_current_no_progress: return "LOW_CURRENT_NO_PROGRESS";
         case MoveResult::move_timeout: return "MOVE_TIMEOUT";
         case MoveResult::read_timeout: return "READ_TIMEOUT";
     }
@@ -184,17 +185,13 @@ void printSample(const char *phase, uint16_t target, uint16_t currentMa,
     Serial.println(elapsedMs);
 }
 
-// For a probe fault, neutralOnFault is true and neutral is commanded before
-// this function returns.  While returning to neutral, it is false; a fault
-// then sends Stop Motor instead.
 MoveResult moveWithGuard(uint16_t target, const char *phase,
-                         bool neutralOnFault, uint16_t &peakMaOut,
-                         uint16_t &finalFeedbackOut,
+                         uint16_t &peakMaOut, uint16_t &finalFeedbackOut,
                          uint32_t maxMoveMs) {
     uint16_t initialCurrent = 0;
     uint16_t initialFeedback = 0;
     if (!readSnapshot(initialCurrent, initialFeedback)) {
-        if (neutralOnFault) setTarget(NEUTRAL_TARGET); else stopMotor();
+        stopMotor();
         return MoveResult::read_timeout;
     }
 
@@ -210,7 +207,7 @@ MoveResult moveWithGuard(uint16_t target, const char *phase,
 
     while (true) {
         if (operatorAbortRequested()) {
-            if (neutralOnFault) setTarget(NEUTRAL_TARGET); else stopMotor();
+            stopMotor();
             return MoveResult::operator_abort;
         }
 
@@ -221,7 +218,7 @@ MoveResult moveWithGuard(uint16_t target, const char *phase,
         uint16_t currentMa = 0;
         uint16_t feedback = 0;
         if (!readSnapshot(currentMa, feedback)) {
-            if (neutralOnFault) setTarget(NEUTRAL_TARGET); else stopMotor();
+            stopMotor();
             return MoveResult::read_timeout;
         }
         finalFeedbackOut = feedback;
@@ -256,7 +253,10 @@ MoveResult moveWithGuard(uint16_t target, const char *phase,
             fault = MoveResult::high_current_no_progress;
             faulted = true;
         } else if (millis() - lastProgressAt >= NO_PROGRESS_MS) {
-            fault = MoveResult::no_progress;
+            // With little or no current, a small target step can sit inside
+            // drivetrain friction/deadband.  The caller may safely stop and
+            // advance one more step to build enough position error to move.
+            fault = MoveResult::low_current_no_progress;
             faulted = true;
         } else if (millis() - moveStarted >= maxMoveMs) {
             fault = MoveResult::move_timeout;
@@ -264,7 +264,7 @@ MoveResult moveWithGuard(uint16_t target, const char *phase,
         }
 
         if (faulted) {
-            if (neutralOnFault) setTarget(NEUTRAL_TARGET); else stopMotor();
+            stopMotor();
             return fault;
         }
     }
@@ -275,23 +275,52 @@ void haltForever() {
     while (true) delay(1000);
 }
 
-bool returnToNeutral(const char *reason) {
+bool returnToNeutralStaged(const char *reason) {
     Serial.print("RETURN_TO_NEUTRAL,");
     Serial.println(reason);
-    uint16_t peakMa = 0;
-    uint16_t finalFeedback = 0;
-    const MoveResult result = moveWithGuard(
-        NEUTRAL_TARGET, "RETURN", false, peakMa, finalFeedback,
-        MAX_RETURN_MOVE_MS);
-    Serial.print("RETURN_RESULT,"); Serial.print(resultName(result));
-    Serial.print(",peak_mA="); Serial.print(peakMa);
-    Serial.print(",feedback="); Serial.println(finalFeedback);
-    if (result != MoveResult::reached) {
-        Serial.println("RETURN FAILED: JRK Stop Motor command sent.");
-        return false;
+
+    while (true) {
+        uint16_t currentMa = 0;
+        uint16_t feedback = 0;
+        if (!readSnapshot(currentMa, feedback)) {
+            stopMotor();
+            Serial.println("RETURN FAILED: status read timeout; motor stopped.");
+            return false;
+        }
+        if (absDifference(feedback, NEUTRAL_TARGET) <= TARGET_TOLERANCE) {
+            stopMotor();
+            Serial.print("NEUTRAL_REACHED,feedback=");
+            Serial.println(feedback);
+            return true;
+        }
+
+        uint16_t nextTarget;
+        if (feedback < NEUTRAL_TARGET) {
+            const uint32_t candidate =
+                static_cast<uint32_t>(feedback) + TARGET_STEP_COUNTS;
+            nextTarget = candidate > NEUTRAL_TARGET
+                ? NEUTRAL_TARGET : static_cast<uint16_t>(candidate);
+        } else {
+            nextTarget = feedback > NEUTRAL_TARGET + TARGET_STEP_COUNTS
+                ? feedback - TARGET_STEP_COUNTS : NEUTRAL_TARGET;
+        }
+
+        Serial.print("RETURN_STEP_BEGIN,target="); Serial.println(nextTarget);
+        uint16_t peakMa = 0;
+        uint16_t finalFeedback = feedback;
+        const MoveResult result = moveWithGuard(
+            nextTarget, "RETURN", peakMa, finalFeedback, MAX_RETURN_STEP_MS);
+        stopMotor();
+        Serial.print("RETURN_STEP_RESULT,target="); Serial.print(nextTarget);
+        Serial.print(",result="); Serial.print(resultName(result));
+        Serial.print(",peak_mA="); Serial.print(peakMa);
+        Serial.print(",feedback="); Serial.println(finalFeedback);
+        if (result != MoveResult::reached) {
+            Serial.println("RETURN FAILED: motor remains stopped.");
+            return false;
+        }
+        delay(100);
     }
-    Serial.println("NEUTRAL_REACHED");
-    return true;
 }
 
 void setup() {
@@ -322,7 +351,7 @@ void setup() {
 
     long firstTarget = promptNumber("First target", FIRST_PROBE_TARGET);
     long lastTarget = promptNumber("Lowest target", LOWEST_ALLOWED_TARGET);
-    long stepSize = promptNumber("Target decrement", 20);
+    long stepSize = promptNumber("Target decrement", TARGET_STEP_COUNTS);
 
     if (firstTarget > FIRST_PROBE_TARGET || firstTarget < LOWEST_ALLOWED_TARGET ||
         lastTarget < LOWEST_ALLOWED_TARGET || lastTarget > firstTarget ||
@@ -348,7 +377,7 @@ void setup() {
     }
 
     // Establish exact neutral before beginning the small progressive steps.
-    if (!returnToNeutral("INITIALIZE")) haltForever();
+    if (!returnToNeutralStaged("INITIALIZE")) haltForever();
     delay(INITIAL_NEUTRAL_SETTLE_MS);
 
     long target = firstTarget;
@@ -357,25 +386,32 @@ void setup() {
         uint16_t peakMa = 0;
         uint16_t finalFeedback = 0;
         const MoveResult result = moveWithGuard(
-            static_cast<uint16_t>(target), "PROBE", true, peakMa,
-            finalFeedback, MAX_PROBE_MOVE_MS);
+            static_cast<uint16_t>(target), "PROBE", peakMa, finalFeedback,
+            MAX_PROBE_MOVE_MS);
+        stopMotor();
 
         Serial.print("PROBE_RESULT,target="); Serial.print(target);
         Serial.print(",result="); Serial.print(resultName(result));
         Serial.print(",peak_mA="); Serial.print(peakMa);
         Serial.print(",feedback="); Serial.println(finalFeedback);
 
-        if (result != MoveResult::reached) {
-            if (!returnToNeutral(resultName(result))) {
+        const bool lowCurrentSkip =
+            result == MoveResult::low_current_no_progress;
+        if (result != MoveResult::reached && !lowCurrentSkip) {
+            if (!returnToNeutralStaged(resultName(result))) {
                 haltForever();
             }
             Serial.println("CUTOFF RECORDED. No further targets will be commanded.");
             haltForever();
         }
 
+        if (lowCurrentSkip) {
+            Serial.println("LOW_CURRENT_NO_PROGRESS: advancing one guarded step.");
+        }
+
         if (target == lastTarget) {
-            if (!returnToNeutral("RANGE_COMPLETE")) haltForever();
-            Serial.println("RANGE COMPLETE: all requested targets were achieved.");
+            if (!returnToNeutralStaged("RANGE_COMPLETE")) haltForever();
+            Serial.println("RANGE COMPLETE: guarded floor reached without a high-current stall.");
             haltForever();
         }
 
