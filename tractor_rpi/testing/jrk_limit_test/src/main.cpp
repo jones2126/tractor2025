@@ -62,9 +62,9 @@ const int MAX_STEPS = 50;  // upper bound on how many steps can be entered
 
 // Sampling rate while holding at each step / at neutral. Not prompted
 // for -- the request was to make start/end/steps/pause queryable.
-const float SAMPLE_HZ = 5.0f;
+const float SAMPLE_HZ = 25.0f;
 const unsigned long SAMPLE_INTERVAL_MS = (unsigned long)(1000.0f / SAMPLE_HZ);
-const unsigned long SETTLE_MS = 500;  // wait after commanding a target before first sample
+const unsigned long SETTLE_MS = 0;  // wait after commanding a target before first sample
 
 #define JRK_BAUD 9600
 

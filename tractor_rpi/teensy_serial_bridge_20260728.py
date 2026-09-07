@@ -189,7 +189,7 @@ class TeensySerialBridge:
             try:
                 ready = select.select([self.gps_sock], [], [], 0.1)
                 if ready[0]:
-                    data, _ = self.gps_sock.recvfrom(1024)
+                    data, _ = self.gps_sock.recvfrom(8192)
                     self.stats['gps_packets_received'] += 1
                     parsed = json.loads(data.decode())
                     status = self.map_gps_status(parsed.get('fix_quality', 'Unknown'))
