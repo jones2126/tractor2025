@@ -41,3 +41,6 @@ field_testing/tools/*_run_analysis_*.json
 field_testing/tools/*_run_map_data_*.json
 field_testing/tools/*_run_map_*.html
 field_testing/**/*.inspect.ndjson
+
+# Node.js dependencies
+node_modules/
