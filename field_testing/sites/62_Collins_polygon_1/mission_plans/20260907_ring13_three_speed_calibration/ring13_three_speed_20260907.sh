@@ -19,6 +19,8 @@ for required in "${BUILDER}" "${CONTROLLER}" "${LOGGER}" "${PREFLIGHT}"; do
     fi
 done
 
+# Rebuild from the reviewed historical geometry every run. The builder verifies
+# the historical source SHA before writing the new mission.
 python3 "${BUILDER}"
 
 python3 - "${MISSION}" <<'PY'
