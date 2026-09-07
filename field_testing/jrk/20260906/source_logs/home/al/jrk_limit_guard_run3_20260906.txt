@@ -1,0 +1,44 @@
+Script started on 2026-09-06 17:34:19-04:00 [COMMAND="python3 -m platformio device monitor -p /dev/teensy -b 115200" TERM="xterm-256color" TTY="/dev/pts/0" COLUMNS="191" LINES="50"]
+--- Terminal on /dev/teensy | 115200 8-N-1
+--- Available filters and text transformations: colorize, debug, default, direct, hexlify, log2file, nocontrol, printable, send_on_enter, time
+--- More details at https://bit.ly/pio-monitor-filters
+--- Quit: Ctrl+C | Menu: Ctrl+T | Help: Ctrl+T followed by Ctrl+H
+
+First target [2816]: 2726
+Lowest target [2200]: 
+Lowest target [2200]: 
+Lowest target [2200]: 
+Target decrement [20]: 
+Targets: 2726 2706 2686 2666 2646 2626 2606 2586 2566 2546 2526 2506 2486 2466 2446 2426 2406 2386 2366 2346 2326 2306 2286 2266 2246 2226 2206 2200 
+CSV: t_ms,phase,target,current_mA,feedback,peak_mA,elapsed_ms
+Begin guarded limit-data test? [y/N]: 
+Begin guarded limit-data test? [y/N]: 
+Begin guarded limit-data test? [y/N]: 
+Begin guarded limit-data test? [y/N]: 
+Begin guarded limit-data test? [y/N]: 
+Begin guarded limit-data test? [y/N]: 
+Begin guarded limit-data test? [y/N]: 
+Begin guarded limit-data test? [y/N]: y
+RETURN_TO_NEUTRAL,INITIALIZE
+93522,RETURN,2836,0,2832,0,13
+RETURN_RESULT,TARGET_REACHED,peak_mA=0,feedback=2832
+NEUTRAL_REACHED
+PROBE_BEGIN,target=2726
+94546,PROBE,2726,0,2831,0,13
+94585,PROBE,2726,4037,2828,4037,52
+PROBE_RESULT,target=2726,result=ABSOLUTE_CURRENT,peak_mA=4037,feedback=2828
+RETURN_TO_NEUTRAL,ABSOLUTE_CURRENT
+94611,RETURN,2836,2006,2816,2727,13
+94651,RETURN,2836,24,2801,2727,53
+94691,RETURN,2836,181,2795,2727,93
+94731,RETURN,2836,860,2792,2727,133
+94771,RETURN,2836,1259,2793,2727,173
+94811,RETURN,2836,1242,2804,2727,213
+94851,RETURN,2836,1192,2822,2727,253
+94891,RETURN,2836,791,2826,2727,293
+RETURN_RESULT,TARGET_REACHED,peak_mA=2727,feedback=2826
+NEUTRAL_REACHED
+CUTOFF RECORDED. No further targets will be commanded.
+Test halted. Reset the Teensy to start over.
+
+Script done on 2026-09-06 17:37:22-04:00 [COMMAND_EXIT_CODE="0"]

@@ -1,0 +1,44 @@
+Script started on 2026-09-06 17:29:59-04:00 [COMMAND="python3 -m platformio device monitor -p /dev/teensy -b 115200" TERM="xterm-256color" TTY="/dev/pts/0" COLUMNS="191" LINES="50"]
+--- Terminal on /dev/teensy | 115200 8-N-1
+--- Available filters and text transformations: colorize, debug, default, direct, hexlify, log2file, nocontrol, printable, send_on_enter, time
+--- More details at https://bit.ly/pio-monitor-filters
+--- Quit: Ctrl+C | Menu: Ctrl+T | Help: Ctrl+T followed by Ctrl+H
+
+First target [2816]: 
+Lowest target [2200]: 
+Target decrement [20]: 
+Targets: 2816 2796 2776 2756 2736 2716 2696 2676 2656 2636 2616 2596 2576 2556 2536 2516 2496 2476 2456 2436 2416 2396 2376 2356 2336 2316 2296 2276 2256 2236 2216 2200 
+CSV: t_ms,phase,target,current_mA,feedback,peak_mA,elapsed_ms
+Begin guarded limit-data test? [y/N]: 
+Begin guarded limit-data test? [y/N]: 
+Begin guarded limit-data test? [y/N]: 
+Begin guarded limit-data test? [y/N]: 
+Begin guarded limit-data test? [y/N]: 
+Begin guarded limit-data test? [y/N]: 
+Begin guarded limit-data test? [y/N]: y
+Begin guarded limit-data test? [y/N]: 
+RETURN_TO_NEUTRAL,INITIALIZE
+74134,RETURN,2836,0,2807,0,12
+74174,RETURN,2836,1730,2805,1730,52
+74214,RETURN,2836,989,2813,1730,92
+74254,RETURN,2836,1020,2817,1730,132
+74294,RETURN,2836,0,2829,1730,172
+RETURN_RESULT,TARGET_REACHED,peak_mA=1730,feedback=2829
+NEUTRAL_REACHED
+PROBE_BEGIN,target=2816
+75318,PROBE,2816,0,2831,0,13
+75357,PROBE,2816,0,2832,0,52
+75397,PROBE,2816,0,2832,0,92
+75437,PROBE,2816,0,2832,0,132
+75477,PROBE,2816,0,2832,0,172
+75517,PROBE,2816,0,2832,0,212
+75557,PROBE,2816,0,2832,0,252
+PROBE_RESULT,target=2816,result=NO_PROGRESS,peak_mA=0,feedback=2832
+RETURN_TO_NEUTRAL,NO_PROGRESS
+75583,RETURN,2836,0,2832,0,13
+RETURN_RESULT,TARGET_REACHED,peak_mA=0,feedback=2832
+NEUTRAL_REACHED
+CUTOFF RECORDED. No further targets will be commanded.
+Test halted. Reset the Teensy to start over.
+
+Script done on 2026-09-06 17:33:26-04:00 [COMMAND_EXIT_CODE="0"]

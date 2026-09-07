@@ -1,0 +1,602 @@
+{
+  "input": "C:\\Repos\\tractor2025\\field_testing\\sites\\62_Collins_polygon_1\\runs\\20260829_heading_satellite\\field_test_20260829_heading_perimeter_132809.csv",
+  "lap_selection": {
+    "method": "manual",
+    "start_sec": 135.89,
+    "end_sec": 525.23
+  },
+  "detected_stationary_pauses": [
+    {
+      "start_sec": 0.01,
+      "end_sec": 47.63,
+      "duration_sec": 47.620000000000005
+    },
+    {
+      "start_sec": 47.81,
+      "end_sec": 70.03,
+      "duration_sec": 22.22
+    },
+    {
+      "start_sec": 75.0,
+      "end_sec": 135.89,
+      "duration_sec": 60.889999999999986
+    },
+    {
+      "start_sec": 209.42,
+      "end_sec": 232.94,
+      "duration_sec": 23.52000000000001
+    },
+    {
+      "start_sec": 399.81,
+      "end_sec": 422.84,
+      "duration_sec": 23.029999999999973
+    },
+    {
+      "start_sec": 525.23,
+      "end_sec": 553.84,
+      "duration_sec": 28.610000000000014
+    }
+  ],
+  "filters": {
+    "position_baseline_m": 3.0,
+    "maximum_turn_over_baseline_deg": 12.0,
+    "minimum_speed_mps": 0.25,
+    "require_rtk_fixed_position": true,
+    "require_heading_valid": true
+  },
+  "position_points": 2891,
+  "comparison": {
+    "all": {
+      "samples": 1271,
+      "signed_mean_deg": -1.9759837393803403,
+      "absolute_median_deg": 7.066011457143816,
+      "absolute_mean_deg": 33.23037517681982,
+      "absolute_p90_deg": 174.21596709082405,
+      "absolute_p95_deg": 177.32966778006315,
+      "absolute_max_deg": 179.95642319084743
+    },
+    "by_carrier": {
+      "fixed": {
+        "samples": 762,
+        "signed_mean_deg": 2.087134102108511,
+        "absolute_median_deg": 2.7364168400522715,
+        "absolute_mean_deg": 8.618929899311516,
+        "absolute_p90_deg": 9.482560578573288,
+        "absolute_p95_deg": 11.051741109580009,
+        "absolute_max_deg": 179.17846166200417,
+        "satellites": {
+          "base_numSV_used": {
+            "count": 762,
+            "min": 27.0,
+            "median": 30.0,
+            "mean": 29.96194225721785,
+            "max": 32.0
+          },
+          "base_numSV_visible": {
+            "count": 762,
+            "min": 48.0,
+            "median": 49.0,
+            "mean": 49.30708661417323,
+            "max": 53.0
+          },
+          "base_cno_mean_dbhz": {
+            "count": 762,
+            "min": 36.2,
+            "median": 38.3,
+            "mean": 38.341732283464566,
+            "max": 40.6
+          },
+          "heading_numSV_used": {
+            "count": 762,
+            "min": 15.0,
+            "median": 23.0,
+            "mean": 23.402887139107612,
+            "max": 31.0
+          },
+          "heading_numSV_visible": {
+            "count": 762,
+            "min": 47.0,
+            "median": 47.0,
+            "mean": 47.374015748031496,
+            "max": 49.0
+          },
+          "heading_cno_mean_dbhz": {
+            "count": 762,
+            "min": 15.8,
+            "median": 19.2,
+            "mean": 18.839370078740156,
+            "max": 21.5
+          }
+        }
+      },
+      "float": {
+        "samples": 472,
+        "signed_mean_deg": -4.444831490593766,
+        "absolute_median_deg": 33.25602041826943,
+        "absolute_mean_deg": 71.05996645537111,
+        "absolute_p90_deg": 177.63502250468437,
+        "absolute_p95_deg": 178.72845688827803,
+        "absolute_max_deg": 179.95642319084743,
+        "satellites": {
+          "base_numSV_used": {
+            "count": 472,
+            "min": 26.0,
+            "median": 30.0,
+            "mean": 30.36864406779661,
+            "max": 32.0
+          },
+          "base_numSV_visible": {
+            "count": 472,
+            "min": 48.0,
+            "median": 49.0,
+            "mean": 49.15889830508475,
+            "max": 52.0
+          },
+          "base_cno_mean_dbhz": {
+            "count": 472,
+            "min": 35.9,
+            "median": 37.9,
+            "mean": 38.02881355932203,
+            "max": 40.1
+          },
+          "heading_numSV_used": {
+            "count": 472,
+            "min": 15.0,
+            "median": 21.0,
+            "mean": 22.41737288135593,
+            "max": 29.0
+          },
+          "heading_numSV_visible": {
+            "count": 472,
+            "min": 47.0,
+            "median": 47.0,
+            "mean": 47.49152542372882,
+            "max": 48.0
+          },
+          "heading_cno_mean_dbhz": {
+            "count": 472,
+            "min": 16.9,
+            "median": 18.7,
+            "mean": 18.820550847457625,
+            "max": 22.0
+          }
+        }
+      },
+      "none": {
+        "samples": 37,
+        "signed_mean_deg": -54.15975824321189,
+        "absolute_median_deg": 10.46228846913607,
+        "absolute_mean_deg": 57.510218906147216,
+        "absolute_p90_deg": 176.2050385789023,
+        "absolute_p95_deg": 177.49466311734534,
+        "absolute_max_deg": 178.90736094641818,
+        "satellites": {
+          "base_numSV_used": {
+            "count": 37,
+            "min": 23.0,
+            "median": 30.0,
+            "mean": 29.16216216216216,
+            "max": 32.0
+          },
+          "base_numSV_visible": {
+            "count": 37,
+            "min": 49.0,
+            "median": 49.0,
+            "mean": 49.2972972972973,
+            "max": 50.0
+          },
+          "base_cno_mean_dbhz": {
+            "count": 37,
+            "min": 37.0,
+            "median": 39.1,
+            "mean": 39.31351351351352,
+            "max": 40.3
+          },
+          "heading_numSV_used": {
+            "count": 37,
+            "min": 19.0,
+            "median": 24.0,
+            "mean": 24.35135135135135,
+            "max": 30.0
+          },
+          "heading_numSV_visible": {
+            "count": 37,
+            "min": 47.0,
+            "median": 47.0,
+            "mean": 47.24324324324324,
+            "max": 48.0
+          },
+          "heading_cno_mean_dbhz": {
+            "count": 37,
+            "min": 19.0,
+            "median": 19.7,
+            "mean": 19.81621621621622,
+            "max": 20.5
+          }
+        }
+      }
+    }
+  },
+  "satellites_during_lap": {
+    "base_numSV_used": {
+      "count": 7784,
+      "min": 22.0,
+      "median": 30.0,
+      "mean": 30.23959403905447,
+      "max": 32.0
+    },
+    "base_numSV_visible": {
+      "count": 7784,
+      "min": 48.0,
+      "median": 49.0,
+      "mean": 49.45349434737924,
+      "max": 53.0
+    },
+    "base_cno_mean_dbhz": {
+      "count": 7784,
+      "min": 35.1,
+      "median": 38.0,
+      "mean": 38.02341983556012,
+      "max": 40.6
+    },
+    "heading_numSV_used": {
+      "count": 7784,
+      "min": 12.0,
+      "median": 23.0,
+      "mean": 22.94655704008222,
+      "max": 31.0
+    },
+    "heading_numSV_visible": {
+      "count": 7784,
+      "min": 47.0,
+      "median": 47.0,
+      "mean": 47.51708633093525,
+      "max": 49.0
+    },
+    "heading_cno_mean_dbhz": {
+      "count": 7784,
+      "min": 14.9,
+      "median": 18.7,
+      "mean": 18.616212744090443,
+      "max": 22.0
+    }
+  },
+  "carrier_episodes": [
+    {
+      "carrier": "fixed",
+      "start_sec": 135.89,
+      "end_sec": 165.54,
+      "duration_sec": 29.650000000000006
+    },
+    {
+      "carrier": "none",
+      "start_sec": 165.62,
+      "end_sec": 168.42,
+      "duration_sec": 2.799999999999983
+    },
+    {
+      "carrier": "float",
+      "start_sec": 168.43,
+      "end_sec": 169.34,
+      "duration_sec": 0.9099999999999966
+    },
+    {
+      "carrier": "none",
+      "start_sec": 169.42,
+      "end_sec": 170.61,
+      "duration_sec": 1.1900000000000261
+    },
+    {
+      "carrier": "float",
+      "start_sec": 170.63,
+      "end_sec": 186.09,
+      "duration_sec": 15.460000000000008
+    },
+    {
+      "carrier": "none",
+      "start_sec": 186.14,
+      "end_sec": 187.01,
+      "duration_sec": 0.8700000000000045
+    },
+    {
+      "carrier": "float",
+      "start_sec": 187.04,
+      "end_sec": 187.64,
+      "duration_sec": 0.5999999999999943
+    },
+    {
+      "carrier": "none",
+      "start_sec": 187.69,
+      "end_sec": 187.88,
+      "duration_sec": 0.18999999999999773
+    },
+    {
+      "carrier": "float",
+      "start_sec": 187.94,
+      "end_sec": 188.44,
+      "duration_sec": 0.5
+    },
+    {
+      "carrier": "none",
+      "start_sec": 188.49,
+      "end_sec": 190.03,
+      "duration_sec": 1.539999999999992
+    },
+    {
+      "carrier": "float",
+      "start_sec": 190.09,
+      "end_sec": 190.73,
+      "duration_sec": 0.6399999999999864
+    },
+    {
+      "carrier": "none",
+      "start_sec": 190.82,
+      "end_sec": 190.94,
+      "duration_sec": 0.12000000000000455
+    },
+    {
+      "carrier": "float",
+      "start_sec": 191.02,
+      "end_sec": 228.43,
+      "duration_sec": 37.41
+    },
+    {
+      "carrier": "none",
+      "start_sec": 228.48,
+      "end_sec": 229.01,
+      "duration_sec": 0.5300000000000011
+    },
+    {
+      "carrier": "float",
+      "start_sec": 229.04,
+      "end_sec": 238.81,
+      "duration_sec": 9.77000000000001
+    },
+    {
+      "carrier": "none",
+      "start_sec": 238.84,
+      "end_sec": 240.02,
+      "duration_sec": 1.1800000000000068
+    },
+    {
+      "carrier": "float",
+      "start_sec": 240.03,
+      "end_sec": 247.24,
+      "duration_sec": 7.210000000000008
+    },
+    {
+      "carrier": "fixed",
+      "start_sec": 247.29,
+      "end_sec": 255.14,
+      "duration_sec": 7.849999999999994
+    },
+    {
+      "carrier": "none",
+      "start_sec": 255.22,
+      "end_sec": 256.43,
+      "duration_sec": 1.210000000000008
+    },
+    {
+      "carrier": "fixed",
+      "start_sec": 256.44,
+      "end_sec": 256.61,
+      "duration_sec": 0.17000000000001592
+    },
+    {
+      "carrier": "none",
+      "start_sec": 256.64,
+      "end_sec": 264.44,
+      "duration_sec": 7.800000000000011
+    },
+    {
+      "carrier": "float",
+      "start_sec": 264.49,
+      "end_sec": 267.61,
+      "duration_sec": 3.1200000000000045
+    },
+    {
+      "carrier": "fixed",
+      "start_sec": 267.64,
+      "end_sec": 274.15,
+      "duration_sec": 6.509999999999991
+    },
+    {
+      "carrier": "none",
+      "start_sec": 274.22,
+      "end_sec": 275.53,
+      "duration_sec": 1.3099999999999454
+    },
+    {
+      "carrier": "float",
+      "start_sec": 275.62,
+      "end_sec": 275.93,
+      "duration_sec": 0.3100000000000023
+    },
+    {
+      "carrier": "none",
+      "start_sec": 276.02,
+      "end_sec": 276.64,
+      "duration_sec": 0.6200000000000045
+    },
+    {
+      "carrier": "fixed",
+      "start_sec": 276.69,
+      "end_sec": 277.43,
+      "duration_sec": 0.7400000000000091
+    },
+    {
+      "carrier": "none",
+      "start_sec": 277.48,
+      "end_sec": 279.81,
+      "duration_sec": 2.329999999999984
+    },
+    {
+      "carrier": "fixed",
+      "start_sec": 279.84,
+      "end_sec": 288.23,
+      "duration_sec": 8.390000000000043
+    },
+    {
+      "carrier": "none",
+      "start_sec": 288.29,
+      "end_sec": 289.23,
+      "duration_sec": 0.9399999999999977
+    },
+    {
+      "carrier": "fixed",
+      "start_sec": 289.3,
+      "end_sec": 338.42,
+      "duration_sec": 49.120000000000005
+    },
+    {
+      "carrier": "none",
+      "start_sec": 338.44,
+      "end_sec": 339.42,
+      "duration_sec": 0.9800000000000182
+    },
+    {
+      "carrier": "float",
+      "start_sec": 339.43,
+      "end_sec": 348.09,
+      "duration_sec": 8.659999999999968
+    },
+    {
+      "carrier": "none",
+      "start_sec": 348.14,
+      "end_sec": 348.83,
+      "duration_sec": 0.6899999999999977
+    },
+    {
+      "carrier": "float",
+      "start_sec": 348.89,
+      "end_sec": 353.09,
+      "duration_sec": 4.199999999999989
+    },
+    {
+      "carrier": "fixed",
+      "start_sec": 353.14,
+      "end_sec": 360.94,
+      "duration_sec": 7.800000000000011
+    },
+    {
+      "carrier": "none",
+      "start_sec": 361.02,
+      "end_sec": 361.94,
+      "duration_sec": 0.9200000000000159
+    },
+    {
+      "carrier": "float",
+      "start_sec": 362.02,
+      "end_sec": 362.94,
+      "duration_sec": 0.9200000000000159
+    },
+    {
+      "carrier": "fixed",
+      "start_sec": 363.03,
+      "end_sec": 396.81,
+      "duration_sec": 33.78000000000003
+    },
+    {
+      "carrier": "none",
+      "start_sec": 396.84,
+      "end_sec": 397.42,
+      "duration_sec": 0.5800000000000409
+    },
+    {
+      "carrier": "float",
+      "start_sec": 397.44,
+      "end_sec": 400.63,
+      "duration_sec": 3.1899999999999977
+    },
+    {
+      "carrier": "fixed",
+      "start_sec": 400.69,
+      "end_sec": 401.84,
+      "duration_sec": 1.1499999999999773
+    },
+    {
+      "carrier": "none",
+      "start_sec": 401.88,
+      "end_sec": 402.53,
+      "duration_sec": 0.6499999999999773
+    },
+    {
+      "carrier": "float",
+      "start_sec": 402.61,
+      "end_sec": 404.81,
+      "duration_sec": 2.1999999999999886
+    },
+    {
+      "carrier": "none",
+      "start_sec": 404.84,
+      "end_sec": 405.75,
+      "duration_sec": 0.910000000000025
+    },
+    {
+      "carrier": "float",
+      "start_sec": 405.82,
+      "end_sec": 408.82,
+      "duration_sec": 3.0
+    },
+    {
+      "carrier": "fixed",
+      "start_sec": 408.85,
+      "end_sec": 422.43,
+      "duration_sec": 13.579999999999984
+    },
+    {
+      "carrier": "none",
+      "start_sec": 422.44,
+      "end_sec": 422.82,
+      "duration_sec": 0.37999999999999545
+    },
+    {
+      "carrier": "float",
+      "start_sec": 422.84,
+      "end_sec": 427.74,
+      "duration_sec": 4.900000000000034
+    },
+    {
+      "carrier": "fixed",
+      "start_sec": 427.82,
+      "end_sec": 431.25,
+      "duration_sec": 3.430000000000007
+    },
+    {
+      "carrier": "none",
+      "start_sec": 431.28,
+      "end_sec": 432.44,
+      "duration_sec": 1.160000000000025
+    },
+    {
+      "carrier": "float",
+      "start_sec": 432.48,
+      "end_sec": 435.24,
+      "duration_sec": 2.759999999999991
+    },
+    {
+      "carrier": "none",
+      "start_sec": 435.29,
+      "end_sec": 435.62,
+      "duration_sec": 0.3299999999999841
+    },
+    {
+      "carrier": "float",
+      "start_sec": 435.63,
+      "end_sec": 499.74,
+      "duration_sec": 64.11000000000001
+    },
+    {
+      "carrier": "fixed",
+      "start_sec": 499.82,
+      "end_sec": 506.63,
+      "duration_sec": 6.810000000000002
+    },
+    {
+      "carrier": "float",
+      "start_sec": 506.7,
+      "end_sec": 525.23,
+      "duration_sec": 18.53000000000003
+    }
+  ]
+}

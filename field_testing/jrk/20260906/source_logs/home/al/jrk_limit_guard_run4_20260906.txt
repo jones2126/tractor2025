@@ -1,0 +1,55 @@
+Script started on 2026-09-06 17:39:48-04:00 [COMMAND="python3 -m platformio device monitor -p /dev/teensy -b 115200" TERM="xterm-256color" TTY="/dev/pts/0" COLUMNS="191" LINES="50"]
+--- Terminal on /dev/teensy | 115200 8-N-1
+--- Available filters and text transformations: colorize, debug, default, direct, hexlify, log2file, nocontrol, printable, send_on_enter, time
+--- More details at https://bit.ly/pio-monitor-filters
+--- Quit: Ctrl+C | Menu: Ctrl+T | Help: Ctrl+T followed by Ctrl+H
+============================================================
+JRK GUARDED FORWARD-LIMIT DATA TEST
+No JRK settings are read or changed by this firmware.
+Engine OFF; tractor secured; operator at power cutoff.
+Press q or x during motion to command return to neutral.
+============================================================
+Startup current mA: 0
+Startup feedback: 2838
+First target [2816]: 2726
+Lowest target [2200]: 
+Target decrement [20]: 
+Targets: 2726 2706 2686 2666 2646 2626 2606 2586 2566 2546 2526 2506 2486 2466 2446 2426 2406 2386 2366 2346 2326 2306 2286 2266 2246 2226 2206 2200 
+CSV: t_ms,phase,target,current_mA,feedback,peak_mA,elapsed_ms
+Begin guarded limit-data test? [y/N]: 
+Begin guarded limit-data test? [y/N]: 
+Begin guarded limit-data test? [y/N]: 
+Begin guarded limit-data test? [y/N]: 
+Begin guarded limit-data test? [y/N]: 
+Begin guarded limit-data test? [y/N]: 
+Begin guarded limit-data test? [y/N]: y
+RETURN_TO_NEUTRAL,INITIALIZE
+44180,RETURN,2836,0,2836,0,13
+RETURN_RESULT,TARGET_REACHED,peak_mA=0,feedback=2836
+NEUTRAL_REACHED
+PROBE_BEGIN,target=2726
+45204,PROBE,2726,0,2838,0,13
+45243,PROBE,2726,3886,2835,3886,52
+45283,PROBE,2726,1208,2816,3886,92
+45323,PROBE,2726,751,2796,3886,132
+45363,PROBE,2726,641,2773,3886,172
+45403,PROBE,2726,641,2752,3886,212
+45443,PROBE,2726,0,2729,3886,252
+PROBE_RESULT,target=2726,result=TARGET_REACHED,peak_mA=3886,feedback=2729
+PROBE_BEGIN,target=2706
+45467,PROBE,2706,0,2724,0,13
+45506,PROBE,2706,0,2723,0,52
+45546,PROBE,2706,0,2723,0,92
+45586,PROBE,2706,0,2723,0,132
+45626,PROBE,2706,0,2723,0,172
+45666,PROBE,2706,0,2723,0,212
+45706,PROBE,2706,0,2723,0,252
+45746,PROBE,2706,0,2723,0,292
+PROBE_RESULT,target=2706,result=NO_PROGRESS,peak_mA=0,feedback=2723
+RETURN_TO_NEUTRAL,NO_PROGRESS
+45772,RETURN,2836,5067,2726,5067,13
+RETURN_RESULT,ABSOLUTE_CURRENT,peak_mA=5067,feedback=2726
+RETURN FAILED: JRK Stop Motor command sent.
+Test halted. Reset the Teensy to start over.
+
+Script done on 2026-09-06 17:42:26-04:00 [COMMAND_EXIT_CODE="0"]

@@ -1,0 +1,57 @@
+Script started on 2026-09-06 17:21:53-04:00 [COMMAND="python3 -m platformio device monitor -p /dev/teensy -b 115200" TERM="xterm-256color" TTY="/dev/pts/0" COLUMNS="191" LINES="50"]
+--- Terminal on /dev/teensy | 115200 8-N-1
+--- Available filters and text transformations: colorize, debug, default, direct, hexlify, log2file, nocontrol, printable, send_on_enter, time
+--- More details at https://bit.ly/pio-monitor-filters
+--- Quit: Ctrl+C | Menu: Ctrl+T | Help: Ctrl+T followed by Ctrl+H
+
+First target [2288]: 
+First target [2288]: 
+First target [2288]: 
+First target [2288]: 
+First target [2288]: 
+First target [2288]: 
+First target [2288]: 
+First target [2288]: 
+First target [2288]: 
+First target [2288]: 
+Lowest target [2200]: 
+Lowest target [2200]: 
+Lowest target [2200]: 
+Lowest target [2200]: 
+Lowest target [2200]: 
+Lowest target [2200]: 
+Lowest target [2200]: 
+Lowest target [2200]: 
+Lowest target [2200]: 
+Lowest target [2200]: 
+Lowest target [2200]: 
+Lowest target [2200]: 
+Lowest target [2200]: 
+Lowest target [2200]: 
+Lowest target [2200]: 
+Lowest target [2200]: 
+Lowest target [2200]: 
+Lowest target [2200]: 
+Lowest target [2200]: 
+Lowest target [2200]: 
+Target decrement [20]: 
+Targets: 2288 2268 2248 2228 2208 2200 
+CSV: t_ms,phase,target,current_mA,feedback,peak_mA,elapsed_ms
+Begin guarded limit-data test? [y/N]: y
+PROBE_BEGIN,target=2288
+192852,PROBE,2288,0,2828,0,13
+192891,PROBE,2288,3877,2824,3877,52
+PROBE_RESULT,target=2288,result=ABSOLUTE_CURRENT,peak_mA=3877,feedback=2824
+RETURN_TO_NEUTRAL,ABSOLUTE_CURRENT
+192917,RETURN,2836,1461,2814,1928,13
+192956,RETURN,2836,109,2793,1928,52
+192996,RETURN,2836,20,2773,1928,92
+193036,RETURN,2836,156,2763,1928,132
+193076,RETURN,2836,1823,2759,1928,172
+193116,RETURN,2836,2164,2767,2164,212
+193156,RETURN,2836,1506,2788,2164,252
+RETURN_RESULT,NO_PROGRESS,peak_mA=2164,feedback=2788
+RETURN FAILED: JRK Stop Motor command sent.
+Test halted. Reset the Teensy to start over.
+
+Script done on 2026-09-06 17:26:55-04:00 [COMMAND_EXIT_CODE="0"]

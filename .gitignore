@@ -44,3 +44,6 @@ field_testing/**/*.inspect.ndjson
 
 # Node.js dependencies
 node_modules/
+
+# Generated analysis outputs
+outputs/

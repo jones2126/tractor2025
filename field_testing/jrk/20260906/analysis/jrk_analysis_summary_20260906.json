@@ -1,0 +1,11 @@
+{
+  "guard_movement_count": 126,
+  "guard_sample_count": 654,
+  "baseline_sample_count": 1594,
+  "successful_probe_count": 60,
+  "lowest_successful_target": 1880,
+  "lowest_feedback": 1888,
+  "max_staged_probe_peak_A": 2.759,
+  "max_successful_return_peak_A": 2.277,
+  "position_count": 26
+}
