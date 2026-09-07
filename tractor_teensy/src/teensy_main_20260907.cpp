@@ -281,7 +281,7 @@ void controlTransmission() {
 // -------------------------------------------------------------------
 // Setup copied from the 0804 production firmware.  The only intended
 // difference is the machine-readable firmware identity at the end.
-void setup() {
+extern "C" void setup() {
     delay(45000);  // waiting for the RPi to boot so the serial connection is made
 
     Serial.begin(460800);
@@ -420,7 +420,7 @@ void setup() {
 // -------------------------------------------------------------------
 // Main loop: identical priority/order to 0804, except it resolves to the
 // 0907 controlTransmission() above.
-void loop() {
+extern "C" void loop() {
     currentMillis = millis();
 
     // 1. Safety
