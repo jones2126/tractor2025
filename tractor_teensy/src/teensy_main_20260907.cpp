@@ -1,687 +1,106 @@
 /*********************************************************************
   teensy_main_20260907.cpp
   --------------------------------------------------------------
-  * CHANGED 20260804: Steering control and its complete PID telemetry
-  *   now run together every 50 ms (20 Hz), matching the Pure Pursuit
-  *   command rate. Each control result is still published exactly once
-  *   with a monotonically increasing q sequence number.
-  *   Serial load is bounded by the 320-byte record buffer: at most about
-  *   5.1 kB/s at 20 Hz versus about 46 kB/s usable at 460800 baud.
-  * CHANGED 20260804: Transmission diagnostics now read the JRK's actual
-  *   Target, raw/scaled feedback, duty-cycle target, applied duty cycle,
-  *   and error flags. This distinguishes a Teensy-requested target from
-  *   what the JRK accepted and from motion caused by its feedback loop.
-  * --------------------------------------------------------------
-  * CHANGED 20260728: Steering telemetry now publishes once per 10 Hz
-  *   steering-control cycle instead of one cached snapshot every 2 seconds.
-  *   Existing STEER keys remain backward compatible. New fields expose PID
-  *   terms, the integral accumulator, applied left/right PWM, deadband,
-  *   minimum-PWM clamping, output saturation, command age, and sequence.
-  *   This is telemetry-only: control timing and output behavior are unchanged.
-  * --------------------------------------------------------------
-  * Date: July 14, 2026 (rev 2)
-  * CHANGED: Mode numbering renumbered to match physical switch intuition.
-  *   DOWN  = Auto  = mode 0  (was mode 2)
-  *   MIDDLE= Manual= mode 1  (unchanged)
-  *   UP    = Pause = mode 2  (was mode 0)
-  *   NO RADIO SIGNAL = mode 9 (unchanged)
-  *   All case labels, == comparisons, and comments updated. No logic changed.
-  *   ModeMonitor in jackstand_steer_test_20260714.py and any other consumer
-  *   of m= fields must be updated to match (MODE_NAMES dict).
-  * CHANGED: cmd_vel contract for auto mode (now mode 0). Pairs with
-  *          pure_pursuit_controller_20260714.py. NOT compatible with
-  *          older senders that used the normalized/pot-count contract.
-  *   - angular_z now arrives NORMALIZED: +1.0 = full LEFT, -1.0 = full
-  *     RIGHT, 0.0 = center. New mapNormalizedSteer() maps it to the
-  *     asymmetric pot space (197/447/815), mirroring mapSteerSetpoint().
-  *     (Was: angular_z passed straight into steer_setpoint as a raw
-  *     pot/PWM value.)
-  *   - linear_x now arrives in METERS PER SECOND, positive = forward,
-  *     0 = stop. New mpsToJrkTarget() interpolates a speed-calibration
-  *     table (SPEED_CAL) to a continuous JRK target -- auto mode no
-  *     longer quantizes to RC buckets. (Was: (linear_x+1)*511.5 bucket
-  *     scaling with negative = forward; 0.5 m/s under the old scaling
-  *     would have selected a REVERSE bucket.)
-  *   - SPEED_CAL currently holds PLACEHOLDER anchors (0 m/s = neutral
-  *     2836, 1.5 m/s = full fwd 2288, linear in between). Replace with
-  *     measured pairs from the speed-calibration field test.
-  *   - Reverse is intentionally not commandable via cmd_vel (mission
-  *     files are forward-only); linear_x <= 0 -> neutral.
-  --------------------------------------------------------------
-  * Prior (20260518/20260617):
-  * FIXED: RPWM/LPWM swap in controlSteering() — both Manual and Auto modes
-  *        Positive error (steer left) now correctly drives LPWM
-  *        Negative error (steer right) now correctly drives RPWM
+  2026-09-07 speed-calibration test firmware.
+
+  This source intentionally reuses the archived, field-tested
+  teensy_main_20260804.cpp implementation and replaces only:
+    - Auto m/s -> JRK calibration
+    - controlTransmission() so its telemetry reports the new target
+    - setup() firmware identity
+    - loop() so it calls the 2026-09-07 transmission function
+
+  Manual bucketTargets[] remains exactly as defined in the archived
+  20260804 firmware:
+      3138, 3063, 2987, 2912, 2836,
+      2616, 2534, 2452, 2370, 2288
+
+  Auto calibration for the Ring 13 test:
+      1.00 m/s -> JRK 2288  known reference
+      1.25 m/s -> JRK 2240  experimental
+      1.50 m/s -> JRK 2200  experimental
+
+  The established lower-speed points are retained, including
+      0.94 m/s -> JRK 2404.
+
+  Requires:
+      src/archive/teensy_main_20260804.cpp
 *********************************************************************/
 
-#include <SPI.h>
-#include <RF24.h>
-#include <string.h>  // For memset
+// Rename only the functions that this 0907 file replaces.  Everything else
+// (radio, steering watchdog, JRK diagnostics, E-stop, telemetry helpers, etc.)
+// is compiled directly from the known-good archived 0804 source.
+#define mpsToJrkTarget      mpsToJrkTarget_20260804
+#define controlTransmission controlTransmission_20260804
+#define setup               setup_20260804
+#define loop                loop_20260804
+
+#include "archive/teensy_main_20260804.cpp"
+
+#undef loop
+#undef setup
+#undef controlTransmission
+#undef mpsToJrkTarget
+
 
 // -------------------------------------------------------------------
-// JRK controller
-#define JRK_BAUD 9600
-const uint16_t transmissionNeutralPos = 2836;  // confirmed by watching the reverse switch on 6/9/26, not by driving
-
-
-// updated on 7/22/26
-const uint16_t bucketTargets[10] = {3138, 3063, 2987, 2912, 2836, 2616, 2534, 2452, 2370, 2240};
-struct SpeedCalPoint { float mps; uint16_t jrkTarget; };
-
-const SpeedCalPoint SPEED_CAL[] = {
+// 2026-09-07 Auto-mode m/s -> JRK target calibration.
+//
+// IMPORTANT:
+//   * Lower JRK target = farther forward.
+//   * 2288 is retained as the Manual-mode maximum because bucketTargets[]
+//     comes unchanged from the archived 0804 firmware.
+//   * 2240 and 2200 are experimental Auto-only extensions for Ring 13.
+const SpeedCalPoint SPEED_CAL_20260907[] = {
     {0.00f, 2836},
     {0.40f, 2452},
     {0.87f, 2421},  // measured: 0.899 outbound, 0.846 return
+    {0.94f, 2404},  // measured: 0.974 outbound, 0.898 return
 
-    // 2026-09-07 Ring 13 speed-calibration test.
-    // 2288 is the previously driven maximum and produces approximately
-    // 1.0 m/s actual GPS ground speed.
-    {1.00f, 2288},  // known reference
-
-    // Experimental extensions beyond the previous production maximum.
-    // These are test estimates, not yet calibrated actual speeds.
+    {1.00f, 2288},  // known Ring 13 reference: approximately 1.0 m/s actual
     {1.25f, 2240},  // experimental
     {1.50f, 2200},  // experimental
 };
 
-const int SPEED_CAL_POINTS = sizeof(SPEED_CAL) / sizeof(SPEED_CAL[0]);
+const int SPEED_CAL_20260907_POINTS =
+    sizeof(SPEED_CAL_20260907) / sizeof(SPEED_CAL_20260907[0]);
 
-// NEW 20260714: interpolate SPEED_CAL. <=0 m/s -> neutral (reverse is not
-// commandable via cmd_vel); above the table max -> clamp to last entry.
 uint16_t mpsToJrkTarget(float mps) {
-    if (mps <= SPEED_CAL[0].mps) return SPEED_CAL[0].jrkTarget;
-    if (mps >= SPEED_CAL[SPEED_CAL_POINTS - 1].mps)
-        return SPEED_CAL[SPEED_CAL_POINTS - 1].jrkTarget;
-    for (int i = 1; i < SPEED_CAL_POINTS; i++) {
-        if (mps <= SPEED_CAL[i].mps) {
-            float f = (mps - SPEED_CAL[i - 1].mps) /
-                      (SPEED_CAL[i].mps - SPEED_CAL[i - 1].mps);
-            float t = (float)SPEED_CAL[i - 1].jrkTarget +
-                      f * ((float)SPEED_CAL[i].jrkTarget -
-                           (float)SPEED_CAL[i - 1].jrkTarget);
+    if (mps <= SPEED_CAL_20260907[0].mps)
+        return SPEED_CAL_20260907[0].jrkTarget;
+
+    if (mps >= SPEED_CAL_20260907[SPEED_CAL_20260907_POINTS - 1].mps)
+        return SPEED_CAL_20260907[SPEED_CAL_20260907_POINTS - 1].jrkTarget;
+
+    for (int i = 1; i < SPEED_CAL_20260907_POINTS; i++) {
+        if (mps <= SPEED_CAL_20260907[i].mps) {
+            float f =
+                (mps - SPEED_CAL_20260907[i - 1].mps) /
+                (SPEED_CAL_20260907[i].mps -
+                 SPEED_CAL_20260907[i - 1].mps);
+
+            float t =
+                (float)SPEED_CAL_20260907[i - 1].jrkTarget +
+                f * ((float)SPEED_CAL_20260907[i].jrkTarget -
+                     (float)SPEED_CAL_20260907[i - 1].jrkTarget);
+
             return (uint16_t)(t + 0.5f);
         }
     }
-    return SPEED_CAL[0].jrkTarget;  // unreachable; defensive
+
+    return SPEED_CAL_20260907[0].jrkTarget;  // defensive/unreachable
 }
-
-// IBT-2 steering pins
-int RPWM_Output = 5;
-int LPWM_Output = 6;
-
-// Steering pot & PID
-#define STEER_POT_PIN A9
-#define STEER_DEADBAND 10
-#define STEER_MIN_PWM  150   // minimum PWM to overcome motor stall (~150 empirically)
-
-// Steering-response watchdog. A drive attempt must move the steering pot at
-// least STEER_RESPONSE_MIN_MOVEMENT counts toward the command before this
-// timeout expires. The 20 Hz telemetry exposes every attempt so the thresholds
-// can be refined from field data.
-const int STEER_RESPONSE_MIN_ERROR = 25;
-const int STEER_RESPONSE_MIN_PWM = 150;
-const int STEER_RESPONSE_MIN_MOVEMENT = 5;
-const unsigned long STEER_RESPONSE_TIMEOUT_MS = 750;
-
-enum SteeringResponseState : uint8_t {
-    STEER_RESPONSE_IDLE = 0,
-    STEER_RESPONSE_PENDING = 1,
-    STEER_RESPONSE_RESPONDED = 2,
-    STEER_RESPONSE_FAULT = 3
-};
-
-float steer_kp = 1.0;
-float steer_ki = 0.0;
-float steer_kd = 0.0;
-
-// Tractor steering pot — measured physical limits (field calibrated 2026-05-18)
-const int STEER_POT_RIGHT  = 197;   // tractor pot at hard right
-const int STEER_POT_CENTER = 447;   // tractor pot straight ahead
-const int STEER_POT_LEFT   = 815;   // tractor pot at hard left
-
-// RC joystick — measured values (field calibrated 2026-05-18)
-const int RADIO_STEER_RIGHT  = 1;    // RC joystick pushed hard right
-const int RADIO_STEER_CENTER = 503;  // RC joystick centered
-const int RADIO_STEER_LEFT   = 1024; // RC joystick pushed hard left
-
-float steer_setpoint = STEER_POT_CENTER;
-float steer_current   = STEER_POT_CENTER;
-float steer_error     = 0;
-float steer_error_sum = 0;
-float steer_last_error = 0;
-unsigned long steer_last_time = 0;
-
-// Most recent low-level PID details for telemetry only.
-float steer_pid_dt_s = 0.0f;
-float steer_pid_derivative = 0.0f;
-float steer_pid_p_term = 0.0f;
-float steer_pid_i_term = 0.0f;
-float steer_pid_d_term = 0.0f;
-float steer_pid_output = 0.0f;
-
-SteeringResponseState steerResponseState = STEER_RESPONSE_IDLE;
-unsigned long steerResponseAttempt = 0;
-unsigned long steerResponseStartMs = 0;
-unsigned long steerResponseElapsedMs = 0;
-long steerResponseTimeMs = -1;
-float steerResponseStartPot = STEER_POT_CENTER;
-int steerResponseMovement = 0;
-int steerResponseDirection = 0;  // +1 left/increasing pot, -1 right/decreasing pot
-bool steerDriveBlocked = false;
-bool steeringFaultLatched = false;
-unsigned long steeringFaultCount = 0;
-bool steeringRecoveryPauseSeen = false;
-bool steeringManualResponseOK = false;
-
-// Transmission vars
-uint16_t currentTransmissionOutput = transmissionNeutralPos;
-int bucket = 5;
-
-struct JrkDiagnostics {
-    uint16_t requestedTarget = transmissionNeutralPos;
-    uint16_t actualTarget = transmissionNeutralPos;
-    uint16_t feedback = transmissionNeutralPos;
-    uint16_t scaledFeedback = transmissionNeutralPos;
-    int16_t integral = 0;
-    int16_t dutyCycleTarget = 0;
-    int16_t dutyCycle = 0;
-    uint16_t errorsHalting = 0;
-    uint16_t errorsOccurred = 0;
-    uint32_t sequence = 0;
-    uint32_t timeouts = 0;
-    uint32_t discardedBytes = 0;
-    uint16_t readLatencyMs = 0;
-    bool valid = false;
-} jrkDiagnostics;
-
-// NeoPixel (not used)
-#define NUM_LEDS 1
-#define DATA_PIN 2
-
-// Radio pins
-RF24 radio(9, 10);
-
-// -------------------------------------------------------------------
-struct __attribute__((packed)) RadioControlStruct {
-    int16_t steering_val;      // 2B: Pin 15 (was 4B int)
-    int16_t throttle_val;      // 2B: Pin 14 (was 4B int)
-    int16_t transmission_val;  // 2B: Pin 16 (was 4B int)
-    uint16_t voltage_mv;       // 2B: Voltage in millivolts (was 4B float)
-    int16_t pot4_val;          // 2B: Pin 17 (was 4B int)
-    byte estop;                // 1B: Pin 10
-    byte control_mode;         // 1B: Pin 3 & 4  From mode switch
-    byte button02;             // 1B: Pin 9
-    byte button03;             // 1B: Pin 6
-    // Total: 14 bytes 
-};
-
-
-struct __attribute__((packed)) AckPayloadStruct {
-    byte gps_status;         // 1=no NMEA, 2=GPS no RTK, 3=RTK Fix (0=unset)
-    byte button02_status;    // Echo of received button02
-    byte button03_status;    // Echo of received button03
-    byte padding[11];        // 11B: Pad to 14 bytes total
-};
-
-RadioControlStruct radioData;
-AckPayloadStruct ackPayload;
-
-// NRF24 addresses - named by data flow direction for clarity
-// ADDR_HANDHELD_TO_TRACTOR: commands travel this path (handheld TX -> tractor RX)
-// ADDR_TRACTOR_TO_HANDHELD: ACKs travel this path    (tractor TX -> handheld RX)
-const uint8_t ADDR_HANDHELD_TO_TRACTOR[6] = "1Node";
-const uint8_t ADDR_TRACTOR_TO_HANDHELD[6] = "2Node";
-
-unsigned long currentMillis = 0;
-
-// -------------------------------------------------------------------
-// Radio stats (MERGED: Old signalGood + new received/ACK counts)
-struct RadioStats {
-    unsigned long lastAckTime = 0;
-    unsigned long ackCount = 0;
-    unsigned long shortTermAckCount = 0;
-    unsigned long lastRateReport = 0;
-    unsigned long lastDataPrint = 0;
-    bool signalGood = false;
-    unsigned long packets_received_total = 0;
-    unsigned long acks_sent_total = 0;
-    unsigned long packets_received_20s = 0;
-    unsigned long acks_sent_20s = 0;
-    unsigned long lastStatsTime = 0;
-
-    const unsigned long signalTimeout = 2000;
-    const unsigned long rateReportInterval = 10000;
-    const unsigned long dataPrintInterval = 5000;
-    const unsigned long statsInterval = 20000;  // New: 20s stats
-} radioStats;
-
-float smoothedRadioVal = 0.0f;
-const float radioAlpha = 0.1f;
-
-void updateRadioSmoothing() {
-    smoothedRadioVal = radioAlpha * (float)radioData.transmission_val / 1024.0f +
-                      (1.0f - radioAlpha) * smoothedRadioVal;
-}
-
-// E-stop
-unsigned long lastEstopCheckRun = 0;
-const unsigned long estopCheckInterval = 50;
-#define ESTOP_RELAY_PIN 30
-
-// Control printing intervals
-unsigned long lastTargetPrint = 0;
-const unsigned long targetPrintInterval = 5000;
-
-unsigned long lastTransmissionControlRun = 0;
-const unsigned long controlTransmissionInterval = 100;   // 10 Hz
-
-unsigned long lastSteeringControlRun = 0;
-const unsigned long controlSteeringInterval = 50;        // 20 Hz; PID and telemetry share this cycle
-
-// -------------------------------------------------------------------
-// cmd_vel
-struct CmdVelCommand {
-    float linear_x = 0.0;
-    float angular_z = 0.0;
-    unsigned long timestamp = 0;
-    bool received = false;
-    unsigned long message_count = 0;
-    float current_hz = 0.0;
-} cmdVel;
-
-unsigned long cmd_vel_count = 0;
-unsigned long last_cmd_vel_time = 0;
-const unsigned long CMD_VEL_TIMEOUT = 500;
-
-// GPS status tracking (received from bridge via serial)
-struct GpsStatus {
-    byte status = 1;                    // 0=unset, 1=noNMEA, 2=noRTK, 3=RTK Fix
-    unsigned long last_update = 0;
-    unsigned long messages_received = 0;
-    unsigned long last_log = 0;
-} gpsStatus;
 
 
 // -------------------------------------------------------------------
-// Serial processing rate limiting
-unsigned long lastSerialProcessTime = 0;
-const unsigned long serialProcessInterval = 10;   // 100 Hz max
-const unsigned long maxSerialProcessTime = 5;     // 5 ms per call
-
-struct SerialStats {
-    unsigned long maxBufferSeen = 0;
-    unsigned long overrunCount = 0;
-    unsigned long lastWarning = 0;
-} serialStats;
-
-// TRANS_LOG (only in auto mode)
-unsigned long lastTransLogPrint = 0;
-const unsigned long transLogInterval = 5000;   // 0.2 Hz
-
-// CSV Logging Toggle (if you enable this now you will have to update the teensy serial bridge 
-// to know what to do with 'log' statements)  (set to 0 at 3:42pm on 11/28/25)
-#define CSV_LOG_ENABLED 0
-
-// -------------------------------------------------------------------
-// TEXT LOG RATE LIMITER (human readable)
-#define TEXT_LOG_INTERVAL 2000UL
-static unsigned long lastTextLog = 0;
-
-void safeTextLog(const char* msg) {
-    if (currentMillis - lastTextLog < TEXT_LOG_INTERVAL) return;
-    Serial.println(msg);
-    Serial.flush();                 // guarantee delivery
-    lastTextLog = currentMillis;
-}
-
-// -------------------------------------------------------------------
-// GPS FUNCTIONS (MOVED HERE - after GpsStatus struct and safeTextLog)
-byte getGpsStatus() {
-    // Return cached GPS status from bridge
-    // Timeout to safe default after 5 seconds of no updates
-    unsigned long age = currentMillis - gpsStatus.last_update;
-    if (age > 5000) {
-        // Add debug for timeout
-        static unsigned long lastTimeoutLog = 0;
-        if (currentMillis - lastTimeoutLog > 5000) {
-            char buf[64];
-            snprintf(buf, sizeof(buf), "1,%lu,GPS_TIMEOUT,age=%lu,st=%d",
-                     currentMillis, age, gpsStatus.status);
-            Serial.println(buf);
-            lastTimeoutLog = currentMillis;
-        }
-        return 1;  // Default to "no fix" on timeout
-    }
-    return gpsStatus.status;
-}
-
-void updateGpsStatus(byte newStatus) {
-    gpsStatus.status = newStatus;
-    gpsStatus.last_update = currentMillis;  // Use currentMillis for consistency
-    gpsStatus.messages_received++;
-    
-    // Log status changes immediately (not just every 10s)
-    static byte lastLoggedStatus = 0;
-    if (newStatus != lastLoggedStatus) {
-        char buf[64];
-        snprintf(buf, sizeof(buf), "1,%lu,GPS_UPDATE,st=%d->%d,cnt=%lu",
-                 currentMillis, lastLoggedStatus, newStatus,
-                 gpsStatus.messages_received);
-        Serial.println(buf);
-        lastLoggedStatus = newStatus;
-    }
-    
-    // Periodic log (every 10s)
-    if (currentMillis - gpsStatus.last_log >= 10000) {
-        char buf[64];
-        snprintf(buf, sizeof(buf), "1,%lu,GPS,st=%d,age=%lu,cnt=%lu",
-                 currentMillis, gpsStatus.status,
-                 currentMillis - gpsStatus.last_update,
-                 gpsStatus.messages_received);
-        Serial.println(buf);  // Changed from safeTextLog to Serial.println
-        gpsStatus.last_log = currentMillis;
-    }
-}
-
-// -------------------------------------------------------------------
-// JRK diagnostic read. Multi-byte variables are little-endian. The JRK's
-// Get Variables command permits at most 15 response bytes. Preserve the last
-// valid snapshot on timeout so a communication failure is not mistaken for
-// a real movement to neutral.
-bool readJrkVariables(uint8_t offset, uint8_t length, uint8_t *buffer) {
-    if (length == 0 || length > 15) return false;
-
-    uint16_t discarded = 0;
-    while (Serial3.available() > 0) {
-        Serial3.read();
-        discarded++;
-    }
-    jrkDiagnostics.discardedBytes += discarded;
-
-    unsigned long start = millis();
-    Serial3.write(0xE5);
-    Serial3.write(offset);
-    Serial3.write(length);
-    Serial3.flush();
-
-    while (Serial3.available() < length) {
-        if (millis() - start > 30) {
-            jrkDiagnostics.timeouts++;
-            jrkDiagnostics.readLatencyMs = millis() - start;
-            return false;
-        }
-    }
-    for (uint8_t i = 0; i < length; i++) buffer[i] = Serial3.read();
-    jrkDiagnostics.readLatencyMs = millis() - start;
-    return true;
-}
-
-uint16_t readU16LE(const uint8_t *p) {
-    return (uint16_t)p[0] | ((uint16_t)p[1] << 8);
-}
-
-int16_t readI16LE(const uint8_t *p) {
-    return (int16_t)readU16LE(p);
-}
-
-void updateJrkDiagnostics() {
-    // Offset 0x02 through 0x0D: Target, Feedback, Scaled feedback,
-    // Integral, Duty cycle target, and Duty cycle.
-    uint8_t values[12];
-    if (!readJrkVariables(0x02, sizeof(values), values)) {
-        jrkDiagnostics.valid = false;
-        return;
-    }
-
-    jrkDiagnostics.actualTarget = readU16LE(values + 0);
-    jrkDiagnostics.feedback = readU16LE(values + 2);
-    jrkDiagnostics.scaledFeedback = readU16LE(values + 4);
-    jrkDiagnostics.integral = readI16LE(values + 6);
-    jrkDiagnostics.dutyCycleTarget = readI16LE(values + 8);
-    jrkDiagnostics.dutyCycle = readI16LE(values + 10);
-    jrkDiagnostics.sequence++;
-    jrkDiagnostics.valid = true;
-
-    // Error flags change slowly; read them once per second to limit blocking
-    // serial work on the 9600-baud JRK link.
-    static unsigned long lastErrorRead = 0;
-    if (currentMillis - lastErrorRead >= 1000) {
-        uint8_t errors[4];
-        if (readJrkVariables(0x12, sizeof(errors), errors)) {
-            jrkDiagnostics.errorsHalting = readU16LE(errors + 0);
-            jrkDiagnostics.errorsOccurred = readU16LE(errors + 2);
-        }
-        lastErrorRead = currentMillis;
-    }
-}
-
-// -------------------------------------------------------------------
-// JRK target
-void setJrkTarget(uint16_t target) {
-    if (target > 4095) target = 4095;
-    Serial3.write(0xC0 + (target & 0x1F));
-    Serial3.write((target >> 5) & 0x7F);
-    jrkDiagnostics.requestedTarget = target;
-
-    static unsigned long lastJrkPrint = 0;
-    if (currentMillis - lastJrkPrint >= 5000) {
-        char buf[48];
-        snprintf(buf, sizeof(buf), "1,%lu,JRK,tgt=%u", currentMillis, target);
-        safeTextLog(buf);
-        lastJrkPrint = currentMillis;
-    }
-}
-
-// -------------------------------------------------------------------
-// Serial command parsing (CMD,<x>,<z>\n and GPS,<status>\n)
-void parseSerialCommand() {
-    if (currentMillis - lastSerialProcessTime < serialProcessInterval) return;
-
-    unsigned long startTime = millis();
-    static char buffer[64];
-    static uint8_t idx = 0;
-    static unsigned long lastRateCalc = 0;
-    static unsigned long msgSinceCalc = 0;
-
-    int processed = 0;
-    const int maxPerCall = 128;
-
-    while (Serial.available() > 0 &&
-           processed < maxPerCall &&
-           (millis() - startTime) < maxSerialProcessTime) {
-
-        char c = Serial.read();
-        processed++;
-
-        if (c == '\n') {
-            buffer[idx] = '\0';
-            
-            // CMD parsing
-            if (idx >= 4 && memcmp(buffer, "CMD,", 4) == 0) {
-                float lx, az;
-                if (sscanf(buffer + 4, "%f,%f", &lx, &az) == 2) {
-                    cmdVel.linear_x = lx;
-                    cmdVel.angular_z = az;
-                    cmdVel.timestamp = millis();
-                    cmdVel.received = true;
-                    cmdVel.message_count++;
-                    msgSinceCalc++;
-                    last_cmd_vel_time = millis();
-
-                    // Echo every 50th message (very light)
-                    if (cmdVel.message_count % 50 == 0) {
-                        char echo[64];
-                        snprintf(echo, sizeof(echo),
-                                 "3,%lu,CE,x=%.2f,z=%.2f,hz=%.1f",
-                                 millis(), lx, az, cmdVel.current_hz);
-                        Serial.println(echo);
-                    }
-                }
-            }
-            // GPS parsing (ADDED)
-            else if (idx >= 4 && memcmp(buffer, "GPS,", 4) == 0) {
-                int status;
-                if (sscanf(buffer + 4, "%d", &status) == 1) {
-                    if (status >= 0 && status <= 3) {  // Validate range
-                        updateGpsStatus((byte)status);
-                        
-                        // Echo every 20th GPS message for monitoring
-                        if (gpsStatus.messages_received % 20 == 0) {
-                            char echo[48];
-                            snprintf(echo, sizeof(echo), "3,%lu,GPS_ECHO,s=%d,cnt=%lu",
-                                     millis(), status, gpsStatus.messages_received);
-                            Serial.println(echo);
-                        }
-                    } else {
-                        char warn[48];
-                        snprintf(warn, sizeof(warn), "2,%lu,GPS,invalid_status=%d",
-                                 millis(), status);
-                        safeTextLog(warn);
-                    }
-                }
-            }
-            idx = 0;
-        } else if (idx < 63) {
-            buffer[idx++] = c;
-        } else {
-            idx = 0;
-            serialStats.overrunCount++;
-            if (currentMillis - serialStats.lastWarning > 5000) {
-                safeTextLog("2,0,SERIAL,buffer_overflow");
-                serialStats.lastWarning = currentMillis;
-            }
-        }
-    }
-
-    // Hz calculation
-    if (currentMillis - lastRateCalc >= 1000) {
-        float elapsed = (currentMillis - lastRateCalc) / 1000.0f;
-        cmdVel.current_hz = msgSinceCalc / elapsed;
-        msgSinceCalc = 0;
-        lastRateCalc = currentMillis;
-    }
-
-    lastSerialProcessTime = currentMillis;
-}
-
-// -------------------------------------------------------------------
-// cmd_vel timeout check
-void checkCmdVelTimeout() {
-    if (cmdVel.received && (currentMillis - cmdVel.timestamp) > CMD_VEL_TIMEOUT) {
-        cmdVel.received = false;
-    }
-}
-
-// -------------------------------------------------------------------
-// Serial buffer health monitor
-void monitorSerialBuffer() {
-    static unsigned long last = 0;
-    if (currentMillis - last < 1000) return;
-    int avail = Serial.available();
-    if ((unsigned long)avail > serialStats.maxBufferSeen) {
-        serialStats.maxBufferSeen = (unsigned long)avail;
-    }
-    if (avail > 40) {                 // warning threshold
-        char msg[64];
-        snprintf(msg, sizeof(msg), "1,%lu,SERIAL,buf=%d,WARN", currentMillis, avail);
-        safeTextLog(msg);
-    }
-    last = currentMillis;
-}
-
-// -------------------------------------------------------------------
-// Steering-response watchdog and recovery state.
-void beginSteeringResponseAttempt(int direction) {
-    steerResponseAttempt++;
-    steerResponseState = STEER_RESPONSE_PENDING;
-    steerResponseStartMs = currentMillis;
-    steerResponseElapsedMs = 0;
-    steerResponseTimeMs = -1;
-    steerResponseStartPot = steer_current;
-    steerResponseMovement = 0;
-    steerResponseDirection = direction;
-    steerDriveBlocked = false;
-}
-
-void latchSteeringResponseFault() {
-    steerResponseState = STEER_RESPONSE_FAULT;
-    steerResponseElapsedMs = currentMillis - steerResponseStartMs;
-    steerDriveBlocked = true;
-
-    if (!steeringFaultLatched) {
-        steeringFaultLatched = true;
-        steeringFaultCount++;
-        steeringRecoveryPauseSeen = false;
-        steeringManualResponseOK = false;
-    }
-
-    // Do not wait for the next 10 Hz transmission cycle to remove propulsion.
-    setJrkTarget(transmissionNeutralPos);
-}
-
-void clearSteeringFaultAfterManualRecovery() {
-    steeringFaultLatched = false;
-    steeringRecoveryPauseSeen = false;
-    steeringManualResponseOK = false;
-    steerDriveBlocked = false;
-}
-
-// Returns true when the planned steering PWM may be applied. A faulted drive
-// direction remains blocked until the operator releases/reverses the steering
-// command, preventing repeated full-PWM retries into an unresponsive actuator.
-bool updateSteeringResponseWatchdog(int pwmValue, int direction, bool pidActive) {
-    const bool qualifies = pidActive &&
-        pwmValue >= STEER_RESPONSE_MIN_PWM &&
-        abs(steer_error) >= STEER_RESPONSE_MIN_ERROR &&
-        direction != 0;
-
-    if (!qualifies) {
-        steerResponseState = STEER_RESPONSE_IDLE;
-        steerResponseStartMs = 0;
-        steerResponseElapsedMs = 0;
-        steerResponseTimeMs = -1;
-        steerResponseMovement = 0;
-        steerResponseDirection = 0;
-        steerDriveBlocked = false;
-        return true;
-    }
-
-    if (steerDriveBlocked && direction == steerResponseDirection) {
-        steerResponseState = STEER_RESPONSE_FAULT;
-        return false;
-    }
-
-    if (steerResponseStartMs == 0 || direction != steerResponseDirection ||
-        steerResponseState == STEER_RESPONSE_IDLE) {
-        beginSteeringResponseAttempt(direction);
-    }
-
-    steerResponseElapsedMs = currentMillis - steerResponseStartMs;
-    steerResponseMovement = direction * (int)(steer_current - steerResponseStartPot);
-
-    if (steerResponseMovement >= STEER_RESPONSE_MIN_MOVEMENT &&
-        steerResponseState == STEER_RESPONSE_PENDING) {
-        steerResponseState = STEER_RESPONSE_RESPONDED;
-        steerResponseTimeMs = (long)steerResponseElapsedMs;
-        if (radioData.control_mode == 1 && steeringFaultLatched &&
-            steeringRecoveryPauseSeen) {
-            steeringManualResponseOK = true;
-        }
-    }
-
-    if (steerResponseState == STEER_RESPONSE_PENDING &&
-        steerResponseElapsedMs >= STEER_RESPONSE_TIMEOUT_MS) {
-        latchSteeringResponseFault();
-        return false;
-    }
-
-    return true;
-}
-
-// -------------------------------------------------------------------
-// Transmission control (10 Hz) - UPDATED: transmission_val now int
+// Transmission control (10 Hz).
+//
+// This is the 0804 production logic with the Auto target calculation routed
+// through the 2026-09-07 calibration above.  Keeping the complete function
+// here also ensures TRANS/TL telemetry reports the ACTUAL 0907 requestedTarget.
 void controlTransmission() {
-    if (currentMillis - lastTransmissionControlRun < controlTransmissionInterval) return;
+    if (currentMillis - lastTransmissionControlRun <
+        controlTransmissionInterval) return;
 
     if (!radioStats.signalGood) {
         radioData.control_mode = 9;   // safety
@@ -703,7 +122,7 @@ void controlTransmission() {
             break;
 
         case 1:
-            // Manual bucket mode.
+            // Manual bucket mode.  Uses the UNCHANGED 0804 bucketTargets[].
             {
                 int tv = (int)radioData.transmission_val;
 
@@ -716,7 +135,8 @@ void controlTransmission() {
                 else if (tv >= 377) bucketTmp = 6;
                 else if (tv >= 285) bucketTmp = 7;
                 else if (tv >= 192) bucketTmp = 8;
-                else bucketTmp = 9;
+                else                bucketTmp = 9;
+
                 requestedTarget = bucketTargets[bucketTmp];
             }
             break;
@@ -740,8 +160,10 @@ void controlTransmission() {
         // A successful Manual steering response after Pause proves that the
         // actuator is available again. Require the transmission command to be
         // neutral before clearing so recovery cannot cause a surprise launch.
-        const bool recoveryComplete = radioData.control_mode == 1 &&
-            steeringRecoveryPauseSeen && steeringManualResponseOK &&
+        const bool recoveryComplete =
+            radioData.control_mode == 1 &&
+            steeringRecoveryPauseSeen &&
+            steeringManualResponseOK &&
             requestedTarget == transmissionNeutralPos;
 
         if (recoveryComplete) {
@@ -767,8 +189,7 @@ void controlTransmission() {
         lastJrkFeedbackRead = currentMillis;
     }
 
-    // Publish machine-readable telemetry at 5 Hz. This intentionally bypasses
-    // safeTextLog(), whose shared limiter can suppress TRANS messages.
+    // Publish machine-readable telemetry at 5 Hz.
     static unsigned long lastTransStatusPrint = 0;
     static const unsigned long transStatusInterval = 200;
 
@@ -779,7 +200,8 @@ void controlTransmission() {
             buf,
             sizeof(buf),
             "1,%lu,TRANS,m=%d,b=%d,tgt=%u,cur=%u,at=%u,sfb=%u,"
-            "it=%d,dtt=%d,dc=%d,eh=%u,eo=%u,jq=%lu,jv=%d,jl=%u,jto=%lu,jdb=%lu,rv=%d,x=%.3f,ca=%lu",
+            "it=%d,dtt=%d,dc=%d,eh=%u,eo=%u,jq=%lu,jv=%d,jl=%u,"
+            "jto=%lu,jdb=%lu,rv=%d,x=%.3f,ca=%lu",
             currentMillis,
             radioData.control_mode,
             bucket,
@@ -799,16 +221,19 @@ void controlTransmission() {
             (unsigned long)jrkDiagnostics.discardedBytes,
             (int)radioData.transmission_val,
             cmdVel.linear_x,
-            cmdVel.received ? currentMillis - cmdVel.timestamp : 999999UL
+            cmdVel.received
+                ? currentMillis - cmdVel.timestamp
+                : 999999UL
         );
 
         Serial.println(buf);
         lastTransStatusPrint = currentMillis;
     }
 
-    // Optional low-rate auto-mode diagnostic; reuse cached JRK feedback.
+    // Optional low-rate Auto-mode diagnostic; reuse cached JRK feedback.
     if (currentMillis - lastTransLogPrint >= transLogInterval &&
-        radioData.control_mode == 0 && cmdVel.received) {
+        radioData.control_mode == 0 &&
+        cmdVel.received) {
 
         char buf[96];
 
@@ -852,466 +277,42 @@ void controlTransmission() {
     lastTransmissionControlRun = currentMillis;
 }
 
-// -------------------------------------------------------------------
-// Steering control (10 Hz â†’ 20 Hz safe) - UPDATED: steering_val now int
-float calculateSteerPID() {
-    unsigned long now = millis();
-    float dt = (now - steer_last_time) / 1000.0f;
-    steer_last_time = now;
-
-    steer_error = steer_setpoint - steer_current;
-
-    steer_error_sum += steer_error * dt;
-    steer_error_sum = constrain(steer_error_sum, -100, 100);
-
-    float d_error = (steer_error - steer_last_error) / dt;
-    steer_last_error = steer_error;
-
-    // Retain each component for telemetry. The returned output is
-    // mathematically identical to the previous implementation.
-    steer_pid_dt_s = dt;
-    steer_pid_derivative = d_error;
-    steer_pid_p_term = steer_kp * steer_error;
-    steer_pid_i_term = steer_ki * steer_error_sum;
-    steer_pid_d_term = steer_kd * d_error;
-    steer_pid_output = steer_pid_p_term +
-                       steer_pid_i_term +
-                       steer_pid_d_term;
-
-    return steer_pid_output;
-}
 
 // -------------------------------------------------------------------
-// Two-segment linear map: RC joystick (0-1024) → tractor pot space.
-//
-// The steering pot is asymmetric — measured 2026-05-18:
-//   Right half: radio 1..503   → pot 197..447  (250 pot counts, 502 radio counts)
-//   Left  half: radio 503..1024 → pot 447..815  (368 pot counts, 521 radio counts)
-//
-// A single map() would compress one side. Two segments ensure joystick
-// center always maps to pot center and full travel hits the mechanical stop.
-float mapSteerSetpoint(int radioVal) {
-    radioVal = constrain(radioVal, RADIO_STEER_RIGHT, RADIO_STEER_LEFT);
-    if (radioVal <= RADIO_STEER_CENTER) {
-        // Right half
-        return STEER_POT_RIGHT +
-               (float)(radioVal - RADIO_STEER_RIGHT) *
-               (float)(STEER_POT_CENTER - STEER_POT_RIGHT) /
-               (float)(RADIO_STEER_CENTER - RADIO_STEER_RIGHT);
-    } else {
-        // Left half
-        return STEER_POT_CENTER +
-               (float)(radioVal - RADIO_STEER_CENTER) *
-               (float)(STEER_POT_LEFT - STEER_POT_CENTER) /
-               (float)(RADIO_STEER_LEFT - RADIO_STEER_CENTER);
-    }
-}
-
-// -------------------------------------------------------------------
-// NEW 20260714: Normalized steering (-1..+1) → tractor pot space, for
-// auto mode (cmd_vel). Convention from pure_pursuit_controller_20260714.py:
-//   +1.0 = full LEFT lock  -> pot 815
-//    0.0 = center          -> pot 447
-//   -1.0 = full RIGHT lock -> pot 197
-// Same two-segment asymmetric structure as mapSteerSetpoint(): the pot
-// travel is 368 counts left of center but only 250 counts right, so each
-// side is scaled independently and 0.0 always lands exactly on center.
-float mapNormalizedSteer(float n) {
-    n = constrain(n, -1.0f, 1.0f);
-    if (n >= 0.0f) {
-        // Left half: 0..+1 -> 447..815
-        return STEER_POT_CENTER + n * (float)(STEER_POT_LEFT - STEER_POT_CENTER);
-    } else {
-        // Right half: -1..0 -> 197..447  (n is negative, so this subtracts)
-        return STEER_POT_CENTER + n * (float)(STEER_POT_CENTER - STEER_POT_RIGHT);
-    }
-}
-
-// Publish one machine-readable steering record per control iteration. This
-// intentionally bypasses safeTextLog(), whose shared 2-second limiter is for
-// human-readable messages and previously hid the steering dynamics.
-//
-// Existing keys retained for bridge compatibility:
-//   m mode, sp setpoint, c current, e error, d direction, p PWM magnitude,
-//   z normalized Pure Pursuit command.
-//
-// New keys:
-//   q sequence, st state, lp/rp applied channel PWM, pa PID active,
-//   db deadband active, mc minimum-PWM clamp, sat output saturation,
-//   pdt PID interval, es integral sum, de error derivative,
-//   pt/it/dt PID terms, out signed PID output, ca cmd_vel age in ms,
-//   ra response attempt, rs response state (0 idle, 1 pending, 2 responded,
-//   3 fault), re attempt elapsed ms, rt confirmed response time ms,
-//   rm movement counts, sf latched steering fault, fc fault count,
-//   ps Pause acknowledgement seen, rb failed direction blocked.
-void publishSteeringTelemetry(
-    const char* state,
-    const char* dir,
-    int pwmValue,
-    int leftPwm,
-    int rightPwm,
-    bool pidActive,
-    bool deadbandActive,
-    bool minClampApplied,
-    bool pwmSaturated
-) {
-    static unsigned long sequence = 0;
-    sequence++;
-
-    const float reportedError = steer_setpoint - steer_current;
-    const long cmdAgeMs = cmdVel.timestamp > 0
-        ? (long)(currentMillis - cmdVel.timestamp)
-        : -1L;
-
-    char buf[320];
-    snprintf(
-        buf,
-        sizeof(buf),
-        "1,%lu,STEER,q=%lu,m=%d,st=%s,sp=%.0f,c=%.0f,e=%.0f,"
-        "d=%s,p=%d,lp=%d,rp=%d,z=%.3f,pa=%d,db=%d,mc=%d,sat=%d,"
-        "pdt=%.3f,es=%.1f,de=%.1f,pt=%.1f,it=%.1f,dt=%.1f,"
-        "out=%.1f,ca=%ld,ra=%lu,rs=%u,re=%lu,rt=%ld,rm=%d,"
-        "sf=%d,fc=%lu,ps=%d,rb=%d",
-        currentMillis,
-        sequence,
-        radioStats.signalGood ? radioData.control_mode : 9,
-        state,
-        steer_setpoint,
-        steer_current,
-        reportedError,
-        dir,
-        pwmValue,
-        leftPwm,
-        rightPwm,
-        cmdVel.angular_z,
-        pidActive ? 1 : 0,
-        deadbandActive ? 1 : 0,
-        minClampApplied ? 1 : 0,
-        pwmSaturated ? 1 : 0,
-        pidActive ? steer_pid_dt_s : 0.0f,
-        steer_error_sum,
-        pidActive ? steer_pid_derivative : 0.0f,
-        pidActive ? steer_pid_p_term : 0.0f,
-        pidActive ? steer_pid_i_term : 0.0f,
-        pidActive ? steer_pid_d_term : 0.0f,
-        pidActive ? steer_pid_output : 0.0f,
-        cmdAgeMs,
-        steerResponseAttempt,
-        (unsigned int)steerResponseState,
-        steerResponseElapsedMs,
-        steerResponseTimeMs,
-        steerResponseMovement,
-        steeringFaultLatched ? 1 : 0,
-        steeringFaultCount,
-        steeringRecoveryPauseSeen ? 1 : 0,
-        steerDriveBlocked ? 1 : 0
-    );
-
-    Serial.println(buf);
-}
-
-void controlSteering() {
-    if (currentMillis - lastSteeringControlRun < controlSteeringInterval) return;
-
-    steer_current = analogRead(STEER_POT_PIN);
-
-    // ---- NO SIGNAL â†’ stop motors ----
-    if (!radioStats.signalGood) {
-        analogWrite(RPWM_Output, 0);
-        analogWrite(LPWM_Output, 0);
-        updateSteeringResponseWatchdog(0, 0, false);
-        publishSteeringTelemetry(
-            "NO_SIG", "NS", 0, 0, 0,
-            false, false, false, false
-        );
-        lastSteeringControlRun = currentMillis;
-        //sendSteeringBinary(0);
-        return;
-    }
-
-    int pwmValue = 0;
-    int leftPwm = 0;
-    int rightPwm = 0;
-    const char* dir = "N";
-    const char* state = "OK";
-    bool pidActive = false;
-    bool deadbandActive = false;
-    bool minClampApplied = false;
-    bool pwmSaturated = false;
-
-    switch (radioData.control_mode) {
-        case 0:  // Auto (cmd_vel) -- DOWN position on RC switch
-            if (cmdVel.received) {
-                // CHANGED 20260714: angular_z is now NORMALIZED -1..+1
-                // (+1 = full left) from pure_pursuit_controller_20260714.py.
-                // (Was: raw pot/PWM value passed straight into the setpoint.)
-                steer_setpoint = mapNormalizedSteer(cmdVel.angular_z);
-                float out = calculateSteerPID();
-                pidActive = true;
-                if (abs(steer_error) <= STEER_DEADBAND) {
-                    pwmValue = 0;
-                    deadbandActive = true;
-                    dir = "AN";
-                } else {
-                    pwmSaturated = out > 255.0f || out < -255.0f;
-                    pwmValue = constrain(abs((int)out), 0, 255);
-                    if (pwmValue > 0 && pwmValue < STEER_MIN_PWM) {
-                        pwmValue = STEER_MIN_PWM;
-                        minClampApplied = true;
-                    }
-                    if (out > 0) {
-                        // Positive error → steer LEFT → drive LPWM
-                        leftPwm = pwmValue;
-                        dir = "AL";
-                    } else {
-                        // Negative error → steer RIGHT → drive RPWM
-                        rightPwm = pwmValue;
-                        dir = "AR";
-                    }
-                }
-            } else {
-                steer_setpoint = steer_current;
-                dir = "AH";
-                state = "NO_CMD";
-            }
-            break;
-
-        case 1:  // Manual PID — MIDDLE position on RC switch
-            steer_setpoint = mapSteerSetpoint((int)radioData.steering_val);
-
-            {
-                float out = calculateSteerPID();
-                pidActive = true;
-                if (abs(steer_error) <= STEER_DEADBAND) {
-                    pwmValue = 0;
-                    deadbandActive = true;
-                    dir = "N";
-                } else {
-                    pwmSaturated = out > 255.0f || out < -255.0f;
-                    pwmValue = constrain(abs((int)out), 0, 255);
-                    if (pwmValue > 0 && pwmValue < STEER_MIN_PWM) {
-                        pwmValue = STEER_MIN_PWM;
-                        minClampApplied = true;
-                    }
-                    if (out > 0) {
-                        // Positive error → pot needs to increase → steer LEFT → drive LPWM
-                        leftPwm = pwmValue;
-                        dir = "L";
-                    } else {
-                        // Negative error → pot needs to decrease → steer RIGHT → drive RPWM
-                        rightPwm = pwmValue;
-                        dir = "R";
-                    }
-                }
-            }
-            break;
-
-        case 2:  // Pause -- UP position on RC switch
-            steer_setpoint = steer_current;
-            dir = "P";
-            state = "PAUSE";
-            if (steeringFaultLatched) steeringRecoveryPauseSeen = true;
-            break;
-
-        default:
-            dir = "E";
-            state = "MODE_ERR";
-            break;
-    }
-
-    const int responseDirection = leftPwm > 0 ? 1 : (rightPwm > 0 ? -1 : 0);
-    bool steeringDriveAllowed = true;
-
-    if (steeringFaultLatched && radioData.control_mode == 0) {
-        // Auto cannot resume until Pause acknowledgement plus a successful
-        // stationary Manual steering response clears the latched fault.
-        steeringDriveAllowed = false;
-        state = "STEER_FAULT";
-    } else {
-        steeringDriveAllowed = updateSteeringResponseWatchdog(
-            pwmValue, responseDirection, pidActive
-        );
-        if (!steeringDriveAllowed) state = "STEER_FAULT";
-    }
-
-    if (!steeringDriveAllowed) {
-        pwmValue = 0;
-        leftPwm = 0;
-        rightPwm = 0;
-        dir = "F";
-    }
-
-    analogWrite(LPWM_Output, leftPwm);
-    analogWrite(RPWM_Output, rightPwm);
-
-    publishSteeringTelemetry(
-        state, dir, pwmValue, leftPwm, rightPwm,
-        pidActive, deadbandActive, minClampApplied, pwmSaturated
-    );
-
-    lastSteeringControlRun = currentMillis;
-    //sendSteeringBinary(pwmValue);          // <<< BINARY PACKET
-}
-
-// -------------------------------------------------------------------
-// E-stop check
-void estopCheck() {
-    if (currentMillis - lastEstopCheckRun < estopCheckInterval) return;
-    digitalWrite(ESTOP_RELAY_PIN, radioData.estop ? LOW : HIGH);
-    lastEstopCheckRun = currentMillis;
-}
-
-// -------------------------------------------------------------------
-// MERGED FROM OLDER: Raw pot monitoring (1s interval)
-void debugSteerPot() {
-    static unsigned long lastPotDebug = 0;
-    if (currentMillis - lastPotDebug >= 1000) {
-        int rawPot = analogRead(STEER_POT_PIN);
-        char buf[64];
-        snprintf(buf, sizeof(buf), "debug,Raw pot: %d, V: %.2f", rawPot, (rawPot * 3.3)/1023.0);
-        safeTextLog(buf);  // Use newer's rate-limiter
-        lastPotDebug = currentMillis;
-    }
-}
-
-// -------------------------------------------------------------------
-// Radio handling (MERGED: Old smoothing/prints/signal + new ACK echoes/stats)
-void handleRadio() {
-    if (radio.available()) {
-        radioStats.packets_received_total++;
-        radioStats.packets_received_20s++;
-
-        radio.read(&radioData, sizeof(RadioControlStruct));
-        
-        if (currentMillis - radioStats.lastDataPrint >= radioStats.dataPrintInterval) {
-            char buf[80];
-            snprintf(buf, sizeof(buf), "1,%lu,RADIO,s=%d,t=%d,x=%d,v=%.2f,e=%d,m=%d,b2=%d,b3=%d",
-                     currentMillis,
-                     (int)radioData.steering_val,      
-                     (int)radioData.throttle_val,      
-                     (int)radioData.transmission_val,  
-                     radioData.voltage_mv / 1000.0f,   
-                     radioData.estop,
-                     radioData.control_mode,
-                     radioData.button02,
-                     radioData.button03);
-            Serial.println(buf);
-            radioStats.lastDataPrint = currentMillis;
-        }
-        
-        // NEW: Echo buttons and set GPS in ACK
-        ackPayload.button02_status = radioData.button02;
-        ackPayload.button03_status = radioData.button03;
-        ackPayload.gps_status = getGpsStatus();
-        memset(ackPayload.padding, 0, sizeof(ackPayload.padding));  // Ensure padding zeroed
-
-        // new debug
-        // ========== ADD ACK WRITE DEBUG ==========
-        static unsigned long lastAckWriteDebug = 0;
-        if (currentMillis - lastAckWriteDebug >= 5000) {
-            char buf[80];
-            snprintf(buf, sizeof(buf), 
-                     "1,%lu,ACK_PREP,gps=%d,b2=%d,b3=%d,size=%d",
-                     currentMillis, 
-                     ackPayload.gps_status,
-                     ackPayload.button02_status, 
-                     ackPayload.button03_status,
-                     sizeof(AckPayloadStruct));
-            Serial.println(buf);
-            lastAckWriteDebug = currentMillis;
-        }
-        // ========== END DEBUG ==========
-        // end of debug        
-        
-        bool ackWriteOk = radio.writeAckPayload(1, &ackPayload, sizeof(AckPayloadStruct));
-        if (ackWriteOk) {
-            radioStats.ackCount++;
-            radioStats.shortTermAckCount++;
-            radioStats.acks_sent_total++;
-            radioStats.acks_sent_20s++;
-        } else {
-            safeTextLog("1,0,RADIO,ack_send_fail");
-        }
-        
-        radioStats.lastAckTime = currentMillis;
-        
-        updateRadioSmoothing();
-    }
-    
-    radioStats.signalGood = (currentMillis - radioStats.lastAckTime < radioStats.signalTimeout);
-    
-    // OLD: Compact statistics format (10s rate)
-    if (currentMillis - radioStats.lastRateReport >= radioStats.rateReportInterval) {
-        float timeElapsed = (currentMillis - radioStats.lastRateReport) / 1000.0;
-        float ackRate = radioStats.ackCount / timeElapsed;
-        float currentRate = radioStats.shortTermAckCount / timeElapsed;
-        
-        char buf[64];
-        snprintf(buf, sizeof(buf), "1,%lu,RADIO,ar=%.1f,cr=%.1f,ta=%lu,sg=%d",
-                 currentMillis, ackRate, currentRate, 
-                 radioStats.ackCount, radioStats.signalGood ? 1 : 0);
-        Serial.println(buf);
-        
-        radioStats.ackCount = 0;
-        radioStats.shortTermAckCount = 0;
-        radioStats.lastRateReport = currentMillis;
-    }
-    
-    // NEW: 20s stats print (from testing)
-    if (currentMillis - radioStats.lastStatsTime >= radioStats.statsInterval) {
-        unsigned long received_delta = radioStats.packets_received_20s;
-        unsigned long acks_delta = radioStats.acks_sent_20s;
-
-        char buf[128];
-        snprintf(buf, sizeof(buf), "1,%lu,RADIO,20s_stats: rx=%lu/%lu, ack=%lu/%lu",
-                 currentMillis, radioStats.packets_received_total, received_delta,
-                 radioStats.acks_sent_total, acks_delta);
-        Serial.println(buf);
-
-        radioStats.packets_received_20s = 0;
-        radioStats.acks_sent_20s = 0;
-        radioStats.lastStatsTime = currentMillis;
-    }
-    
-    // Heartbeat every 5 seconds
-    static unsigned long lastHeartbeat = 0;
-    if (currentMillis - lastHeartbeat >= 5000) {
-        Serial.println("1,0,SYS,hb");
-        lastHeartbeat = currentMillis;
-    }
-}
-
-// -------------------------------------------------------------------
+// Setup copied from the 0804 production firmware.  The only intended
+// difference is the machine-readable firmware identity at the end.
 void setup() {
     delay(45000);  // waiting for the RPi to boot so the serial connection is made
-    
+
     Serial.begin(460800);
-    while (!Serial && millis() < 10000);  // wait up to 10 seconds for USB serial to initialize 
+    while (!Serial && millis() < 10000);
     Serial.println("Teensy Receiver Starting v20251225...");
     Serial.flush();
 
-    // Print multiple times to ensure we see something
-    for(int i = 0; i < 4; i++) {
+    for (int i = 0; i < 4; i++) {
         Serial.print("Debug message #");
         Serial.println(i);
         Serial.flush();
         delay(100);
     }
-    
+
     Serial.println("If you see this, serial is working!");
     Serial.flush();
-    
-    Serial.println("*** NEW BUILD: CSV_LOG_ENABLED=0 - No more logs! Timestamp: " __TIMESTAMP__);
+
+    Serial.println(
+        "*** NEW BUILD: CSV_LOG_ENABLED=0 - No more logs! Timestamp: "
+        __TIMESTAMP__
+    );
     Serial.flush();
-    
+
     Serial3.begin(JRK_BAUD);
 
-    // CHANGED 20260609: exit JRK safe start so motor responds to targets on power-up
+    // Exit JRK safe start so motor responds to targets on power-up.
     delay(100);
-    Serial3.write(0x83);  // Exit safe start command
+    Serial3.write(0x83);
     Serial3.flush();
 
-    // === IBT-2 Steering controller SETUP ===
+    // IBT-2 steering controller.
     pinMode(RPWM_Output, OUTPUT);
     pinMode(LPWM_Output, OUTPUT);
     analogWrite(RPWM_Output, 0);
@@ -1320,27 +321,26 @@ void setup() {
     pinMode(ESTOP_RELAY_PIN, OUTPUT);
     digitalWrite(ESTOP_RELAY_PIN, HIGH);
 
-    // MERGED FROM OLDER: Explicit SPI pins (redundancy)
-    SPI.setSCK(13);  
-    SPI.setMOSI(11);   
+    SPI.setSCK(13);
+    SPI.setMOSI(11);
     SPI.setMISO(12);
 
-    // === SPI & RADIO SETUP (UPDATED: Channel 76, payload size) ===
-    SPI.begin();  // REQUIRED: initializes SPI0
+    SPI.begin();
     delay(100);
-    
-    // MERGED FROM OLDER: Radio init retries for robustness
+
     bool initialized = false;
     for (int i = 0; i < 5; i++) {
         Serial.print("Radio init attempt ");
         Serial.println(i + 1);
         Serial.flush();
+
         if (radio.begin()) {
             initialized = true;
             Serial.println("Radio initialized successfully!");
             Serial.flush();
             break;
         }
+
         Serial.println("Radio init failed, retrying...");
         Serial.flush();
         delay(1000);
@@ -1349,28 +349,31 @@ void setup() {
     if (!initialized) {
         Serial.println("Radio hardware not responding!");
         Serial.flush();
-        // Note: Continue anyway, but monitor logs
     }
-    
+
     radio.setPALevel(RF24_PA_HIGH);
     radio.setDataRate(RF24_250KBPS);
-    radio.setChannel(76);  
+    radio.setChannel(76);
     radio.enableAckPayload();
-    radio.setPayloadSize(14);  
+    radio.setPayloadSize(14);
 
-    radio.openWritingPipe(ADDR_TRACTOR_TO_HANDHELD);       // Send ACKs to handheld
-    radio.openReadingPipe(1, ADDR_HANDHELD_TO_TRACTOR);   // Listen for commands from handheld
+    radio.openWritingPipe(ADDR_TRACTOR_TO_HANDHELD);
+    radio.openReadingPipe(1, ADDR_HANDHELD_TO_TRACTOR);
     radio.startListening();
 
-    // ========== ADD THESE DEBUG LINES ==========
     Serial.println("=== RADIO CONFIGURATION ===");
-    Serial.print("Channel: "); Serial.println(radio.getChannel());
-    Serial.print("Payload Size: "); Serial.println(radio.getPayloadSize());
+    Serial.print("Channel: ");
+    Serial.println(radio.getChannel());
+
+    Serial.print("Payload Size: ");
+    Serial.println(radio.getPayloadSize());
+
     Serial.print("Data Rate: ");
     uint8_t dr = radio.getDataRate();
     if (dr == RF24_250KBPS) Serial.println("250KBPS");
     else if (dr == RF24_1MBPS) Serial.println("1MBPS");
     else Serial.println("2MBPS");
+
     Serial.print("PA Level: ");
     uint8_t pa = radio.getPALevel();
     if (pa == RF24_PA_MIN) Serial.println("MIN");
@@ -1378,38 +381,45 @@ void setup() {
     else if (pa == RF24_PA_HIGH) Serial.println("HIGH");
     else Serial.println("MAX");
 
-    // Print addresses
-    //uint8_t addr[6];
-    radio.openReadingPipe(1, ADDR_HANDHELD_TO_TRACTOR);  // Re-open to ensure it's set
+    radio.openReadingPipe(1, ADDR_HANDHELD_TO_TRACTOR);
+
     Serial.print("Reading Pipe 1 Address: ");
-    for(int i = 0; i < 5; i++) {
+    for (int i = 0; i < 5; i++) {
         Serial.print((char)ADDR_HANDHELD_TO_TRACTOR[i]);
     }
     Serial.println();
+
     Serial.print("Writing Pipe Address: ");
-    for(int i = 0; i < 5; i++) {
+    for (int i = 0; i < 5; i++) {
         Serial.print((char)ADDR_TRACTOR_TO_HANDHELD[i]);
     }
     Serial.println();
+
     Serial.println("=========================");
-    // ========== END DEBUG LINES ==========
 
-
-    // Init ACK (zero padding)
     memset(&ackPayload, 0, sizeof(AckPayloadStruct));
 
-    // MERGED FROM OLDER: Print bucket system info
     Serial.println("10-Bucket Control System:");
-    Serial.println("  transmission_val 1023 -> bucket 0 -> JRK 3138 (FULL REVERSE)");
-    Serial.println("  transmission_val ~512 -> bucket 5 -> JRK 2836 (NEUTRAL)");
-    Serial.println("  transmission_val 1    -> bucket 9 -> JRK 2288 (FULL FORWARD)");
+    Serial.println(
+        "  transmission_val 1023 -> bucket 0 -> JRK 3138 (FULL REVERSE)"
+    );
+    Serial.println(
+        "  transmission_val ~512 -> bucket 5 -> JRK 2836 (NEUTRAL)"
+    );
+    Serial.println(
+        "  transmission_val 1    -> bucket 9 -> JRK 2288 (MANUAL FORWARD MAX)"
+    );
 
-    Serial.println("1,0,SYS,start,fw=teensy_main_20260907,steer_hz=20");
+    Serial.println(
+        "1,0,SYS,start,fw=teensy_main_20260907,steer_hz=20"
+    );
     Serial.flush();
 }
 
+
 // -------------------------------------------------------------------
-// MAIN LOOP (priority order unchanged)
+// Main loop: identical priority/order to 0804, except it resolves to the
+// 0907 controlTransmission() above.
 void loop() {
     currentMillis = millis();
 
@@ -1424,10 +434,9 @@ void loop() {
     // 3. Radio
     handleRadio();
 
-    // 4. Control (rate limited)
+    // 4. Control
     controlTransmission();
     controlSteering();
 
-    // MERGED FROM OLDER: Pot monitoring
     debugSteerPot();
 }
