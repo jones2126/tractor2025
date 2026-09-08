@@ -2,8 +2,9 @@
 """Fail-closed mission preflight for tractor01.
 
 Checks the systemd services, recent RTCM forwarding, the live dual-F9P UDP
-state, heading validity, and the Teensy steering telemetry path.  The command
-returns zero only when every mission-critical check passes.
+state, stationary ground-speed data, and the Teensy steering/transmission
+telemetry paths.  The command returns zero only when every mission-critical
+check passes.
 """
 
 from __future__ import annotations
@@ -34,6 +35,11 @@ RTCM_BAD_PATTERNS = (
     "serial write incomplete",
     "fatal gps connection",
 )
+REQUIRED_DATA_FRACTION = 0.90
+DEFAULT_MAX_STATIONARY_SPEED_MPS = 0.20
+DEFAULT_NEUTRAL_JRK_TARGET = 2836
+MIN_JRK_DIAGNOSTIC_RATE_HZ = 2.0
+MIN_GROUND_SPEED_RATE_HZ = 4.0
 
 
 @dataclass
@@ -147,6 +153,7 @@ def gps_checks(
     max_heading_error: float,
     min_baseline: float,
     max_baseline: float,
+    max_stationary_speed: float,
 ) -> list[Check]:
     if not samples:
         return [Check("GPS UDP 6009", False, f"no packets received in {seconds:.1f}s")]
@@ -189,6 +196,22 @@ def gps_checks(
         if finite_number(item[1].get("relpos_heading_accuracy_deg"))
     ]
     heading_error = statistics.median(heading_error_values[-20:]) if heading_error_values else math.nan
+    speed_values = [
+        float(item[1]["speed_mps"])
+        for item in samples
+        if finite_number(item[1].get("speed_mps"))
+    ]
+    speed_fraction = len(speed_values) / len(samples)
+    stationary_speed = statistics.median(speed_values[-20:]) if speed_values else math.nan
+    speed_counts = [
+        int(float(item[1]["speed_update_count"]))
+        for item in samples
+        if finite_number(item[1].get("speed_update_count"))
+    ]
+    speed_delta = max(0, speed_counts[-1] - speed_counts[0]) if len(speed_counts) >= 2 else 0
+    speed_rate = speed_delta / elapsed if elapsed > 0 else 0.0
+    speed_source = latest.get("speed_source")
+    speed_timestamp = latest.get("speed_timestamp")
 
     checks = [
         Check("GPS UDP 6009", rate >= 15.0, f"{len(samples)} packets, approximately {rate:.2f} Hz"),
@@ -226,6 +249,31 @@ def gps_checks(
             "Differential correction age",
             bool(diff_values) and diff_age <= max_diff_age,
             f"median recent diff_age={diff_age:.2f}s" if diff_values else "diff_age is absent",
+        ),
+        Check(
+            "GPS ground-speed stream",
+            (
+                speed_fraction >= REQUIRED_DATA_FRACTION
+                and len(speed_counts) >= 2
+                and speed_rate >= MIN_GROUND_SPEED_RATE_HZ
+            ),
+            (
+                f"finite in {speed_fraction:.1%} of packets; {speed_source or 'unknown'} "
+                f"counter advanced by {speed_delta}, approximately {speed_rate:.2f} Hz; "
+                f"latest update={speed_timestamp or 'unknown'}"
+                if speed_values
+                else "speed_mps is absent; confirm VTG or valid RMC output"
+            ),
+        ),
+        Check(
+            "Stationary ground speed",
+            bool(speed_values) and 0.0 <= stationary_speed <= max_stationary_speed,
+            (
+                f"median recent speed={stationary_speed:.3f} m/s "
+                f"(maximum {max_stationary_speed:.2f} m/s while in Pause)"
+                if speed_values
+                else "speed_mps is absent"
+            ),
         ),
         Check(
             "Heading GPS output",
@@ -267,6 +315,7 @@ def collect_gps_until_ready(
     max_heading_error: float,
     min_baseline: float,
     max_baseline: float,
+    max_stationary_speed: float,
 ) -> tuple[list[tuple[float, dict[str, Any]]], list[Check]]:
     deadline = time.monotonic() + max(sample_seconds, wait_seconds)
     attempt = 0
@@ -287,6 +336,7 @@ def collect_gps_until_ready(
             max_heading_error,
             min_baseline,
             max_baseline,
+            max_stationary_speed,
         )
         failures = [check.name for check in checks if not check.passed]
         if not failures:
@@ -303,7 +353,11 @@ def collect_gps_until_ready(
     return samples, checks
 
 
-def steering_checks(samples: list[tuple[float, dict[str, Any]]], seconds: float) -> list[Check]:
+def steering_checks(
+    samples: list[tuple[float, dict[str, Any]]],
+    seconds: float,
+    neutral_jrk_target: int,
+) -> list[Check]:
     unique: dict[int, tuple[float, dict[str, Any]]] = {}
     for received, message in samples:
         steering = message.get("steering", {})
@@ -322,23 +376,110 @@ def steering_checks(samples: list[tuple[float, dict[str, Any]]], seconds: float)
     latest_message = ordered[-1][1]
     steering = latest_message.get("steering", {})
     transmission = latest_message.get("transmission", {})
+
+    transmission_samples = [message.get("transmission", {}) for _, message in ordered]
+    required_transmission_fields = (
+        "target",
+        "current",
+        "actual_target",
+        "scaled_feedback",
+        "duty_cycle_target",
+        "duty_cycle",
+        "errors_halting",
+        "jrk_sequence",
+        "jrk_valid",
+        "jrk_read_latency_ms",
+        "jrk_timeouts",
+        "cmd_vel_mps",
+    )
+    complete_count = sum(
+        all(finite_number(trans.get(field)) for field in required_transmission_fields)
+        for trans in transmission_samples
+    )
+    complete_fraction = complete_count / len(transmission_samples)
+
+    jrk_sequences = [
+        int(float(trans["jrk_sequence"]))
+        for trans in transmission_samples
+        if finite_number(trans.get("jrk_sequence"))
+    ]
+    jrk_delta = max(0, jrk_sequences[-1] - jrk_sequences[0]) if len(jrk_sequences) >= 2 else 0
+    jrk_rate = jrk_delta / elapsed if elapsed > 0 else 0.0
+    jrk_valid_fraction = sum(
+        finite_number(trans.get("jrk_valid")) and int(float(trans["jrk_valid"])) == 1
+        for trans in transmission_samples
+    ) / len(transmission_samples)
+    timeout_values = [
+        int(float(trans["jrk_timeouts"]))
+        for trans in transmission_samples
+        if finite_number(trans.get("jrk_timeouts"))
+    ]
+    timeout_delta = max(timeout_values) - min(timeout_values) if timeout_values else 0
+    active_error_values = [
+        int(float(trans["errors_halting"]))
+        for trans in transmission_samples
+        if finite_number(trans.get("errors_halting"))
+    ]
+    no_active_errors = (
+        len(active_error_values) / len(transmission_samples) >= REQUIRED_DATA_FRACTION
+        and all(value == 0 for value in active_error_values)
+    )
+
     steering_mode = steering.get("mode")
     transmission_mode = transmission.get("mode")
     state = str(steering.get("state", "UNKNOWN"))
     pwm = steering.get("pwm")
+    requested_target = transmission.get("target")
+    actual_target = transmission.get("actual_target")
     paused = (
         steering_mode == 2
         and transmission_mode == 2
         and state == "PAUSE"
         and finite_number(pwm)
         and float(pwm) == 0.0
+        and finite_number(requested_target)
+        and int(float(requested_target)) == neutral_jrk_target
+        and finite_number(actual_target)
+        and int(float(actual_target)) == neutral_jrk_target
     )
     return [
         Check("Steering telemetry", rate >= 18.0, f"{len(ordered)} unique sequences, approximately {rate:.2f} Hz"),
         Check(
+            "Transmission telemetry data",
+            complete_fraction >= REQUIRED_DATA_FRACTION,
+            (
+                f"all calibration fields finite in {complete_fraction:.1%} of samples"
+                if complete_fraction >= REQUIRED_DATA_FRACTION
+                else f"complete in only {complete_fraction:.1%}; required fields: "
+                + ", ".join(required_transmission_fields)
+            ),
+        ),
+        Check(
+            "JRK diagnostic stream",
+            len(jrk_sequences) >= 2 and jrk_rate >= MIN_JRK_DIAGNOSTIC_RATE_HZ,
+            f"counter advanced by {jrk_delta}, approximately {jrk_rate:.2f} Hz",
+        ),
+        Check(
+            "JRK diagnostic validity",
+            jrk_valid_fraction >= REQUIRED_DATA_FRACTION and timeout_delta == 0,
+            (
+                f"valid in {jrk_valid_fraction:.1%} of samples; "
+                f"timeouts increased by {timeout_delta}"
+            ),
+        ),
+        Check(
+            "JRK active errors",
+            no_active_errors,
+            "none" if no_active_errors else f"halting error values: {sorted(set(active_error_values))}",
+        ),
+        Check(
             "Safe starting mode",
             paused,
-            f"steering mode={steering_mode}; transmission mode={transmission_mode}; state={state}; pwm={pwm}",
+            (
+                f"steering mode={steering_mode}; transmission mode={transmission_mode}; "
+                f"state={state}; steering pwm={pwm}; JRK requested/actual target="
+                f"{requested_target}/{actual_target} (neutral {neutral_jrk_target})"
+            ),
         ),
     ]
 
@@ -360,11 +501,30 @@ def main() -> int:
     parser.add_argument("--max-heading-error", type=float, default=1.0)
     parser.add_argument("--min-baseline", type=float, default=0.8)
     parser.add_argument("--max-baseline", type=float, default=1.3)
+    parser.add_argument(
+        "--max-stationary-speed",
+        type=float,
+        default=DEFAULT_MAX_STATIONARY_SPEED_MPS,
+        help=(
+            "maximum median GPS ground speed allowed while preflight requires Pause "
+            f"(default {DEFAULT_MAX_STATIONARY_SPEED_MPS:.2f} m/s)"
+        ),
+    )
+    parser.add_argument(
+        "--neutral-jrk-target",
+        type=int,
+        default=DEFAULT_NEUTRAL_JRK_TARGET,
+        help=f"expected requested/read-back JRK target in Pause (default {DEFAULT_NEUTRAL_JRK_TARGET})",
+    )
     args = parser.parse_args()
     if args.sample_seconds <= 0 or args.heading_wait_seconds <= 0:
         parser.error("sample and heading wait times must be positive")
     if args.min_baseline <= 0 or args.max_baseline < args.min_baseline:
         parser.error("baseline limits must be positive and ordered")
+    if args.max_stationary_speed < 0:
+        parser.error("maximum stationary speed must not be negative")
+    if args.neutral_jrk_target < 0:
+        parser.error("neutral JRK target must not be negative")
 
     print("Tractor01 mission preflight")
     print("Keep the tractor in Pause with blades disengaged.\n")
@@ -385,12 +545,19 @@ def main() -> int:
         args.max_heading_error,
         args.min_baseline,
         args.max_baseline,
+        args.max_stationary_speed,
     )
     checks.extend(gps_results)
 
     print(f"Sampling steering UDP 6003 for {args.sample_seconds:.1f}s...\n")
     steering_samples = collect_json_udp(6003, args.sample_seconds)
-    checks.extend(steering_checks(steering_samples, args.sample_seconds))
+    checks.extend(
+        steering_checks(
+            steering_samples,
+            args.sample_seconds,
+            args.neutral_jrk_target,
+        )
+    )
 
     passed = print_checks(checks)
     print()

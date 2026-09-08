@@ -125,7 +125,10 @@ state = {
     "base_satellite_timestamp": None,
     "hdop": None,            # Horizontal dilution of precision (GGA field 8)
     "diff_age": None,        # Age of differential corrections in seconds (GGA field 13)
-    "speed_mps": None,       # NEW 6/17/26: Ground speed m/s (from VTG)    
+    "speed_mps": None,       # Ground speed m/s from VTG or valid RMC
+    "speed_update_count": 0, # Advances on every successfully parsed speed sentence
+    "speed_timestamp": None, # UTC time of the latest successfully parsed speed sentence
+    "speed_source": None,    # VTG or RMC
     "heading_deg": None,
     "headValid": None,
     "carrier": None,
@@ -468,6 +471,9 @@ def process_base_nmea_line(line: bytes):
             try:
                 with state_lock:
                     state["speed_mps"] = round(float(match.group(2)) / 3.6, 3)
+                    state["speed_update_count"] += 1
+                    state["speed_timestamp"] = datetime.now(timezone.utc).isoformat()
+                    state["speed_source"] = "VTG"
             except ValueError:
                 pass
 
@@ -479,6 +485,9 @@ def process_base_nmea_line(line: bytes):
                 try:
                     with state_lock:
                         state["speed_mps"] = round(float(speed_knots_raw) * 0.514444, 3)
+                        state["speed_update_count"] += 1
+                        state["speed_timestamp"] = datetime.now(timezone.utc).isoformat()
+                        state["speed_source"] = "RMC"
                 except ValueError:
                     pass
 
