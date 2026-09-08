@@ -48,6 +48,10 @@ CHANGED 20260828:
   - Added symmetric, receiver-specific satellite diagnostics for Base-Link
     and Heading F9Ps. Removed the ambiguous legacy numSV column.
 
+CHANGED 20260908:
+  - Record the Teensy firmware identity published by the serial bridge so each
+    speed-calibration log proves which target table was active.
+
   python3 field_test_logger_20260828.py
   python3 field_test_logger_20260828.py --output /home/al/field_logs/run2.csv
 
@@ -83,6 +87,7 @@ GPS_ONLY_TIMEOUT = 2.0    # seconds
 CSV_COLUMNS = [
     "time",               # ISO-8601 UTC wall clock
     "elapsed_sec",        # seconds since logging started
+    "teensy_firmware",    # firmware identity captured by the serial bridge
     # --- Transmission ---
     "bucket",             # 0-9 transmission bucket
     "jrk_target",         # JRK commanded position
@@ -325,10 +330,12 @@ def build_row(start_time: float) -> dict:
     steer = status.get('steering', {})
     trans = status.get('transmission', {})
     radio = status.get('radio', {})
+    system = status.get('system', {})
 
     row = {
         "time":          now.isoformat(timespec='milliseconds'),
         "elapsed_sec":   round(elapsed, 2),
+        "teensy_firmware": system.get('firmware', ''),
 
         # Transmission
         "bucket":        trans.get('bucket', ''),

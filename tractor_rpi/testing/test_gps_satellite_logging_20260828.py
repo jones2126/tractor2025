@@ -108,9 +108,14 @@ class LoggerFieldTests(unittest.TestCase):
                 "heading_cno_mean_dbhz": 34.5,
             }
         )
+        logger.latest_status.clear()
+        logger.latest_status.update(
+            {"system": {"firmware": "teensy_main_20260908"}}
+        )
         row = logger.build_row(time.time())
 
         self.assertNotIn("numSV", row)
+        self.assertEqual(row["teensy_firmware"], "teensy_main_20260908")
         self.assertEqual(row["base_numSV_used"], 31)
         self.assertEqual(row["base_numSV_visible"], 36)
         self.assertEqual(row["heading_numSV_used"], 8)

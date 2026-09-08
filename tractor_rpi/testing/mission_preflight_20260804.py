@@ -3,8 +3,9 @@
 
 Checks the systemd services, recent RTCM forwarding, the live dual-F9P UDP
 state, stationary ground-speed data, and the Teensy steering/transmission
-telemetry paths.  The command returns zero only when every mission-critical
-check passes.
+telemetry paths. An optional expected-firmware argument lets a mission require
+the matching flashed Teensy build. The command returns zero only when every
+mission-critical check passes.
 """
 
 from __future__ import annotations
@@ -357,6 +358,7 @@ def steering_checks(
     samples: list[tuple[float, dict[str, Any]]],
     seconds: float,
     neutral_jrk_target: int,
+    expected_firmware: str | None = None,
 ) -> list[Check]:
     unique: dict[int, tuple[float, dict[str, Any]]] = {}
     for received, message in samples:
@@ -376,6 +378,7 @@ def steering_checks(
     latest_message = ordered[-1][1]
     steering = latest_message.get("steering", {})
     transmission = latest_message.get("transmission", {})
+    system = latest_message.get("system", {})
 
     transmission_samples = [message.get("transmission", {}) for _, message in ordered]
     required_transmission_fields = (
@@ -442,7 +445,7 @@ def steering_checks(
         and finite_number(actual_target)
         and int(float(actual_target)) == neutral_jrk_target
     )
-    return [
+    checks = [
         Check("Steering telemetry", rate >= 18.0, f"{len(ordered)} unique sequences, approximately {rate:.2f} Hz"),
         Check(
             "Transmission telemetry data",
@@ -482,6 +485,16 @@ def steering_checks(
             ),
         ),
     ]
+    if expected_firmware is not None:
+        observed_firmware = system.get("firmware")
+        checks.append(
+            Check(
+                "Teensy firmware identity",
+                observed_firmware == expected_firmware,
+                f"expected={expected_firmware}; observed={observed_firmware}",
+            )
+        )
+    return checks
 
 
 def print_checks(checks: list[Check]) -> bool:
@@ -515,6 +528,10 @@ def main() -> int:
         type=int,
         default=DEFAULT_NEUTRAL_JRK_TARGET,
         help=f"expected requested/read-back JRK target in Pause (default {DEFAULT_NEUTRAL_JRK_TARGET})",
+    )
+    parser.add_argument(
+        "--expected-firmware",
+        help="require this firmware identity from the Teensy startup telemetry",
     )
     args = parser.parse_args()
     if args.sample_seconds <= 0 or args.heading_wait_seconds <= 0:
@@ -556,6 +573,7 @@ def main() -> int:
             steering_samples,
             args.sample_seconds,
             args.neutral_jrk_target,
+            args.expected_firmware,
         )
     )
 

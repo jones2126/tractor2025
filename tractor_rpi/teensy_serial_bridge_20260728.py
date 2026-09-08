@@ -13,6 +13,10 @@ CHANGED 20260728:
   - Preserve the Teensy source timestamp and steering sequence number so
     consumers can distinguish fresh control samples from cached UDP values.
   - Retain the original steering keys for backward compatibility.
+
+CHANGED 20260908:
+  - Publish the Teensy firmware identity and steering rate received in SYS
+    startup telemetry so mission pre-flight can require the matching build.
 """
 
 import serial
@@ -415,6 +419,8 @@ class TeensySerialBridge:
         if 'SYSTEM' in self.latest_data:
             d = self.latest_data['SYSTEM']
             message['system'] = {
+                'firmware': d.get('fw'),
+                'steer_hz': d.get('steer_hz'),
                 'heartbeat_age': current_time - d.get('last_update', current_time)
             }
 
