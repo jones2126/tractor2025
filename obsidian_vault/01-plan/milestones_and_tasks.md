@@ -4,27 +4,37 @@
 > [!note] How this list is organized
 > **Today** is the short working queue. **Next Field Test** is the checklist for the next outing. Sections **A–G** are the canonical backlog by subsystem. Routine start-up and shut-down checklists stay at the top for field use.
 >
-> Last workflow review: **2026-07-27**
+> Last workflow review: **2026-09-08**
 
 ## 🟡 Field Test Start-up
-- [ ] Power up RTKBase, Base Router, Base Starlink Mini - Suggestion: Turn off router switch on the back; Connect; Then turn on and watch LED to confirm power.  Takes 3 minutes for network TractorField to appear.
-- [ ] Check if TractorField is being broadcast (e.g. Check if TractorField is showing in laptop wi-fi list)
-- [ ] If needed, open Starlink App; Check if Starlink Mini is online
-- [ ] Once you have TractorField you can log on to the router and see what is connected http://192.168.10.1/webpages/index.html#/login  ; watch to make sure Base, Laptop and tractor are connected
-- [ ] Log on to RTK Base and reset download files $ python3 /home/al/tractor2025/RTKBase/Bridgeville/esp32_downloader_20260623.py download_delete ; Then check status and make sure file is growing
+- [ ] Power up the RTK base, base router, and Base Starlink Mini. Turn off the router switch on the back before connecting power, then turn it on and watch its LED. Allow approximately 3 minutes for `TractorField` to appear.
+- [ ] Confirm `TractorField` appears in the laptop Wi-Fi list and connect to it.
+- [ ] If needed, open the Starlink app and confirm the Starlink Mini is online.
+- [ ] Open the [GL.iNet router page](http://192.168.10.1/webpages/index.html#/login) and confirm the RTK base, laptop, and tractor are connected.
+- [ ] Log on to the RTK base and download/reset the previous ESP32 log: `python3 /home/al/tractor2025/RTKBase/Bridgeville/esp32_downloader_20260623.py download_delete`. Confirm it reports `SUCCESS: Download and delete completed`, including a non-zero line count and saved filename. Wait briefly, then run the same command with `status` in place of `download_delete` and confirm the new source log is growing.
 - [ ] Run the base station survey if needed — see the runbook:
   1. `cd /home/al/tractor2025/RTKBase/setup`
   2. Run `./skytraq_rtk_base_survey.sh`. The `Run-time survey length` value should count down. If it does not, check that the antenna is connected to the port in line with the USB connector.
   3. Review the generated candidate: `python3 skytraq_rtk_base_commit_step_2.py --config "<candidate.json>"`
   4. Apply it only after review: `python3 skytraq_rtk_base_commit_step_2.py --commit --config "<candidate.json>"`
-- [ ] Turn on radio - check radio connectivity
-- [ ] Power on tractor01
-- [ ] Log on to the GL.iNet router and check that the status script is running; or, from tractor01, run `python3 /home/al/tractor2025/tractor_rpi/testing/router_wifi_tcp_listener_TESTING.py`
-- [ ] Run sudo python3 /home/al/mission_preflight_20260804.py  (update location to tractor2025\tractor_rpi\testing - this is a consolidated safety check)
-- [ ] Check LED4 on radio control for green (i.e. RTK Fix)
-- [ ] Check key services are running: $ cd /home/al/tractor2025/tractor_rpi  ; $ ./check_services.sh
-- [ ] Start data logging -- Use nohup with output redirected to a log file: $ nohup python3 /home/al/tractor2025/tractor_rpi/field_test_logger_20260828.py > /home/al/field_logs/logger_console.log 2>&1 &
-- [ ] Note the PID it prints (e.g. [1] 12345) so you can kill it cleanly later: $ kill 12345
+- [ ] Walk the planned route and remove new obstacles. Check the GPS antennas, wiring/connectors, tires, steering linkage, and visible fluid leaks.
+- [ ] Disengage the mower deck and keep it disengaged for calibration missions. Keep people and animals clear of the route.
+- [ ] Turn on the handheld radio, select **Pause**, and confirm radio connectivity. Put its transmission control in the known Manual-neutral range rather than relying on the physical center indent.
+- [ ] Power on tractor01. Keep it in **Pause** and keep the e-stop immediately accessible.
+- [ ] Check LED4 on the radio control for green (RTK Fix).
+- [ ] Confirm router status from the GL.iNet page; if diagnostics are needed, run this on tractor01: `python3 /home/al/tractor2025/tractor_rpi/testing/router_wifi_tcp_listener_TESTING.py`
+- [ ] Record the deployed revision for the run: `cd /home/al/tractor2025 && git log -1 --oneline`. Confirm it is the expected revision and do not pull or change code immediately before driving unless the change has been reviewed.
+- [ ] Run the consolidated stationary check while the tractor is in Pause: `cd /home/al/tractor2025 && sudo python3 tractor_rpi/testing/mission_preflight_20260804.py`
+  - Continue only when the final line is `MISSION PREFLIGHT PASS`.
+  - If it fails, do not select Auto. The check already covers the mission-critical services, devices, corrections, RTK position, heading, stationary speed, steering, and JRK telemetry.
+  - `tractor_rpi/check_services.sh` is optional troubleshooting; its disabled LED-controller result is not currently a navigation prerequisite.
+- [ ] In **Manual**, drive to the mission's reviewed starting position. Stop, select **Pause**, and point the tractor in the expected starting direction.
+- [ ] For the Ring 13 three-speed mission, run this single-line command: `cd /home/al/tractor2025/field_testing/sites/62_Collins_polygon_1/mission_plans/20260907_ring13_three_speed_calibration && ./ring13_three_speed_20260907.sh`
+  - The launcher rebuilds and validates the mission, reruns pre-flight, checks the start position and heading, starts the field logger, and starts Pure Pursuit.
+  - Do **not** start a separate field logger for this mission; the launcher will reject an already-running logger.
+  - Type the exact requested confirmation only after every check passes. Remain in Pause until the controller is ready and its output looks normal, then select Auto only when the route is clear.
+  - Stay beside the controls. For an abnormal condition, select **Pause** immediately; use the e-stop if necessary. `Ctrl+C` stops the controller and the launcher's field logger.
+- [ ] For a test whose launcher does **not** manage logging, start `field_test_logger_20260828.py` separately, note its output filename and PID, confirm its row count increases, and stop it cleanly when the test ends.
 
 ---
 
