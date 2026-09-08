@@ -1,0 +1,5 @@
+command_mps,expected_jrk_target,observed_actual_target_mode,steady_duration_s,speed_mean_mps,speed_median_mps,speed_stdev_mps,speed_p05_mps,speed_p95_mps,median_percent_of_command,feedback_median,feedback_minus_target_median,steady_duty_target_median,steady_duty_applied_median,whole_stage_peak_abs_duty_target,whole_stage_peak_abs_duty_applied,radio_loss_mode9_approx_s,maximum_jrk_halting_error_bits,jrk_timeout_counter_increase
+0.75,2429,2429,31.490000000000002,0.3554809523809524,0.361,0.04606250111132133,0.266,0.424,48.13333333333333,2424.0,-5.0,0.0,0.0,2135.0,600.0,0.0,0,0
+1.0,2288,2288,45.03999999999999,1.034578539823009,1.041,0.06939030815351384,0.924,1.1439499999999994,104.1,2284.0,-4.0,0.0,0.0,1335.0,600.0,0.0,0,0
+1.25,2240,2240,37.839999999999975,1.214096052631579,1.223,0.07464807187901201,1.08,1.328,97.84,2236.0,-4.0,0.0,0.0,3359.0,600.0,0.6,0,0
+1.5,2200,2200,30.08000000000004,1.3394875621890547,1.344,0.08422605101133586,1.196,1.4719,89.60000000000001,2199.0,-1.0,0.0,0.0,3829.0,600.0,31.4,0,0

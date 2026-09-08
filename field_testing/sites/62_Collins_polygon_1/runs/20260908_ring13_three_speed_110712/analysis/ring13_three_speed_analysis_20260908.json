@@ -1,0 +1,318 @@
+[
+  {
+    "command_mps": 0.75,
+    "expected_jrk_target": 2429,
+    "observed_requested_target_mode": 2429,
+    "observed_actual_target_mode": 2429,
+    "command_first_s": 1.7,
+    "command_last_s": 70.81,
+    "command_samples": 1366,
+    "steady_runs": [
+      {
+        "eligible_start_s": 29.3,
+        "eligible_end_s": 70.81,
+        "eligible_duration_s": 41.510000000000005,
+        "steady_start_s": 34.32,
+        "steady_end_s": 65.81,
+        "steady_samples": 630
+      }
+    ],
+    "steady_duration_s": 31.490000000000002,
+    "speed_mps": {
+      "count": 630,
+      "mean": 0.3554809523809524,
+      "median": 0.361,
+      "stdev": 0.04606250111132133,
+      "min": 0.247,
+      "p05": 0.266,
+      "p95": 0.424,
+      "max": 0.453
+    },
+    "median_minus_command_mps": -0.389,
+    "median_percent_of_command": 48.13333333333333,
+    "mean_minus_command_mps": -0.3945190476190476,
+    "mean_percent_of_command": 47.39746031746032,
+    "scaled_feedback": {
+      "count": 630,
+      "mean": 2424.0,
+      "median": 2424.0,
+      "stdev": 0.0,
+      "min": 2424.0,
+      "p05": 2424.0,
+      "p95": 2424.0,
+      "max": 2424.0
+    },
+    "feedback_minus_target_median": -5.0,
+    "steady_duty_cycle_target": {
+      "count": 630,
+      "mean": 0.0,
+      "median": 0.0,
+      "stdev": 0.0,
+      "min": 0.0,
+      "p05": 0.0,
+      "p95": 0.0,
+      "max": 0.0
+    },
+    "steady_duty_cycle_applied": {
+      "count": 630,
+      "mean": 0.0,
+      "median": 0.0,
+      "stdev": 0.0,
+      "min": 0.0,
+      "p05": 0.0,
+      "p95": 0.0,
+      "max": 0.0
+    },
+    "steady_nonzero_duty_target_percent": 0.0,
+    "steady_nonzero_duty_applied_percent": 0.0,
+    "whole_stage_peak_abs_duty_target": 2135.0,
+    "whole_stage_peak_abs_duty_applied": 600.0,
+    "radio_loss_mode9_samples": 0,
+    "radio_loss_mode9_approx_s": 0.0,
+    "maximum_jrk_halting_error_bits": 0,
+    "jrk_timeout_counter_increase": 0
+  },
+  {
+    "command_mps": 1.0,
+    "expected_jrk_target": 2288,
+    "observed_requested_target_mode": 2288,
+    "observed_actual_target_mode": 2288,
+    "command_first_s": 70.89,
+    "command_last_s": 141.41,
+    "command_samples": 1404,
+    "steady_runs": [
+      {
+        "eligible_start_s": 70.89,
+        "eligible_end_s": 89.82,
+        "eligible_duration_s": 18.929999999999993,
+        "steady_start_s": 75.89,
+        "steady_end_s": 84.81,
+        "steady_samples": 180
+      },
+      {
+        "eligible_start_s": 95.29,
+        "eligible_end_s": 141.41,
+        "eligible_duration_s": 46.11999999999999,
+        "steady_start_s": 100.29,
+        "steady_end_s": 136.41,
+        "steady_samples": 724
+      }
+    ],
+    "steady_duration_s": 45.03999999999999,
+    "speed_mps": {
+      "count": 904,
+      "mean": 1.034578539823009,
+      "median": 1.041,
+      "stdev": 0.06939030815351384,
+      "min": 0.845,
+      "p05": 0.924,
+      "p95": 1.1439499999999994,
+      "max": 1.2
+    },
+    "median_minus_command_mps": 0.040999999999999925,
+    "median_percent_of_command": 104.1,
+    "mean_minus_command_mps": 0.03457853982300896,
+    "mean_percent_of_command": 103.45785398230089,
+    "scaled_feedback": {
+      "count": 904,
+      "mean": 2284.0,
+      "median": 2284.0,
+      "stdev": 0.0,
+      "min": 2284.0,
+      "p05": 2284.0,
+      "p95": 2284.0,
+      "max": 2284.0
+    },
+    "feedback_minus_target_median": -4.0,
+    "steady_duty_cycle_target": {
+      "count": 904,
+      "mean": 0.0,
+      "median": 0.0,
+      "stdev": 0.0,
+      "min": 0.0,
+      "p05": 0.0,
+      "p95": 0.0,
+      "max": 0.0
+    },
+    "steady_duty_cycle_applied": {
+      "count": 904,
+      "mean": 0.0,
+      "median": 0.0,
+      "stdev": 0.0,
+      "min": 0.0,
+      "p05": 0.0,
+      "p95": 0.0,
+      "max": 0.0
+    },
+    "steady_nonzero_duty_target_percent": 0.0,
+    "steady_nonzero_duty_applied_percent": 0.0,
+    "whole_stage_peak_abs_duty_target": 1335.0,
+    "whole_stage_peak_abs_duty_applied": 600.0,
+    "radio_loss_mode9_samples": 0,
+    "radio_loss_mode9_approx_s": 0.0,
+    "maximum_jrk_halting_error_bits": 0,
+    "jrk_timeout_counter_increase": 0
+  },
+  {
+    "command_mps": 1.25,
+    "expected_jrk_target": 2240,
+    "observed_requested_target_mode": 2240,
+    "observed_actual_target_mode": 2240,
+    "command_first_s": 141.49,
+    "command_last_s": 203.2,
+    "command_samples": 1232,
+    "steady_runs": [
+      {
+        "eligible_start_s": 141.49,
+        "eligible_end_s": 166.82,
+        "eligible_duration_s": 25.329999999999984,
+        "steady_start_s": 146.49,
+        "steady_end_s": 161.82,
+        "steady_samples": 308
+      },
+      {
+        "eligible_start_s": 170.69,
+        "eligible_end_s": 203.2,
+        "eligible_duration_s": 32.50999999999999,
+        "steady_start_s": 175.69,
+        "steady_end_s": 198.2,
+        "steady_samples": 452
+      }
+    ],
+    "steady_duration_s": 37.839999999999975,
+    "speed_mps": {
+      "count": 760,
+      "mean": 1.214096052631579,
+      "median": 1.223,
+      "stdev": 0.07464807187901201,
+      "min": 0.992,
+      "p05": 1.08,
+      "p95": 1.328,
+      "max": 1.468
+    },
+    "median_minus_command_mps": -0.026999999999999913,
+    "median_percent_of_command": 97.84,
+    "mean_minus_command_mps": -0.03590394736842106,
+    "mean_percent_of_command": 97.12768421052631,
+    "scaled_feedback": {
+      "count": 760,
+      "mean": 2237.621052631579,
+      "median": 2236.0,
+      "stdev": 1.965064830081333,
+      "min": 2236.0,
+      "p05": 2236.0,
+      "p95": 2240.0,
+      "max": 2240.0
+    },
+    "feedback_minus_target_median": -4.0,
+    "steady_duty_cycle_target": {
+      "count": 760,
+      "mean": 0.0,
+      "median": 0.0,
+      "stdev": 0.0,
+      "min": 0.0,
+      "p05": 0.0,
+      "p95": 0.0,
+      "max": 0.0
+    },
+    "steady_duty_cycle_applied": {
+      "count": 760,
+      "mean": 0.0,
+      "median": 0.0,
+      "stdev": 0.0,
+      "min": 0.0,
+      "p05": 0.0,
+      "p95": 0.0,
+      "max": 0.0
+    },
+    "steady_nonzero_duty_target_percent": 0.0,
+    "steady_nonzero_duty_applied_percent": 0.0,
+    "whole_stage_peak_abs_duty_target": 3359.0,
+    "whole_stage_peak_abs_duty_applied": 600.0,
+    "radio_loss_mode9_samples": 12,
+    "radio_loss_mode9_approx_s": 0.6,
+    "maximum_jrk_halting_error_bits": 0,
+    "jrk_timeout_counter_increase": 0
+  },
+  {
+    "command_mps": 1.5,
+    "expected_jrk_target": 2200,
+    "observed_requested_target_mode": 2200,
+    "observed_actual_target_mode": 2200,
+    "command_first_s": 203.29,
+    "command_last_s": 292.51,
+    "command_samples": 1754,
+    "steady_runs": [
+      {
+        "eligible_start_s": 210.5,
+        "eligible_end_s": 224.81,
+        "eligible_duration_s": 14.310000000000002,
+        "steady_start_s": 215.5,
+        "steady_end_s": 219.8,
+        "steady_samples": 87
+      },
+      {
+        "eligible_start_s": 256.7,
+        "eligible_end_s": 292.51,
+        "eligible_duration_s": 35.81,
+        "steady_start_s": 261.71,
+        "steady_end_s": 287.49,
+        "steady_samples": 516
+      }
+    ],
+    "steady_duration_s": 30.08000000000004,
+    "speed_mps": {
+      "count": 603,
+      "mean": 1.3394875621890547,
+      "median": 1.344,
+      "stdev": 0.08422605101133586,
+      "min": 1.065,
+      "p05": 1.196,
+      "p95": 1.4719,
+      "max": 1.586
+    },
+    "median_minus_command_mps": -0.15599999999999992,
+    "median_percent_of_command": 89.60000000000001,
+    "mean_minus_command_mps": -0.16051243781094526,
+    "mean_percent_of_command": 89.29917081260365,
+    "scaled_feedback": {
+      "count": 603,
+      "mean": 2198.353233830846,
+      "median": 2199.0,
+      "stdev": 1.0468757458705933,
+      "min": 2196.0,
+      "p05": 2196.0,
+      "p95": 2199.0,
+      "max": 2199.0
+    },
+    "feedback_minus_target_median": -1.0,
+    "steady_duty_cycle_target": {
+      "count": 603,
+      "mean": 0.0,
+      "median": 0.0,
+      "stdev": 0.0,
+      "min": 0.0,
+      "p05": 0.0,
+      "p95": 0.0,
+      "max": 0.0
+    },
+    "steady_duty_cycle_applied": {
+      "count": 603,
+      "mean": 0.0,
+      "median": 0.0,
+      "stdev": 0.0,
+      "min": 0.0,
+      "p05": 0.0,
+      "p95": 0.0,
+      "max": 0.0
+    },
+    "steady_nonzero_duty_target_percent": 0.0,
+    "steady_nonzero_duty_applied_percent": 0.0,
+    "whole_stage_peak_abs_duty_target": 3829.0,
+    "whole_stage_peak_abs_duty_applied": 600.0,
+    "radio_loss_mode9_samples": 628,
+    "radio_loss_mode9_approx_s": 31.4,
+    "maximum_jrk_halting_error_bits": 0,
+    "jrk_timeout_counter_increase": 0
+  }
+]
