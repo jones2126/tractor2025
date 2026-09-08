@@ -62,6 +62,7 @@
 
 ## 🔴 Today Action Items
 
+- [ ] Improve `configure_heading_f9p_20260727.py` handling of UBX-CFG-VALSET acknowledgements: retry or continue to verified readback when an ACK is missed, clearly distinguish ACK-ACK from ACK-NAK, and report whether each requested setting actually persisted. On 2026-09-08 the utility reported `no ACK received for UBX 06/8A`, but after the service restarted the complete mission pre-flight passed and NAV-RELPOSNED was healthy at approximately 5 Hz.
 - [ ] Expand RTK logging so the next fix-loss event can be diagnosed (RELPOSNED flags, baseline length, carrier state, correction state, and per-receiver validity).
 - [ ] Plot cross-track error and choose a repeatable score (for example RMS and 95th percentile) for comparing runs.
 - [ ] Resolve the steering asymmetry: measured minimum radius was approximately 1.63 m right versus 1.05 m left.
