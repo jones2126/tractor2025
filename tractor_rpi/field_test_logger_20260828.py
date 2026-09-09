@@ -97,6 +97,9 @@ CSV_COLUMNS = [
     "jrk_integral",               # JRK PID integral accumulator
     "jrk_duty_cycle_target",      # signed desired motor duty (-600..600 nominal)
     "jrk_duty_cycle",             # signed applied motor duty (-600..600)
+    "jrk_motor_current_mA",        # JRK G2 measured motor current
+    "jrk_peak_motor_current_mA",   # peak 10 Hz sample since last TRANS message
+    "jrk_motor_current_valid",     # 1 when the latest current read succeeded
     "jrk_errors_halting",         # active error bitmask
     "jrk_errors_occurred",        # latched error bitmask
     "jrk_sequence",               # successful diagnostic snapshot counter
@@ -346,6 +349,9 @@ def build_row(start_time: float) -> dict:
         "jrk_integral":            trans.get('integral', ''),
         "jrk_duty_cycle_target":   trans.get('duty_cycle_target', ''),
         "jrk_duty_cycle":          trans.get('duty_cycle', ''),
+        "jrk_motor_current_mA":     trans.get('motor_current_mA', ''),
+        "jrk_peak_motor_current_mA": trans.get('peak_motor_current_mA', ''),
+        "jrk_motor_current_valid":  trans.get('motor_current_valid', ''),
         "jrk_errors_halting":      trans.get('errors_halting', ''),
         "jrk_errors_occurred":     trans.get('errors_occurred', ''),
         "jrk_sequence":            trans.get('jrk_sequence', ''),

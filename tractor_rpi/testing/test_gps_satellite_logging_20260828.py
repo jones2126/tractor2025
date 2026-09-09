@@ -16,6 +16,7 @@ TRACTOR_RPI = Path(__file__).resolve().parents[1]
 def load_module(name, path):
     spec = importlib.util.spec_from_file_location(name, path)
     module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
     spec.loader.exec_module(module)
     return module
 
@@ -34,6 +35,14 @@ rtcm_server = load_module(
 heading_analysis = load_module(
     "analyze_heading_f9p_20260828_test",
     TRACTOR_RPI.parent / "field_testing" / "tools" / "analyze_heading_f9p_20260828.py",
+)
+teensy_bridge = load_module(
+    "teensy_serial_bridge_20260728_test",
+    TRACTOR_RPI / "teensy_serial_bridge_20260728.py",
+)
+mission_preflight = load_module(
+    "mission_preflight_20260804_test",
+    TRACTOR_RPI / "testing" / "mission_preflight_20260804.py",
 )
 
 
@@ -110,17 +119,106 @@ class LoggerFieldTests(unittest.TestCase):
         )
         logger.latest_status.clear()
         logger.latest_status.update(
-            {"system": {"firmware": "teensy_main_20260908"}}
+            {
+                "system": {"firmware": "teensy_main_20260908_1p8_test"},
+                "transmission": {
+                    "motor_current_mA": 1425,
+                    "peak_motor_current_mA": 2085,
+                    "motor_current_valid": 1,
+                },
+            }
         )
         row = logger.build_row(time.time())
 
         self.assertNotIn("numSV", row)
-        self.assertEqual(row["teensy_firmware"], "teensy_main_20260908")
+        self.assertEqual(row["teensy_firmware"], "teensy_main_20260908_1p8_test")
+        self.assertEqual(row["jrk_motor_current_mA"], 1425)
+        self.assertEqual(row["jrk_peak_motor_current_mA"], 2085)
+        self.assertEqual(row["jrk_motor_current_valid"], 1)
         self.assertEqual(row["base_numSV_used"], 31)
         self.assertEqual(row["base_numSV_visible"], 36)
         self.assertEqual(row["heading_numSV_used"], 8)
         self.assertEqual(row["heading_numSV_visible"], 11)
         self.assertEqual(set(row), set(logger.CSV_COLUMNS))
+
+
+class JrkCurrentTelemetryTests(unittest.TestCase):
+    def test_bridge_maps_current_fields(self):
+        bridge = teensy_bridge.TeensySerialBridge.__new__(
+            teensy_bridge.TeensySerialBridge
+        )
+        now = time.time()
+        bridge.latest_data = {
+            "TRANS": {
+                "jma": 1425,
+                "jmp": 2085,
+                "jmv": 1,
+                "last_update": now,
+            }
+        }
+        bridge.last_cmd_vel = {
+            "linear_x": 0.0,
+            "angular_z": 0.0,
+            "timestamp": now,
+        }
+        bridge.cmd_vel_received_count = 0
+        bridge.cmd_vel_sent_count = 0
+        bridge.cmd_vel_echo_count = 0
+        bridge.current_gps_status = "UNKNOWN"
+
+        transmission = bridge.create_broadcast_message()["transmission"]
+        self.assertEqual(transmission["motor_current_mA"], 1425)
+        self.assertEqual(transmission["peak_motor_current_mA"], 2085)
+        self.assertEqual(transmission["motor_current_valid"], 1)
+
+    def test_preflight_requires_valid_current_for_1p8_firmware(self):
+        samples = []
+        for sequence in range(1, 102):
+            samples.append(
+                (
+                    sequence * 0.05,
+                    {
+                        "steering": {
+                            "sequence": sequence,
+                            "mode": 2,
+                            "state": "PAUSE",
+                            "pwm": 0,
+                        },
+                        "transmission": {
+                            "mode": 2,
+                            "target": 2836,
+                            "current": 2836,
+                            "actual_target": 2836,
+                            "scaled_feedback": 2836,
+                            "duty_cycle_target": 0,
+                            "duty_cycle": 0,
+                            "errors_halting": 0,
+                            "jrk_sequence": sequence // 4 + 1,
+                            "jrk_valid": 1,
+                            "jrk_read_latency_ms": 1,
+                            "jrk_timeouts": 0,
+                            "cmd_vel_mps": 0,
+                            "motor_current_mA": 25,
+                            "peak_motor_current_mA": 40,
+                            "motor_current_valid": 1,
+                        },
+                        "system": {
+                            "firmware": "teensy_main_20260908_1p8_test"
+                        },
+                    },
+                )
+            )
+
+        checks = mission_preflight.steering_checks(
+            samples,
+            seconds=5.0,
+            neutral_jrk_target=2836,
+            expected_firmware="teensy_main_20260908_1p8_test",
+        )
+        current_check = next(
+            check for check in checks if check.name == "JRK motor-current telemetry"
+        )
+        self.assertTrue(current_check.passed, current_check.detail)
 
 
 class HeadingAnalysisTests(unittest.TestCase):

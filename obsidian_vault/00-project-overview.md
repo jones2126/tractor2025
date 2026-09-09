@@ -99,12 +99,13 @@ Local clone: `~/tractor2025/`
 See `firmware_versions.md` for flash history and commit tracking.
 
 ### Tractor Teensy 4.1 Firmware
-**Selected next test build:** `tractor_teensy/src/teensy_main_20260908.cpp`
+**Selected next test build:** `tractor_teensy/src/teensy_main_20260908_1p8_test.cpp`
 
-Four-value Ring 13 calibration retest; must be flashed and verified by mission
-pre-flight before use. The completed 2026-09-08 run used
-`tractor_teensy/src/teensy_main_20260907.cpp` from repository revision
-`7545260`.
+Optional Ring 13 calibration through 1.8 m/s; must be flashed and verified by
+mission pre-flight before use. It adds actual JRK motor-current telemetry. The
+completed four-value 2026-09-08 run used
+`tractor_teensy/src/teensy_main_20260908.cpp` from repository revision
+`841bca4`.
 Steering PID, transmission (JRK G2), NRF24 radio receive, e-stop relay, serial bridge to RPi.
 Archive of older versions: `tractor_teensy/src/archive/`
 

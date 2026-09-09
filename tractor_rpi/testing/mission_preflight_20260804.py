@@ -494,6 +494,35 @@ def steering_checks(
                 f"expected={expected_firmware}; observed={observed_firmware}",
             )
         )
+    if expected_firmware == "teensy_main_20260908_1p8_test":
+        current_samples = [
+            float(trans["motor_current_mA"])
+            for trans in transmission_samples
+            if finite_number(trans.get("motor_current_mA"))
+            and finite_number(trans.get("motor_current_valid"))
+            and int(float(trans["motor_current_valid"])) == 1
+        ]
+        peak_samples = [
+            float(trans["peak_motor_current_mA"])
+            for trans in transmission_samples
+            if finite_number(trans.get("peak_motor_current_mA"))
+            and finite_number(trans.get("motor_current_valid"))
+            and int(float(trans["motor_current_valid"])) == 1
+        ]
+        current_fraction = len(current_samples) / len(transmission_samples)
+        checks.append(
+            Check(
+                "JRK motor-current telemetry",
+                current_fraction >= REQUIRED_DATA_FRACTION and bool(peak_samples),
+                (
+                    f"valid in {current_fraction:.1%} of samples; "
+                    f"median current={statistics.median(current_samples) / 1000.0:.3f} A; "
+                    f"maximum recent peak={max(peak_samples) / 1000.0:.3f} A"
+                    if current_samples and peak_samples
+                    else f"valid in only {current_fraction:.1%} of samples"
+                ),
+            )
+        )
     return checks
 
 

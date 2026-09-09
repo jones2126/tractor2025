@@ -49,7 +49,7 @@ Full documentation: `obsidian_vault/00-project-overview.md`
 ### Current Firmware
 | Board | File |
 |-------|------|
-| Tractor Teensy 4.1 | `tractor_teensy/src/teensy_main_20260908.cpp` (selected four-value Ring 13 test build; must be flashed before the retest) |
+| Tractor Teensy 4.1 | `tractor_teensy/src/teensy_main_20260908_1p8_test.cpp` (selected optional 1.2/1.5/1.8 m/s Ring 13 test build; not yet flashed) |
 | Handheld RC (Teensy 3.2) | `radiocontrol_nrf24radio/src/Rccntrl_rf24_20260517.cpp` |
 
 ### Active Development Focus (as of 2026-05-20)

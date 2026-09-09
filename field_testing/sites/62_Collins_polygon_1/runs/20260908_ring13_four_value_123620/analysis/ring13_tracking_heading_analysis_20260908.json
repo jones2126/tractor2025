@@ -1,0 +1,389 @@
+{
+  "stages": [
+    {
+      "intended_speed_mps": 0.75,
+      "route": "approach",
+      "cycle_count": 733,
+      "stage_duration_s": 36.650000000000034,
+      "driving_cycle_percent": 99.86357435197817,
+      "cross_track_error_m": {
+        "count": 732,
+        "mean": 0.6158754098360656,
+        "median": 0.9002,
+        "p90": 0.9176,
+        "p95": 0.9191,
+        "max": 0.9352
+      },
+      "signed_lateral_error_m": {
+        "count": 732,
+        "mean": -0.565711475409836,
+        "median": -0.9002,
+        "p90": 0.014069999999998788,
+        "p95": 0.26126499999999986,
+        "max": 0.4571
+      },
+      "cte_at_or_below_0p25m_percent": 30.737704918032787,
+      "cte_above_0p50m_percent": 61.74863387978142,
+      "steering_saturated_percent": 61.0655737704918,
+      "heading_valid_percent": 99.86357435197817,
+      "heading_invalid_total_s": 0.050000000000000044,
+      "heading_invalid_event_count": 1,
+      "heading_invalid_longest_s": 0.050000000000000044,
+      "heading_invalid_progress_bin_counts": {
+        "0": 1
+      },
+      "rtk_fixed_percent": 99.86357435197817,
+      "fix_quality_wait_s": 0.0,
+      "heading_signal": {
+        "heading_numSV_used": {
+          "median": 30.0,
+          "min": 29.0,
+          "max": 32.0
+        },
+        "heading_numSV_visible": {
+          "median": 51.0,
+          "min": 47.0,
+          "max": 51.0
+        },
+        "heading_cno_mean_dbhz": {
+          "median": 42.1,
+          "min": 41.6,
+          "max": 43.9
+        },
+        "base_numSV_used": {
+          "median": 29.0,
+          "min": 26.0,
+          "max": 32.0
+        },
+        "base_cno_mean_dbhz": {
+          "median": 39.3,
+          "min": 38.1,
+          "max": 41.5
+        },
+        "diff_age": {
+          "median": 0.95,
+          "min": 0.5,
+          "max": 1.4
+        }
+      },
+      "progress_bin_median_cte_m": {
+        "1": 0.914,
+        "2": 0.8428,
+        "3": 0.7701,
+        "4": 0.6482,
+        "5": 0.3975,
+        "6": 0.14305,
+        "7": 0.0893,
+        "8": 0.0895,
+        "9": 0.1501,
+        "10": 0.1372,
+        "11": 0.10895,
+        "12": 0.0985,
+        "13": 0.156,
+        "14": 0.1387,
+        "15": 0.0596,
+        "16": 0.2806,
+        "17": 0.37375,
+        "18": 0.25425,
+        "19": 0.2822
+      }
+    },
+    {
+      "intended_speed_mps": 1.0,
+      "route": "ring lap 1",
+      "cycle_count": 1531,
+      "stage_duration_s": 76.55000000000007,
+      "driving_cycle_percent": 94.77465708687133,
+      "cross_track_error_m": {
+        "count": 1451,
+        "mean": 0.3861906271536871,
+        "median": 0.3452,
+        "p90": 0.5962,
+        "p95": 0.8027,
+        "max": 1.1724
+      },
+      "signed_lateral_error_m": {
+        "count": 1451,
+        "mean": -0.37185995864920746,
+        "median": -0.3427,
+        "p90": -0.2192,
+        "p95": -0.1865,
+        "max": 0.8053
+      },
+      "cte_at_or_below_0p25m_percent": 20.33080634045486,
+      "cte_above_0p50m_percent": 18.332184700206753,
+      "steering_saturated_percent": 0.13783597518952448,
+      "heading_valid_percent": 96.01567602873939,
+      "heading_invalid_total_s": 3.0500000000000025,
+      "heading_invalid_event_count": 12,
+      "heading_invalid_longest_s": 0.9000000000000008,
+      "heading_invalid_progress_bin_counts": {
+        "6": 18,
+        "7": 8,
+        "8": 12,
+        "9": 4,
+        "10": 3,
+        "11": 4,
+        "16": 4,
+        "18": 8
+      },
+      "rtk_fixed_percent": 97.58327890267799,
+      "fix_quality_wait_s": 1.8500000000000016,
+      "heading_signal": {
+        "heading_numSV_used": {
+          "median": 32.0,
+          "min": 29.0,
+          "max": 32.0
+        },
+        "heading_numSV_visible": {
+          "median": 51.0,
+          "min": 47.0,
+          "max": 52.0
+        },
+        "heading_cno_mean_dbhz": {
+          "median": 43.2,
+          "min": 41.6,
+          "max": 44.2
+        },
+        "base_numSV_used": {
+          "median": 31.0,
+          "min": 26.0,
+          "max": 32.0
+        },
+        "base_cno_mean_dbhz": {
+          "median": 40.9,
+          "min": 39.1,
+          "max": 41.9
+        },
+        "diff_age": {
+          "median": 0.9,
+          "min": 0.5,
+          "max": 1.5
+        }
+      },
+      "progress_bin_median_cte_m": {
+        "0": 0.4631,
+        "1": 0.24725,
+        "2": 0.2364,
+        "3": 0.2152,
+        "4": 0.2196,
+        "5": 0.3553,
+        "6": 0.9341999999999999,
+        "7": 0.2978,
+        "8": 0.4189,
+        "9": 0.5121,
+        "10": 0.2883,
+        "11": 0.2491,
+        "12": 0.3464,
+        "13": 0.3959,
+        "14": 0.3513,
+        "15": 0.35055000000000003,
+        "16": 0.5014,
+        "17": 0.34325,
+        "18": 0.2859,
+        "19": 0.42525
+      }
+    },
+    {
+      "intended_speed_mps": 1.2,
+      "route": "ring lap 2",
+      "cycle_count": 1220,
+      "stage_duration_s": 61.00000000000006,
+      "driving_cycle_percent": 98.36065573770492,
+      "cross_track_error_m": {
+        "count": 1200,
+        "mean": 0.38697933333333334,
+        "median": 0.33665,
+        "p90": 0.6365500000000004,
+        "p95": 0.7523,
+        "max": 1.102
+      },
+      "signed_lateral_error_m": {
+        "count": 1200,
+        "mean": -0.38697933333333334,
+        "median": -0.33665,
+        "p90": -0.23048,
+        "p95": -0.1962,
+        "max": -0.101
+      },
+      "cte_at_or_below_0p25m_percent": 16.25,
+      "cte_above_0p50m_percent": 20.083333333333332,
+      "steering_saturated_percent": 0.0,
+      "heading_valid_percent": 98.36065573770492,
+      "heading_invalid_total_s": 1.0000000000000009,
+      "heading_invalid_event_count": 5,
+      "heading_invalid_longest_s": 0.20000000000000018,
+      "heading_invalid_progress_bin_counts": {
+        "1": 8,
+        "5": 4,
+        "7": 4,
+        "10": 4
+      },
+      "rtk_fixed_percent": 100.0,
+      "fix_quality_wait_s": 0.0,
+      "heading_signal": {
+        "heading_numSV_used": {
+          "median": 31.0,
+          "min": 0.0,
+          "max": 32.0
+        },
+        "heading_numSV_visible": {
+          "median": 49.0,
+          "min": 47.0,
+          "max": 51.0
+        },
+        "heading_cno_mean_dbhz": {
+          "median": 43.4,
+          "min": 41.5,
+          "max": 44.8
+        },
+        "base_numSV_used": {
+          "median": 31.0,
+          "min": 29.0,
+          "max": 32.0
+        },
+        "base_cno_mean_dbhz": {
+          "median": 40.9,
+          "min": 38.6,
+          "max": 42.6
+        },
+        "diff_age": {
+          "median": 1.0,
+          "min": 0.5,
+          "max": 1.5
+        }
+      },
+      "progress_bin_median_cte_m": {
+        "0": 0.6449,
+        "1": 0.2989,
+        "2": 0.2911,
+        "3": 0.2571,
+        "4": 0.22825,
+        "5": 0.36445,
+        "6": 0.766,
+        "7": 0.3519,
+        "8": 0.3415,
+        "9": 0.52875,
+        "10": 0.3167,
+        "11": 0.2557,
+        "12": 0.3043,
+        "13": 0.4021,
+        "14": 0.34904999999999997,
+        "15": 0.3434,
+        "16": 0.5162,
+        "17": 0.3008,
+        "18": 0.2807,
+        "19": 0.4155
+      }
+    },
+    {
+      "intended_speed_mps": 1.5,
+      "route": "ring lap 3",
+      "cycle_count": 1064,
+      "stage_duration_s": 53.200000000000045,
+      "driving_cycle_percent": 92.76315789473684,
+      "cross_track_error_m": {
+        "count": 987,
+        "mean": 0.3904706180344478,
+        "median": 0.3435,
+        "p90": 0.6401399999999999,
+        "p95": 0.7888399999999995,
+        "max": 1.2595
+      },
+      "signed_lateral_error_m": {
+        "count": 987,
+        "mean": -0.3904706180344478,
+        "median": -0.3435,
+        "p90": -0.191,
+        "p95": -0.15217000000000006,
+        "max": -0.0318
+      },
+      "cte_at_or_below_0p25m_percent": 21.88449848024316,
+      "cte_above_0p50m_percent": 22.289766970618036,
+      "steering_saturated_percent": 0.9118541033434651,
+      "heading_valid_percent": 93.23308270676692,
+      "heading_invalid_total_s": 3.600000000000003,
+      "heading_invalid_event_count": 7,
+      "heading_invalid_longest_s": 2.450000000000002,
+      "heading_invalid_progress_bin_counts": {
+        "7": 8,
+        "8": 4,
+        "10": 4,
+        "14": 4,
+        "17": 52
+      },
+      "rtk_fixed_percent": 96.61654135338345,
+      "fix_quality_wait_s": 1.8000000000000016,
+      "heading_signal": {
+        "heading_numSV_used": {
+          "median": 31.0,
+          "min": 30.0,
+          "max": 32.0
+        },
+        "heading_numSV_visible": {
+          "median": 51.0,
+          "min": 47.0,
+          "max": 51.0
+        },
+        "heading_cno_mean_dbhz": {
+          "median": 43.1,
+          "min": 40.9,
+          "max": 44.0
+        },
+        "base_numSV_used": {
+          "median": 31.0,
+          "min": 30.0,
+          "max": 32.0
+        },
+        "base_cno_mean_dbhz": {
+          "median": 40.9,
+          "min": 38.1,
+          "max": 42.0
+        },
+        "diff_age": {
+          "median": 1.0,
+          "min": 0.6,
+          "max": 1.5
+        }
+      },
+      "progress_bin_median_cte_m": {
+        "0": 0.6766,
+        "1": 0.28290000000000004,
+        "2": 0.2066,
+        "3": 0.22699999999999998,
+        "4": 0.2095,
+        "5": 0.3277,
+        "6": 0.8979,
+        "7": 0.2432,
+        "8": 0.4099,
+        "9": 0.5754,
+        "10": 0.32055,
+        "11": 0.19795,
+        "12": 0.3337,
+        "13": 0.4015,
+        "14": 0.3539,
+        "15": 0.3547,
+        "16": 0.5105,
+        "17": 0.3243,
+        "18": 0.2448,
+        "19": 0.5053
+      }
+    }
+  ],
+  "comparison": {
+    "fair_comparison_speeds_mps": [
+      1.0,
+      1.2,
+      1.5
+    ],
+    "approach_0p75_excluded_from_speed_correlation": true,
+    "aggregate_pearson_speed_vs_mean_cte": 0.9726004428503412,
+    "aggregate_pearson_speed_vs_median_cte": -0.07389195159512582,
+    "aggregate_pearson_speed_vs_p95_cte": -0.15383667209496918,
+    "aggregate_pearson_speed_vs_heading_invalid_percent": 0.6348342160630648,
+    "aggregate_point_count_warning": 3,
+    "matched_progress_bin_count": 20,
+    "matched_progress_median_cte_difference_1p5_minus_1p0_m": -0.0032000000000000084,
+    "matched_progress_bins_worse_at_1p5_count": 10
+  }
+}

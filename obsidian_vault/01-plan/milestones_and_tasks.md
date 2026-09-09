@@ -29,7 +29,7 @@
   - If it fails, do not select Auto. The check already covers the mission-critical services, devices, corrections, RTK position, heading, stationary speed, steering, and JRK telemetry.
   - `tractor_rpi/check_services.sh` is optional troubleshooting; its disabled LED-controller result is not currently a navigation prerequisite.
 - [ ] In **Manual**, drive to the mission's reviewed starting position. Stop, select **Pause**, and point the tractor in the expected starting direction.
-- [ ] For the current Ring 13 four-value retest, run this single-line command: `cd /home/al/tractor2025/field_testing/sites/62_Collins_polygon_1/mission_plans/20260908_ring13_four_value_calibration && ./ring13_four_value_20260908.sh`
+- [ ] For the optional Ring 13 1.2/1.5/1.8 m/s test, run this single-line command only after flashing its matching firmware: `cd /home/al/tractor2025/field_testing/sites/62_Collins_polygon_1/mission_plans/20260908_ring13_1p2_1p5_1p8_calibration && ./ring13_1p2_1p5_1p8_20260908.sh`
   - The launcher rebuilds and validates the mission, reruns pre-flight, checks the start position and heading, starts the field logger, and starts Pure Pursuit.
   - Do **not** start a separate field logger for this mission; the launcher will reject an already-running logger.
   - Type the exact requested confirmation only after every check passes. Remain in Pause until the controller is ready and its output looks normal, then select Auto only when the route is clear.
@@ -72,16 +72,17 @@
 
 ## 🔴 Today Action Items
 
-- [ ] Before the four-value Ring 13 retest, investigate the approximately 31.6-second Teensy radio-loss safety stop from the 2026-09-08 run. Confirm stable handheld-to-tractor radio reception around the full ring before accepting the new 2160 result as production evidence.
-- [ ] Deploy and flash `teensy_main_20260908.cpp`, restart `teensy-bridge.service`, and require pre-flight to report `Teensy firmware identity ... teensy_main_20260908` before running `ring13_four_value_20260908.sh`.
+- [ ] If the optional higher-speed test is run, deploy and flash `teensy_main_20260908_1p8_test.cpp`, restart `teensy-bridge.service`, and require pre-flight to report `Teensy firmware identity ... teensy_main_20260908_1p8_test` before running its launcher.
 - [ ] Improve `configure_heading_f9p_20260727.py` handling of UBX-CFG-VALSET acknowledgements: retry or continue to verified readback when an ACK is missed, clearly distinguish ACK-ACK from ACK-NAK, and report whether each requested setting actually persisted. On 2026-09-08 the utility reported `no ACK received for UBX 06/8A`, but after the service restarted the complete mission pre-flight passed and NAV-RELPOSNED was healthy at approximately 5 Hz.
 - [ ] Expand RTK logging so the next fix-loss event can be diagnosed (RELPOSNED flags, baseline length, carrier state, correction state, and per-receiver validity).
-- [ ] Plot cross-track error and choose a repeatable score (for example RMS and 95th percentile) for comparing runs.
+- [x] Plot cross-track error by speed for the four-value run. Median and mean error were nearly flat from 1.0 through 1.5 m/s; retain median, mean, 95th percentile, maximum, and percentage above 0.50 m for future comparisons.
 - [ ] Resolve the steering asymmetry: measured minimum radius was approximately 1.63 m right versus 1.05 m left.
-- [ ] Verify the `jrk_current` field name/source; it stayed at `2985`, which looks like JRK position rather than current.
+- [x] Verified that the historical `jrk_current` field is JRK feedback position, not amps. The optional 1.8 m/s firmware and logger add `jrk_motor_current_mA`, recent peak current, and a current-valid flag.
 
 
 ### Recently completed
+
+- [x] Completed and analyzed the 2026-09-08 four-value Ring 13 run with no Teensy radio-loss mode, no JRK errors, and matching `teensy_main_20260908` identity.
 
 - [x] Verified the base-link GPS udev mapping.
 - [x] Set the Pure Pursuit base-link GPS offsets to zero.

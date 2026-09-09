@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Analyze the approved 2026-09-08 Ring 13 four-value retest field log."""
+"""Analyze the optional Ring 13 1.2/1.5/1.8 m/s field test."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 
-EXPECTED_TARGETS = {0.75: 2350, 1.00: 2300, 1.20: 2246, 1.50: 2160}
+EXPECTED_TARGETS = {0.75: 2368, 1.20: 2233, 1.50: 2178, 1.80: 2135}
 TRIM_SECONDS = 5.0
 
 
@@ -167,6 +167,25 @@ def main() -> None:
         all_duty_target = [value for value in all_duty_target if value is not None]
         all_duty_applied = [number(row, "jrk_duty_cycle") for row in all_stage_rows]
         all_duty_applied = [value for value in all_duty_applied if value is not None]
+        current_rows = [
+            row
+            for row in all_stage_rows
+            if number(row, "jrk_motor_current_valid") == 1
+        ]
+        current_samples = [number(row, "jrk_motor_current_mA") for row in current_rows]
+        current_samples = [value for value in current_samples if value is not None]
+        peak_current_samples = [
+            number(row, "jrk_peak_motor_current_mA") for row in current_rows
+        ]
+        peak_current_samples = [
+            value for value in peak_current_samples if value is not None
+        ]
+        current_valid_samples = [
+            number(row, "jrk_motor_current_valid") for row in all_stage_rows
+        ]
+        current_valid_samples = [
+            value for value in current_valid_samples if value is not None
+        ]
 
         mode9_rows = [
             row for row in all_stage_rows if number(row, "trans_mode") == 9
@@ -217,6 +236,15 @@ def main() -> None:
                 "whole_stage_peak_abs_duty_applied": (
                     max(map(abs, all_duty_applied)) if all_duty_applied else None
                 ),
+                "whole_stage_motor_current_mA": stats(current_samples),
+                "whole_stage_peak_motor_current_mA": (
+                    max(peak_current_samples) if peak_current_samples else None
+                ),
+                "motor_current_valid_percent": (
+                    100.0 * sum(value == 1 for value in current_valid_samples)
+                    / len(current_valid_samples)
+                    if current_valid_samples else None
+                ),
                 "radio_loss_mode9_samples": len(mode9_rows),
                 "radio_loss_mode9_approx_s": len(mode9_rows) / 20.0,
                 "maximum_jrk_halting_error_bits": max(errors) if errors else None,
@@ -226,10 +254,10 @@ def main() -> None:
             }
         )
 
-    json_path = args.output_dir / "ring13_four_value_retest_analysis_20260908.json"
+    json_path = args.output_dir / "ring13_1p2_1p5_1p8_analysis_20260908.json"
     json_path.write_text(json.dumps(summaries, indent=2) + "\n", encoding="utf-8")
 
-    csv_path = args.output_dir / "ring13_four_value_retest_summary_20260908.csv"
+    csv_path = args.output_dir / "ring13_1p2_1p5_1p8_summary_20260908.csv"
     columns = [
         "command_mps", "expected_jrk_target", "observed_actual_target_mode",
         "steady_duration_s", "speed_mean_mps", "speed_median_mps",
@@ -238,6 +266,8 @@ def main() -> None:
         "feedback_minus_target_median", "steady_duty_target_median",
         "steady_duty_applied_median", "whole_stage_peak_abs_duty_target",
         "whole_stage_peak_abs_duty_applied", "radio_loss_mode9_approx_s",
+        "motor_current_mean_A", "motor_current_p95_A",
+        "whole_stage_peak_motor_current_A", "motor_current_valid_percent",
         "maximum_jrk_halting_error_bits", "jrk_timeout_counter_increase",
     ]
     with csv_path.open("w", newline="", encoding="utf-8") as handle:
@@ -263,6 +293,18 @@ def main() -> None:
                     "whole_stage_peak_abs_duty_target": summary["whole_stage_peak_abs_duty_target"],
                     "whole_stage_peak_abs_duty_applied": summary["whole_stage_peak_abs_duty_applied"],
                     "radio_loss_mode9_approx_s": summary["radio_loss_mode9_approx_s"],
+                    "motor_current_mean_A": (
+                        summary["whole_stage_motor_current_mA"].get("mean", 0) / 1000.0
+                    ),
+                    "motor_current_p95_A": (
+                        summary["whole_stage_motor_current_mA"].get("p95", 0) / 1000.0
+                    ),
+                    "whole_stage_peak_motor_current_A": (
+                        summary["whole_stage_peak_motor_current_mA"] / 1000.0
+                        if summary["whole_stage_peak_motor_current_mA"] is not None
+                        else None
+                    ),
+                    "motor_current_valid_percent": summary["motor_current_valid_percent"],
                     "maximum_jrk_halting_error_bits": summary["maximum_jrk_halting_error_bits"],
                     "jrk_timeout_counter_increase": summary["jrk_timeout_counter_increase"],
                 }
@@ -288,7 +330,7 @@ def main() -> None:
         label="Heading invalid",
     )
     timeline.set(
-        title="Ring 13 four-value calibration retest — 2026-09-08",
+        title="Ring 13 1.2/1.5/1.8 m/s calibration — 2026-09-08",
         xlabel="Field logger elapsed time (s)",
         ylabel="Speed (m/s)",
         ylim=(0, 1.85),
@@ -326,7 +368,7 @@ def main() -> None:
     calibration.grid(True, alpha=0.25)
     calibration.legend(loc="upper left", fontsize=9)
     figure.tight_layout()
-    plot_path = args.output_dir / "ring13_four_value_retest_speed_vs_command_20260908.png"
+    plot_path = args.output_dir / "ring13_1p2_1p5_1p8_speed_vs_command_20260908.png"
     figure.savefig(plot_path, dpi=170)
     plt.close(figure)
 
