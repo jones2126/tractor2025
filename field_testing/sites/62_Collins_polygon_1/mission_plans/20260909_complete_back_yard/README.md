@@ -30,8 +30,10 @@ confirmation, starts the field logger, and starts Pure Pursuit.
 ## Live dashboard
 
 The live mission dashboard adds a replay-style map, target and actual values,
-mission progress, a guarded Start button, and software Pause/Resume controls.
-The handheld Pause remains the independent safety override.
+mission progress, a guarded Start button, and software Pause/Clear-Pause
+controls. The actual trail is limited to the most recent 30 seconds. The
+handheld Pause remains the independent safety override, and must be selected
+before the dashboard will clear a software Pause.
 
 ```bash
 cd /home/al/tractor2025 && sudo -v && python3 tractor_rpi/pure-pursuit/mission_dashboard_20260910.py

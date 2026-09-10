@@ -43,16 +43,16 @@ HTML = r'''<!doctype html>
 </style></head><body><main>
 <h1>Tractor01 — complete back yard mission</h1>
 <p class="note">Live mission plan, actual tractor position, controller target, and drivetrain telemetry.</p>
-<div class="toolbar"><button id="start" class="button start">START MISSION</button><button id="pause" class="button pause" disabled>PAUSE</button><button id="resume" class="button resume" disabled>RESUME</button><span id="state" class="badge">CONNECTING</span><span id="age" class="badge">No telemetry</span></div>
-<div class="safety"><b>Keep the handheld with you.</b> The browser Pause is an additional software hold; the handheld Pause remains the independent safety override.</div>
+<div class="toolbar"><button id="start" class="button start">START MISSION</button><button id="pause" class="button pause" disabled>PAUSE</button><button id="clearPause" class="button resume" disabled>CLEAR PAUSE</button><span id="state" class="badge">CONNECTING</span><span id="age" class="badge">No telemetry</span></div>
+<div class="safety"><b>Keep the handheld with you.</b> After a browser Pause: select handheld Pause, press CLEAR PAUSE, confirm HANDHELD PAUSE, then select Auto.</div>
 <div class="progressbar"><div id="progress"></div></div>
 <div class="layout"><svg id="map" viewBox="0 0 900 760" role="img" aria-label="Planned mission and live tractor path"></svg><div class="side"><div class="facts" id="facts"></div><div id="output" class="output"></div></div></div>
 </main><script>
 const key=new URLSearchParams(location.search).get('key')||'';
 const headers={'Content-Type':'application/json','X-Operator-Key':key};
 const svg=document.getElementById('map'),facts=document.getElementById('facts'),stateEl=document.getElementById('state'),ageEl=document.getElementById('age'),out=document.getElementById('output');
-const startBtn=document.getElementById('start'),pauseBtn=document.getElementById('pause'),resumeBtn=document.getElementById('resume'),progress=document.getElementById('progress');
-let DATA=null,trailPoints=[];const NS='http://www.w3.org/2000/svg';
+const startBtn=document.getElementById('start'),pauseBtn=document.getElementById('pause'),clearPauseBtn=document.getElementById('clearPause'),progress=document.getElementById('progress');
+const TRAIL_SECONDS=30;let DATA=null,trailPoints=[];const NS='http://www.w3.org/2000/svg';
 const el=(n,a={})=>{const x=document.createElementNS(NS,n);for(const[k,v]of Object.entries(a))x.setAttribute(k,v);return x};
 let sx=x=>x,sy=y=>y,trail,tractor,target,targetLine,heading;
 function pathD(points){return points.map((p,i)=>(i?'L':'M')+sx(p.x).toFixed(1)+' '+sy(p.y).toFixed(1)).join(' ')}
@@ -60,8 +60,44 @@ function setupMap(){const xs=DATA.path.map(p=>p.x),ys=DATA.path.map(p=>p.y),pad=
 function fmt(v,d=2){return v===null||v===undefined||v===''?'—':Number(v).toFixed(d)}function fact(l,v){return `<div class="fact"><span>${l}</span><b>${v}</b></div>`}function mode(v){return Number(v)===2?'Pause':Number(v)===1?'Manual':Number(v)===0?'Auto':'—'}
 async function api(path,method='GET',body=null){const r=await fetch(path,{method,headers,body:body?JSON.stringify(body):null});const j=await r.json();if(!r.ok)throw Error(j.error||r.statusText);return j}
 async function command(name){try{if(name==='start'&&!confirm('Start the complete 40-minute blades-off mission? Keep the handheld in Pause until the controller is ready.'))return;const body=name==='start'?{confirmation:'RUN COMPLETE BACK YARD BLADES OFF'}:{};await api('/api/'+name,'POST',body)}catch(e){alert(e.message)}}
-startBtn.onclick=()=>command('start');pauseBtn.onclick=()=>command('pause');resumeBtn.onclick=()=>command('resume');
-function draw(s){const c=s.controller||{},b=s.bridge||{},st=b.steering||{},tr=b.transmission||{};const active=['STARTING','RUNNING','PAUSED','WAITING'].includes(s.process_state),fresh=s.controller_age_s!=null&&s.controller_age_s<1;startBtn.disabled=active;pauseBtn.disabled=!active||!fresh||c.software_paused===true;resumeBtn.disabled=!active||!fresh||c.software_paused!==true;stateEl.textContent=s.process_state;stateEl.className='badge '+(s.process_state==='RUNNING'?'ok':s.process_state==='PAUSED'||s.process_state==='WAITING'?'warn':s.process_state==='FAILED'?'bad':'');ageEl.textContent=s.controller_age_s==null?'No controller telemetry':s.controller_age_s.toFixed(1)+' s telemetry age';ageEl.className='badge '+(fresh?'ok':'bad');const idx=Number(c.waypoint_idx||0),total=Number(c.waypoints_total||DATA.path.length);progress.style.width=(100*Math.min(1,idx/Math.max(1,total))).toFixed(1)+'%';if(c.pos_x_m!==undefined&&c.pos_x_m!==''){const p={x:Number(c.pos_x_m),y:Number(c.pos_y_m)};if(!trailPoints.length||Math.hypot(p.x-trailPoints.at(-1).x,p.y-trailPoints.at(-1).y)>.03)trailPoints.push(p);if(trailPoints.length>6000)trailPoints.shift();trail.setAttribute('d',pathD(trailPoints));tractor.setAttribute('cx',sx(p.x));tractor.setAttribute('cy',sy(p.y));if(c.target_x_m!==''){const q={x:Number(c.target_x_m),y:Number(c.target_y_m)};target.setAttribute('cx',sx(q.x));target.setAttribute('cy',sy(q.y));targetLine.setAttribute('x1',sx(p.x));targetLine.setAttribute('y1',sy(p.y));targetLine.setAttribute('x2',sx(q.x));targetLine.setAttribute('y2',sy(q.y))}const h=(90-Number(c.heading_compass_deg))*Math.PI/180;heading.setAttribute('x1',sx(p.x));heading.setAttribute('y1',sy(p.y));heading.setAttribute('x2',sx(p.x+2*Math.cos(h)));heading.setAttribute('y2',sy(p.y+2*Math.sin(h)))}const phase=(DATA.phases[idx]||'—').replaceAll('_',' ');facts.innerHTML=fact('Mission phase',phase)+fact('Progress',idx+' / '+total+' ('+fmt(100*idx/Math.max(1,total),1)+'%)')+fact('Controller state',c.controller_state||s.process_state)+fact('Wait reason',c.wait_reason||'—')+fact('Target / actual speed',fmt(c.speed_cmd_mps)+' / '+fmt(c.actual_speed_mps)+' m/s')+fact('Cross-track / lateral yt',fmt(c.cross_track_err_m,3)+' / '+fmt(c.yt_m,3)+' m')+fact('Target lookahead',fmt(c.lookahead_dist_m)+' m')+fact('Heading',fmt(c.heading_compass_deg,1)+'°')+fact('Steering command',fmt(c.delta_deg,1)+'° / '+fmt(c.steer_normalized))+fact('Steering target / actual',(st.setpoint??'—')+' / '+(st.current??'—'))+fact('Steering error / PWM',(st.error??'—')+' / '+(st.pwm??'—'))+fact('JRK target / feedback',(tr.target??'—')+' / '+(tr.current??'—'))+fact('JRK motor current',tr.motor_current_mA==null?'—':tr.motor_current_mA+' mA')+fact('Radio / steering state',(b.radio?.signal||'—')+' / '+(st.state||'—'))+fact('Handheld modes',mode(st.mode)+' steering / '+mode(tr.mode)+' transmission')+fact('GPS / heading',(c.fix_quality||'—')+' / '+(String(c.head_valid).toLowerCase()==='true'?'valid':'invalid'));out.textContent=(s.output||[]).join('\n');out.scrollTop=out.scrollHeight}
+startBtn.onclick=()=>command('start');pauseBtn.onclick=()=>command('pause');clearPauseBtn.onclick=()=>command('clear-pause');
+function draw(s){
+  const c=s.controller||{},b=s.bridge||{},st=b.steering||{},tr=b.transmission||{};
+  const active=['STARTING','RUNNING','PAUSED','WAITING'].includes(s.process_state);
+  const controllerFresh=s.controller_age_s!=null&&s.controller_age_s<1;
+  const bridgeFresh=s.bridge_age_s!=null&&s.bridge_age_s<1;
+  const softwarePaused=c.software_paused===true;
+  const handheldPaused=bridgeFresh&&Number(st.mode)===2&&Number(tr.mode)===2&&st.state==='PAUSE';
+  const shownState=softwarePaused?'SOFTWARE PAUSE':handheldPaused?'HANDHELD PAUSE':s.process_state;
+  const pauseSource=softwarePaused?'Dashboard software hold':handheldPaused?'Handheld Pause':'None';
+  startBtn.disabled=active;
+  pauseBtn.disabled=!active||!controllerFresh||softwarePaused;
+  clearPauseBtn.disabled=!active||!controllerFresh||!softwarePaused||!handheldPaused;
+  clearPauseBtn.title=softwarePaused&&!handheldPaused?'Put the handheld in Pause before clearing software Pause':'';
+  stateEl.textContent=shownState;
+  stateEl.className='badge '+(shownState==='RUNNING'?'ok':shownState.includes('PAUSE')||shownState==='WAITING'?'warn':shownState==='FAILED'?'bad':'');
+  ageEl.textContent=s.controller_age_s==null?'No controller telemetry':s.controller_age_s.toFixed(1)+' s telemetry age';
+  ageEl.className='badge '+(controllerFresh?'ok':'bad');
+  const idx=Number(c.waypoint_idx||0),total=Number(c.waypoints_total||DATA.path.length);
+  progress.style.width=(100*Math.min(1,idx/Math.max(1,total))).toFixed(1)+'%';
+  if(c.pos_x_m!==undefined&&c.pos_x_m!==''){
+    const now=Date.now()/1000,p={x:Number(c.pos_x_m),y:Number(c.pos_y_m),t:now},last=trailPoints.at(-1);
+    if(!last||Math.hypot(p.x-last.x,p.y-last.y)>.03||now-last.t>=1)trailPoints.push(p);
+    trailPoints=trailPoints.filter(q=>now-q.t<=TRAIL_SECONDS);
+    trail.setAttribute('d',pathD(trailPoints));
+    tractor.setAttribute('cx',sx(p.x));tractor.setAttribute('cy',sy(p.y));
+    if(c.target_x_m!==''){
+      const q={x:Number(c.target_x_m),y:Number(c.target_y_m)};
+      target.setAttribute('cx',sx(q.x));target.setAttribute('cy',sy(q.y));
+      targetLine.setAttribute('x1',sx(p.x));targetLine.setAttribute('y1',sy(p.y));targetLine.setAttribute('x2',sx(q.x));targetLine.setAttribute('y2',sy(q.y));
+    }
+    const h=(90-Number(c.heading_compass_deg))*Math.PI/180;
+    heading.setAttribute('x1',sx(p.x));heading.setAttribute('y1',sy(p.y));heading.setAttribute('x2',sx(p.x+2*Math.cos(h)));heading.setAttribute('y2',sy(p.y+2*Math.sin(h)));
+  }
+  const phase=(DATA.phases[idx]||'—').replaceAll('_',' ');
+  facts.innerHTML=fact('Mission phase',phase)+fact('Progress',idx+' / '+total+' ('+fmt(100*idx/Math.max(1,total),1)+'%)')+fact('Pause source',pauseSource)+fact('Controller state',c.controller_state||s.process_state)+fact('Wait reason',c.wait_reason||'—')+fact('Target / actual speed',fmt(c.speed_cmd_mps)+' / '+fmt(c.actual_speed_mps)+' m/s')+fact('Cross-track / lateral yt',fmt(c.cross_track_err_m,3)+' / '+fmt(c.yt_m,3)+' m')+fact('Target lookahead',fmt(c.lookahead_dist_m)+' m')+fact('Heading',fmt(c.heading_compass_deg,1)+'°')+fact('Steering command',fmt(c.delta_deg,1)+'° / '+fmt(c.steer_normalized))+fact('Steering target / actual',(st.setpoint??'—')+' / '+(st.current??'—'))+fact('Steering error / PWM',(st.error??'—')+' / '+(st.pwm??'—'))+fact('JRK target / feedback',(tr.target??'—')+' / '+(tr.current??'—'))+fact('JRK motor current',tr.motor_current_mA==null?'—':tr.motor_current_mA+' mA')+fact('Radio / steering state',(b.radio?.signal||'—')+' / '+(st.state||'—'))+fact('Handheld modes',mode(st.mode)+' steering / '+mode(tr.mode)+' transmission')+fact('GPS / heading',(c.fix_quality||'—')+' / '+(String(c.head_valid).toLowerCase()==='true'?'valid':'invalid'));
+  out.textContent=(s.output||[]).join('\n');out.scrollTop=out.scrollHeight;
+}
 async function poll(){try{const s=await api('/api/state');draw(s)}catch(e){stateEl.textContent='DISCONNECTED';stateEl.className='badge bad'}setTimeout(poll,250)}
 (async()=>{try{DATA=await api('/api/mission');setupMap();poll()}catch(e){document.body.innerHTML='<main><h1>Dashboard access failed</h1><p>'+e.message+'</p></main>'}})();
 </script></body></html>'''
@@ -182,11 +218,19 @@ def pause_mission(state):
     with state.lock: state.process_state = "PAUSED"
 
 
-def resume_mission(state):
+def clear_pause(state):
+    snap = state.snapshot()
     with state.lock:
         if state.process is None: raise RuntimeError("No mission is active")
+    if snap["controller_age_s"] is None or snap["controller_age_s"] > 1.0:
+        raise RuntimeError("Controller telemetry is not live; retain the handheld Pause")
+    if snap["controller"].get("software_paused") is not True:
+        raise RuntimeError("No dashboard software Pause is active")
+    ok, reason = safe_to_start(state)
+    if not ok:
+        raise RuntimeError(f"Cannot clear software Pause: {reason}")
     send_udp(CONTROL_PORT, {"command": "resume"}, repeats=3)
-    with state.lock: state.process_state = "RUNNING"
+    with state.lock: state.process_state = "WAITING"
 
 
 def load_mission_payload():
@@ -238,7 +282,7 @@ def handler_factory(state, token, mission_payload):
                         raise RuntimeError("Start confirmation was not accepted")
                     start_mission(state)
                 elif path == "/api/pause": pause_mission(state)
-                elif path == "/api/resume": resume_mission(state)
+                elif path == "/api/clear-pause": clear_pause(state)
                 else: self.send_json({"error": "Not found"}, 404); return
             except RuntimeError as exc: self.send_json({"error": str(exc)}, 409); return
             self.send_json({"ok": True})

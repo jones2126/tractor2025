@@ -1,7 +1,8 @@
 # Live mission dashboard — 2026-09-10
 
 The dashboard is a local web interface modeled after the Pure Pursuit replay
-tool. It displays the complete planned path, actual tractor trail, heading,
+tool. It displays the complete planned path, the most recent 30 seconds of the
+actual tractor trail, heading,
 active target, mission progress, controller calculations, GPS state, steering
 telemetry, and JRK transmission telemetry.
 
@@ -12,8 +13,13 @@ telemetry, and JRK transmission telemetry.
 - The web **PAUSE** button immediately sends repeated zero-speed commands and
   places Pure Pursuit in a software hold. GPS and telemetry continue updating,
   but the pursuit waypoint does not advance.
-- **RESUME** releases only the software hold. If the handheld remains in Pause,
-  the tractor remains physically paused.
+- **CLEAR PAUSE** releases only the software hold, and the dashboard rejects
+  this command unless fresh telemetry confirms that the handheld is in Pause.
+  The tractor therefore remains physically paused until the operator selects
+  Auto on the handheld.
+- Moving the handheld from Manual to Auto does not clear a dashboard software
+  Pause. This prevents an unexpected restart while the operator is moving the
+  tractor manually.
 - Closing the dashboard server with Ctrl+C software-pauses and terminates the
   mission controller so its normal cleanup stops the tractor and logger.
 - The Start button is rejected unless fresh Teensy telemetry reports both
@@ -50,9 +56,12 @@ on the field network from operating the buttons without the URL.
 4. Watch the launcher output on the lower-right. It rebuilds the mission, runs
    preflight, and checks the starting position and heading.
 5. Wait until controller telemetry is live, then select Auto on the handheld.
-6. Use **PAUSE** for a software hold. Use **RESUME** when ready, or retain Pause
-   on the handheld for the independent physical hold.
-7. At mission completion, the controller sends stop and the launcher closes
+6. Use **PAUSE** for a software hold. The dashboard keeps showing the complete
+   mission while limiting the cyan actual trail to its most recent 30 seconds.
+7. To continue, first put the handheld in Pause, then press **CLEAR PAUSE**.
+   Confirm the dashboard changes to **HANDHELD PAUSE**, then select Auto on the
+   handheld. Manual-to-Auto alone deliberately does not clear software Pause.
+8. At mission completion, the controller sends stop and the launcher closes
    the field logger normally.
 
 If Start reports that non-interactive sudo is unavailable, return to the
@@ -63,7 +72,7 @@ tractor01 terminal, run `sudo -v`, and press Start again promptly.
 | Port | Purpose |
 |---|---|
 | TCP 8088 | Dashboard page and local API |
-| UDP 6011 | Local-only Pure Pursuit Pause/Resume control |
+| UDP 6011 | Local-only Pure Pursuit Pause/Clear-Pause control |
 | UDP 6012 | Local-only controller telemetry for the dashboard |
 | UDP 6003 | Existing Teensy bridge status |
 | UDP 6004 | Existing `cmd_vel` command path |
