@@ -1,0 +1,39 @@
+{
+  "site": "62 Collins Polygon 3",
+  "boundary_csv": "C:\\Repos\\tractor2025\\field_testing\\sites\\62_Collins_polygon_3\\01_boundary_final.csv",
+  "boundary_sha256": "729bdf4d988289482408cb569d4e8b9ae3c695c34835250b7f07adfa3b3fe0ce",
+  "boundary_area_m2": 189.7755594420216,
+  "boundary_perimeter_m": 61.46749765446245,
+  "lane_spacing_m": 0.9652,
+  "lane_spacing_in": 38.0,
+  "turn_radius_m": 1.9,
+  "boundary_outset_m": 0.381,
+  "outer_boundary_is_pass_1": true,
+  "passing_total_passes": 3,
+  "passing_inner_rings": 2,
+  "passing": [
+    {
+      "pass": 1,
+      "inset_m": 0.0,
+      "centerline_length_m": 61.270623481180884,
+      "rounded_area_m2": 189.54621843908802
+    },
+    {
+      "pass": 2,
+      "inset_m": 0.9652,
+      "centerline_length_m": 48.53029695908293,
+      "rounded_area_m2": 122.37149043014573
+    },
+    {
+      "pass": 3,
+      "inset_m": 1.9304,
+      "centerline_length_m": 34.111030995427534,
+      "rounded_area_m2": 66.38501058492986
+    }
+  ],
+  "first_failure": {
+    "pass": 4,
+    "inset_m": 2.8956,
+    "reason": "cannot be rounded inward with the 1.90 m turn radius"
+  }
+}
