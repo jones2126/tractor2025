@@ -16,8 +16,8 @@
   "recorded_transition_unique_source_points": 473,
   "recorded_transition_length_m": 26.754,
   "transition_resample_hausdorff_m": 0.286,
-  "source_log_sha256": "e8abf55919e3072c01453bc9456c3d204c2f150c8842091262d06a1176b990f9",
-  "mission_sha256": "f819c0e72b80b858b87b6cd45022bc59a73b769b9b0323e88310da0caebfa5b0",
+  "source_log_sha256": "6af981e96a6d28e316656c8098549a81994178a5dbd74adad69b5e9283f0cf59",
+  "mission_sha256": "d2e166cdeb95af247ffca553d3e65ccaf4ecfe6392260697f1bf0e796b5fb77f",
   "start": {
     "lat": 40.485631339344835,
     "lon": -80.33267258575214,

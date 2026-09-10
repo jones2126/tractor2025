@@ -69,7 +69,12 @@ TURN_RADIUS_M = 1.90
 BOUNDARY_OUTSET_M = 0.381
 TRANSITION_START_S = 241.68
 TRANSITION_END_S = 292.97
-EXPECTED_SOURCE_SHA256 = "e8abf55919e3072c01453bc9456c3d204c2f150c8842091262d06a1176b990f9"
+EXPECTED_SOURCE_SHA256 = "6af981e96a6d28e316656c8098549a81994178a5dbd74adad69b5e9283f0cf59"
+
+
+def portable_text_sha256(path: Path) -> str:
+    """Hash text identically after Windows or Linux Git checkout."""
+    return hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
 
 
 def select_transition(frame):
@@ -147,7 +152,7 @@ def plan_inbound_chain(headlands, incoming_pose, drive_area):
 
 
 def main():
-    source_sha = hashlib.sha256(SOURCE_LOG.read_bytes()).hexdigest()
+    source_sha = portable_text_sha256(SOURCE_LOG)
     if source_sha != EXPECTED_SOURCE_SHA256:
         raise ValueError(
             "Combined perimeter source log changed; review it before rebuilding this mission"
@@ -267,7 +272,7 @@ def main():
         "recorded_transition_length_m": round(transition_source.length, 3),
         "transition_resample_hausdorff_m": round(transition_deviation, 4),
         "source_log_sha256": source_sha,
-        "mission_sha256": hashlib.sha256(MISSION.read_bytes()).hexdigest(),
+        "mission_sha256": portable_text_sha256(MISSION),
         "start": {"lat": mission[0].lat, "lon": mission[0].lon,
                   "heading_deg": math.degrees(mission[0].yaw_rad) % 360.0},
         "end": {"lat": mission[-1].lat, "lon": mission[-1].lon,
