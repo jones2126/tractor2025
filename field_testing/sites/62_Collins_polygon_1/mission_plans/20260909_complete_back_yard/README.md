@@ -26,3 +26,16 @@ Run from any directory on tractor01:
 The launcher rebuilds and validates both mission sections, runs preflight,
 checks the live start position and heading, requires a typed blades-off
 confirmation, starts the field logger, and starts Pure Pursuit.
+
+## Live dashboard
+
+The live mission dashboard adds a replay-style map, target and actual values,
+mission progress, a guarded Start button, and software Pause/Resume controls.
+The handheld Pause remains the independent safety override.
+
+```bash
+cd /home/al/tractor2025 && sudo -v && python3 tractor_rpi/pure-pursuit/mission_dashboard_20260910.py
+```
+
+Open the temporary operator-key URL printed in the terminal. Full instructions
+are in `tractor_rpi/pure-pursuit/MISSION_DASHBOARD_20260910.md`.

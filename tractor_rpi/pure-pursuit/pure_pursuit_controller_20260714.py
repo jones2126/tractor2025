@@ -90,8 +90,10 @@ CSV_COLUMNS = [
     ("delta_deg",           "Steering angle delta: + = turn left - = turn right degrees"),
     ("steer_normalized",    "Normalized steer command sent: +1.0=full left -1.0=full right"),
     ("speed_cmd_mps",       "Commanded speed m/s positive = forward"),
+    ("actual_speed_mps",    "GPS ground speed m/s"),
     ("driving",             "True if cmd_vel sent this cycle False = WAIT state"),
     ("wait_reason",         "Reason not driving this cycle empty string if driving"),
+    ("software_paused",     "True while the local mission dashboard requests Pause"),
 ]
 
 CSV_FIELDNAMES = [c[0] for c in CSV_COLUMNS]
@@ -197,6 +199,7 @@ class GPSReceiver:
                 'lon': lon,
                 'heading_rad': heading_rad,
                 'heading_compass_deg': heading_deg,
+                'speed_mps': msg.get('speed_mps'),
                 'fix_quality': msg.get('fix_quality'),
                 'headValid': bool(msg.get('headValid')),
                 'carrier': msg.get('carrier'),
@@ -226,6 +229,50 @@ class GPSReceiver:
         if self.require_head_valid and not pose['headValid']:
             return False, "headValid=False"
         return True, ""
+
+    def stop(self):
+        self._running = False
+        try:
+            self._sock.close()
+        except OSError:
+            pass
+
+
+class MissionControlReceiver:
+    """Local-only UDP Pause/Resume input for the mission dashboard."""
+
+    def __init__(self, port):
+        self.port = port
+        self._paused = False
+        self._lock = threading.Lock()
+        self._running = True
+        self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self._sock.bind(('127.0.0.1', port))
+        self._sock.settimeout(0.5)
+        self._thread = threading.Thread(target=self._listen, daemon=True)
+        self._thread.start()
+
+    def _listen(self):
+        while self._running:
+            try:
+                data, _addr = self._sock.recvfrom(1024)
+            except socket.timeout:
+                continue
+            except OSError:
+                break
+            try:
+                command = json.loads(data.decode('utf-8')).get('command', '').lower()
+            except (ValueError, UnicodeDecodeError):
+                continue
+            if command in ('pause', 'resume'):
+                with self._lock:
+                    self._paused = command == 'pause'
+                print(f"[CONTROL] Software {command.upper()} requested")
+
+    def is_paused(self):
+        with self._lock:
+            return self._paused
 
     def stop(self):
         self._running = False
@@ -513,7 +560,8 @@ class PurePursuit:
         finally:
             self.cleanup()
 
-    def run_live(self, gps_receiver, logger=None):
+    def run_live(self, gps_receiver, logger=None, control_receiver=None,
+                 telemetry_port=0):
         """Field-test mode. Logs every cycle to CSV if logger provided."""
         if not self.path:
             print("No path loaded.")
@@ -530,6 +578,7 @@ class PurePursuit:
         self.start_time = time.time()
         self.last_stats_time = self.start_time
         loop_count = 0
+        telemetry_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) if telemetry_port else None
 
         try:
             while self.running:
@@ -539,6 +588,7 @@ class PurePursuit:
 
                 pose = gps_receiver.get_pose()
                 ok, reason = gps_receiver.is_drivable(pose)
+                software_paused = bool(control_receiver and control_receiver.is_paused())
 
                 # Base CSV row -- filled in for every cycle regardless of state
                 row = {
@@ -550,6 +600,7 @@ class PurePursuit:
                     'goal_reached':   self.goal_reached,
                     'waypoints_total': len(self.path),
                     'waypoint_idx':   self.idx,
+                    'software_paused': software_paused,
                 }
 
                 if pose is not None:
@@ -560,9 +611,20 @@ class PurePursuit:
                         'fix_quality':         pose['fix_quality'],
                         'head_valid':          pose['headValid'],
                         'gps_age_s':           f"{pose['age']:.3f}",
+                        'actual_speed_mps':    pose.get('speed_mps'),
                     })
 
-                if not ok:
+                if software_paused:
+                    self._send_stop()
+                    row['wait_reason'] = 'software pause'
+                    if pose is not None:
+                        bx, by, bh = self.gps_to_base(
+                            pose['lat'], pose['lon'], pose['heading_rad'])
+                        self.last_x, self.last_y, self.last_h = bx, by, bh
+                        row.update({'pos_x_m': f"{bx:.4f}", 'pos_y_m': f"{by:.4f}"})
+                    if loop_count % 20 == 0:
+                        print("[WAIT] software pause")
+                elif not ok:
                     self._send_stop()
                     row['wait_reason'] = reason
                     if loop_count % 20 == 0:
@@ -625,6 +687,20 @@ class PurePursuit:
                 if logger:
                     logger.write(row)
 
+                if telemetry_sock:
+                    live = dict(row)
+                    live['controller_state'] = (
+                        'PAUSED' if software_paused else
+                        ('WAITING' if not ok else 'RUNNING')
+                    )
+                    try:
+                        telemetry_sock.sendto(
+                            json.dumps(live).encode('utf-8'),
+                            ('127.0.0.1', telemetry_port),
+                        )
+                    except OSError:
+                        pass
+
                 self.print_statistics()
                 loop_count += 1
                 sleep = self.period - (time.time() - loop_start)
@@ -634,6 +710,8 @@ class PurePursuit:
         except KeyboardInterrupt:
             print("\nInterrupted -- stopping.")
         finally:
+            if telemetry_sock:
+                telemetry_sock.close()
             self.cleanup()
 
     def cleanup(self):
@@ -672,6 +750,10 @@ def main():
                         help='Along-track goal window meters (default 0.5)')
     parser.add_argument('--no-pursuit-log', action='store_true',
                         help='Disable per-cycle CSV logging (on by default in live mode)')
+    parser.add_argument('--control-port', type=int, default=0,
+                        help='Local UDP port for dashboard Pause/Resume commands')
+    parser.add_argument('--telemetry-port', type=int, default=0,
+                        help='Local UDP port for live dashboard controller telemetry')
     args = parser.parse_args()
 
     pp = PurePursuit(
@@ -691,6 +773,7 @@ def main():
 
     gps_receiver = None
     logger = None
+    control_receiver = None
 
     if args.mode == 'live':
         min_fix = None if args.min_fix == 'any' else args.min_fix
@@ -698,6 +781,8 @@ def main():
                                    require_head_valid=not args.allow_head_invalid)
         if not args.no_pursuit_log:
             logger = PursuitLogger()
+        if args.control_port:
+            control_receiver = MissionControlReceiver(args.control_port)
 
     def signal_handler(sig, frame):
         pp.cleanup()
@@ -705,6 +790,8 @@ def main():
             gps_receiver.stop()
         if logger:
             logger.close()
+        if control_receiver:
+            control_receiver.stop()
         sys.exit(0)
     signal.signal(signal.SIGINT, signal_handler)
 
@@ -714,9 +801,16 @@ def main():
         elif args.mode == 'timed':
             pp.run_timed()
         else:
-            pp.run_live(gps_receiver, logger=logger)
+            pp.run_live(
+                gps_receiver,
+                logger=logger,
+                control_receiver=control_receiver,
+                telemetry_port=args.telemetry_port,
+            )
             gps_receiver.stop()
     finally:
+        if control_receiver:
+            control_receiver.stop()
         if logger:
             logger.close()
 

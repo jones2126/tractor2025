@@ -1,0 +1,279 @@
+#!/usr/bin/env python3
+"""Local web dashboard for starting and monitoring the backyard mission."""
+
+from __future__ import annotations
+
+import argparse
+import csv
+import json
+import math
+import os
+import secrets
+import signal
+import socket
+import subprocess
+import threading
+import time
+from collections import deque
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+from urllib.parse import parse_qs, urlparse
+
+
+REPO = Path(__file__).resolve().parents[2]
+PACKAGE = (
+    REPO / "field_testing" / "sites" / "62_Collins_polygon_1" / "mission_plans"
+    / "20260909_complete_back_yard"
+)
+MISSION = PACKAGE / "62_Collins_complete_back_yard_1mps_20260909.txt"
+AUDIT = PACKAGE / "62_Collins_complete_back_yard_1mps_20260909_audit.csv"
+LAUNCHER = PACKAGE / "run_complete_back_yard_mission_20260909.sh"
+CONTROL_PORT = 6011
+TELEMETRY_PORT = 6012
+STATUS_PORT = 6003
+CMD_VEL_PORT = 6004
+EXPECTED_CONFIRMATION = "RUN COMPLETE BACK YARD BLADES OFF"
+
+
+HTML = r'''<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tractor01 mission control</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,sans-serif}*{box-sizing:border-box}body{margin:0;background:#101418;color:#e8edf2}main{max-width:1500px;margin:auto;padding:14px}h1{margin:.2rem 0;font-size:1.5rem}.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px 0}.button{border:0;border-radius:6px;padding:12px 18px;font-weight:700;cursor:pointer}.button:disabled{opacity:.4;cursor:not-allowed}.start{background:#2fb344;color:#fff}.pause{background:#e03131;color:#fff}.resume{background:#1971c2;color:#fff}.badge{padding:7px 10px;border-radius:999px;background:#343a40;font-weight:700}.ok{background:#19713c}.warn{background:#9c640c}.bad{background:#9b2226}.layout{display:grid;grid-template-columns:minmax(0,2fr) minmax(330px,1fr);gap:14px}svg{width:100%;height:min(78vh,850px);background:#182028;border:1px solid #52606d}.side{min-width:0}.facts{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#52606d;border:1px solid #52606d}.fact{background:#182028;padding:8px;min-height:58px}.fact span{display:block;color:#9fb0bf;font-size:.78rem}.fact b{font-size:.96rem}.output{height:180px;overflow:auto;white-space:pre-wrap;background:#080b0d;border:1px solid #52606d;padding:8px;font:12px ui-monospace,monospace;margin-top:10px}.note{color:#b8c5cf;margin:.3rem 0 0}.mission{fill:none;stroke:#708090;stroke-width:1}.trail{fill:none;stroke:#35d0ba;stroke-width:2}.to-target{stroke:#ff5d8f;stroke-width:1.7;stroke-dasharray:5 3}.heading{stroke:#ffd43b;stroke-width:2}.tractor{fill:#ffd43b;stroke:#111;stroke-width:1}.target{fill:#ff5d8f}.startpoint{fill:#2fb344}.endpoint{fill:#e03131}.progressbar{width:100%;height:9px;background:#343a40;border-radius:5px;overflow:hidden}.progressbar div{height:100%;background:#35d0ba;width:0}.safety{border-left:5px solid #e03131;background:#291719;padding:9px 12px;margin-bottom:10px}@media(max-width:850px){.layout{grid-template-columns:1fr}svg{height:60vh}.facts{grid-template-columns:1fr 1fr}}
+</style></head><body><main>
+<h1>Tractor01 — complete back yard mission</h1>
+<p class="note">Live mission plan, actual tractor position, controller target, and drivetrain telemetry.</p>
+<div class="toolbar"><button id="start" class="button start">START MISSION</button><button id="pause" class="button pause" disabled>PAUSE</button><button id="resume" class="button resume" disabled>RESUME</button><span id="state" class="badge">CONNECTING</span><span id="age" class="badge">No telemetry</span></div>
+<div class="safety"><b>Keep the handheld with you.</b> The browser Pause is an additional software hold; the handheld Pause remains the independent safety override.</div>
+<div class="progressbar"><div id="progress"></div></div>
+<div class="layout"><svg id="map" viewBox="0 0 900 760" role="img" aria-label="Planned mission and live tractor path"></svg><div class="side"><div class="facts" id="facts"></div><div id="output" class="output"></div></div></div>
+</main><script>
+const key=new URLSearchParams(location.search).get('key')||'';
+const headers={'Content-Type':'application/json','X-Operator-Key':key};
+const svg=document.getElementById('map'),facts=document.getElementById('facts'),stateEl=document.getElementById('state'),ageEl=document.getElementById('age'),out=document.getElementById('output');
+const startBtn=document.getElementById('start'),pauseBtn=document.getElementById('pause'),resumeBtn=document.getElementById('resume'),progress=document.getElementById('progress');
+let DATA=null,trailPoints=[];const NS='http://www.w3.org/2000/svg';
+const el=(n,a={})=>{const x=document.createElementNS(NS,n);for(const[k,v]of Object.entries(a))x.setAttribute(k,v);return x};
+let sx=x=>x,sy=y=>y,trail,tractor,target,targetLine,heading;
+function pathD(points){return points.map((p,i)=>(i?'L':'M')+sx(p.x).toFixed(1)+' '+sy(p.y).toFixed(1)).join(' ')}
+function setupMap(){const xs=DATA.path.map(p=>p.x),ys=DATA.path.map(p=>p.y),pad=3,minX=Math.min(...xs)-pad,maxX=Math.max(...xs)+pad,minY=Math.min(...ys)-pad,maxY=Math.max(...ys)+pad;const scale=Math.min(830/(maxX-minX),700/(maxY-minY));const ox=35+(830-(maxX-minX)*scale)/2,oy=725-(700-(maxY-minY)*scale)/2;sx=x=>ox+(x-minX)*scale;sy=y=>oy-(y-minY)*scale;const mission=el('path',{class:'mission',d:pathD(DATA.path)});trail=el('path',{class:'trail'});targetLine=el('line',{class:'to-target'});heading=el('line',{class:'heading'});tractor=el('circle',{class:'tractor',r:6});target=el('circle',{class:'target',r:5});const s=DATA.path[0],e=DATA.path.at(-1);svg.append(mission,trail,el('circle',{class:'startpoint',cx:sx(s.x),cy:sy(s.y),r:5}),el('rect',{class:'endpoint',x:sx(e.x)-5,y:sy(e.y)-5,width:10,height:10}),targetLine,heading,tractor,target)}
+function fmt(v,d=2){return v===null||v===undefined||v===''?'—':Number(v).toFixed(d)}function fact(l,v){return `<div class="fact"><span>${l}</span><b>${v}</b></div>`}function mode(v){return Number(v)===2?'Pause':Number(v)===1?'Manual':Number(v)===0?'Auto':'—'}
+async function api(path,method='GET',body=null){const r=await fetch(path,{method,headers,body:body?JSON.stringify(body):null});const j=await r.json();if(!r.ok)throw Error(j.error||r.statusText);return j}
+async function command(name){try{if(name==='start'&&!confirm('Start the complete 40-minute blades-off mission? Keep the handheld in Pause until the controller is ready.'))return;const body=name==='start'?{confirmation:'RUN COMPLETE BACK YARD BLADES OFF'}:{};await api('/api/'+name,'POST',body)}catch(e){alert(e.message)}}
+startBtn.onclick=()=>command('start');pauseBtn.onclick=()=>command('pause');resumeBtn.onclick=()=>command('resume');
+function draw(s){const c=s.controller||{},b=s.bridge||{},st=b.steering||{},tr=b.transmission||{};const active=['STARTING','RUNNING','PAUSED','WAITING'].includes(s.process_state),fresh=s.controller_age_s!=null&&s.controller_age_s<1;startBtn.disabled=active;pauseBtn.disabled=!active||!fresh||c.software_paused===true;resumeBtn.disabled=!active||!fresh||c.software_paused!==true;stateEl.textContent=s.process_state;stateEl.className='badge '+(s.process_state==='RUNNING'?'ok':s.process_state==='PAUSED'||s.process_state==='WAITING'?'warn':s.process_state==='FAILED'?'bad':'');ageEl.textContent=s.controller_age_s==null?'No controller telemetry':s.controller_age_s.toFixed(1)+' s telemetry age';ageEl.className='badge '+(fresh?'ok':'bad');const idx=Number(c.waypoint_idx||0),total=Number(c.waypoints_total||DATA.path.length);progress.style.width=(100*Math.min(1,idx/Math.max(1,total))).toFixed(1)+'%';if(c.pos_x_m!==undefined&&c.pos_x_m!==''){const p={x:Number(c.pos_x_m),y:Number(c.pos_y_m)};if(!trailPoints.length||Math.hypot(p.x-trailPoints.at(-1).x,p.y-trailPoints.at(-1).y)>.03)trailPoints.push(p);if(trailPoints.length>6000)trailPoints.shift();trail.setAttribute('d',pathD(trailPoints));tractor.setAttribute('cx',sx(p.x));tractor.setAttribute('cy',sy(p.y));if(c.target_x_m!==''){const q={x:Number(c.target_x_m),y:Number(c.target_y_m)};target.setAttribute('cx',sx(q.x));target.setAttribute('cy',sy(q.y));targetLine.setAttribute('x1',sx(p.x));targetLine.setAttribute('y1',sy(p.y));targetLine.setAttribute('x2',sx(q.x));targetLine.setAttribute('y2',sy(q.y))}const h=(90-Number(c.heading_compass_deg))*Math.PI/180;heading.setAttribute('x1',sx(p.x));heading.setAttribute('y1',sy(p.y));heading.setAttribute('x2',sx(p.x+2*Math.cos(h)));heading.setAttribute('y2',sy(p.y+2*Math.sin(h)))}const phase=(DATA.phases[idx]||'—').replaceAll('_',' ');facts.innerHTML=fact('Mission phase',phase)+fact('Progress',idx+' / '+total+' ('+fmt(100*idx/Math.max(1,total),1)+'%)')+fact('Controller state',c.controller_state||s.process_state)+fact('Wait reason',c.wait_reason||'—')+fact('Target / actual speed',fmt(c.speed_cmd_mps)+' / '+fmt(c.actual_speed_mps)+' m/s')+fact('Cross-track / lateral yt',fmt(c.cross_track_err_m,3)+' / '+fmt(c.yt_m,3)+' m')+fact('Target lookahead',fmt(c.lookahead_dist_m)+' m')+fact('Heading',fmt(c.heading_compass_deg,1)+'°')+fact('Steering command',fmt(c.delta_deg,1)+'° / '+fmt(c.steer_normalized))+fact('Steering target / actual',(st.setpoint??'—')+' / '+(st.current??'—'))+fact('Steering error / PWM',(st.error??'—')+' / '+(st.pwm??'—'))+fact('JRK target / feedback',(tr.target??'—')+' / '+(tr.current??'—'))+fact('JRK motor current',tr.motor_current_mA==null?'—':tr.motor_current_mA+' mA')+fact('Radio / steering state',(b.radio?.signal||'—')+' / '+(st.state||'—'))+fact('Handheld modes',mode(st.mode)+' steering / '+mode(tr.mode)+' transmission')+fact('GPS / heading',(c.fix_quality||'—')+' / '+(String(c.head_valid).toLowerCase()==='true'?'valid':'invalid'));out.textContent=(s.output||[]).join('\n');out.scrollTop=out.scrollHeight}
+async function poll(){try{const s=await api('/api/state');draw(s)}catch(e){stateEl.textContent='DISCONNECTED';stateEl.className='badge bad'}setTimeout(poll,250)}
+(async()=>{try{DATA=await api('/api/mission');setupMap();poll()}catch(e){document.body.innerHTML='<main><h1>Dashboard access failed</h1><p>'+e.message+'</p></main>'}})();
+</script></body></html>'''
+
+
+class MissionState:
+    def __init__(self):
+        self.lock = threading.Lock()
+        self.controller = {}
+        self.controller_time = 0.0
+        self.bridge = {}
+        self.bridge_time = 0.0
+        self.process = None
+        self.process_state = "READY"
+        self.output = deque(maxlen=80)
+
+    def snapshot(self):
+        with self.lock:
+            now = time.time()
+            return {
+                "controller": dict(self.controller),
+                "controller_age_s": None if not self.controller_time else now - self.controller_time,
+                "bridge": dict(self.bridge),
+                "bridge_age_s": None if not self.bridge_time else now - self.bridge_time,
+                "process_state": self.process_state,
+                "output": list(self.output),
+            }
+
+
+def udp_listener(state, port, kind):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    if hasattr(socket, "SO_REUSEPORT"):
+        try: sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+        except OSError: pass
+    sock.bind(("", port)); sock.settimeout(0.5)
+    while True:
+        try: data, _addr = sock.recvfrom(65535)
+        except socket.timeout: continue
+        try: message = json.loads(data.decode("utf-8"))
+        except (ValueError, UnicodeDecodeError): continue
+        with state.lock:
+            if kind == "controller":
+                state.controller = message; state.controller_time = time.time()
+                if message.get("software_paused"):
+                    state.process_state = "PAUSED"
+                elif state.process_state not in ("COMPLETED", "FAILED"):
+                    state.process_state = message.get("controller_state", "RUNNING")
+            else:
+                state.bridge = message; state.bridge_time = time.time()
+
+
+def send_udp(port, payload, repeats=1):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    encoded = json.dumps(payload).encode("utf-8")
+    for _ in range(repeats):
+        sock.sendto(encoded, ("127.0.0.1", port)); time.sleep(0.02)
+    sock.close()
+
+
+def process_output(state, process):
+    assert process.stdout is not None
+    for line in process.stdout:
+        with state.lock: state.output.append(line.rstrip())
+
+
+def process_waiter(state, process):
+    code = process.wait()
+    with state.lock:
+        state.process_state = "COMPLETED" if code == 0 else "FAILED"
+        state.output.append(f"Mission launcher exited with status {code}.")
+        state.process = None
+
+
+def safe_to_start(state):
+    snap = state.snapshot()
+    if snap["bridge_age_s"] is None or snap["bridge_age_s"] > 1.0:
+        return False, "No fresh Teensy status; keep tractor01 services running"
+    steering = snap["bridge"].get("steering", {})
+    transmission = snap["bridge"].get("transmission", {})
+    try:
+        steering_mode = int(steering.get("mode", -1))
+        transmission_mode = int(transmission.get("mode", -1))
+    except (TypeError, ValueError):
+        return False, "Teensy mode telemetry is incomplete"
+    if steering_mode != 2 or transmission_mode != 2:
+        return False, "Put the handheld in Pause before starting"
+    if steering.get("state") != "PAUSE":
+        return False, f"Steering state is {steering.get('state')!r}, not PAUSE"
+    return True, ""
+
+
+def start_mission(state):
+    ok, reason = safe_to_start(state)
+    if not ok: raise RuntimeError(reason)
+    with state.lock:
+        if state.process is not None: raise RuntimeError("A mission is already active")
+        state.controller = {}; state.controller_time = 0.0; state.output.clear()
+        state.process_state = "STARTING"
+        process = subprocess.Popen(
+            ["bash", str(LAUNCHER), "--dashboard"], cwd=str(REPO),
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+            bufsize=1, start_new_session=True,
+        )
+        state.process = process
+    threading.Thread(target=process_output, args=(state, process), daemon=True).start()
+    threading.Thread(target=process_waiter, args=(state, process), daemon=True).start()
+
+
+def pause_mission(state):
+    snap = state.snapshot()
+    with state.lock:
+        if state.process is None: raise RuntimeError("No mission is active")
+    if snap["controller_age_s"] is None or snap["controller_age_s"] > 1.0:
+        raise RuntimeError("Controller telemetry is not live; use the handheld Pause")
+    send_udp(CONTROL_PORT, {"command": "pause"}, repeats=3)
+    send_udp(CMD_VEL_PORT, {"linear_x": 0.0, "angular_z": 0.0, "timestamp": time.time()}, repeats=5)
+    with state.lock: state.process_state = "PAUSED"
+
+
+def resume_mission(state):
+    with state.lock:
+        if state.process is None: raise RuntimeError("No mission is active")
+    send_udp(CONTROL_PORT, {"command": "resume"}, repeats=3)
+    with state.lock: state.process_state = "RUNNING"
+
+
+def load_mission_payload():
+    rows = [list(map(float, line.split())) for line in MISSION.read_text().splitlines()]
+    lat0, lon0 = rows[0][0], rows[0][1]
+    lon_scale = 111_320.0 * math.cos(math.radians(lat0))
+    path = [{"x": (row[1] - lon0) * lon_scale, "y": (row[0] - lat0) * 110_540.0,
+             "speed": row[4], "lookahead": row[3]} for row in rows]
+    with AUDIT.open(newline="", encoding="utf-8-sig") as handle:
+        phases = [row.get("phase", "") for row in csv.DictReader(handle)]
+    return {"path": path, "phases": phases, "waypoints": len(path)}
+
+
+def handler_factory(state, token, mission_payload):
+    class Handler(BaseHTTPRequestHandler):
+        def log_message(self, fmt, *args):
+            return
+
+        def authorized(self):
+            query_key = parse_qs(urlparse(self.path).query).get("key", [""])[0]
+            return secrets.compare_digest(self.headers.get("X-Operator-Key", "") or query_key, token)
+
+        def send_json(self, value, status=200):
+            data = json.dumps(value, allow_nan=False).encode("utf-8")
+            self.send_response(status); self.send_header("Content-Type", "application/json")
+            self.send_header("Cache-Control", "no-store"); self.send_header("Content-Length", str(len(data)))
+            self.end_headers(); self.wfile.write(data)
+
+        def do_GET(self):
+            path = urlparse(self.path).path
+            if path == "/":
+                data = HTML.encode("utf-8"); self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(data))); self.end_headers(); self.wfile.write(data); return
+            if not self.authorized(): self.send_json({"error": "Invalid operator key"}, 403); return
+            if path == "/api/state": self.send_json(state.snapshot()); return
+            if path == "/api/mission": self.send_json(mission_payload); return
+            self.send_json({"error": "Not found"}, 404)
+
+        def do_POST(self):
+            if not self.authorized(): self.send_json({"error": "Invalid operator key"}, 403); return
+            length = int(self.headers.get("Content-Length", "0")); body = self.rfile.read(length)
+            try: payload = json.loads(body or b"{}")
+            except ValueError: self.send_json({"error": "Invalid JSON"}, 400); return
+            path = urlparse(self.path).path
+            try:
+                if path == "/api/start":
+                    if payload.get("confirmation") != EXPECTED_CONFIRMATION:
+                        raise RuntimeError("Start confirmation was not accepted")
+                    start_mission(state)
+                elif path == "/api/pause": pause_mission(state)
+                elif path == "/api/resume": resume_mission(state)
+                else: self.send_json({"error": "Not found"}, 404); return
+            except RuntimeError as exc: self.send_json({"error": str(exc)}, 409); return
+            self.send_json({"ok": True})
+    return Handler
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--host", default="0.0.0.0")
+    parser.add_argument("--port", type=int, default=8088)
+    args = parser.parse_args()
+    for required in (MISSION, AUDIT, LAUNCHER):
+        if not required.is_file(): raise SystemExit(f"Required file not found: {required}")
+    token = secrets.token_urlsafe(18)
+    state = MissionState()
+    threading.Thread(target=udp_listener, args=(state, TELEMETRY_PORT, "controller"), daemon=True).start()
+    threading.Thread(target=udp_listener, args=(state, STATUS_PORT, "bridge"), daemon=True).start()
+    server = ThreadingHTTPServer((args.host, args.port), handler_factory(state, token, load_mission_payload()))
+    print("Tractor01 mission dashboard")
+    print(f"Open: http://raspberrypi:{args.port}/?key={token}")
+    print(f"IP:   http://192.168.1.151:{args.port}/?key={token}")
+    print("Keep this terminal open. Press Ctrl+C to close the dashboard safely.")
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        print("\nClosing dashboard and stopping any active mission...")
+    finally:
+        with state.lock: process = state.process
+        if process is not None:
+            try: pause_mission(state)
+            except RuntimeError: pass
+            try: os.killpg(process.pid, signal.SIGINT)
+            except (OSError, ProcessLookupError): pass
+        server.server_close()
+
+
+if __name__ == "__main__":
+    main()

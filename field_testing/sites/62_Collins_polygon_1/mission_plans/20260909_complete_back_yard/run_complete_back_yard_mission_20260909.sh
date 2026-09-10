@@ -31,11 +31,16 @@ if any(not all(math.isfinite(float(value)) for value in row) for row in rows):
 print("PASS: complete backyard mission has 5553 valid rows at 1.00 m/s.")
 PY
 
+dashboard_mode=false
 if [[ "${1:-}" == "--build-only" ]]; then
     echo "Build-only requested; mission generated and validated."
     exit 0
 fi
-[[ $# -eq 0 ]] || { echo "Usage: $0 [--build-only]" >&2; exit 2; }
+if [[ "${1:-}" == "--dashboard" ]]; then
+    dashboard_mode=true
+    shift
+fi
+[[ $# -eq 0 ]] || { echo "Usage: $0 [--build-only|--dashboard]" >&2; exit 2; }
 
 pgrep -f '[p]ython3.*field_test_logger_20260828.py' >/dev/null && { echo "ERROR: a field logger is already running." >&2; exit 1; }
 pgrep -f '[p]ython3.*pure_pursuit_controller_20260714.py' >/dev/null && { echo "ERROR: Pure Pursuit is already running." >&2; exit 1; }
@@ -49,7 +54,11 @@ echo " Route      : approximately 2.37 km / 39.5 min moving"
 echo " Mower deck must remain disengaged"
 echo "============================================================"
 echo "Running preflight; keep the tractor in Pause."
-sudo python3 "${PREFLIGHT}" --expected-firmware teensy_main_20260908_1p8_test
+if [[ "${dashboard_mode}" == true ]]; then
+    sudo -n python3 "${PREFLIGHT}" --expected-firmware teensy_main_20260908_1p8_test
+else
+    sudo python3 "${PREFLIGHT}" --expected-firmware teensy_main_20260908_1p8_test
+fi
 
 echo "Checking position and heading against the mission start..."
 python3 - "${MISSION}" <<'PY'
@@ -81,8 +90,12 @@ if heading_error > 20.0: raise SystemExit("ERROR: align within 20 degrees of the
 print("PASS: position and heading are suitable for mission start.")
 PY
 
-read -r -p 'Type RUN COMPLETE BACK YARD BLADES OFF to start: ' confirmation
-[[ "${confirmation}" == "RUN COMPLETE BACK YARD BLADES OFF" ]] || { echo "Aborted; nothing was started."; exit 1; }
+if [[ "${dashboard_mode}" == true ]]; then
+    echo "Dashboard supplied the blades-off start confirmation."
+else
+    read -r -p 'Type RUN COMPLETE BACK YARD BLADES OFF to start: ' confirmation
+    [[ "${confirmation}" == "RUN COMPLETE BACK YARD BLADES OFF" ]] || { echo "Aborted; nothing was started."; exit 1; }
+fi
 
 log_dir="/home/al/field_logs/20260909_complete_back_yard"
 mkdir -p "${log_dir}"
@@ -103,4 +116,4 @@ logger_pid=$!
 sleep 2
 kill -0 "${logger_pid}" 2>/dev/null || { echo "ERROR: field logger stopped during startup." >&2; exit 1; }
 echo "Logger running. Starting Pure Pursuit; remain ready to select Pause."
-python3 -u "${CONTROLLER}" "${MISSION}" --mode live --gps-port 6010 --min-fix "RTK Fixed" --ip 127.0.0.1 --port 6004 --max-speed 1.00
+python3 -u "${CONTROLLER}" "${MISSION}" --mode live --gps-port 6010 --min-fix "RTK Fixed" --ip 127.0.0.1 --port 6004 --max-speed 1.00 --control-port 6011 --telemetry-port 6012
