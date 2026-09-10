@@ -4,7 +4,7 @@
 > [!note] How this list is organized
 > **Today** is the short working queue. **Next Field Test** is the checklist for the next outing. Sections **A–G** are the canonical backlog by subsystem. Routine start-up and shut-down checklists stay at the top for field use.
 >
-> Last workflow review: **2026-09-08**
+> Last workflow review: **2026-09-10**
 
 ## 🟡 Field Test Start-up
 - [ ] Power up the RTK base, base router, and Base Starlink Mini. Turn off the router switch on the back before connecting power, then turn it on and watch its LED. Allow approximately 3 minutes for `TractorField` to appear.
@@ -29,6 +29,10 @@
   - If it fails, do not select Auto. The check already covers the mission-critical services, devices, corrections, RTK position, heading, stationary speed, steering, and JRK telemetry.
   - `tractor_rpi/check_services.sh` is optional troubleshooting; its disabled LED-controller result is not currently a navigation prerequisite.
 - [ ] In **Manual**, drive to the mission's reviewed starting position. Stop, select **Pause**, and point the tractor in the expected starting direction.
+- [ ] For the complete back-yard mission, start the live dashboard from Windows PowerShell with this single line: `ssh -t -i "$env:USERPROFILE\.ssh\id_ed25519_tractor01" al@192.168.1.151 "cd /home/al/tractor2025 && sudo -v && python3 tractor_rpi/pure-pursuit/mission_dashboard_20260910.py"`
+  - Enter the SSH-key passphrase and tractor01 `sudo` password if requested. Keep this PowerShell window open for the entire mission.
+  - Open the exact temporary dashboard URL printed in PowerShell. Keep the handheld in **Pause**, verify live telemetry, and use **START MISSION**; the dashboard launcher reruns pre-flight and the mission start-position/heading checks.
+  - After dashboard **PAUSE**, first select handheld **Pause**, press **CLEAR PAUSE**, confirm the dashboard shows **HANDHELD PAUSE**, and only then select Auto. Manual-to-Auto does not clear a dashboard software Pause.
 - [ ] For the optional Ring 13 1.2/1.5/1.8 m/s test, run this single-line command only after flashing its matching firmware: `cd /home/al/tractor2025/field_testing/sites/62_Collins_polygon_1/mission_plans/20260908_ring13_1p2_1p5_1p8_calibration && ./ring13_1p2_1p5_1p8_20260908.sh`
   - The launcher rebuilds and validates the mission, reruns pre-flight, checks the start position and heading, starts the field logger, and starts Pure Pursuit.
   - Do **not** start a separate field logger for this mission; the launcher will reject an already-running logger.
