@@ -1,0 +1,44 @@
+{
+  "mission": "62_Collins_complete_back_yard_1mps_20260909.txt",
+  "waypoints": 5553,
+  "route_length_m": 2369.409,
+  "estimated_runtime_minutes_at_1mps": 39.49,
+  "commanded_speed_mps": 1.0,
+  "maximum_waypoint_gap_m": 0.5001,
+  "turn_radius_m": 1.9,
+  "polygon_1_rings": 14,
+  "polygon_1_stripes": 21,
+  "polygon_2_rings": 2,
+  "polygon_3_rings": 3,
+  "polygon_1_exit_connector": {
+    "mode": "RSR",
+    "length_m": 25.542564241716082
+  },
+  "recorded_travel_polygon_1_to_2_length_m": 32.787,
+  "recorded_travel_polygon_1_to_2_hausdorff_m": 0.0674,
+  "phase_waypoint_counts": {
+    "polygon_1_rings": 2976,
+    "polygon_1_internal_connector": 50,
+    "polygon_1_stripes": 1098,
+    "polygon_1_exit_connector": 53,
+    "recorded_travel_polygon_1_to_2": 521,
+    "polygon_2_ring": 271,
+    "polygon_2_connector": 33,
+    "polygon_0_recorded_transition": 63,
+    "polygon_3_connector": 23,
+    "polygon_3_ring": 465
+  },
+  "p1_source_sha256": "eae4849dfb988082eb91e5f7b9aae602bbb14938cc450490bd333305d35b5ea7",
+  "p23_source_sha256": "30ae2744c60d33556d5dcb2a6ecc0891242add4e8dccbf66cb6294e83e2b5b89",
+  "mission_sha256": "e089ce42dedd821b4705281bfeba5c9d7d5782877e1b835234df484b68d39cd6",
+  "start": {
+    "lat": 40.485616704,
+    "lon": -80.332356671,
+    "heading_deg": 163.81250944066483
+  },
+  "end": {
+    "lat": 40.485760961,
+    "lon": -80.332512654,
+    "heading_deg": 346.21094607302655
+  }
+}

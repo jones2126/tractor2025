@@ -1,7 +1,7 @@
 {
   "mission": "62_Collins_polygon2_polygon3_rings_1mps_20260909.txt",
-  "waypoints": 844,
-  "route_length_m": 274.734,
+  "waypoints": 856,
+  "route_length_m": 282.592,
   "commanded_speed_mps": 1.0,
   "lookahead_m": 2.0,
   "waypoint_spacing_m": 0.5,
@@ -17,15 +17,15 @@
   "recorded_transition_length_m": 26.754,
   "transition_resample_hausdorff_m": 0.286,
   "source_log_sha256": "6af981e96a6d28e316656c8098549a81994178a5dbd74adad69b5e9283f0cf59",
-  "mission_sha256": "d2e166cdeb95af247ffca553d3e65ccaf4ecfe6392260697f1bf0e796b5fb77f",
+  "mission_sha256": "30ae2744c60d33556d5dcb2a6ecc0891242add4e8dccbf66cb6294e83e2b5b89",
   "start": {
-    "lat": 40.485631339344835,
-    "lon": -80.33267258575214,
-    "heading_deg": 287.26044786966963
+    "lat": 40.4855895,
+    "lon": -80.332734167,
+    "heading_deg": 344.9188468263014
   },
   "end": {
     "lat": 40.48576096061759,
     "lon": -80.33251265373089,
-    "heading_deg": 103.79055693216912
+    "heading_deg": 346.2094430678309
   }
 }

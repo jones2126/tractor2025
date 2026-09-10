@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Supervised, blades-off Polygon 2 -> Polygon 3 ring test at 1.00 m/s.
+# Supervised, blades-off complete backyard mission at 1.00 m/s.
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 TRACTOR_REPO="${TRACTOR_REPO:-/home/al/tractor2025}"
-BUILDER="${SCRIPT_DIR}/build_polygon2_polygon3_ring_mission_20260909.py"
-MISSION="${SCRIPT_DIR}/62_Collins_polygon2_polygon3_rings_1mps_20260909.txt"
+BUILDER="${SCRIPT_DIR}/build_complete_back_yard_mission_20260909.py"
+MISSION="${SCRIPT_DIR}/62_Collins_complete_back_yard_1mps_20260909.txt"
 CONTROLLER="${TRACTOR_REPO}/tractor_rpi/pure-pursuit/pure_pursuit_controller_20260714.py"
 LOGGER="${TRACTOR_REPO}/tractor_rpi/field_test_logger_20260828.py"
 PREFLIGHT="${TRACTOR_REPO}/tractor_rpi/testing/mission_preflight_20260804.py"
@@ -22,15 +22,13 @@ import math
 import sys
 
 rows = [line.split() for line in Path(sys.argv[1]).read_text(encoding="utf-8").splitlines()]
-if len(rows) != 856 or any(len(row) != 5 for row in rows):
-    raise SystemExit(f"ERROR: expected 856 five-column mission rows, got {len(rows)}")
+if len(rows) != 5553 or any(len(row) != 5 for row in rows):
+    raise SystemExit(f"ERROR: expected 5553 five-column mission rows, got {len(rows)}")
 if {row[4] for row in rows} != {"1.00"}:
     raise SystemExit("ERROR: every mission speed must be 1.00 m/s")
-if {row[3] for row in rows} != {"2.00"}:
-    raise SystemExit("ERROR: every mission lookahead must be 2.00 m")
 if any(not all(math.isfinite(float(value)) for value in row) for row in rows):
     raise SystemExit("ERROR: mission contains a non-finite value")
-print("PASS: 856 mission rows, all at 1.00 m/s with 2.00 m lookahead.")
+print("PASS: complete backyard mission has 5553 valid rows at 1.00 m/s.")
 PY
 
 if [[ "${1:-}" == "--build-only" ]]; then
@@ -43,16 +41,17 @@ pgrep -f '[p]ython3.*field_test_logger_20260828.py' >/dev/null && { echo "ERROR:
 pgrep -f '[p]ython3.*pure_pursuit_controller_20260714.py' >/dev/null && { echo "ERROR: Pure Pursuit is already running." >&2; exit 1; }
 
 echo "============================================================"
-echo " POLYGON 2 -> POLYGON 3 RING TEST - 1.00 M/S"
-echo " Polygon 2: outer boundary plus 1 inner ring"
-echo " Transfer : recorded RTK-Fixed path from 2026-09-08"
-echo " Polygon 3: outer boundary plus 2 inner rings"
+echo " COMPLETE 62 COLLINS BACK YARD TEST - 1.00 M/S"
+echo " Polygon 1: 14 clockwise rings and 21 stripes"
+echo " Polygon 2: outer boundary and 1 inner ring"
+echo " Polygon 3: outer boundary and 2 inner rings"
+echo " Route      : approximately 2.37 km / 39.5 min moving"
 echo " Mower deck must remain disengaged"
 echo "============================================================"
 echo "Running preflight; keep the tractor in Pause."
 sudo python3 "${PREFLIGHT}" --expected-firmware teensy_main_20260908_1p8_test
 
-echo "Checking position and heading against the generated mission start..."
+echo "Checking position and heading against the mission start..."
 python3 - "${MISSION}" <<'PY'
 import json, math, socket, sys, time
 
@@ -82,12 +81,12 @@ if heading_error > 20.0: raise SystemExit("ERROR: align within 20 degrees of the
 print("PASS: position and heading are suitable for mission start.")
 PY
 
-read -r -p 'Type RUN POLYGON 2 AND 3 RINGS BLADES OFF to start: ' confirmation
-[[ "${confirmation}" == "RUN POLYGON 2 AND 3 RINGS BLADES OFF" ]] || { echo "Aborted; nothing was started."; exit 1; }
+read -r -p 'Type RUN COMPLETE BACK YARD BLADES OFF to start: ' confirmation
+[[ "${confirmation}" == "RUN COMPLETE BACK YARD BLADES OFF" ]] || { echo "Aborted; nothing was started."; exit 1; }
 
-log_dir="/home/al/field_logs/20260909_polygon2_polygon3_ring_test"
+log_dir="/home/al/field_logs/20260909_complete_back_yard"
 mkdir -p "${log_dir}"
-field_log="${log_dir}/polygon2_polygon3_rings_$(date '+%Y%m%d_%H%M%S').csv"
+field_log="${log_dir}/complete_back_yard_$(date '+%Y%m%d_%H%M%S').csv"
 logger_pid=""
 cleanup() {
     if [[ -n "${logger_pid}" ]] && kill -0 "${logger_pid}" 2>/dev/null; then

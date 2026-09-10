@@ -39,7 +39,6 @@ from site_coverage_planner_20260724 import (  # noqa: E402
     make_headland_paths,
     path_end_pose,
     path_start_pose,
-    plan_headland_chain,
     ring_variants,
     valid_connector,
 )
@@ -151,6 +150,69 @@ def plan_inbound_chain(headlands, incoming_pose, drive_area):
     return list(reversed(selected))
 
 
+def plan_polygon2_chain(headlands, anchor, next_pose, drive_area):
+    """Force the outer ring to start at the driven pause corner.
+
+    The later splice remains optimized, but its outgoing connector must begin
+    with a southern component before meeting the recorded transition.
+    """
+    candidates = ring_variants(headlands[0]["points"], True)
+    nearest = min(candidates, key=lambda item: distance(item["ring"][0], anchor))
+    # Start and finish the outer lap at the exact recorded pause point. The
+    # next retained rounded-ring point continues clockwise up the west side.
+    # Skip the tiny rounded-corner hook nearest the pause point. Joining the
+    # first point more than 1 m away follows the driven clockwise tangent and
+    # avoids commanding a sub-radius kink immediately after startup.
+    remainder = nearest["ring"][1:]
+    first_tangent = next(
+        index for index, point in enumerate(remainder) if distance(point, anchor) >= 1.0
+    )
+    outer_ring = [anchor, *remainder[first_tangent:]]
+    outer = {
+        "ring": outer_ring,
+        "start_pose": path_start_pose(outer_ring),
+        "end_pose": path_end_pose(outer_ring),
+        "label": headlands[0]["label"],
+        "headland_pass": headlands[0]["pass"],
+        "cost": 0.0,
+        "previous": None,
+        "incoming": None,
+    }
+
+    if len(headlands) != 2:
+        raise ValueError("Polygon 2 mission expects exactly two rings")
+    finals = []
+    for variant in ring_variants(headlands[1]["points"], True):
+        incoming = valid_connector(
+            outer["end_pose"], variant["start_pose"], drive_area,
+            TURN_RADIUS_M, SPACING_M,
+        )
+        if incoming is None:
+            continue
+        outgoing = valid_connector(
+            variant["end_pose"], next_pose, drive_area,
+            TURN_RADIUS_M, SPACING_M,
+        )
+        if outgoing is None:
+            continue
+        outgoing_points = outgoing["points"]
+        if len(outgoing_points) < 2 or outgoing_points[1][1] >= outgoing_points[0][1]:
+            continue
+        cost = float(incoming["length_m"]) + float(outgoing["length_m"])
+        finals.append((cost, {
+            **variant,
+            "label": headlands[1]["label"],
+            "headland_pass": headlands[1]["pass"],
+            "cost": cost,
+            "previous": outer,
+            "incoming": incoming,
+        }, outgoing))
+    if not finals:
+        raise ValueError("No Polygon 2 ring sequence can make the required southern exit")
+    _cost, inner, outgoing = min(finals, key=lambda item: item[0])
+    return [outer, inner], outgoing
+
+
 def main():
     source_sha = portable_text_sha256(SOURCE_LOG)
     if source_sha != EXPECTED_SOURCE_SHA256:
@@ -171,9 +233,8 @@ def main():
     p3_headlands = make_headland_paths(
         p3_drive, 3, LANE_SPACING_M, TURN_RADIUS_M, outer_boundary=p3_boundary
     )
-    p2_selected, p2_outgoing = plan_headland_chain(
-        p2_headlands, transition[0], path_start_pose(transition), True,
-        p2_drive, TURN_RADIUS_M, SPACING_M,
+    p2_selected, p2_outgoing = plan_polygon2_chain(
+        p2_headlands, (0.0, 0.0), path_start_pose(transition), p2_drive
     )
     p3_selected = plan_inbound_chain(p3_headlands, path_end_pose(transition), p3_drive)
 
@@ -274,9 +335,9 @@ def main():
         "source_log_sha256": source_sha,
         "mission_sha256": portable_text_sha256(MISSION),
         "start": {"lat": mission[0].lat, "lon": mission[0].lon,
-                  "heading_deg": math.degrees(mission[0].yaw_rad) % 360.0},
+                  "heading_deg": (90.0 - math.degrees(mission[0].yaw_rad)) % 360.0},
         "end": {"lat": mission[-1].lat, "lon": mission[-1].lon,
-                "heading_deg": math.degrees(mission[-1].yaw_rad) % 360.0},
+                "heading_deg": (90.0 - math.degrees(mission[-1].yaw_rad)) % 360.0},
     }
     REPORT.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
 
@@ -308,6 +369,14 @@ def main():
             shown.add(label)
     ax.scatter(*xy[0], marker="o", s=90, color="limegreen", edgecolor="black", zorder=5, label="Mission start")
     ax.scatter(*xy[-1], marker="X", s=90, color="red", edgecolor="black", zorder=5, label="Mission end")
+    # Direction arrows remove ambiguity at the ring splices and transition.
+    arrow_indexes = list(range(18, len(xy) - 1, 30))
+    for i in arrow_indexes:
+        dx = xy[i + 1][0] - xy[i][0]
+        dy = xy[i + 1][1] - xy[i][1]
+        ax.annotate("", xy=xy[i + 1], xytext=xy[i],
+                    arrowprops={"arrowstyle": "-|>", "color": "black", "lw": 1.1,
+                                "mutation_scale": 14})
     ax.set_aspect("equal", adjustable="box"); ax.grid(True, alpha=.25)
     ax.set_xlabel("East (m)"); ax.set_ylabel("North (m)")
     ax.set_title("Polygon 2 + Polygon 3 Ring Test — 1.00 m/s")

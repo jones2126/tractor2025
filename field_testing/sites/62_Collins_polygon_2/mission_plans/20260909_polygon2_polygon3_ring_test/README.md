@@ -6,6 +6,11 @@ Supervised, blades-off mission commanded at **1.00 m/s** throughout:
 2. The RTK-Fixed Polygon 2-to-Polygon 3 transition driven on 2026-09-08.
 3. Polygon 3 outer boundary and two inner rings.
 
+The first waypoint is the exact `(0, 0)` local-frame position recorded during
+the Polygon 2 pause. Direction arrows on the preview confirm clockwise travel.
+The contained connector leaving Polygon 2 begins southward and meets the
+original recorded transition, which is then followed toward Polygon 3.
+
 Planning assumptions: 0.9652 m (38 inch) ring spacing, 1.90 m minimum turn
 radius, 0.50 m maximum waypoint spacing, 2.00 m lookahead, and clockwise
 rings. Ring connectors are forward-only Dubins paths checked against the
