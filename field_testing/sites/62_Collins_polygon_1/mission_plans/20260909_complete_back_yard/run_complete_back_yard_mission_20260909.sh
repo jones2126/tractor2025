@@ -11,17 +11,41 @@ CONTROLLER="${TRACTOR_REPO}/tractor_rpi/pure-pursuit/pure_pursuit_controller_202
 LOGGER="${TRACTOR_REPO}/tractor_rpi/field_test_logger_20260828.py"
 PREFLIGHT="${TRACTOR_REPO}/tractor_rpi/testing/mission_preflight_20260804.py"
 
-for required in "${BUILDER}" "${CONTROLLER}" "${LOGGER}" "${PREFLIGHT}"; do
+dashboard_mode=false
+build_only=false
+if [[ "${1:-}" == "--build-only" ]]; then
+    build_only=true
+    shift
+elif [[ "${1:-}" == "--dashboard" ]]; then
+    dashboard_mode=true
+    shift
+fi
+[[ $# -eq 0 ]] || { echo "Usage: $0 [--build-only|--dashboard]" >&2; exit 2; }
+
+for required in "${BUILDER}" "${MISSION}" "${CONTROLLER}" "${LOGGER}" "${PREFLIGHT}"; do
     [[ -f "${required}" ]] || { echo "ERROR: required file not found: ${required}" >&2; exit 1; }
 done
 
-python3 "${BUILDER}"
+if [[ "${build_only}" == true ]]; then
+    python3 "${BUILDER}"
+else
+    echo "Using the reviewed committed mission; verifying its exact checksum and contents."
+fi
 python3 - "${MISSION}" <<'PY'
+import hashlib
 from pathlib import Path
 import math
 import sys
 
-rows = [line.split() for line in Path(sys.argv[1]).read_text(encoding="utf-8").splitlines()]
+mission_path = Path(sys.argv[1])
+mission_bytes = mission_path.read_bytes().replace(b"\r\n", b"\n")
+mission_sha256 = hashlib.sha256(mission_bytes).hexdigest()
+expected_sha256 = "e089ce42dedd821b4705281bfeba5c9d7d5782877e1b835234df484b68d39cd6"
+if mission_sha256 != expected_sha256:
+    raise SystemExit(
+        f"ERROR: mission checksum is {mission_sha256}; expected reviewed mission {expected_sha256}"
+    )
+rows = [line.split() for line in mission_bytes.decode("utf-8").splitlines()]
 if len(rows) != 5553 or any(len(row) != 5 for row in rows):
     raise SystemExit(f"ERROR: expected 5553 five-column mission rows, got {len(rows)}")
 if {row[4] for row in rows} != {"1.00"}:
@@ -31,16 +55,10 @@ if any(not all(math.isfinite(float(value)) for value in row) for row in rows):
 print("PASS: complete backyard mission has 5553 valid rows at 1.00 m/s.")
 PY
 
-dashboard_mode=false
-if [[ "${1:-}" == "--build-only" ]]; then
+if [[ "${build_only}" == true ]]; then
     echo "Build-only requested; mission generated and validated."
     exit 0
 fi
-if [[ "${1:-}" == "--dashboard" ]]; then
-    dashboard_mode=true
-    shift
-fi
-[[ $# -eq 0 ]] || { echo "Usage: $0 [--build-only|--dashboard]" >&2; exit 2; }
 
 pgrep -f '[p]ython3.*field_test_logger_20260828.py' >/dev/null && { echo "ERROR: a field logger is already running." >&2; exit 1; }
 pgrep -f '[p]ython3.*pure_pursuit_controller_20260714.py' >/dev/null && { echo "ERROR: Pure Pursuit is already running." >&2; exit 1; }
