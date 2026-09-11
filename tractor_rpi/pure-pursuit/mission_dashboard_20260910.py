@@ -135,6 +135,17 @@ poll();
 </script></body></html>'''
 
 
+def json_safe(value):
+    """Replace non-finite telemetry floats with JSON null, recursively."""
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+    if isinstance(value, dict):
+        return {key: json_safe(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [json_safe(item) for item in value]
+    return value
+
+
 class MissionState:
     def __init__(self):
         self.lock = threading.Lock()
@@ -300,7 +311,7 @@ def handler_factory(state, token, mission_payload):
             return secrets.compare_digest(self.headers.get("X-Operator-Key", "") or query_key, token)
 
         def send_json(self, value, status=200):
-            data = json.dumps(value, allow_nan=False).encode("utf-8")
+            data = json.dumps(json_safe(value), allow_nan=False).encode("utf-8")
             self.send_response(status); self.send_header("Content-Type", "application/json")
             self.send_header("Cache-Control", "no-store"); self.send_header("Content-Length", str(len(data)))
             self.end_headers(); self.wfile.write(data)

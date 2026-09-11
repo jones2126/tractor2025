@@ -2,6 +2,7 @@
 """Focused offline tests for per-receiver F9P satellite diagnostics."""
 
 import importlib.util
+import json
 import struct
 import sys
 import time
@@ -44,6 +45,26 @@ mission_preflight = load_module(
     "mission_preflight_20260804_test",
     TRACTOR_RPI / "testing" / "mission_preflight_20260804.py",
 )
+mission_dashboard = load_module(
+    "mission_dashboard_20260910_test",
+    TRACTOR_RPI / "pure-pursuit" / "mission_dashboard_20260910.py",
+)
+
+
+class DashboardJsonTests(unittest.TestCase):
+    def test_non_finite_telemetry_is_encoded_as_null(self):
+        telemetry = {
+            "gps": {"speed_mps": float("nan"), "diff_age": float("inf")},
+            "controller": {"cross_track_err_m": 0.25},
+        }
+        encoded = json.dumps(
+            mission_dashboard.json_safe(telemetry),
+            allow_nan=False,
+        )
+        decoded = json.loads(encoded)
+        self.assertIsNone(decoded["gps"]["speed_mps"])
+        self.assertIsNone(decoded["gps"]["diff_age"])
+        self.assertEqual(decoded["controller"]["cross_track_err_m"], 0.25)
 
 
 class SatelliteParserTests(unittest.TestCase):
