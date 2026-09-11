@@ -73,7 +73,9 @@ echo " Mower deck must remain disengaged"
 echo "============================================================"
 echo "Running preflight; keep the tractor in Pause."
 if [[ "${dashboard_mode}" == true ]]; then
-    sudo -n python3 "${PREFLIGHT}" --expected-firmware teensy_main_20260908_1p8_test
+    # The dashboard cannot answer an interactive sudo prompt. Preflight only
+    # performs read-only checks and fails closed if any required data is unavailable.
+    python3 "${PREFLIGHT}" --expected-firmware teensy_main_20260908_1p8_test
 else
     sudo python3 "${PREFLIGHT}" --expected-firmware teensy_main_20260908_1p8_test
 fi
