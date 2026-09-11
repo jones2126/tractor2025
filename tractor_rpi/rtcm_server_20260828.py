@@ -72,6 +72,7 @@ UDP_TARGET_IP = "127.0.0.1"
 UDP_TARGET_PORT = 6002
 UDP_NAV_PORT = 6010
 UDP_LOG_PORT = 6009          # NEW line — dedicated feed for field_test_logger
+UDP_DASHBOARD_PORT = 6013    # dedicated feed; avoids competing with safety/navigation listeners
 UDP_PUBLISH_HZ = 20                 # broadcast rate
 SATELLITE_DIAGNOSTIC_POLL_HZ = 1    # NAV-PVT/NAV-SAT, both receivers
 
@@ -682,6 +683,7 @@ def udp_publisher():
         sock.sendto(payload, (UDP_TARGET_IP, UDP_TARGET_PORT))
         sock.sendto(payload, (UDP_TARGET_IP, UDP_NAV_PORT))
         sock.sendto(payload, (UDP_TARGET_IP, UDP_LOG_PORT))  # NEW line — separate flow, avoids SO_REUSEPORT contention with the controller on 6002
+        sock.sendto(payload, (UDP_TARGET_IP, UDP_DASHBOARD_PORT))
 
 # ---------------------------------------------------------------------------
 

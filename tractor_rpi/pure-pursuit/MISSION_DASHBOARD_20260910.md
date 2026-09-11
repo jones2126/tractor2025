@@ -6,6 +6,11 @@ actual tractor trail, heading,
 active target, mission progress, controller calculations, GPS state, steering
 telemetry, and JRK transmission telemetry.
 
+Before the controller starts, a dedicated GPS feed shows the tractor's live
+position, its distance from the mission start, and the east/west and
+north/south movement needed to reach the start. **OPEN MESSAGES** opens the
+complete launcher output in a separate browser tab with a copy button.
+
 ## Safety behavior
 
 - The handheld Pause remains the independent safety override and must stay
@@ -34,17 +39,19 @@ On tractor01, update the repository and flash the expected
 `teensy_main_20260908_1p8_test` firmware first. Then run this one line:
 
 ```bash
-cd /home/al/tractor2025 && sudo -v && python3 tractor_rpi/pure-pursuit/mission_dashboard_20260910.py
+cd /home/al/tractor2025 && python3 tractor_rpi/pure-pursuit/mission_dashboard_20260910.py
 ```
 
 The terminal prints a private, temporary URL containing an operator key, for
 example:
 
 ```text
-http://192.168.1.151:8088/?key=...
+ZeroTier: http://192.168.193.76:8088/?key=...
+Local:    http://192.168.1.151:8088/?key=...
 ```
 
-Open that exact URL from the field laptop or phone. Keep the terminal open.
+From a remote development machine, open the complete ZeroTier URL. Use the
+local URL only from a device on the tractor's local network. Keep the terminal open.
 The key changes whenever the dashboard restarts and prevents another device
 on the field network from operating the buttons without the URL.
 
@@ -53,8 +60,9 @@ on the field network from operating the buttons without the URL.
 1. Keep the mower deck disengaged and the handheld in Pause.
 2. Open the dashboard URL and confirm live Teensy status is visible.
 3. Press **START MISSION** and accept the blades-off confirmation.
-4. Watch the launcher output on the lower-right. It rebuilds the mission, runs
-   preflight, and checks the starting position and heading.
+4. Watch the launcher output on the lower-right, or open **OPEN MESSAGES** in a
+   separate tab. It verifies the exact reviewed mission, runs preflight, and
+   checks the starting position and heading.
 5. Wait until controller telemetry is live, then select Auto on the handheld.
 6. Use **PAUSE** for a software hold. The dashboard keeps showing the complete
    mission while limiting the cyan actual trail to its most recent 30 seconds.
@@ -64,9 +72,6 @@ on the field network from operating the buttons without the URL.
 8. At mission completion, the controller sends stop and the launcher closes
    the field logger normally.
 
-If Start reports that non-interactive sudo is unavailable, return to the
-tractor01 terminal, run `sudo -v`, and press Start again promptly.
-
 ## Network ports
 
 | Port | Purpose |
@@ -74,6 +79,7 @@ tractor01 terminal, run `sudo -v`, and press Start again promptly.
 | TCP 8088 | Dashboard page and local API |
 | UDP 6011 | Local-only Pure Pursuit Pause/Clear-Pause control |
 | UDP 6012 | Local-only controller telemetry for the dashboard |
+| UDP 6013 | Dedicated live GPS feed for pre-start map positioning |
 | UDP 6003 | Existing Teensy bridge status |
 | UDP 6004 | Existing `cmd_vel` command path |
 
