@@ -10,10 +10,6 @@ import math
 import sys
 from pathlib import Path
 
-import matplotlib
-
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 from shapely.geometry import LineString, Point, Polygon
 
 
@@ -340,6 +336,20 @@ def main():
                 "heading_deg": (90.0 - math.degrees(mission[-1].yaw_rad)) % 360.0},
     }
     REPORT.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+
+    try:
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+    except ImportError as exc:
+        print(
+            f"WARNING: Mission and safety report were built, but the optional "
+            f"preview image was skipped because matplotlib is unavailable: {exc}",
+            file=sys.stderr,
+        )
+        print(json.dumps(report, indent=2))
+        return
 
     fig, ax = plt.subplots(figsize=(13, 10))
     for polygon, color, label in [(p2_boundary, "#333333", "Polygon 2 boundary"),
