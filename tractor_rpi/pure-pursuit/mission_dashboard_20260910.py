@@ -32,6 +32,8 @@ CONTROL_PORT = 6011
 TELEMETRY_PORT = 6012
 STATUS_PORT = 6003
 CMD_VEL_PORT = 6004
+TRACTOR_LOCAL_IP = "192.168.1.151"
+TRACTOR_ZEROTIER_IP = "192.168.193.76"
 EXPECTED_CONFIRMATION = "RUN COMPLETE BACK YARD BLADES OFF"
 
 
@@ -302,8 +304,9 @@ def main():
     threading.Thread(target=udp_listener, args=(state, STATUS_PORT, "bridge"), daemon=True).start()
     server = ThreadingHTTPServer((args.host, args.port), handler_factory(state, token, load_mission_payload()))
     print("Tractor01 mission dashboard")
-    print(f"Open: http://raspberrypi:{args.port}/?key={token}")
-    print(f"IP:   http://192.168.1.151:{args.port}/?key={token}")
+    print(f"ZeroTier: http://{TRACTOR_ZEROTIER_IP}:{args.port}/?key={token}")
+    print(f"Local:    http://{TRACTOR_LOCAL_IP}:{args.port}/?key={token}")
+    print(f"Hostname: http://raspberrypi:{args.port}/?key={token}")
     print("Keep this terminal open. Press Ctrl+C to close the dashboard safely.")
     try:
         server.serve_forever()
