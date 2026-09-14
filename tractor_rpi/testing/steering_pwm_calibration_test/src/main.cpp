@@ -7,6 +7,8 @@
     Find a low PWM value that reliably moves the unloaded steering from
     near center to the halfway point on either the right or left side,
     then use exactly that PWM to return to the production center value.
+    PWM is applied in short pulses. Both outputs are turned off before
+    the steering potentiometer is allowed to settle and measured.
 
   This test DOES NOT seek a mechanical stop. It stays inside the steering
   positions already used by production firmware (197/447/815).
@@ -53,13 +55,17 @@ constexpr int PWM_START = 60;
 constexpr int PWM_INCREMENT = 5;
 constexpr int PWM_MAX = 180;
 
-// A PWM step is raised only after this long without directional progress.
-constexpr int PROGRESS_COUNTS = 2;
-constexpr uint32_t RAMP_NO_PROGRESS_MS = 400;
-constexpr uint32_t RETURN_NO_PROGRESS_MS = 750;
+// Pulsed drive keeps each possible stall short and measures the pot only
+// while both IBT-2 PWM inputs are zero. The median rejects isolated ADC noise.
+constexpr int PROGRESS_COUNTS = 3;
+constexpr int WRONG_DIRECTION_COUNTS = 6;
+constexpr int WRONG_DIRECTION_PULSES = 2;
+constexpr int RETURN_NO_PROGRESS_PULSES = 3;
+constexpr int FILTER_SAMPLES = 9;
+constexpr uint32_t PWM_PULSE_MS = 100;
+constexpr uint32_t PWM_OFF_SETTLE_MS = 100;
 constexpr uint32_t MAX_OUTBOUND_MS = 20000;
 constexpr uint32_t MAX_RETURN_MS = 12000;
-constexpr uint32_t SAMPLE_INTERVAL_MS = 20;
 constexpr uint32_t SETTLE_AT_HALF_MS = 750;
 
 enum class Direction : int8_t {
@@ -161,30 +167,77 @@ void haltForever(const char *message) {
     }
 }
 
-void printSample(const char *phase, Direction direction, int target, int pwm,
-                 int pot, int anchor, uint32_t elapsedMs) {
+int readMedianPot() {
+    int samples[FILTER_SAMPLES];
+    for (int i = 0; i < FILTER_SAMPLES; ++i) {
+        samples[i] = analogRead(STEER_POT_PIN);
+        delayMicroseconds(500);
+    }
+
+    for (int i = 1; i < FILTER_SAMPLES; ++i) {
+        const int value = samples[i];
+        int j = i - 1;
+        while (j >= 0 && samples[j] > value) {
+            samples[j + 1] = samples[j];
+            --j;
+        }
+        samples[j + 1] = value;
+    }
+    return samples[FILTER_SAMPLES / 2];
+}
+
+bool delayWithAbort(uint32_t durationMs) {
+    const uint32_t started = millis();
+    while (millis() - started < durationMs) {
+        if (abortRequested()) {
+            stopMotor();
+            return false;
+        }
+        delay(2);
+    }
+    return true;
+}
+
+bool pulseAndMeasure(Direction direction, int pwm, int &rawPot,
+                     int &filteredPot) {
+    drive(direction, pwm);
+    if (!delayWithAbort(PWM_PULSE_MS)) return false;
+
+    stopMotor();
+    if (!delayWithAbort(PWM_OFF_SETTLE_MS)) return false;
+
+    rawPot = analogRead(STEER_POT_PIN);
+    filteredPot = readMedianPot();
+    return true;
+}
+
+void printPulse(const char *phase, Direction direction, int target, int pwm,
+                int pulseNumber, int rawPot, int filteredPot, int previousPot,
+                int directionalStep, uint32_t elapsedMs) {
     Serial.print(millis()); Serial.print(',');
     Serial.print(phase); Serial.print(',');
     Serial.print(directionName(direction)); Serial.print(',');
     Serial.print(target); Serial.print(',');
     Serial.print(pwm); Serial.print(',');
-    Serial.print(pot); Serial.print(',');
-    Serial.print(anchor); Serial.print(',');
+    Serial.print(pulseNumber); Serial.print(',');
+    Serial.print(rawPot); Serial.print(',');
+    Serial.print(filteredPot); Serial.print(',');
+    Serial.print(previousPot); Serial.print(',');
+    Serial.print(directionalStep); Serial.print(',');
     Serial.println(elapsedMs);
 }
 
-// Outbound move: begin at PWM_START and raise PWM_INCREMENT only when the
-// pot has not made PROGRESS_COUNTS of directional progress in the allowed
-// interval. Once motion continues, retain the current PWM.
+// Outbound move: apply one guarded pulse, stop, settle, then measure. Raise
+// PWM only when an entire pulse produces no confirmed directional progress.
 MoveResult rampToHalf(Direction direction, int target, int &foundPwm,
                       int &finalPot) {
     int pwm = PWM_START;
-    int progressAnchor = analogRead(STEER_POT_PIN);
-    uint32_t lastProgressAt = millis();
+    delay(PWM_OFF_SETTLE_MS);
+    int previousPot = readMedianPot();
+    const int startingPot = previousPot;
+    int wrongDirectionStreak = 0;
+    int pulseNumber = 0;
     const uint32_t moveStarted = millis();
-    uint32_t lastSampleAt = 0;
-
-    drive(direction, pwm);
 
     while (true) {
         if (abortRequested()) {
@@ -192,34 +245,42 @@ MoveResult rampToHalf(Direction direction, int target, int &foundPwm,
             return MoveResult::operator_abort;
         }
 
-        const uint32_t now = millis();
-        if (now - lastSampleAt < SAMPLE_INTERVAL_MS) continue;
-        lastSampleAt = now;
+        int rawPot = 0;
+        int filteredPot = previousPot;
+        ++pulseNumber;
+        if (!pulseAndMeasure(direction, pwm, rawPot, filteredPot)) {
+            return MoveResult::operator_abort;
+        }
 
-        const int pot = analogRead(STEER_POT_PIN);
-        finalPot = pot;
-        const int remaining = static_cast<int>(direction) * (target - pot);
-        const int progress = static_cast<int>(direction) * (pot - progressAnchor);
-        printSample("OUTBOUND", direction, target, pwm, pot, progressAnchor,
-                    now - moveStarted);
+        finalPot = filteredPot;
+        const int remaining =
+            static_cast<int>(direction) * (target - filteredPot);
+        const int directionalStep =
+            static_cast<int>(direction) * (filteredPot - previousPot);
+        const int totalDirectionalMovement =
+            static_cast<int>(direction) * (filteredPot - startingPot);
+        printPulse("OUTBOUND", direction, target, pwm, pulseNumber, rawPot,
+                   filteredPot, previousPot, directionalStep,
+                   millis() - moveStarted);
 
-        if (abs(target - pot) <= TARGET_TOLERANCE || remaining <= 0) {
-            stopMotor();
+        if (abs(target - filteredPot) <= TARGET_TOLERANCE || remaining <= 0) {
             foundPwm = pwm;
             return MoveResult::reached;
         }
 
-        if (progress >= PROGRESS_COUNTS) {
-            progressAnchor = pot;
-            lastProgressAt = now;
-        } else if (progress <= -PROGRESS_COUNTS) {
-            stopMotor();
+        if (directionalStep <= -PROGRESS_COUNTS) {
+            ++wrongDirectionStreak;
+        } else {
+            wrongDirectionStreak = 0;
+        }
+
+        if (wrongDirectionStreak >= WRONG_DIRECTION_PULSES &&
+            totalDirectionalMovement <= -WRONG_DIRECTION_COUNTS) {
             foundPwm = pwm;
             return MoveResult::wrong_direction;
         }
 
-        if (now - lastProgressAt >= RAMP_NO_PROGRESS_MS) {
-            stopMotor();
+        if (directionalStep < PROGRESS_COUNTS) {
             if (pwm >= PWM_MAX) {
                 foundPwm = pwm;
                 return MoveResult::pwm_ceiling;
@@ -227,13 +288,11 @@ MoveResult rampToHalf(Direction direction, int target, int &foundPwm,
             pwm += PWM_INCREMENT;
             if (pwm > PWM_MAX) pwm = PWM_MAX;
             Serial.print("PWM_STEP,"); Serial.println(pwm);
-            progressAnchor = pot;
-            lastProgressAt = now;
-            drive(direction, pwm);
         }
 
-        if (now - moveStarted >= MAX_OUTBOUND_MS) {
-            stopMotor();
+        previousPot = filteredPot;
+
+        if (millis() - moveStarted >= MAX_OUTBOUND_MS) {
             foundPwm = pwm;
             return MoveResult::timeout;
         }
@@ -242,12 +301,13 @@ MoveResult rampToHalf(Direction direction, int target, int &foundPwm,
 
 // Return with exactly the outbound PWM; do not increase it automatically.
 MoveResult returnToCenter(Direction direction, int pwm, int &finalPot) {
-    int progressAnchor = analogRead(STEER_POT_PIN);
-    uint32_t lastProgressAt = millis();
+    delay(PWM_OFF_SETTLE_MS);
+    int previousPot = readMedianPot();
+    const int startingPot = previousPot;
+    int wrongDirectionStreak = 0;
+    int noProgressPulses = 0;
+    int pulseNumber = 0;
     const uint32_t moveStarted = millis();
-    uint32_t lastSampleAt = 0;
-
-    drive(direction, pwm);
 
     while (true) {
         if (abortRequested()) {
@@ -255,37 +315,52 @@ MoveResult returnToCenter(Direction direction, int pwm, int &finalPot) {
             return MoveResult::operator_abort;
         }
 
-        const uint32_t now = millis();
-        if (now - lastSampleAt < SAMPLE_INTERVAL_MS) continue;
-        lastSampleAt = now;
+        int rawPot = 0;
+        int filteredPot = previousPot;
+        ++pulseNumber;
+        if (!pulseAndMeasure(direction, pwm, rawPot, filteredPot)) {
+            return MoveResult::operator_abort;
+        }
 
-        const int pot = analogRead(STEER_POT_PIN);
-        finalPot = pot;
-        const int remaining = static_cast<int>(direction) * (POT_CENTER - pot);
-        const int progress = static_cast<int>(direction) * (pot - progressAnchor);
-        printSample("RETURN", direction, POT_CENTER, pwm, pot, progressAnchor,
-                    now - moveStarted);
+        finalPot = filteredPot;
+        const int remaining =
+            static_cast<int>(direction) * (POT_CENTER - filteredPot);
+        const int directionalStep =
+            static_cast<int>(direction) * (filteredPot - previousPot);
+        const int totalDirectionalMovement =
+            static_cast<int>(direction) * (filteredPot - startingPot);
+        printPulse("RETURN", direction, POT_CENTER, pwm, pulseNumber, rawPot,
+                   filteredPot, previousPot, directionalStep,
+                   millis() - moveStarted);
 
-        if (abs(POT_CENTER - pot) <= TARGET_TOLERANCE || remaining <= 0) {
-            stopMotor();
+        if (abs(POT_CENTER - filteredPot) <= TARGET_TOLERANCE || remaining <= 0) {
             return MoveResult::reached;
         }
 
-        if (progress >= PROGRESS_COUNTS) {
-            progressAnchor = pot;
-            lastProgressAt = now;
-        } else if (progress <= -PROGRESS_COUNTS) {
-            stopMotor();
+        if (directionalStep >= PROGRESS_COUNTS) {
+            noProgressPulses = 0;
+            wrongDirectionStreak = 0;
+        } else {
+            ++noProgressPulses;
+            if (directionalStep <= -PROGRESS_COUNTS) {
+                ++wrongDirectionStreak;
+            } else {
+                wrongDirectionStreak = 0;
+            }
+        }
+
+        if (wrongDirectionStreak >= WRONG_DIRECTION_PULSES &&
+            totalDirectionalMovement <= -WRONG_DIRECTION_COUNTS) {
             return MoveResult::wrong_direction;
         }
 
-        if (now - lastProgressAt >= RETURN_NO_PROGRESS_MS) {
-            stopMotor();
+        if (noProgressPulses >= RETURN_NO_PROGRESS_PULSES) {
             return MoveResult::no_progress;
         }
 
-        if (now - moveStarted >= MAX_RETURN_MS) {
-            stopMotor();
+        previousPot = filteredPot;
+
+        if (millis() - moveStarted >= MAX_RETURN_MS) {
             return MoveResult::timeout;
         }
     }
@@ -322,8 +397,9 @@ void setup() {
     Serial.print("Halfway targets: RIGHT="); Serial.print(RIGHT_HALF_TARGET);
     Serial.print(" LEFT="); Serial.println(LEFT_HALF_TARGET);
 
-    const int startupPot = analogRead(STEER_POT_PIN);
-    Serial.print("Startup pot (read-only): "); Serial.println(startupPot);
+    delay(PWM_OFF_SETTLE_MS);
+    const int startupPot = readMedianPot();
+    Serial.print("Startup filtered pot (read-only): "); Serial.println(startupPot);
     if (abs(startupPot - POT_CENTER) > START_CENTER_TOLERANCE) {
         haltForever("ABORT: steering is not within 40 pot counts of center.");
     }
@@ -352,6 +428,9 @@ void setup() {
     Serial.print("Outbound target: "); Serial.println(halfwayTarget);
     Serial.print("PWM search: "); Serial.print(PWM_START); Serial.print(" to ");
     Serial.print(PWM_MAX); Serial.print(" in steps of "); Serial.println(PWM_INCREMENT);
+    Serial.print("Pulse timing: "); Serial.print(PWM_PULSE_MS);
+    Serial.print(" ms ON, then "); Serial.print(PWM_OFF_SETTLE_MS);
+    Serial.println(" ms OFF before filtered measurement");
     Serial.print("Return target: "); Serial.print(POT_CENTER);
     Serial.println(" using exactly the PWM found outbound");
     Serial.println("--------------------------------------------------------------");
@@ -362,7 +441,10 @@ void setup() {
         haltForever("Not confirmed. No motion command was sent.");
     }
 
-    Serial.println("CSV: t_ms,phase,direction,target,pwm,pot,progress_anchor,elapsed_ms");
+    Serial.println(
+        "CSV: t_ms,phase,direction,target,pwm,pulse,raw_pot,"
+        "filtered_pot,previous_pot,directional_step,elapsed_ms"
+    );
     int foundPwm = 0;
     int finalPot = startupPot;
     const MoveResult outboundResult =
