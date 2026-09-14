@@ -399,6 +399,18 @@ void setup() {
         haltForever("Not confirmed. No motion command was sent.");
     }
 
+    Serial.println("Confirmed. Both PWM outputs remain zero during countdown.");
+    Serial.println("Start video now and move into a safe viewing position.");
+    for (int seconds = 15; seconds >= 1; --seconds) {
+        stopMotor();
+        Serial.print("STEERING STARTS IN "); Serial.print(seconds);
+        Serial.println(" SECONDS");
+        if (!delayWithAbort(1000)) {
+            haltForever("Operator aborted during the startup countdown.");
+        }
+    }
+    Serial.println("COUNTDOWN COMPLETE - STARTING LEFT PROBE NOW");
+
     Serial.println(
         "CSV: t_ms,phase,direction,pwm,pulse,raw_pot,filtered_pot,"
         "previous_pot,directional_step,no_progress_pulses,elapsed_ms"
