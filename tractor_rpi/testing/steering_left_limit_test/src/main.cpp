@@ -51,7 +51,9 @@ constexpr int WRONG_DIRECTION_COUNTS = 6;
 constexpr int WRONG_DIRECTION_PULSES = 2;
 constexpr int RETURN_NO_PROGRESS_PULSES = 3;
 
-constexpr int POT_SANITY_MIN = 50;
+// The 2026-09-14 right-stop run reached a stable pot reading of 46. Keep a
+// guard below that observed position while still rejecting ADC endpoint data.
+constexpr int POT_SANITY_MIN = 20;
 constexpr int POT_SANITY_MAX = 970;
 constexpr int MAX_CHANGE_PER_PULSE = 75;
 constexpr int MAX_PROBE_PULSES = 80;
@@ -395,8 +397,67 @@ void setup() {
     delay(PWM_OFF_SETTLE_MS);
     const int startupPot = readMedianPot();
     Serial.print("Startup filtered pot (read-only): "); Serial.println(startupPot);
+
+    if (startupPot < POT_SANITY_MIN || startupPot > POT_SANITY_MAX) {
+        haltForever("ABORT: startup steering-pot reading is outside sanity bounds.");
+    }
+
     if (abs(startupPot - POT_CENTER) > START_CENTER_TOLERANCE) {
-        haltForever("ABORT: steering is not within 40 pot counts of center.");
+        // Recovery-only mode. A limit probe that halted on a guard can leave
+        // steering at the stop; never offer another outward probe from there.
+        const Direction recoveryDirection = startupPot < POT_CENTER
+            ? Direction::left : Direction::right;
+
+        Serial.println("============================================================");
+        Serial.println("RECOVERY-ONLY MODE: steering is not near center.");
+        Serial.print("Recovery direction: ");
+        Serial.print(directionName(recoveryDirection));
+        Serial.print(" toward center "); Serial.println(POT_CENTER);
+        Serial.println("No mechanical-limit probe will be performed.");
+        Serial.println("============================================================");
+
+        const String recoveryConfirmation =
+            readLine("Begin guarded return to center? Steering WILL move [y/N]: ");
+        if (recoveryConfirmation.length() == 0 ||
+            (recoveryConfirmation[0] != 'y' &&
+             recoveryConfirmation[0] != 'Y')) {
+            haltForever("Recovery not confirmed. No motion command was sent.");
+        }
+
+        Serial.println("Confirmed. Both PWM outputs remain zero during countdown.");
+        for (int seconds = 10; seconds >= 1; --seconds) {
+            stopMotor();
+            Serial.print("CENTERING STARTS IN "); Serial.print(seconds);
+            Serial.println(" SECONDS");
+            if (!delayWithAbort(1000)) {
+                haltForever("Operator aborted during the recovery countdown.");
+            }
+        }
+        Serial.println("COUNTDOWN COMPLETE - STARTING GUARDED CENTERING NOW");
+        Serial.println(
+            "CSV: t_ms,phase,direction,pwm,pulse,raw_pot,filtered_pot,"
+            "previous_pot,directional_step,no_progress_pulses,pulse_ms,elapsed_ms"
+        );
+
+        int recoveryPot = startupPot;
+        int recoveryPulses = 0;
+        const MoveResult recoveryResult =
+            returnToCenter(recoveryDirection, recoveryPot, recoveryPulses);
+        stopMotor();
+
+        Serial.print("RECOVERY_RESULT,result=");
+        Serial.print(resultName(recoveryResult));
+        Serial.print(",pot="); Serial.print(recoveryPot);
+        Serial.print(",pulses="); Serial.println(recoveryPulses);
+
+        if (recoveryResult != MoveResult::reached_center) {
+            haltForever("Recovery did not safely reach center; PWM remains stopped.");
+        }
+
+        Serial.println("RECOVERY_COMPLETE");
+        Serial.print("Final centered pot: "); Serial.println(recoveryPot);
+        Serial.println("Both PWM outputs are zero. Reset the Teensy to run again.");
+        return;
     }
 
     const String directionLine = readLine("Test direction [l/r, q=quit]: ");
