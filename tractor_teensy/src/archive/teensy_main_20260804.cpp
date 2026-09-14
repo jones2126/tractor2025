@@ -151,10 +151,20 @@ float steer_kp = 1.0;
 float steer_ki = 0.0;
 float steer_kd = 0.0;
 
-// Tractor steering pot — measured physical limits (field calibrated 2026-05-18)
-const int STEER_POT_RIGHT  = 197;   // tractor pot at hard right
-const int STEER_POT_CENTER = 447;   // tractor pot straight ahead
-const int STEER_POT_LEFT   = 815;   // tractor pot at hard left
+// Tractor steering calibration. Dated wrapper builds can override these
+// compile-time values without duplicating this full known-good source.
+#ifndef STEER_POT_RIGHT_CAL
+#define STEER_POT_RIGHT_CAL 197
+#endif
+#ifndef STEER_POT_CENTER_CAL
+#define STEER_POT_CENTER_CAL 447
+#endif
+#ifndef STEER_POT_LEFT_CAL
+#define STEER_POT_LEFT_CAL 815
+#endif
+const int STEER_POT_RIGHT  = STEER_POT_RIGHT_CAL;
+const int STEER_POT_CENTER = STEER_POT_CENTER_CAL;
+const int STEER_POT_LEFT   = STEER_POT_LEFT_CAL;
 
 // RC joystick — measured values (field calibrated 2026-05-18)
 const int RADIO_STEER_RIGHT  = 1;    // RC joystick pushed hard right
