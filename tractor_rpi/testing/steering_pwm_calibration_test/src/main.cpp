@@ -153,7 +153,12 @@ void haltForever(const char *message) {
     stopMotor();
     Serial.println(message);
     Serial.println("Motor stopped. Reset the Teensy to run again.");
-    while (true) delay(1000);
+    while (true) {
+        stopMotor();
+        Serial.print("HALTED: "); Serial.print(message);
+        Serial.print(" Live pot="); Serial.println(analogRead(STEER_POT_PIN));
+        delay(5000);
+    }
 }
 
 void printSample(const char *phase, Direction direction, int target, int pwm,
@@ -295,7 +300,13 @@ void setup() {
     analogWriteResolution(8);
 
     Serial.begin(115200);
-    while (!Serial && millis() < 5000) {}
+    // Keep the motor disabled and wait for an operator terminal. This prevents
+    // startup and abort messages from being emitted once before the monitor
+    // has opened, which otherwise leaves an apparently blank terminal.
+    while (!Serial) {
+        stopMotor();
+        delay(50);
+    }
     delay(100);
 
     Serial.println("============================================================");
