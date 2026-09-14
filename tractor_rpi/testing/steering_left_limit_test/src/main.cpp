@@ -13,8 +13,10 @@
   The probe stops after three consecutive pulses produce less than two
   counts of movement toward the selected side. It records the farthest
   settled pot position and DOES NOT increase PWM at the suspected stop.
-  After a motor-off pause, it returns toward center with the same PWM 65,
-  using shorter pulses near center for a more precise final position.
+  After a motor-off pause, it returns toward the startup position with the
+  same PWM 65, using shorter pulses near center for a more precise result.
+  The startup reading is captured only after the operator confirms that the
+  wheels are physically centered; no obsolete center calibration is used.
 
   IMPORTANT LIMITATION:
     Gen1 IBT-2 wiring does not expose current sense or enable/reset.
@@ -31,8 +33,6 @@ constexpr uint8_t RPWM_PIN = 5;
 constexpr uint8_t LPWM_PIN = 6;
 constexpr uint8_t STEER_POT_PIN = A9;
 
-constexpr int POT_CENTER = 447;
-constexpr int START_CENTER_TOLERANCE = 40;
 constexpr int CENTER_TOLERANCE = 2;
 
 constexpr int TEST_PWM = 65;
@@ -51,10 +51,10 @@ constexpr int WRONG_DIRECTION_COUNTS = 6;
 constexpr int WRONG_DIRECTION_PULSES = 2;
 constexpr int RETURN_NO_PROGRESS_PULSES = 3;
 
-// The 2026-09-14 right-stop run reached a stable pot reading of 46. Keep a
-// guard below that observed position while still rejecting ADC endpoint data.
-constexpr int POT_SANITY_MIN = 20;
-constexpr int POT_SANITY_MAX = 970;
+// Old calibrated limit guards were intentionally removed after the physical
+// potentiometer adjustment. Only near-rail ADC values remain invalid.
+constexpr int POT_SANITY_MIN = 2;
+constexpr int POT_SANITY_MAX = 1021;
 constexpr int MAX_CHANGE_PER_PULSE = 75;
 constexpr int MAX_PROBE_PULSES = 80;
 constexpr int MAX_RETURN_PULSES = 80;
@@ -300,7 +300,8 @@ MoveResult probeLimit(Direction direction, int &candidateLimit, int &pulseCount)
     return MoveResult::pulse_limit;
 }
 
-MoveResult returnToCenter(Direction direction, int &finalPot, int &pulseCount) {
+MoveResult returnToCenter(Direction direction, int centerTarget,
+                          int &finalPot, int &pulseCount) {
     delay(PWM_OFF_SETTLE_MS);
     int previousPot = readMedianPot();
     const int startingPot = previousPot;
@@ -311,7 +312,7 @@ MoveResult returnToCenter(Direction direction, int &finalPot, int &pulseCount) {
     for (int pulse = 1; pulse <= MAX_RETURN_PULSES; ++pulse) {
         int rawPot = 0;
         int filteredPot = previousPot;
-        const int distanceToCenter = abs(POT_CENTER - previousPot);
+        const int distanceToCenter = abs(centerTarget - previousPot);
         uint32_t pulseMs = PWM_PULSE_MS;
         if (distanceToCenter <= 12) {
             pulseMs = RETURN_FINE_PULSE_MS;
@@ -352,8 +353,8 @@ MoveResult returnToCenter(Direction direction, int &finalPot, int &pulseCount) {
                    previousPot, directionalStep, noProgressPulses,
                    pulseMs, millis() - started);
 
-        if (abs(POT_CENTER - filteredPot) <= CENTER_TOLERANCE ||
-            static_cast<int>(direction) * (POT_CENTER - filteredPot) <= 0) {
+        if (abs(centerTarget - filteredPot) <= CENTER_TOLERANCE ||
+            static_cast<int>(direction) * (centerTarget - filteredPot) <= 0) {
             return MoveResult::reached_center;
         }
 
@@ -402,63 +403,15 @@ void setup() {
         haltForever("ABORT: startup steering-pot reading is outside sanity bounds.");
     }
 
-    if (abs(startupPot - POT_CENTER) > START_CENTER_TOLERANCE) {
-        // Recovery-only mode. A limit probe that halted on a guard can leave
-        // steering at the stop; never offer another outward probe from there.
-        const Direction recoveryDirection = startupPot < POT_CENTER
-            ? Direction::left : Direction::right;
-
-        Serial.println("============================================================");
-        Serial.println("RECOVERY-ONLY MODE: steering is not near center.");
-        Serial.print("Recovery direction: ");
-        Serial.print(directionName(recoveryDirection));
-        Serial.print(" toward center "); Serial.println(POT_CENTER);
-        Serial.println("No mechanical-limit probe will be performed.");
-        Serial.println("============================================================");
-
-        const String recoveryConfirmation =
-            readLine("Begin guarded return to center? Steering WILL move [y/N]: ");
-        if (recoveryConfirmation.length() == 0 ||
-            (recoveryConfirmation[0] != 'y' &&
-             recoveryConfirmation[0] != 'Y')) {
-            haltForever("Recovery not confirmed. No motion command was sent.");
-        }
-
-        Serial.println("Confirmed. Both PWM outputs remain zero during countdown.");
-        for (int seconds = 10; seconds >= 1; --seconds) {
-            stopMotor();
-            Serial.print("CENTERING STARTS IN "); Serial.print(seconds);
-            Serial.println(" SECONDS");
-            if (!delayWithAbort(1000)) {
-                haltForever("Operator aborted during the recovery countdown.");
-            }
-        }
-        Serial.println("COUNTDOWN COMPLETE - STARTING GUARDED CENTERING NOW");
-        Serial.println(
-            "CSV: t_ms,phase,direction,pwm,pulse,raw_pot,filtered_pot,"
-            "previous_pot,directional_step,no_progress_pulses,pulse_ms,elapsed_ms"
-        );
-
-        int recoveryPot = startupPot;
-        int recoveryPulses = 0;
-        const MoveResult recoveryResult =
-            returnToCenter(recoveryDirection, recoveryPot, recoveryPulses);
-        stopMotor();
-
-        Serial.print("RECOVERY_RESULT,result=");
-        Serial.print(resultName(recoveryResult));
-        Serial.print(",pot="); Serial.print(recoveryPot);
-        Serial.print(",pulses="); Serial.println(recoveryPulses);
-
-        if (recoveryResult != MoveResult::reached_center) {
-            haltForever("Recovery did not safely reach center; PWM remains stopped.");
-        }
-
-        Serial.println("RECOVERY_COMPLETE");
-        Serial.print("Final centered pot: "); Serial.println(recoveryPot);
-        Serial.println("Both PWM outputs are zero. Reset the Teensy to run again.");
-        return;
+    const String centerConfirmation = readLine(
+        "Are the wheels physically centered now? Use startup reading as return target [y/N]: "
+    );
+    if (centerConfirmation.length() == 0 ||
+        (centerConfirmation[0] != 'y' && centerConfirmation[0] != 'Y')) {
+        haltForever("Physical center was not confirmed. No motion command was sent.");
     }
+    const int centerTarget = startupPot;
+    Serial.print("CAPTURED_CENTER_TARGET="); Serial.println(centerTarget);
 
     const String directionLine = readLine("Test direction [l/r, q=quit]: ");
     if (directionLine.length() == 0 || directionLine[0] == 'q' ||
@@ -490,7 +443,8 @@ void setup() {
     Serial.println("PWM will NOT be increased at the candidate limit.");
     Serial.print("After recording it, the test returns ");
     Serial.print(directionName(returnDirection));
-    Serial.println(" to center at PWM 65 with shorter pulses near center.");
+    Serial.print(" to captured center "); Serial.print(centerTarget);
+    Serial.println(" at PWM 65 with shorter pulses near center.");
     Serial.println("--------------------------------------------------------------");
 
     const String confirmation =
@@ -544,7 +498,7 @@ void setup() {
     int finalPot = candidateLimit;
     int returnPulses = 0;
     const MoveResult returnResult =
-        returnToCenter(returnDirection, finalPot, returnPulses);
+        returnToCenter(returnDirection, centerTarget, finalPot, returnPulses);
     stopMotor();
 
     Serial.print("RETURN_RESULT,result="); Serial.print(resultName(returnResult));
@@ -559,7 +513,8 @@ void setup() {
     Serial.print("Recorded candidate "); Serial.print(directionName(probeDirection));
     Serial.print(" limit at PWM 65: ");
     Serial.println(candidateLimit);
-    Serial.print("Final centered pot: "); Serial.println(finalPot);
+    Serial.print("Captured center target: "); Serial.println(centerTarget);
+    Serial.print("Final returned pot: "); Serial.println(finalPot);
     Serial.println("Both PWM outputs are zero. Reset the Teensy to run again.");
 }
 
