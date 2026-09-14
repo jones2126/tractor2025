@@ -24,9 +24,21 @@
 - [ ] Check LED4 on the radio control for green (RTK Fix).
 - [ ] Confirm router status from the GL.iNet page; if diagnostics are needed, run this on tractor01: `python3 /home/al/tractor2025/tractor_rpi/testing/router_wifi_tcp_listener_TESTING.py`
 - [ ] Record the deployed revision for the run: `cd /home/al/tractor2025 && git log -1 --oneline`. Confirm it is the expected revision and do not pull or change code immediately before driving unless the change has been reviewed.
-- [ ] Run the consolidated stationary check while the tractor is in Pause: `cd /home/al/tractor2025 && sudo python3 tractor_rpi/testing/mission_preflight_20260804.py`
-  - Continue only when the final line is `MISSION PREFLIGHT PASS`.
-  - If it fails, do not select Auto. The check already covers the mission-critical services, devices, corrections, RTK position, heading, stationary speed, steering, and JRK telemetry.
+- [ ] Run the consolidated stationary check while the tractor is in **Pause**.
+  - From PowerShell on the field laptop, connect to tractor01 over ZeroTier:
+    ```powershell
+    Write-Host "Connecting to tractor01 at 192.168.193.76..."
+    ssh al@192.168.193.76
+    ```
+    If ZeroTier is unavailable but the laptop is on the tractor's local network, use `ssh al@192.168.1.151` instead.
+  - Confirm that the prompt changes to something like `al@raspberrypi`. Then paste this complete non-interactive line at the tractor01 prompt:
+    ```bash
+    echo "===== TRACTOR PREFLIGHT START ====="; echo "Computer: $(hostname)"; echo "Starting directory: $(pwd)"; sleep 2; cd /home/al/tractor2025 || { echo "FAIL: Could not open /home/al/tractor2025"; sleep 10; exit 1; }; echo "PASS: Repository opened"; echo "Current directory: $(pwd)"; sleep 2; test -f tractor_rpi/testing/mission_preflight_20260804.py || { echo "FAIL: Pre-flight script not found"; find tractor_rpi -iname '*preflight*' -print; sleep 10; exit 1; }; echo "PASS: Pre-flight script found"; ls -l tractor_rpi/testing/mission_preflight_20260804.py; sleep 2; echo "Running mission pre-flight..."; sudo python3 tractor_rpi/testing/mission_preflight_20260804.py --expected-firmware teensy_main_20260914; RESULT=$?; echo "===== PREFLIGHT FINISHED ====="; echo "Pre-flight exit code: $RESULT"; if [ "$RESULT" -eq 0 ]; then echo "PASS: Mission pre-flight passed"; else echo "FAIL: Do not select Auto"; fi; sleep 10
+    ```
+  - Do not add backslashes before underscores in `tractor_rpi` or `mission_preflight`.
+  - Continue only when the final pre-flight result is `MISSION PREFLIGHT PASS` and its exit code is `0`.
+  - If a GPS/heading check fails, pre-flight now automatically prints device links, fix distribution, satellite counts, signal strength, HDOP, correction-age coverage, heading health, a likely-cause assessment, and recent relevant `rtcm-server` journal events.
+  - If pre-flight fails, do not select Auto. It checks the mission-critical services, devices, corrections, RTK position, heading, stationary speed, steering, and JRK telemetry; its automatic diagnostics do not stop services or change receiver settings.
   - `tractor_rpi/check_services.sh` is optional troubleshooting; its disabled LED-controller result is not currently a navigation prerequisite.
 - [ ] In **Manual**, drive to the mission's reviewed starting position. Stop, select **Pause**, and point the tractor in the expected starting direction.
 - [ ] For the complete back-yard mission, use NoMachine from the on-site laptop to reach the development PC, then start the live dashboard from PowerShell on the development PC with this single line: `ssh -t -i "$env:USERPROFILE\.ssh\id_ed25519_tractor01" al@192.168.193.76 "cd /home/al/tractor2025 && sudo -v && python3 tractor_rpi/pure-pursuit/mission_dashboard_20260910.py"`
