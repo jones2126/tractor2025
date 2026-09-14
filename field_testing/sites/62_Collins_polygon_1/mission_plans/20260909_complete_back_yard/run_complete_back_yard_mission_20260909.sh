@@ -75,9 +75,9 @@ echo "Running preflight; keep the tractor in Pause."
 if [[ "${dashboard_mode}" == true ]]; then
     # The dashboard cannot answer an interactive sudo prompt. Preflight only
     # performs read-only checks and fails closed if any required data is unavailable.
-    python3 "${PREFLIGHT}" --expected-firmware teensy_main_20260908_1p8_test
+    python3 "${PREFLIGHT}" --expected-firmware teensy_main_20260914
 else
-    sudo python3 "${PREFLIGHT}" --expected-firmware teensy_main_20260908_1p8_test
+    sudo python3 "${PREFLIGHT}" --expected-firmware teensy_main_20260914
 fi
 
 echo "Checking position and heading against the mission start..."

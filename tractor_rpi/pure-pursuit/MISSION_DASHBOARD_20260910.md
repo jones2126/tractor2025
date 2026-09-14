@@ -36,7 +36,7 @@ and does not replace the handheld.
 ## Field startup
 
 On tractor01, update the repository and flash the expected
-`teensy_main_20260908_1p8_test` firmware first. Then run this one line:
+`teensy_main_20260914` firmware first. Then run this one line:
 
 ```bash
 cd /home/al/tractor2025 && python3 tractor_rpi/pure-pursuit/mission_dashboard_20260910.py

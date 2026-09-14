@@ -224,7 +224,7 @@ class JrkCurrentTelemetryTests(unittest.TestCase):
                             "motor_current_valid": 1,
                         },
                         "system": {
-                            "firmware": "teensy_main_20260908_1p8_test"
+                            "firmware": "teensy_main_20260914"
                         },
                     },
                 )
@@ -234,7 +234,7 @@ class JrkCurrentTelemetryTests(unittest.TestCase):
             samples,
             seconds=5.0,
             neutral_jrk_target=2836,
-            expected_firmware="teensy_main_20260908_1p8_test",
+            expected_firmware="teensy_main_20260914",
         )
         current_check = next(
             check for check in checks if check.name == "JRK motor-current telemetry"

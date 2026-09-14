@@ -50,7 +50,7 @@ echo " Polygon 3: outer boundary plus 2 inner rings"
 echo " Mower deck must remain disengaged"
 echo "============================================================"
 echo "Running preflight; keep the tractor in Pause."
-sudo python3 "${PREFLIGHT}" --expected-firmware teensy_main_20260908_1p8_test
+sudo python3 "${PREFLIGHT}" --expected-firmware teensy_main_20260914
 
 echo "Checking position and heading against the generated mission start..."
 python3 - "${MISSION}" <<'PY'

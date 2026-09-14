@@ -19,7 +19,9 @@ import statistics
 import subprocess
 import sys
 import time
+from collections import Counter
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 
@@ -41,6 +43,10 @@ DEFAULT_MAX_STATIONARY_SPEED_MPS = 0.20
 DEFAULT_NEUTRAL_JRK_TARGET = 2836
 MIN_JRK_DIAGNOSTIC_RATE_HZ = 2.0
 MIN_GROUND_SPEED_RATE_HZ = 4.0
+FIRMWARES_WITH_JRK_CURRENT_TELEMETRY = {
+    "teensy_main_20260908_1p8_test",
+    "teensy_main_20260914",
+}
 
 
 @dataclass
@@ -78,8 +84,6 @@ def service_checks() -> list[Check]:
 
 
 def device_checks() -> list[Check]:
-    from pathlib import Path
-
     return [Check(device, Path(device).exists(), "present" if Path(device).exists() else "missing") for device in DEVICES]
 
 
@@ -309,6 +313,144 @@ def gps_checks(
     return checks
 
 
+def numeric_sample_summary(
+    samples: list[tuple[float, dict[str, Any]]],
+    key: str,
+    digits: int = 1,
+) -> str:
+    values = [float(message[key]) for _, message in samples if finite_number(message.get(key))]
+    if not values:
+        return "absent"
+    return (
+        f"latest={values[-1]:.{digits}f}; median={statistics.median(values):.{digits}f}; "
+        f"range={min(values):.{digits}f}-{max(values):.{digits}f}"
+    )
+
+
+def automatic_gps_failure_diagnostics(
+    samples: list[tuple[float, dict[str, Any]]],
+    gps_results: list[Check],
+    all_checks: list[Check],
+    journal_seconds: int,
+) -> None:
+    """Print read-only diagnostics after a GPS/heading pre-flight failure."""
+    failed = [check.name for check in gps_results if not check.passed]
+    if not failed:
+        return
+
+    print("\n===== AUTOMATIC GPS FAILURE DIAGNOSTICS =====")
+    print(f"Triggered by: {', '.join(failed)}")
+    print("No receiver settings or services are changed by these diagnostics.")
+
+    for device in ("/dev/gps-base-link", "/dev/gps-heading"):
+        path = Path(device)
+        if path.exists():
+            print(f"Device: {device} -> {path.resolve()}")
+        else:
+            print(f"Device: {device} is missing")
+
+    if not samples:
+        print("UDP 6009 supplied no usable JSON samples.")
+        print("Likely area: rtcm-server publication, service health, or UDP binding.")
+    else:
+        messages = [message for _, message in samples]
+        latest = messages[-1]
+        fixes = Counter(str(message.get("fix_quality", "Unknown")) for message in messages)
+        carriers = Counter(str(message.get("carrier", "none")).lower() for message in messages)
+        diff_present = sum(finite_number(message.get("diff_age")) for message in messages)
+        head_valid_fraction = sum(message.get("headValid") is True for message in messages) / len(messages)
+        fixed_heading_fraction = sum(
+            str(message.get("carrier", "none")).lower() == "fixed" for message in messages
+        ) / len(messages)
+        relpos_counts = [
+            int(float(message["relposned_count"]))
+            for message in messages
+            if finite_number(message.get("relposned_count"))
+        ]
+        elapsed = samples[-1][0] - samples[0][0]
+        relpos_delta = max(0, relpos_counts[-1] - relpos_counts[0]) if len(relpos_counts) >= 2 else 0
+        relpos_rate = relpos_delta / elapsed if elapsed > 0 else 0.0
+
+        print(f"Samples analyzed: {len(samples)}")
+        print("Position fix distribution: " + ", ".join(f"{name}={count}" for name, count in sorted(fixes.items())))
+        print(f"Base satellites used (NAV): {numeric_sample_summary(samples, 'base_numSV_used', 0)}")
+        print(f"Base satellites used (GGA): {numeric_sample_summary(samples, 'base_numSV_used_gga', 0)}")
+        print(f"Base satellites visible: {numeric_sample_summary(samples, 'base_numSV_visible', 0)}")
+        print(f"Base mean C/N0: {numeric_sample_summary(samples, 'base_cno_mean_dbhz', 1)} dB-Hz")
+        print(f"Base HDOP: {numeric_sample_summary(samples, 'hdop', 2)}")
+        print(f"Correction age present: {diff_present}/{len(messages)} samples")
+        if diff_present:
+            print(f"Correction age: {numeric_sample_summary(samples, 'diff_age', 2)} seconds")
+        print(
+            f"Heading: headValid={head_valid_fraction:.1%}; "
+            f"carrier distribution={dict(sorted(carriers.items()))}; "
+            f"RELPOSNED approximately {relpos_rate:.2f} Hz"
+        )
+        print(f"Heading satellites used: {numeric_sample_summary(samples, 'heading_numSV_used', 0)}")
+        print(f"Heading satellites visible: {numeric_sample_summary(samples, 'heading_numSV_visible', 0)}")
+        print(f"Heading mean C/N0: {numeric_sample_summary(samples, 'heading_cno_mean_dbhz', 1)} dB-Hz")
+
+        latest_fix = str(latest.get("fix_quality", "Unknown"))
+        rtcm_ok = any(check.name == "RTCM correction stream" and check.passed for check in all_checks)
+        heading_healthy = (
+            head_valid_fraction >= REQUIRED_DATA_FRACTION
+            and fixed_heading_fraction >= REQUIRED_DATA_FRACTION
+            and relpos_rate >= 4.0
+        )
+        base_satellites = latest.get("base_numSV_used")
+        if not finite_number(base_satellites):
+            base_satellites = latest.get("base_numSV_used_gga")
+        hdop = latest.get("hdop")
+
+        print("\nAutomatic assessment:")
+        if bool(latest.get("fatal_error")):
+            print(
+                "- GPS connection failure reported: "
+                f"base={latest.get('fatal_base_reason')}; "
+                f"heading={latest.get('fatal_heading_reason')}"
+            )
+        if heading_healthy and latest_fix != "RTK Fixed":
+            print("- The heading receiver appears configured and healthy; do not reconfigure it from this result.")
+            print(f"- The position/base-link receiver is reporting {latest_fix}, not RTK Fixed.")
+        elif not heading_healthy:
+            print("- The heading stream is not fully healthy; inspect its antenna, cable, device link, and configuration.")
+        if rtcm_ok and latest_fix != "RTK Fixed":
+            print("- RTCM bytes are being forwarded, but forwarding alone does not prove an RTK-fixed position solution.")
+        if diff_present == 0:
+            print("- The base receiver's GGA messages omit differential-correction age.")
+        if finite_number(base_satellites) and float(base_satellites) < 10:
+            print(f"- Only {int(float(base_satellites))} base satellites are used; check sky view and the position antenna connection.")
+        if finite_number(hdop) and float(hdop) > 1.5:
+            print(f"- Base HDOP is {float(hdop):.2f}; check for obstruction or multipath before driving.")
+        if latest_fix in ("DGPS", "RTK Float"):
+            print("- Keep the tractor in Pause under open sky, allow several minutes to converge, then rerun pre-flight.")
+
+    code, journal = command_output(
+        [
+            "journalctl", "-u", "rtcm-server.service", "--since",
+            f"{journal_seconds} seconds ago", "--no-pager", "-o", "cat",
+        ],
+        timeout=8.0,
+    )
+    print(f"\nRelevant rtcm-server journal lines from the last {journal_seconds} seconds:")
+    if code != 0:
+        print(f"- Journal unavailable: {journal}")
+    else:
+        terms = RTCM_BAD_PATTERNS + (
+            "error", "warning", "fatal", "disconnect", "checksum", "overflow", "opened",
+        )
+        relevant = [
+            line.strip() for line in journal.splitlines()
+            if line.strip() and any(term in line.lower() for term in terms)
+        ]
+        if relevant:
+            for line in relevant[-12:]:
+                print(f"- {line}")
+        else:
+            print("- No matching error, warning, disconnect, or reconnect lines found.")
+    print("===== END AUTOMATIC GPS FAILURE DIAGNOSTICS =====")
+
+
 def collect_gps_until_ready(
     sample_seconds: float,
     wait_seconds: float,
@@ -494,7 +636,7 @@ def steering_checks(
                 f"expected={expected_firmware}; observed={observed_firmware}",
             )
         )
-    if expected_firmware == "teensy_main_20260908_1p8_test":
+    if expected_firmware in FIRMWARES_WITH_JRK_CURRENT_TELEMETRY:
         current_samples = [
             float(trans["motor_current_mA"])
             for trans in transmission_samples
@@ -539,6 +681,12 @@ def main() -> int:
     parser.add_argument("--sample-seconds", type=float, default=5.0)
     parser.add_argument("--heading-wait-seconds", type=float, default=60.0)
     parser.add_argument("--journal-seconds", type=int, default=30)
+    parser.add_argument(
+        "--diagnostic-journal-seconds",
+        type=int,
+        default=180,
+        help="journal history included automatically after a GPS failure (default 180s)",
+    )
     parser.add_argument("--max-diff-age", type=float, default=5.0)
     parser.add_argument("--max-heading-error", type=float, default=1.0)
     parser.add_argument("--min-baseline", type=float, default=0.8)
@@ -565,6 +713,8 @@ def main() -> int:
     args = parser.parse_args()
     if args.sample_seconds <= 0 or args.heading_wait_seconds <= 0:
         parser.error("sample and heading wait times must be positive")
+    if args.journal_seconds <= 0 or args.diagnostic_journal_seconds <= 0:
+        parser.error("journal time windows must be positive")
     if args.min_baseline <= 0 or args.max_baseline < args.min_baseline:
         parser.error("baseline limits must be positive and ordered")
     if args.max_stationary_speed < 0:
@@ -584,7 +734,7 @@ def main() -> int:
         f"Waiting up to {args.heading_wait_seconds:.0f}s for a stable "
         f"{args.sample_seconds:.1f}s GPS/heading window on UDP 6009..."
     )
-    _, gps_results = collect_gps_until_ready(
+    gps_samples, gps_results = collect_gps_until_ready(
         args.sample_seconds,
         args.heading_wait_seconds,
         args.max_diff_age,
@@ -612,7 +762,14 @@ def main() -> int:
         print("MISSION PREFLIGHT PASS")
         return 0
     print("MISSION PREFLIGHT FAIL — do not select Auto.")
-    print("Inspect: sudo journalctl -u rtcm-server.service --since '2 minutes ago' --no-pager -l")
+    automatic_gps_failure_diagnostics(
+        gps_samples,
+        gps_results,
+        checks,
+        args.diagnostic_journal_seconds,
+    )
+    if not any(not check.passed for check in gps_results):
+        print("GPS/heading passed; inspect the failed service, device, or control check above.")
     return 1
 
 
