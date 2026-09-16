@@ -4,7 +4,9 @@
 This deliberately changes only the settings needed by rtcm_server_20260828.py:
 
 * UART1 enabled at 115200 baud with RTCM3 input enabled
+* UART1 RTCM3 output disabled (the heading receiver is the MB rover)
 * UBX output enabled on USB
+* NMEA protocol and standard NMEA messages disabled on USB
 * UBX-NAV-RELPOSNED enabled on USB once per navigation solution
 * 100 ms measurement period and one measurement per navigation solution (10 Hz)
 
@@ -44,8 +46,23 @@ SETTINGS = [
     ("CFG-UART1-ENABLED", 0x10520005, "<B", 1),
     ("CFG-UART1-BAUDRATE", 0x40520001, "<I", 115200),
     ("CFG-UART1INPROT-RTCM3X", 0x10730004, "<B", 1),
+    ("CFG-UART1OUTPROT-RTCM3X", 0x10740004, "<B", 0),
     ("CFG-USBOUTPROT-UBX", 0x10780001, "<B", 1),
+    ("CFG-USBOUTPROT-NMEA", 0x10780002, "<B", 0),
     ("CFG-MSGOUT-UBX_NAV_RELPOSNED_USB", 0x20910090, "<B", 1),
+    ("CFG-MSGOUT-NMEA_ID_DTM_USB", 0x209100A9, "<B", 0),
+    ("CFG-MSGOUT-NMEA_ID_GBS_USB", 0x209100E0, "<B", 0),
+    ("CFG-MSGOUT-NMEA_ID_GGA_USB", 0x209100BD, "<B", 0),
+    ("CFG-MSGOUT-NMEA_ID_GLL_USB", 0x209100CC, "<B", 0),
+    ("CFG-MSGOUT-NMEA_ID_GNS_USB", 0x209100B8, "<B", 0),
+    ("CFG-MSGOUT-NMEA_ID_GRS_USB", 0x209100D1, "<B", 0),
+    ("CFG-MSGOUT-NMEA_ID_GSA_USB", 0x209100C2, "<B", 0),
+    ("CFG-MSGOUT-NMEA_ID_GST_USB", 0x209100D6, "<B", 0),
+    ("CFG-MSGOUT-NMEA_ID_GSV_USB", 0x209100C7, "<B", 0),
+    ("CFG-MSGOUT-NMEA_ID_RMC_USB", 0x209100AE, "<B", 0),
+    ("CFG-MSGOUT-NMEA_ID_VLW_USB", 0x209100EA, "<B", 0),
+    ("CFG-MSGOUT-NMEA_ID_VTG_USB", 0x209100B3, "<B", 0),
+    ("CFG-MSGOUT-NMEA_ID_ZDA_USB", 0x209100DB, "<B", 0),
     ("CFG-RATE-MEAS", 0x30210001, "<H", 100),
     ("CFG-RATE-NAV", 0x30210002, "<H", 1),
 ]
