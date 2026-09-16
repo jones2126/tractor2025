@@ -26,6 +26,8 @@ CLASS_CFG = 0x06
 ID_VALGET = 0x8B
 CLASS_NAV = 0x01
 ID_RELPOSNED = 0x3C
+CLASS_MON = 0x0A
+ID_MON_VER = 0x04
 
 
 @dataclass(frozen=True)
@@ -148,17 +150,51 @@ def valget(port: serial.Serial, layer: int) -> dict[str, int]:
     raise TimeoutError(f"no UBX-CFG-VALGET response for layer {layer}")
 
 
-def read_receiver(port_name: str) -> tuple[str, dict[str, dict[str, int]]]:
+def poll_mon_ver(port: serial.Serial) -> dict[str, object]:
+    port.reset_input_buffer()
+    port.write(frame(CLASS_MON, ID_MON_VER))
+    port.flush()
+    deadline = time.monotonic() + 3.0
+    while time.monotonic() < deadline:
+        message = read_frame(port, deadline)
+        if message is None:
+            break
+        message_class, message_id, payload = message
+        if message_class != CLASS_MON or message_id != ID_MON_VER:
+            continue
+        if len(payload) < 40:
+            raise RuntimeError("short UBX-MON-VER response")
+
+        def text_field(raw: bytes) -> str:
+            return raw.split(b"\x00", 1)[0].decode("ascii", errors="replace").strip()
+
+        extensions = [
+            text_field(payload[offset : offset + 30])
+            for offset in range(40, len(payload), 30)
+            if text_field(payload[offset : offset + 30])
+        ]
+        return {
+            "software": text_field(payload[:30]),
+            "hardware": text_field(payload[30:40]),
+            "extensions": extensions,
+        }
+    raise TimeoutError("no UBX-MON-VER response")
+
+
+def read_receiver(
+    port_name: str,
+) -> tuple[str, dict[str, object], dict[str, dict[str, int]]]:
     resolved = str(Path(port_name).resolve())
     layers: dict[str, dict[str, int]] = {}
     with serial.Serial(port_name, 115200, timeout=0.15) as port:
         time.sleep(0.4)
+        version = poll_mon_ver(port)
         for name, number in (("RAM", 0), ("BBR", 1), ("FLASH", 2)):
             try:
                 layers[name] = valget(port, number)
             except TimeoutError:
                 layers[name] = {}
-    return resolved, layers
+    return resolved, version, layers
 
 
 def check_equal(
@@ -246,7 +282,7 @@ def audit_configuration(
             differences = {
                 name: {"RAM": value, saved_name: saved.get(name)}
                 for name, value in ram.items()
-                if saved.get(name) != value
+                if name in saved and saved.get(name) != value
             }
             if differences:
                 warnings.append(
@@ -353,10 +389,12 @@ def main() -> int:
 
     print("READ-ONLY DUAL-F9P MOVING-BASE AUDIT")
     print("No receiver settings will be changed.\n")
-    base_resolved, base_layers = read_receiver(args.base_port)
-    heading_resolved, heading_layers = read_receiver(args.heading_port)
+    base_resolved, base_version, base_layers = read_receiver(args.base_port)
+    heading_resolved, heading_version, heading_layers = read_receiver(args.heading_port)
     print(f"Base:    {args.base_port} -> {base_resolved}")
+    print(f"         {json.dumps(base_version, sort_keys=True)}")
     print(f"Heading: {args.heading_port} -> {heading_resolved}\n")
+    print(f"         {json.dumps(heading_version, sort_keys=True)}\n")
 
     checks, warnings = audit_configuration(base_layers, heading_layers)
     print_checks(checks)
@@ -378,10 +416,16 @@ def main() -> int:
         )
 
     report = {
-        "base": {"port": args.base_port, "resolved": base_resolved, "layers": base_layers},
+        "base": {
+            "port": args.base_port,
+            "resolved": base_resolved,
+            "version": base_version,
+            "layers": base_layers,
+        },
         "heading": {
             "port": args.heading_port,
             "resolved": heading_resolved,
+            "version": heading_version,
             "layers": heading_layers,
         },
         "checks": checks,
