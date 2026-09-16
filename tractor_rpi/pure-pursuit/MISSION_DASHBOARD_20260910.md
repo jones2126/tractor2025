@@ -1,7 +1,8 @@
 # Live mission dashboard — 2026-09-10
 
 The dashboard is a local web interface modeled after the Pure Pursuit replay
-tool. It displays the complete planned path, the most recent 30 seconds of the
+tool. It now loads the reviewed 2026-09-15 partial rings master mission. It
+displays the complete planned path, the most recent 30 seconds of the
 actual tractor trail, heading,
 active target, mission progress, controller calculations, GPS state, steering
 telemetry, and JRK transmission telemetry.
@@ -59,7 +60,8 @@ on the field network from operating the buttons without the URL.
 
 1. Keep the mower deck disengaged and the handheld in Pause.
 2. Open the dashboard URL and confirm live Teensy status is visible.
-3. Press **START MISSION** and accept the blades-off confirmation.
+3. Confirm the map and mission note identify the **62 Collins partial rings
+   master**, then press **START MISSION** and accept the blades-off confirmation.
 4. Watch the launcher output on the lower-right, or open **OPEN MESSAGES** in a
    separate tab. It verifies the exact reviewed mission, runs preflight, and
    checks the starting position and heading.
@@ -71,6 +73,21 @@ on the field network from operating the buttons without the URL.
    handheld. Manual-to-Auto alone deliberately does not clear software Pause.
 8. At mission completion, the controller sends stop and the launcher closes
    the field logger normally.
+
+## Loaded mission
+
+- 19,343 waypoints at 1.0 m/s with 2.0 m lookahead
+- inner rings for the main backyard, both gardens, and front yard
+- recorded safe connectors between fields
+- over-road boundary included with the 24-inch-expanded pole exclusion
+- over-road inner ring omitted because no contained 1.63 m entry/exit chain
+  was found
+- stripes omitted
+
+The dashboard starts
+`run_62_Collins_partial_rings_field_test_20260916.sh --dashboard`. The launcher
+still verifies the exact mission checksum, report limitations, preflight,
+RTK/heading state, and starting pose before it starts Pure Pursuit.
 
 ## Network ports
 

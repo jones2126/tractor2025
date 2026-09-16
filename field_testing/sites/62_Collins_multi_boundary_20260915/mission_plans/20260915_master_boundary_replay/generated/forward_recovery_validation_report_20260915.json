@@ -1,0 +1,21 @@
+{
+  "status": "PROTOTYPE_REVIEW_ONLY",
+  "scenario": "At each waypoint, simulate 20 m of Manual travel and then request AUTO.",
+  "tested_locations": 2642,
+  "results": {
+    "ACQUIRED": 2548,
+    "BLOCKED": 94
+  },
+  "blocked_by_phase": {
+    "front_yard": 12,
+    "left_of_garden": 14,
+    "main_backyard_1": 7,
+    "main_backyard_2": 32,
+    "right_of_garden": 4,
+    "telephone_pole_#1": 11,
+    "transition_to_segment_3": 6,
+    "transition_to_segment_8": 6,
+    "travel_over_driveway": 2
+  },
+  "interpretation": "BLOCKED locations are deliberate safe refusals where two forward path branches are almost equally close but far apart in mission progress. The operator can remain in Manual and move/align until the choice is unique."
+}

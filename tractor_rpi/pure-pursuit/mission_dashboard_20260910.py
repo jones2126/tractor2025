@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Local web dashboard for starting and monitoring the backyard mission."""
+"""Local web dashboard for starting and monitoring the 62 Collins master mission."""
 
 from __future__ import annotations
 
@@ -22,12 +22,18 @@ from urllib.parse import parse_qs, urlparse
 
 REPO = Path(__file__).resolve().parents[2]
 PACKAGE = (
-    REPO / "field_testing" / "sites" / "62_Collins_polygon_1" / "mission_plans"
-    / "20260909_complete_back_yard"
+    REPO / "field_testing" / "sites" / "62_Collins_multi_boundary_20260915"
+    / "mission_plans" / "20260915_master_boundary_replay"
 )
-MISSION = PACKAGE / "62_Collins_complete_back_yard_1mps_20260909.txt"
-AUDIT = PACKAGE / "62_Collins_complete_back_yard_1mps_20260909_audit.csv"
-LAUNCHER = PACKAGE / "run_complete_back_yard_mission_20260909.sh"
+MISSION = (
+    PACKAGE / "generated_rings_only"
+    / "62_Collins_rings_only_master_1mps_PARTIAL_REVIEW_ONLY_20260915.txt"
+)
+AUDIT = (
+    PACKAGE / "generated_rings_only"
+    / "62_Collins_rings_only_master_1mps_audit_20260915.csv"
+)
+LAUNCHER = PACKAGE / "run_62_Collins_partial_rings_field_test_20260916.sh"
 CONTROL_PORT = 6011
 TELEMETRY_PORT = 6012
 STATUS_PORT = 6003
@@ -35,7 +41,7 @@ CMD_VEL_PORT = 6004
 GPS_DASHBOARD_PORT = 6013
 TRACTOR_LOCAL_IP = "192.168.1.151"
 TRACTOR_ZEROTIER_IP = "192.168.193.76"
-EXPECTED_CONFIRMATION = "RUN COMPLETE BACK YARD BLADES OFF"
+EXPECTED_CONFIRMATION = "RUN PARTIAL RINGS BLADES OFF"
 
 
 HTML = r'''<!doctype html>
@@ -44,8 +50,8 @@ HTML = r'''<!doctype html>
 <style>
 :root{color-scheme:dark;font-family:system-ui,sans-serif}*{box-sizing:border-box}body{margin:0;background:#101418;color:#e8edf2}main{max-width:1500px;margin:auto;padding:14px}h1{margin:.2rem 0;font-size:1.5rem}.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px 0}.button{border:0;border-radius:6px;padding:12px 18px;font-weight:700;cursor:pointer}.button:disabled{opacity:.4;cursor:not-allowed}.start{background:#2fb344;color:#fff}.pause{background:#e03131;color:#fff}.resume{background:#1971c2;color:#fff}.messages{background:#495057;color:#fff}.badge{padding:7px 10px;border-radius:999px;background:#343a40;font-weight:700}.ok{background:#19713c}.warn{background:#9c640c}.bad{background:#9b2226}.layout{display:grid;grid-template-columns:minmax(0,2fr) minmax(330px,1fr);gap:14px}svg{width:100%;height:min(78vh,850px);background:#182028;border:1px solid #52606d}.side{min-width:0}.facts{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#52606d;border:1px solid #52606d}.fact{background:#182028;padding:8px;min-height:58px}.fact span{display:block;color:#9fb0bf;font-size:.78rem}.fact b{font-size:.96rem}.output{height:180px;overflow:auto;white-space:pre-wrap;background:#080b0d;border:1px solid #52606d;padding:8px;font:12px ui-monospace,monospace;margin-top:10px}.note{color:#b8c5cf;margin:.3rem 0 0}.mission{fill:none;stroke:#708090;stroke-width:1}.trail{fill:none;stroke:#35d0ba;stroke-width:2}.to-target{stroke:#ff5d8f;stroke-width:1.7;stroke-dasharray:5 3}.to-start{stroke:#ff922b;stroke-width:2.5;stroke-dasharray:8 4}.start-label{fill:#fff3bf;font:bold 16px system-ui,sans-serif;paint-order:stroke;stroke:#101418;stroke-width:4px}.heading{stroke:#ffd43b;stroke-width:2}.tractor{fill:#ffd43b;stroke:#111;stroke-width:1}.target{fill:#ff5d8f}.startpoint{fill:#2fb344}.endpoint{fill:#e03131}.progressbar{width:100%;height:9px;background:#343a40;border-radius:5px;overflow:hidden}.progressbar div{height:100%;background:#35d0ba;width:0}.safety{border-left:5px solid #e03131;background:#291719;padding:9px 12px;margin-bottom:10px}@media(max-width:850px){.layout{grid-template-columns:1fr}svg{height:60vh}.facts{grid-template-columns:1fr 1fr}}
 </style></head><body><main>
-<h1>Tractor01 — complete back yard mission</h1>
-<p class="note">Live mission plan, actual tractor position, controller target, and drivetrain telemetry.</p>
+<h1>Tractor01 — 62 Collins partial rings master</h1>
+<p class="note">Inner rings at 1.0 m/s. Over-road boundary only; over-road inner ring and stripes are omitted.</p>
 <div class="toolbar"><button id="start" class="button start">START MISSION</button><button id="pause" class="button pause" disabled>PAUSE</button><button id="clearPause" class="button resume" disabled>CLEAR PAUSE</button><button id="messages" class="button messages">OPEN MESSAGES</button><span id="state" class="badge">CONNECTING</span><span id="age" class="badge">No telemetry</span></div>
 <div class="safety"><b>Keep the handheld with you.</b> After a browser Pause: select handheld Pause, press CLEAR PAUSE, confirm HANDHELD PAUSE, then select Auto.</div>
 <div class="progressbar"><div id="progress"></div></div>
@@ -62,14 +68,14 @@ function pathD(points){return points.map((p,i)=>(i?'L':'M')+sx(p.x).toFixed(1)+'
 function setupMap(){const xs=DATA.path.map(p=>p.x),ys=DATA.path.map(p=>p.y),pad=15,minX=Math.min(...xs)-pad,maxX=Math.max(...xs)+pad,minY=Math.min(...ys)-pad,maxY=Math.max(...ys)+pad;const scale=Math.min(830/(maxX-minX),700/(maxY-minY));const ox=35+(830-(maxX-minX)*scale)/2,oy=725-(700-(maxY-minY)*scale)/2;sx=x=>ox+(x-minX)*scale;sy=y=>oy-(y-minY)*scale;const mission=el('path',{class:'mission',d:pathD(DATA.path)});trail=el('path',{class:'trail'});targetLine=el('line',{class:'to-target',visibility:'hidden'});startLine=el('line',{class:'to-start',visibility:'hidden'});startLabel=el('text',{class:'start-label','text-anchor':'middle'});heading=el('line',{class:'heading',visibility:'hidden'});tractor=el('circle',{class:'tractor',r:7,visibility:'hidden'});target=el('circle',{class:'target',r:5,visibility:'hidden'});const s=DATA.path[0],e=DATA.path.at(-1);svg.append(mission,trail,el('circle',{class:'startpoint',cx:sx(s.x),cy:sy(s.y),r:6}),el('rect',{class:'endpoint',x:sx(e.x)-5,y:sy(e.y)-5,width:10,height:10}),targetLine,startLine,startLabel,heading,tractor,target)}
 function fmt(v,d=2){return v===null||v===undefined||v===''?'—':Number(v).toFixed(d)}function fact(l,v){return `<div class="fact"><span>${l}</span><b>${v}</b></div>`}function mode(v){return Number(v)===2?'Pause':Number(v)===1?'Manual':Number(v)===0?'Auto':'—'}
 async function api(path,method='GET',body=null){const r=await fetch(path,{method,headers,body:body?JSON.stringify(body):null});const j=await r.json();if(!r.ok)throw Error(j.error||r.statusText);return j}
-async function command(name){try{if(name==='start'&&!confirm('Start the complete 40-minute blades-off mission? Keep the handheld in Pause until the controller is ready.'))return;const body=name==='start'?{confirmation:'RUN COMPLETE BACK YARD BLADES OFF'}:{};await api('/api/'+name,'POST',body)}catch(e){alert(e.message)}}
+async function command(name){try{if(name==='start'&&!confirm('Start the reviewed 50-minute partial rings mission with blades off? The over-road boundary is included, but its inner ring and all stripes are omitted. Keep the handheld in Pause until the controller is ready.'))return;const body=name==='start'?{confirmation:'RUN PARTIAL RINGS BLADES OFF'}:{};await api('/api/'+name,'POST',body)}catch(e){alert(e.message)}}
 startBtn.onclick=()=>command('start');pauseBtn.onclick=()=>command('pause');clearPauseBtn.onclick=()=>command('clear-pause');
 messagesBtn.onclick=()=>window.open('/messages?key='+encodeURIComponent(key),'_blank');
 function finite(v){return v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v))}
 function axisText(value,positive,negative){if(Math.abs(value)<.1)return '';return Math.abs(value).toFixed(1)+' m '+(value>0?positive:negative)}
 function draw(s){
   const c=s.controller||{},b=s.bridge||{},g=s.gps||{},st=b.steering||{},tr=b.transmission||{};
-  const active=['STARTING','RUNNING','PAUSED','WAITING'].includes(s.process_state);
+  const active=Boolean(s.mission_active);
   const controllerFresh=s.controller_age_s!=null&&s.controller_age_s<1;
   const bridgeFresh=s.bridge_age_s!=null&&s.bridge_age_s<1;
   const gpsFresh=s.gps_age_s!=null&&s.gps_age_s<1;
@@ -170,6 +176,7 @@ class MissionState:
                 "gps": dict(self.gps),
                 "gps_age_s": None if not self.gps_time else now - self.gps_time,
                 "process_state": self.process_state,
+                "mission_active": self.process is not None,
                 "output": list(self.output),
             }
 
