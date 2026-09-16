@@ -153,6 +153,19 @@ CSV_COLUMNS = [
     "heading_deg",        # degrees from north
     "head_valid",         # bool: heading valid flag
     "carrier",            # "fixed" / "float" / "none"
+    "relposned_count",          # decoded UBX-NAV-RELPOSNED frames
+    "relposned_timestamp",      # observation timestamp for latest RELPOSNED
+    "relposned_itow_ms",        # GNSS time of week from latest RELPOSNED
+    "relpos_length_m",          # moving-baseline length
+    "relpos_heading_accuracy_deg", # F9P heading accuracy estimate
+    "relpos_gnss_fix_ok",       # RELPOSNED gnssFixOK flag
+    "relpos_diff_solution",     # RELPOSNED diffSoln flag
+    "relpos_valid",             # RELPOSNED relPosValid flag
+    "relpos_moving",            # RELPOSNED isMoving flag
+    "relpos_ref_pos_miss",      # RELPOSNED refPosMiss flag
+    "relpos_ref_obs_miss",      # RELPOSNED refObsMiss flag
+    "relpos_normalized",        # RELPOSNED relPosNormalized flag
+    "expected_heading_error_deg", # independent expected heading error
     "speed_mps",          # ground speed m/s (from VTG)
     "base_numSV_used",          # Base-Link NAV-PVT/NAV-SAT satellites used
     "base_numSV_visible",       # Base-Link NAV-SAT satellite records
@@ -407,6 +420,19 @@ def build_row(start_time: float) -> dict:
         "heading_deg":   gps.get('heading_deg', ''),
         "head_valid":    gps.get('headValid', ''),
         "carrier":       gps.get('carrier', ''),
+        "relposned_count": gps.get('relposned_count', ''),
+        "relposned_timestamp": gps.get('relposned_timestamp', ''),
+        "relposned_itow_ms": gps.get('relposned_itow_ms', ''),
+        "relpos_length_m": gps.get('relpos_length_m', ''),
+        "relpos_heading_accuracy_deg": gps.get('relpos_heading_accuracy_deg', ''),
+        "relpos_gnss_fix_ok": gps.get('relpos_gnss_fix_ok', ''),
+        "relpos_diff_solution": gps.get('relpos_diff_solution', ''),
+        "relpos_valid": gps.get('relpos_valid', ''),
+        "relpos_moving": gps.get('relpos_moving', ''),
+        "relpos_ref_pos_miss": gps.get('relpos_ref_pos_miss', ''),
+        "relpos_ref_obs_miss": gps.get('relpos_ref_obs_miss', ''),
+        "relpos_normalized": gps.get('relpos_normalized', ''),
+        "expected_heading_error_deg": gps.get('expectedErrDeg', ''),
         "speed_mps":     gps.get('speed_mps', ''),
         "base_numSV_used": gps.get('base_numSV_used', ''),
         "base_numSV_visible": gps.get('base_numSV_visible', ''),

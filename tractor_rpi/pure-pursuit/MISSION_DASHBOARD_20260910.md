@@ -76,7 +76,7 @@ on the field network from operating the buttons without the URL.
 
 ## Loaded mission
 
-- 19,340 waypoints with 2.0 m lookahead
+- 19,250 remaining waypoints with 2.0 m lookahead (resume at source waypoint 91)
 - 1.0 m/s cruise; 0.5 m/s for planned connectors, garden-left A-C, and the
   other fields' innermost rings including D-E
 - the two near-360-degree main-backyard connector loops are prohibited and
@@ -111,3 +111,17 @@ RTK/heading state, and starting pose before it starts Pure Pursuit.
 The dashboard control and controller telemetry sockets bind or transmit only
 through localhost. TCP 8088 is reachable from the field network and protected
 by the temporary operator key.
+
+## Heading-drop diagnostics
+
+The 2026-09-16 diagnostic update keeps the mission fail-closed while exposing
+the reason for an intermittent dual-F9P heading rejection. The dashboard now
+shows carrier state, baseline length, heading accuracy, satellites/C/N0, and
+the RELPOSNED `fixOK`, `diff`, `relPosValid`, `moving`, `refPosMiss`, and
+`refObsMiss` flags. Controller wait messages include the same values whenever
+`headValid` clears.
+
+Both the Pure Pursuit CSV and `field_test_logger_20260828.py` CSV retain these
+values per cycle. This distinguishes an RF/satellite problem from missing
+moving-base observations, an invalid relative position, or a receiver flag
+transition without weakening any drive gate.

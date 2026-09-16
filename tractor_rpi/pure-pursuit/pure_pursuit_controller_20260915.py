@@ -87,6 +87,20 @@ CSV_COLUMNS = [
     ("heading_compass_deg", "Actual heading compass degrees from true north"),
     ("fix_quality",         "RTK Fixed / RTK Float / GPS Fix / etc."),
     ("head_valid",          "True if F9P dual-antenna heading is valid"),
+    ("heading_carrier",     "RELPOSNED carrier solution: fixed / float / none"),
+    ("relpos_length_m",     "Measured moving-baseline length meters"),
+    ("heading_accuracy_deg", "RELPOSNED heading accuracy estimate degrees"),
+    ("relpos_gnss_fix_ok",  "RELPOSNED gnssFixOK flag"),
+    ("relpos_diff_solution", "RELPOSNED diffSoln flag"),
+    ("relpos_valid",        "RELPOSNED relPosValid flag"),
+    ("relpos_moving",       "RELPOSNED isMoving flag"),
+    ("relpos_ref_pos_miss", "RELPOSNED refPosMiss flag"),
+    ("relpos_ref_obs_miss", "RELPOSNED refObsMiss flag"),
+    ("relpos_normalized",   "RELPOSNED relPosNormalized flag"),
+    ("relposned_count",     "Cumulative decoded RELPOSNED frame count"),
+    ("relposned_itow_ms",   "RELPOSNED GNSS time of week milliseconds"),
+    ("heading_numSV_used",  "Satellites used by heading receiver"),
+    ("heading_cno_mean_dbhz", "Heading receiver mean carrier-to-noise dB-Hz"),
     ("gps_age_s",           "Age of GPS packet seconds"),
     ("pos_x_m",             "Actual position local x meters east of origin"),
     ("pos_y_m",             "Actual position local y meters north of origin"),
@@ -230,6 +244,17 @@ class GPSReceiver:
                 'carrier': msg.get('carrier'),
                 'relpos_length_m': msg.get('relpos_length_m'),
                 'heading_accuracy_deg': msg.get('relpos_heading_accuracy_deg'),
+                'relpos_gnss_fix_ok': msg.get('relpos_gnss_fix_ok'),
+                'relpos_diff_solution': msg.get('relpos_diff_solution'),
+                'relpos_valid': msg.get('relpos_valid'),
+                'relpos_moving': msg.get('relpos_moving'),
+                'relpos_ref_pos_miss': msg.get('relpos_ref_pos_miss'),
+                'relpos_ref_obs_miss': msg.get('relpos_ref_obs_miss'),
+                'relpos_normalized': msg.get('relpos_normalized'),
+                'relposned_count': msg.get('relposned_count'),
+                'relposned_itow_ms': msg.get('relposned_itow_ms'),
+                'heading_numSV_used': msg.get('heading_numSV_used'),
+                'heading_cno_mean_dbhz': msg.get('heading_cno_mean_dbhz'),
                 'fatal_error': bool(msg.get('fatal_error', False)),
                 'fatal_base_reason': msg.get('fatal_base_reason'),
                 'fatal_heading_reason': msg.get('fatal_heading_reason'),
@@ -254,7 +279,19 @@ class GPSReceiver:
         if not _fix_ok(pose['fix_quality'], self.min_fix):
             return False, f"fix_quality={pose['fix_quality']!r} below --min-fix {self.min_fix!r}"
         if self.require_head_valid and not pose['headValid']:
-            return False, "headValid=False"
+            return False, (
+                "headValid=False "
+                f"(carrier={pose.get('carrier')!r}, "
+                f"fixOK={pose.get('relpos_gnss_fix_ok')!r}, "
+                f"diff={pose.get('relpos_diff_solution')!r}, "
+                f"relPosValid={pose.get('relpos_valid')!r}, "
+                f"moving={pose.get('relpos_moving')!r}, "
+                f"refPosMiss={pose.get('relpos_ref_pos_miss')!r}, "
+                f"refObsMiss={pose.get('relpos_ref_obs_miss')!r}, "
+                f"baseline={pose.get('relpos_length_m')!r} m, "
+                f"accuracy={pose.get('heading_accuracy_deg')!r} deg, "
+                f"headingSV={pose.get('heading_numSV_used')!r}, "
+                f"headingCNO={pose.get('heading_cno_mean_dbhz')!r} dB-Hz)")
         if self.require_carrier_fixed and pose['carrier'] != 'fixed':
             return False, f"heading carrier={pose['carrier']!r}, expected 'fixed'"
         try:
@@ -894,6 +931,20 @@ class PurePursuit:
                         'heading_compass_deg': f"{pose['heading_compass_deg']:.3f}",
                         'fix_quality':         pose['fix_quality'],
                         'head_valid':          pose['headValid'],
+                        'heading_carrier':     pose.get('carrier'),
+                        'relpos_length_m':     pose.get('relpos_length_m'),
+                        'heading_accuracy_deg': pose.get('heading_accuracy_deg'),
+                        'relpos_gnss_fix_ok':  pose.get('relpos_gnss_fix_ok'),
+                        'relpos_diff_solution': pose.get('relpos_diff_solution'),
+                        'relpos_valid':        pose.get('relpos_valid'),
+                        'relpos_moving':       pose.get('relpos_moving'),
+                        'relpos_ref_pos_miss': pose.get('relpos_ref_pos_miss'),
+                        'relpos_ref_obs_miss': pose.get('relpos_ref_obs_miss'),
+                        'relpos_normalized':   pose.get('relpos_normalized'),
+                        'relposned_count':     pose.get('relposned_count'),
+                        'relposned_itow_ms':   pose.get('relposned_itow_ms'),
+                        'heading_numSV_used':  pose.get('heading_numSV_used'),
+                        'heading_cno_mean_dbhz': pose.get('heading_cno_mean_dbhz'),
                         'gps_age_s':           f"{pose['age']:.3f}",
                         'actual_speed_mps':    pose.get('speed_mps'),
                     })

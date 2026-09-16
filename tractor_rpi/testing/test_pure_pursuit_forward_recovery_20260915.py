@@ -125,6 +125,14 @@ class HeadingHealthGateTests(unittest.TestCase):
             "carrier": "fixed",
             "relpos_length_m": 1.10,
             "heading_accuracy_deg": 0.50,
+            "relpos_gnss_fix_ok": True,
+            "relpos_diff_solution": True,
+            "relpos_valid": True,
+            "relpos_moving": True,
+            "relpos_ref_pos_miss": False,
+            "relpos_ref_obs_miss": False,
+            "heading_numSV_used": 27,
+            "heading_cno_mean_dbhz": 42.6,
         }
 
     def test_healthy_fixed_heading_is_drivable(self):
@@ -136,6 +144,17 @@ class HeadingHealthGateTests(unittest.TestCase):
         ok, reason = self.receiver().is_drivable(pose)
         self.assertFalse(ok)
         self.assertIn("carrier='float'", reason)
+
+    def test_invalid_heading_reason_contains_relpos_diagnostics(self):
+        pose = self.healthy_pose()
+        pose.update(headValid=False, relpos_valid=False, relpos_moving=False,
+                    relpos_ref_obs_miss=True)
+        ok, reason = self.receiver().is_drivable(pose)
+        self.assertFalse(ok)
+        self.assertIn("relPosValid=False", reason)
+        self.assertIn("moving=False", reason)
+        self.assertIn("refObsMiss=True", reason)
+        self.assertIn("headingSV=27", reason)
 
 
 if __name__ == "__main__":

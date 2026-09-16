@@ -113,6 +113,13 @@ preventing a nearby later ring from being selected. Driving also requires five
 continuous seconds of RTK Fixed position and healthy heading: fixed carrier,
 0.80-1.30 m baseline, and no more than 1.0 degree estimated heading error.
 
+After an intermittent `headValid=False` stopped the first clear-sky attempt,
+the controller, dashboard, and field logger were extended to retain the full
+RELPOSNED flag set, baseline, accuracy, frame count/time, and heading-receiver
+satellite signal data. The controller still stops immediately on an invalid
+heading; its wait reason now states the individual receiver flags needed to
+diagnose the event.
+
 The launcher does not convert the partial route into complete coverage. The
 over-road boundary is included, but its one geometrically possible inner ring
 remains omitted. The mower deck must remain disengaged for this first test.
