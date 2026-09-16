@@ -42,14 +42,8 @@ ID_RELPOSNED = 0x3C
 
 # Configuration key IDs and value widths from the u-blox F9 interface
 # description.  Boolean/L and U1 values are both encoded as one byte.
-SETTINGS = [
-    ("CFG-UART1-ENABLED", 0x10520005, "<B", 1),
-    ("CFG-UART1-BAUDRATE", 0x40520001, "<I", 115200),
-    ("CFG-UART1INPROT-RTCM3X", 0x10730004, "<B", 1),
-    ("CFG-UART1OUTPROT-RTCM3X", 0x10740004, "<B", 0),
-    ("CFG-USBOUTPROT-UBX", 0x10780001, "<B", 1),
+NMEA_ONLY_SETTINGS = [
     ("CFG-USBOUTPROT-NMEA", 0x10780002, "<B", 0),
-    ("CFG-MSGOUT-UBX_NAV_RELPOSNED_USB", 0x20910090, "<B", 1),
     ("CFG-MSGOUT-NMEA_ID_DTM_USB", 0x209100A9, "<B", 0),
     ("CFG-MSGOUT-NMEA_ID_GBS_USB", 0x209100E0, "<B", 0),
     ("CFG-MSGOUT-NMEA_ID_GGA_USB", 0x209100BD, "<B", 0),
@@ -63,6 +57,16 @@ SETTINGS = [
     ("CFG-MSGOUT-NMEA_ID_VLW_USB", 0x209100EA, "<B", 0),
     ("CFG-MSGOUT-NMEA_ID_VTG_USB", 0x209100B3, "<B", 0),
     ("CFG-MSGOUT-NMEA_ID_ZDA_USB", 0x209100DB, "<B", 0),
+]
+
+SETTINGS = [
+    ("CFG-UART1-ENABLED", 0x10520005, "<B", 1),
+    ("CFG-UART1-BAUDRATE", 0x40520001, "<I", 115200),
+    ("CFG-UART1INPROT-RTCM3X", 0x10730004, "<B", 1),
+    ("CFG-UART1OUTPROT-RTCM3X", 0x10740004, "<B", 0),
+    ("CFG-USBOUTPROT-UBX", 0x10780001, "<B", 1),
+    ("CFG-MSGOUT-UBX_NAV_RELPOSNED_USB", 0x20910090, "<B", 1),
+    *NMEA_ONLY_SETTINGS,
     ("CFG-RATE-MEAS", 0x30210001, "<H", 100),
     ("CFG-RATE-NAV", 0x30210002, "<H", 1),
 ]
@@ -143,9 +147,9 @@ def expect_ack(
     )
 
 
-def valget(port: serial.Serial) -> dict[str, int]:
+def valget(port: serial.Serial, settings=SETTINGS) -> dict[str, int]:
     payload = struct.pack("<BBH", 0, 0, 0)
-    payload += b"".join(struct.pack("<I", key) for _, key, _, _ in SETTINGS)
+    payload += b"".join(struct.pack("<I", key) for _, key, _, _ in settings)
     port.write(frame(CLASS_CFG, ID_VALGET, payload))
     port.flush()
 
@@ -161,7 +165,7 @@ def valget(port: serial.Serial) -> dict[str, int]:
             raise RuntimeError("short UBX-CFG-VALGET response")
         offset = 4
         values: dict[int, int] = {}
-        formats = {key: fmt for _, key, fmt, _ in SETTINGS}
+        formats = {key: fmt for _, key, fmt, _ in settings}
         while offset + 4 <= len(response):
             key = struct.unpack_from("<I", response, offset)[0]
             offset += 4
@@ -175,16 +179,16 @@ def valget(port: serial.Serial) -> dict[str, int]:
             offset += width
         return {
             name: values[key]
-            for name, key, _, _ in SETTINGS
+            for name, key, _, _ in settings
             if key in values
         }
     raise TimeoutError("no UBX-CFG-VALGET response received")
 
 
-def apply_settings(port: serial.Serial) -> None:
+def apply_settings(port: serial.Serial, settings=SETTINGS) -> None:
     # Version 0, layer mask, transaction=0, reserved=0.
     payload = struct.pack("<BBBB", 0, LAYERS_RAM_BBR_FLASH, 0, 0)
-    for _name, key, fmt, value in SETTINGS:
+    for _name, key, fmt, value in settings:
         payload += struct.pack("<I", key)
         payload += struct.pack(fmt, value)
     port.write(frame(CLASS_CFG, ID_VALSET, payload))
@@ -216,11 +220,20 @@ def main() -> int:
         help="write the guarded heading configuration",
     )
     parser.add_argument(
+        "--nmea-only",
+        action="store_true",
+        help=(
+            "target only heading USB NMEA protocol/message outputs; do not "
+            "change UART, MSM, baud, rate, UBX, or RELPOSNED settings"
+        ),
+    )
+    parser.add_argument(
         "--backup",
         default="heading_f9p_config_before_20260727.json",
         help="JSON file for the targeted pre-change values",
     )
     args = parser.parse_args()
+    active_settings = NMEA_ONLY_SETTINGS if args.nmea_only else SETTINGS
 
     resolved = Path(args.port).resolve()
     print(f"Serial device: {args.port} -> {resolved}")
@@ -229,17 +242,20 @@ def main() -> int:
 
     with serial.Serial(args.port, 115200, timeout=0.15) as port:
         time.sleep(0.5)
-        before = valget(port)
+        before = valget(port, active_settings)
         print("Current targeted settings:")
         print(json.dumps(before, indent=2, sort_keys=True))
 
         if not args.apply:
             return 0
 
-        confirmation = input(
-            "Type CONFIGURE HEADING to write RAM, BBR, and Flash: "
+        confirmation_text = (
+            "DISABLE HEADING NMEA" if args.nmea_only else "CONFIGURE HEADING"
         )
-        if confirmation != "CONFIGURE HEADING":
+        confirmation = input(
+            f"Type {confirmation_text} to write RAM, BBR, and Flash: "
+        )
+        if confirmation != confirmation_text:
             print("Aborted; no settings were changed.")
             return 1
 
@@ -249,15 +265,15 @@ def main() -> int:
         )
         print(f"Saved targeted-value backup: {Path(args.backup).resolve()}")
 
-        apply_settings(port)
+        apply_settings(port, active_settings)
         print("Receiver acknowledged UBX-CFG-VALSET.")
         time.sleep(0.5)
 
-        after = valget(port)
+        after = valget(port, active_settings)
         print("Configured targeted settings:")
         print(json.dumps(after, indent=2, sort_keys=True))
 
-        expected = {name: value for name, _key, _fmt, value in SETTINGS}
+        expected = {name: value for name, _key, _fmt, value in active_settings}
         if after != expected:
             missing_or_different = {
                 name: {"expected": value, "actual": after.get(name)}
