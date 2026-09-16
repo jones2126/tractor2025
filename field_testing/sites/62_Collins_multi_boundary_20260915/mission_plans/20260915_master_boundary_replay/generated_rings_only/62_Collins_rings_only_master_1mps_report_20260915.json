@@ -1,17 +1,20 @@
 {
-  "status": "REVIEW_ONLY_NOT_FIELD_READY",
+  "status": "SUPERVISED_BLADES_OFF_FIELD_TEST",
   "coverage_complete": false,
   "coverage_blocked_fields": [
     "over_the_road"
   ],
   "coverage_mode": "rings_only",
   "stripes_enabled": false,
-  "speed_mps_all_waypoints": 1.0,
+  "cruise_speed_mps": 1.0,
+  "tight_turn_speed_mps": 0.5,
+  "tight_turn_speed_policy": "0.5 m/s for every planned connector, all garden-left coverage (review features A-C), and each other field's innermost ring (including review features D-E); 1.0 m/s elsewhere.",
+  "maximum_connector_net_turn_deg": 300.0,
   "lookahead_m": 2.0,
   "lane_spacing_m": 0.9652,
   "lane_spacing_in": 38.0,
   "turn_radius_m": 1.63,
-  "turn_radius_note": "Review-only uniform value equals the previously measured weaker right-turn radius and has no added margin. The approximately 1.12 m pole circle was a hard-left maneuver, so it does not justify reducing the right-turn value. A launcher remains blocked pending repeatability validation. Stripe U-turns remain deferred.",
+  "turn_radius_note": "The 1.63 m value equals the previously measured weaker right-turn radius and has no geometric margin. Near-360-degree planned connectors are rejected, and reviewed tight features run at 0.5 m/s for the supervised blades-off test. The approximately 1.12 m pole circle was a hard-left maneuver, so it does not justify reducing the right-turn value. Stripe U-turns remain deferred.",
   "pole_turn_measurement": {
     "candidate_sequence_start": 14,
     "candidate_sequence_end": 64,
@@ -32,9 +35,9 @@
   "pole_extra_clearance_m": 0.6096,
   "pole_extra_clearance_in": 24.0,
   "pole_planning_numerical_margin_m": 0.02,
-  "waypoints": 19343,
-  "route_length_m": 2995.678203114127,
-  "estimated_runtime_minutes": 49.927970051902115,
+  "waypoints": 19340,
+  "route_length_m": 2996.2827704726783,
+  "estimated_runtime_minutes": 59.247799453708694,
   "maximum_waypoint_gap_m": 0.5,
   "minimum_over_road_route_distance_to_recorded_pole_loop_m": 0.6282792553327957,
   "over_road_route_enters_expanded_pole_exclusion_interior": false,
@@ -105,5 +108,5 @@
       "recorded_boundary_exit_m": 0.0
     }
   },
-  "mission_sha256": "7a57c8408a7f22026d0418bcfea50bbb2c7eefde39d2b3e7103775361a9f5e2d"
+  "mission_sha256": "42d113457bb813b555b6262d4c277ff3159cd29077a1c49d35be68322db4680a"
 }

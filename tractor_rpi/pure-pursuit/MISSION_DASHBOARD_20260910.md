@@ -76,7 +76,13 @@ on the field network from operating the buttons without the URL.
 
 ## Loaded mission
 
-- 19,343 waypoints at 1.0 m/s with 2.0 m lookahead
+- 19,340 waypoints with 2.0 m lookahead
+- 1.0 m/s cruise; 0.5 m/s for planned connectors, garden-left A-C, and the
+  other fields' innermost rings including D-E
+- the two near-360-degree main-backyard connector loops are prohibited and
+  have been replaced by contained forward connectors
+- the launcher uses a 6 m forward tracking window so the controller cannot
+  jump across the 10.08 m closed A ring
 - inner rings for the main backyard, both gardens, and front yard
 - recorded safe connectors between fields
 - over-road boundary included with the 24-inch-expanded pole exclusion

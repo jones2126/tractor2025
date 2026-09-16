@@ -10,7 +10,7 @@ REPORT="${SCRIPT_DIR}/generated_rings_only/62_Collins_rings_only_master_1mps_rep
 CONTROLLER="${TRACTOR_REPO}/tractor_rpi/pure-pursuit/pure_pursuit_controller_20260915.py"
 LOGGER="${TRACTOR_REPO}/tractor_rpi/field_test_logger_20260828.py"
 PREFLIGHT="${TRACTOR_REPO}/tractor_rpi/testing/mission_preflight_20260804.py"
-EXPECTED_NORMALIZED_SHA256="56d33fcc7184f4ad03e58d392284e092033178a91f67a111d33c4312cdbc17c2"
+EXPECTED_NORMALIZED_SHA256="15c207b19d73502a8b24ef5bd1b38c6d9fe029db5fa66743e799560a1c291306"
 
 verify_only=false
 dashboard_mode=false
@@ -42,14 +42,15 @@ if actual_sha256 != expected_sha256:
     )
 
 rows = [line.split() for line in mission_bytes.decode("utf-8").splitlines()]
-if len(rows) != 19343 or any(len(row) != 5 for row in rows):
-    raise SystemExit(f"ERROR: expected 19343 five-column rows, got {len(rows)}")
+if len(rows) != 19340 or any(len(row) != 5 for row in rows):
+    raise SystemExit(f"ERROR: expected 19340 five-column rows, got {len(rows)}")
 if any(not all(math.isfinite(float(value)) for value in row) for row in rows):
     raise SystemExit("ERROR: mission contains a non-finite value")
 if {row[3] for row in rows} != {"2.00"}:
     raise SystemExit("ERROR: every mission lookahead must be 2.00 m")
-if {row[4] for row in rows} != {"1.00"}:
-    raise SystemExit("ERROR: every mission speed must be 1.00 m/s")
+speed_counts = {speed: sum(row[4] == speed for row in rows) for speed in {row[4] for row in rows}}
+if speed_counts != {"0.50": 2945, "1.00": 16395}:
+    raise SystemExit(f"ERROR: unexpected mission speed distribution: {speed_counts}")
 
 report = json.loads(report_path.read_text(encoding="utf-8"))
 if report.get("coverage_blocked_fields") != ["over_the_road"]:
@@ -71,7 +72,8 @@ if report.get("maximum_waypoint_gap_m", 999.0) > 0.500001:
     raise SystemExit("ERROR: waypoint spacing exceeds 0.50 m")
 
 print("PASS: exact reviewed partial mission verified.")
-print("      19,343 rows, 1.00 m/s, 2.00 m lookahead, stripes disabled.")
+print("      19,340 rows, 1.00 m/s cruise, 0.50 m/s tight turns, 2.00 m lookahead.")
+print("      Near-360-degree planned connectors are prohibited; stripes disabled.")
 print("      Over-road boundary included; its one inner ring remains omitted.")
 PY
 
@@ -95,7 +97,7 @@ echo " Inner rings : main backyard, both gardens, and front yard"
 echo " Over-road   : reviewed boundary only; inner ring omitted"
 echo " Pole        : 24-inch additional exclusion preserved"
 echo " Stripes     : disabled"
-echo " Moving time : approximately 49.9 minutes"
+echo " Moving time : approximately 59.2 minutes"
 echo " Mower deck must remain disengaged"
 echo " Keep the handheld available for Pause/Manual at all times"
 echo "============================================================"
@@ -204,6 +206,7 @@ controller_args=(
     --ip 127.0.0.1
     --port 6004
     --max-speed 1.00
+    --tracking-window 6.0
 )
 if [[ "${dashboard_mode}" == true ]]; then
     controller_args+=(--control-port 6011 --telemetry-port 6012)

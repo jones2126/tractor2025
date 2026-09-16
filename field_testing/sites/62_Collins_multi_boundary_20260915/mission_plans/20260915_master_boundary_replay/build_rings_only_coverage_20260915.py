@@ -7,6 +7,7 @@ import csv
 import hashlib
 import json
 import math
+import os
 import sys
 from pathlib import Path
 
@@ -47,11 +48,13 @@ from site_coverage_planner_20260724 import (  # noqa: E402
 )
 
 
-SPEED_MPS = 1.0
+CRUISE_SPEED_MPS = 1.0
+TIGHT_TURN_SPEED_MPS = 0.5
 LOOKAHEAD_M = 2.0
 WAYPOINT_SPACING_M = 0.50
 LANE_SPACING_M = 0.9652  # 38-inch centerline spacing used by prior missions
 TURN_RADIUS_M = 1.63     # review value: previously measured weaker right-turn radius
+MAX_CONNECTOR_NET_TURN_DEG = 300.0
 BOUNDARY_OUTSET_M = 0.381
 POLE_EXTRA_CLEARANCE_M = 0.6096  # 24 inches
 POLE_NUMERICAL_MARGIN_M = 0.02
@@ -145,9 +148,45 @@ def zero_or_dubins(start_pose, end_pose, drive_area):
             "length_m": gap,
             "points": [start_pose, end_pose],
         }
-    return valid_connector(
+    connector = valid_connector(
         start_pose, end_pose, drive_area, TURN_RADIUS_M, WAYPOINT_SPACING_M
     )
+    if connector is None:
+        return None
+    yaws = [float(point[2]) for point in connector["points"]]
+    net_turn = 0.0
+    for first, second in zip(yaws, yaws[1:]):
+        net_turn += (second - first + math.pi) % (2.0 * math.pi) - math.pi
+    if abs(math.degrees(net_turn)) >= MAX_CONNECTOR_NET_TURN_DEG:
+        return None
+    return connector
+
+
+def mission_speeds(route):
+    """Use 0.5 m/s for reviewed tight maneuvers and 1.0 m/s elsewhere.
+
+    Garden-left contains the three close/circular features labeled A-C in the
+    review image, so that compact field stays slow throughout. All planned
+    connectors are also slow, as are the innermost ring in every other field.
+    """
+    innermost_ring = {}
+    for item in route:
+        if item["kind"] == "ring":
+            innermost_ring[item["field"]] = max(
+                innermost_ring.get(item["field"], 0), int(item["ring"])
+            )
+    speeds = []
+    for item in route:
+        tight = (
+            item["kind"] == "planned_connector"
+            or item["field"] == "garden_left"
+            or (
+                item["kind"] == "ring"
+                and int(item["ring"]) == innermost_ring[item["field"]]
+            )
+        )
+        speeds.append(TIGHT_TURN_SPEED_MPS if tight else CRUISE_SPEED_MPS)
+    return speeds
 
 
 def plan_ring_chain(headlands, incoming_pose, outgoing_pose, clockwise, drive_area):
@@ -566,12 +605,13 @@ def main():
 
     xy = [item["xy"] for item in route]
     gaps = [distance(a, b) for a, b in zip(xy, xy[1:])]
+    speeds = mission_speeds(route)
     mission = []
     audit = []
-    for index, item in enumerate(route):
+    for index, (item, speed_mps) in enumerate(zip(route, speeds)):
         yaw = segment_yaw(xy[index], xy[index + 1]) if index < len(xy) - 1 else segment_yaw(xy[-2], xy[-1])
         lat, lon = frame.to_latlon(*item["xy"])
-        mission.append(MissionPoint(lat, lon, yaw, LOOKAHEAD_M, SPEED_MPS))
+        mission.append(MissionPoint(lat, lon, yaw, LOOKAHEAD_M, speed_mps))
         audit.append({
             "waypoint": index + 1,
             "phase": item["phase"],
@@ -584,7 +624,7 @@ def main():
             "north_m": f"{item['xy'][1]:.3f}",
             "yaw_rad": f"{yaw:.6f}",
             "lookahead_m": f"{LOOKAHEAD_M:.2f}",
-            "speed_mps": f"{SPEED_MPS:.2f}",
+            "speed_mps": f"{speed_mps:.2f}",
         })
 
     mission_path = OUT / "62_Collins_rings_only_master_1mps_PARTIAL_REVIEW_ONLY_20260915.txt"
@@ -599,26 +639,35 @@ def main():
     over_rows = [row for row in route if row["field"] == "over_the_road"]
     over_line = LineString([row["xy"] for row in over_rows])
     report = {
-        "status": "REVIEW_ONLY_NOT_FIELD_READY",
+        "status": "SUPERVISED_BLADES_OFF_FIELD_TEST",
         "coverage_complete": False,
         "coverage_blocked_fields": [
             name for name, item in planned.items() if item["coverage_blocked"]
         ],
         "coverage_mode": "rings_only",
         "stripes_enabled": False,
-        "speed_mps_all_waypoints": SPEED_MPS,
+        "cruise_speed_mps": CRUISE_SPEED_MPS,
+        "tight_turn_speed_mps": TIGHT_TURN_SPEED_MPS,
+        "tight_turn_speed_policy": (
+            "0.5 m/s for every planned connector, all garden-left coverage "
+            "(review features A-C), and each other field's innermost ring "
+            "(including review features D-E); 1.0 m/s elsewhere."
+        ),
+        "maximum_connector_net_turn_deg": MAX_CONNECTOR_NET_TURN_DEG,
         "lookahead_m": LOOKAHEAD_M,
         "lane_spacing_m": LANE_SPACING_M,
         "lane_spacing_in": LANE_SPACING_M / 0.0254,
         "turn_radius_m": TURN_RADIUS_M,
-        "turn_radius_note": "Review-only uniform value equals the previously measured weaker right-turn radius and has no added margin. The approximately 1.12 m pole circle was a hard-left maneuver, so it does not justify reducing the right-turn value. A launcher remains blocked pending repeatability validation. Stripe U-turns remain deferred.",
+        "turn_radius_note": "The 1.63 m value equals the previously measured weaker right-turn radius and has no geometric margin. Near-360-degree planned connectors are rejected, and reviewed tight features run at 0.5 m/s for the supervised blades-off test. The approximately 1.12 m pole circle was a hard-left maneuver, so it does not justify reducing the right-turn value. Stripe U-turns remain deferred.",
         "pole_turn_measurement": pole_turn_measurement,
         "pole_extra_clearance_m": POLE_EXTRA_CLEARANCE_M,
         "pole_extra_clearance_in": 24.0,
         "pole_planning_numerical_margin_m": POLE_NUMERICAL_MARGIN_M,
         "waypoints": len(mission),
         "route_length_m": route_line.length,
-        "estimated_runtime_minutes": route_line.length / SPEED_MPS / 60.0,
+        "estimated_runtime_minutes": sum(
+            gap / speeds[index] for index, gap in enumerate(gaps)
+        ) / 60.0,
         "maximum_waypoint_gap_m": max(gaps),
         "minimum_over_road_route_distance_to_recorded_pole_loop_m": over_line.distance(pole_polygon),
         "over_road_route_enters_expanded_pole_exclusion_interior": over_line.intersects(pole_exclusion.buffer(-0.01)),
@@ -690,12 +739,15 @@ def main():
     axis.set_ylabel("North of Segment 2 start (m)")
     axis.set_title(
         f"62 Collins partial rings-only master — {report['route_length_m']:.0f} m, "
-        f"{report['estimated_runtime_minutes']:.1f} min at 1.0 m/s"
+        f"{report['estimated_runtime_minutes']:.1f} min, 1.0 m/s cruise / 0.5 m/s tight turns"
     )
     axis.legend(loc="best", fontsize=8)
     fig.tight_layout()
     preview_path = OUT / "62_Collins_rings_only_master_1mps_REVIEW_20260915.png"
-    fig.savefig(preview_path)
+    save_path = str(preview_path.resolve())
+    if os.name == "nt":
+        save_path = "\\\\?\\" + save_path
+    fig.savefig(save_path)
     plt.close(fig)
 
     print(json.dumps(report, indent=2))

@@ -44,7 +44,10 @@ python3 build_master_boundary_replay_20260915.py
 after the boundary review:
 
 - use inner rings only; stripe coverage is deferred;
-- command 1.0 m/s at every waypoint;
+- command 1.0 m/s on ordinary coverage and 0.5 m/s on all planned connectors,
+  all garden-left geometry (review features A-C), and each other field's
+  innermost ring (including review features D-E);
+- reject any planned connector requiring 300 degrees or more of net turning;
 - preserve the deliberately driven inter-field transitions;
 - treat the closed subset of Segment 14 as the telephone-pole obstacle and
   expand it outward by 24 inches (0.6096 m), plus a 0.02 m numerical margin;
@@ -69,6 +72,17 @@ formed while simultaneously honoring the 24-inch pole exclusion and the
 in the master route: Segments 13 and 15 are retained, while the Segment 14 pole
 portion is shifted outward to the expanded exclusion. The report marks the
 inner-ring coverage as incomplete, not the boundary pass as missing.
+
+The first generated version contained two nearly complete right-hand connector
+circles between main-backyard rings 1-2 and 9-10. They were not coverage rings.
+The connector search now rejects turns of 300 degrees or more and selects
+contained forward alternatives. The replacements are 7.60 m with 6.9 degrees
+of net turn and 4.18 m with 40.6 degrees of right turn. The A-E review features
+remain because they are intentional innermost rings or contained transition
+geometry; each is commanded at 0.5 m/s. Feature A is a 10.08 m closed inner
+ring, so the field launcher reduces the controller's normal forward tracking
+window from 12 m to 6 m. This prevents a nearby point on the far side/end of
+that ring from being selected during ordinary tracking.
 
 The files under `generated_rings_only/` retain `REVIEW_ONLY` or
 `PARTIAL_REVIEW_ONLY` in their names so the omitted over-road inner ring is not
