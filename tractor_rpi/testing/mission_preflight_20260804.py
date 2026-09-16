@@ -414,6 +414,12 @@ def automatic_gps_failure_diagnostics(
             print(f"- The position/base-link receiver is reporting {latest_fix}, not RTK Fixed.")
         elif not heading_healthy:
             print("- The heading stream is not fully healthy; inspect its antenna, cable, device link, and configuration.")
+            if relpos_rate < 1.0:
+                print("- NAV-RELPOSNED is absent or too slow. A lost heading-F9P configuration is a likely cause when its satellite data is otherwise present.")
+                print("- Safe configuration readback requires stopping rtcm-server first; do not run it while the service owns the serial port.")
+                print("  sudo systemctl stop rtcm-server.service")
+                print("  sudo python3 tractor_rpi/testing/configure_heading_f9p_20260727.py --port /dev/gps-heading")
+                print("  sudo systemctl start rtcm-server.service")
         if rtcm_ok and latest_fix != "RTK Fixed":
             print("- RTCM bytes are being forwarded, but forwarding alone does not prove an RTK-fixed position solution.")
         if diff_present == 0:

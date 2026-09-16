@@ -5,12 +5,14 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 TRACTOR_REPO="${TRACTOR_REPO:-/home/al/tractor2025}"
-MISSION="${SCRIPT_DIR}/generated_rings_only/62_Collins_rings_only_master_1mps_PARTIAL_REVIEW_ONLY_20260915.txt"
-REPORT="${SCRIPT_DIR}/generated_rings_only/62_Collins_rings_only_master_1mps_report_20260915.json"
+MISSION="${SCRIPT_DIR}/generated_rings_only/62_Collins_rings_only_resume_wp0091_20260916.txt"
+AUDIT="${SCRIPT_DIR}/generated_rings_only/62_Collins_rings_only_resume_wp0091_audit_20260916.csv"
+REPORT="${SCRIPT_DIR}/generated_rings_only/62_Collins_rings_only_resume_wp0091_report_20260916.json"
+SOURCE_REPORT="${SCRIPT_DIR}/generated_rings_only/62_Collins_rings_only_master_1mps_report_20260915.json"
 CONTROLLER="${TRACTOR_REPO}/tractor_rpi/pure-pursuit/pure_pursuit_controller_20260915.py"
 LOGGER="${TRACTOR_REPO}/tractor_rpi/field_test_logger_20260828.py"
 PREFLIGHT="${TRACTOR_REPO}/tractor_rpi/testing/mission_preflight_20260804.py"
-EXPECTED_NORMALIZED_SHA256="15c207b19d73502a8b24ef5bd1b38c6d9fe029db5fa66743e799560a1c291306"
+EXPECTED_NORMALIZED_SHA256="8a324391b762a82eb28ebe542f8f5bcd9da4c4a1897d921c41a2afcea1338dee"
 
 verify_only=false
 dashboard_mode=false
@@ -20,11 +22,12 @@ case "${1:-}" in
 esac
 [[ $# -eq 0 ]] || { echo "Usage: $0 [--verify-only|--dashboard]" >&2; exit 2; }
 
-for required in "${MISSION}" "${REPORT}" "${CONTROLLER}" "${LOGGER}" "${PREFLIGHT}"; do
+for required in "${MISSION}" "${AUDIT}" "${REPORT}" "${SOURCE_REPORT}" "${CONTROLLER}" "${LOGGER}" "${PREFLIGHT}"; do
     [[ -f "${required}" ]] || { echo "ERROR: required file not found: ${required}" >&2; exit 1; }
 done
 
-python3 - "${MISSION}" "${REPORT}" "${EXPECTED_NORMALIZED_SHA256}" <<'PY'
+python3 - "${MISSION}" "${AUDIT}" "${REPORT}" "${SOURCE_REPORT}" "${EXPECTED_NORMALIZED_SHA256}" <<'PY'
+import csv
 import hashlib
 import json
 import math
@@ -32,8 +35,10 @@ from pathlib import Path
 import sys
 
 mission_path = Path(sys.argv[1])
-report_path = Path(sys.argv[2])
-expected_sha256 = sys.argv[3]
+audit_path = Path(sys.argv[2])
+report_path = Path(sys.argv[3])
+source_report_path = Path(sys.argv[4])
+expected_sha256 = sys.argv[5]
 mission_bytes = mission_path.read_bytes().replace(b"\r\n", b"\n")
 actual_sha256 = hashlib.sha256(mission_bytes).hexdigest()
 if actual_sha256 != expected_sha256:
@@ -42,37 +47,57 @@ if actual_sha256 != expected_sha256:
     )
 
 rows = [line.split() for line in mission_bytes.decode("utf-8").splitlines()]
-if len(rows) != 19340 or any(len(row) != 5 for row in rows):
-    raise SystemExit(f"ERROR: expected 19340 five-column rows, got {len(rows)}")
+if len(rows) != 19250 or any(len(row) != 5 for row in rows):
+    raise SystemExit(f"ERROR: expected 19250 five-column rows, got {len(rows)}")
 if any(not all(math.isfinite(float(value)) for value in row) for row in rows):
     raise SystemExit("ERROR: mission contains a non-finite value")
 if {row[3] for row in rows} != {"2.00"}:
     raise SystemExit("ERROR: every mission lookahead must be 2.00 m")
 speed_counts = {speed: sum(row[4] == speed for row in rows) for speed in {row[4] for row in rows}}
-if speed_counts != {"0.50": 2945, "1.00": 16395}:
+if speed_counts != {"0.50": 2945, "1.00": 16305}:
     raise SystemExit(f"ERROR: unexpected mission speed distribution: {speed_counts}")
 
 report = json.loads(report_path.read_text(encoding="utf-8"))
-if report.get("coverage_blocked_fields") != ["over_the_road"]:
+if report.get("source_start_waypoint") != 91 or report.get("trimmed_source_waypoints") != 90:
+    raise SystemExit("ERROR: resume report no longer starts at reviewed source waypoint 91")
+if report.get("waypoints") != 19250 or report.get("mission_sha256") != expected_sha256:
+    raise SystemExit("ERROR: resume report does not match the reviewed mission")
+guards = report.get("safety_guards", {})
+if guards.get("reacquire_max_advance_m") != 30.0 or not guards.get("phase_locked_recovery"):
+    raise SystemExit("ERROR: bounded phase-locked recovery is not enabled")
+if guards.get("required_heading_carrier") != "fixed":
+    raise SystemExit("ERROR: fixed-carrier heading is not required")
+
+with audit_path.open(newline="", encoding="utf-8-sig") as handle:
+    audit = list(csv.DictReader(handle))
+if len(audit) != len(rows) or audit[0].get("source_waypoint") != "91":
+    raise SystemExit("ERROR: resume audit is not aligned with the mission")
+if any(not row.get("phase") for row in audit):
+    raise SystemExit("ERROR: resume audit contains an empty phase")
+
+source_report = json.loads(source_report_path.read_text(encoding="utf-8"))
+if source_report.get("coverage_blocked_fields") != ["over_the_road"]:
     raise SystemExit("ERROR: report no longer has the reviewed over-road-only limitation")
-over_road = report.get("fields", {}).get("over_the_road", {})
+over_road = source_report.get("fields", {}).get("over_the_road", {})
 if not over_road.get("manual_boundary_pass_included"):
     raise SystemExit("ERROR: over-road boundary pass is not marked as included")
 if over_road.get("geometrically_available_inner_ring_count") != 1:
     raise SystemExit("ERROR: expected exactly one omitted over-road inner ring")
 if over_road.get("ring_count") != 0:
     raise SystemExit("ERROR: reviewed field test must omit the over-road inner ring")
-if report.get("stripes_enabled") is not False:
+if source_report.get("stripes_enabled") is not False:
     raise SystemExit("ERROR: stripes must remain disabled")
-if report.get("over_road_route_enters_expanded_pole_exclusion_interior"):
+if source_report.get("over_road_route_enters_expanded_pole_exclusion_interior"):
     raise SystemExit("ERROR: over-road route enters the pole exclusion")
-if report.get("minimum_over_road_route_distance_to_recorded_pole_loop_m", 0.0) < 0.6096:
+if source_report.get("minimum_over_road_route_distance_to_recorded_pole_loop_m", 0.0) < 0.6096:
     raise SystemExit("ERROR: over-road route does not preserve 24-inch pole clearance")
-if report.get("maximum_waypoint_gap_m", 999.0) > 0.500001:
+if source_report.get("maximum_waypoint_gap_m", 999.0) > 0.500001:
     raise SystemExit("ERROR: waypoint spacing exceeds 0.50 m")
 
-print("PASS: exact reviewed partial mission verified.")
-print("      19,340 rows, 1.00 m/s cruise, 0.50 m/s tight turns, 2.00 m lookahead.")
+print("PASS: exact reviewed clear-sky resume mission verified.")
+print("      Starts at source waypoint 91; 19,250 rows remain.")
+print("      1.00 m/s cruise, 0.50 m/s tight turns, 2.00 m lookahead.")
+print("      Recovery is phase-locked and limited to 30 m forward progress.")
 print("      Near-360-degree planned connectors are prohibited; stripes disabled.")
 print("      Over-road boundary included; its one inner ring remains omitted.")
 PY
@@ -92,7 +117,7 @@ pgrep -f '[p]ython3.*pure_pursuit_controller_20260915.py' >/dev/null && {
 }
 
 echo "============================================================"
-echo " 62 COLLINS PARTIAL RINGS FIELD TEST - 1.00 M/S"
+echo " 62 COLLINS CLEAR-SKY RESUME - SOURCE WAYPOINT 91"
 echo " Inner rings : main backyard, both gardens, and front yard"
 echo " Over-road   : reviewed boundary only; inner ring omitted"
 echo " Pole        : 24-inch additional exclusion preserved"
@@ -100,6 +125,7 @@ echo " Stripes     : disabled"
 echo " Moving time : approximately 59.2 minutes"
 echo " Mower deck must remain disengaged"
 echo " Keep the handheld available for Pause/Manual at all times"
+echo " Recovery    : same phase only; maximum 30 m forward"
 echo "============================================================"
 echo "Running preflight; keep the tractor in Pause."
 if [[ "${dashboard_mode}" == true ]]; then
@@ -150,6 +176,12 @@ if latest.get("fix_quality") != "RTK Fixed":
     raise SystemExit("ERROR: mission start requires RTK Fixed")
 if not latest.get("headValid") or latest.get("carrier") != "fixed":
     raise SystemExit("ERROR: mission start requires valid fixed-carrier heading")
+baseline = latest.get("relpos_length_m")
+accuracy = latest.get("relpos_heading_accuracy_deg")
+if baseline is None or not 0.80 <= float(baseline) <= 1.30:
+    raise SystemExit(f"ERROR: heading baseline {baseline!r} m is outside 0.80-1.30 m")
+if accuracy is None or float(accuracy) > 1.0:
+    raise SystemExit(f"ERROR: heading accuracy {accuracy!r} deg exceeds 1.0 deg")
 if position_error > 1.5:
     raise SystemExit("ERROR: move within 1.50 m of the mission start")
 if heading_error > 20.0:
@@ -207,6 +239,9 @@ controller_args=(
     --port 6004
     --max-speed 1.00
     --tracking-window 6.0
+    --audit-file "${AUDIT}"
+    --reacquire-max-advance 30.0
+    --resume-stable-seconds 5.0
 )
 if [[ "${dashboard_mode}" == true ]]; then
     controller_args+=(--control-port 6011 --telemetry-port 6012)

@@ -7,7 +7,9 @@ This is a field-review successor to the proven 20260714 controller.  It adds:
 * handheld mode monitoring on Teensy status UDP 6003;
 * frozen progress while the handheld is not in AUTO;
 * guarded forward-only reacquisition after Manual/Pause or loss of RTK Fixed;
-* refusal to resume when the closest forward path choice is ambiguous.
+* refusal to resume when the closest forward path choice is ambiguous;
+* bounded, phase-locked recovery so a nearby later ring cannot be selected;
+* fixed-carrier, baseline-length, heading-accuracy, and stable-time gates.
 
 The older controller remains unchanged for comparison and rollback.
 
@@ -171,10 +173,16 @@ class GPSReceiver:
     SO_REUSEPORT allows coexistence with field_test_logger on the same port.
     """
 
-    def __init__(self, port=GPS_UDP_PORT, min_fix="RTK Fixed", require_head_valid=True):
+    def __init__(self, port=GPS_UDP_PORT, min_fix="RTK Fixed", require_head_valid=True,
+                 require_carrier_fixed=True, baseline_min_m=0.80,
+                 baseline_max_m=1.30, heading_accuracy_max_deg=1.0):
         self.port = port
         self.min_fix = min_fix
         self.require_head_valid = require_head_valid
+        self.require_carrier_fixed = require_carrier_fixed
+        self.baseline_min_m = baseline_min_m
+        self.baseline_max_m = baseline_max_m
+        self.heading_accuracy_max_deg = heading_accuracy_max_deg
         self._lock = threading.Lock()
         self._latest = None
         self._last_update = 0.0
@@ -220,6 +228,8 @@ class GPSReceiver:
                 'fix_quality': msg.get('fix_quality'),
                 'headValid': bool(msg.get('headValid')),
                 'carrier': msg.get('carrier'),
+                'relpos_length_m': msg.get('relpos_length_m'),
+                'heading_accuracy_deg': msg.get('relpos_heading_accuracy_deg'),
                 'fatal_error': bool(msg.get('fatal_error', False)),
                 'fatal_base_reason': msg.get('fatal_base_reason'),
                 'fatal_heading_reason': msg.get('fatal_heading_reason'),
@@ -245,6 +255,26 @@ class GPSReceiver:
             return False, f"fix_quality={pose['fix_quality']!r} below --min-fix {self.min_fix!r}"
         if self.require_head_valid and not pose['headValid']:
             return False, "headValid=False"
+        if self.require_carrier_fixed and pose['carrier'] != 'fixed':
+            return False, f"heading carrier={pose['carrier']!r}, expected 'fixed'"
+        try:
+            baseline_m = float(pose['relpos_length_m'])
+        except (TypeError, ValueError):
+            return False, "heading baseline length is absent"
+        if (not math.isfinite(baseline_m)
+                or not self.baseline_min_m <= baseline_m <= self.baseline_max_m):
+            return False, (
+                f"heading baseline={baseline_m:.3f} m outside "
+                f"{self.baseline_min_m:.2f}-{self.baseline_max_m:.2f} m")
+        try:
+            heading_accuracy_deg = float(pose['heading_accuracy_deg'])
+        except (TypeError, ValueError):
+            return False, "heading accuracy is absent"
+        if (not math.isfinite(heading_accuracy_deg)
+                or heading_accuracy_deg > self.heading_accuracy_max_deg):
+            return False, (
+                f"heading accuracy={heading_accuracy_deg:.3f} deg exceeds "
+                f"{self.heading_accuracy_max_deg:.2f} deg")
         return True, ""
 
     def stop(self):
@@ -375,7 +405,7 @@ class PurePursuit:
                  rate_hz=20.0, max_speed_mps=DEFAULT_MAX_SPEED_MPS,
                  tracking_window_m=12.0, reacquire_distance_m=2.0,
                  reacquire_heading_deg=60.0, ambiguity_distance_m=0.35,
-                 ambiguity_progress_m=8.0):
+                 ambiguity_progress_m=8.0, reacquire_max_advance_m=30.0):
         self.L = wheelbase
         self.delta_max = max_steer
         self.pos_tol = pos_tol
@@ -395,6 +425,8 @@ class PurePursuit:
         self.reacquire_heading_rad = math.radians(reacquire_heading_deg)
         self.ambiguity_distance_m = ambiguity_distance_m
         self.ambiguity_progress_m = ambiguity_progress_m
+        self.reacquire_max_advance_m = reacquire_max_advance_m
+        self.path_phases = []
         self.reacquire_state = "REQUIRED"
         self.reacquire_detail = "mission not started"
 
@@ -462,6 +494,17 @@ class PurePursuit:
                 print(f"NOTE: mission file commands up to {v_max:.2f} m/s; "
                       f"will be clamped to --max-speed {self.max_speed_mps:.2f} m/s.")
 
+    def load_audit_phases(self, filename):
+        with open(filename, newline='', encoding='utf-8-sig') as handle:
+            phases = [str(row.get('phase', '')) for row in csv.DictReader(handle)]
+        if len(phases) != len(self.path):
+            raise ValueError(
+                f"audit has {len(phases)} rows but mission has {len(self.path)} waypoints")
+        if any(not phase for phase in phases):
+            raise ValueError("audit contains an empty mission phase")
+        self.path_phases = phases
+        print(f"Loaded {len(phases)} waypoint phases from {filename}.")
+
     def _build_arc_lengths(self):
         self.cumulative_s = [0.0] if self.path else []
         for previous, current in zip(self.path, self.path[1:]):
@@ -503,10 +546,19 @@ class PurePursuit:
             candidate = self._segment_projection(segment_index, x, y)
             if candidate is None or candidate["s"] < self.progress_s - 0.25:
                 continue
+            if end_s is not None and candidate["s"] > end_s:
+                continue
             candidate["heading_error"] = abs(
                 self._angle_difference(candidate["heading"], heading))
             candidates.append(candidate)
         return candidates
+
+    def _segment_phase(self, segment_index):
+        if not self.path_phases or segment_index + 1 >= len(self.path_phases):
+            return None
+        first = self.path_phases[segment_index]
+        second = self.path_phases[segment_index + 1]
+        return first if first == second else None
 
     def reacquire_forward(self, x, y, heading):
         """Select a close, heading-compatible point at or ahead of progress.
@@ -518,16 +570,29 @@ class PurePursuit:
             self.reacquire_state = "BLOCKED"
             self.reacquire_detail = "path has fewer than two waypoints"
             return False
+        end_s = min(
+            self.cumulative_s[-1], self.progress_s + self.reacquire_max_advance_m)
+        current_phase = (
+            self.path_phases[min(self.idx, len(self.path_phases) - 1)]
+            if self.path_phases else None
+        )
         candidates = [
-            candidate for candidate in self._projection_candidates(x, y, heading)
+            candidate for candidate in self._projection_candidates(
+                x, y, heading, end_s=end_s)
             if candidate["distance"] <= self.reacquire_distance_m
             and candidate["heading_error"] <= self.reacquire_heading_rad
+            and (
+                current_phase is None
+                or self._segment_phase(candidate["segment"]) == current_phase
+            )
         ]
         if not candidates:
             self.reacquire_state = "BLOCKED"
             self.reacquire_detail = (
                 f"no forward path within {self.reacquire_distance_m:.2f} m "
-                f"and {math.degrees(self.reacquire_heading_rad):.0f} deg")
+                f"and {math.degrees(self.reacquire_heading_rad):.0f} deg, "
+                f"within {self.reacquire_max_advance_m:.1f} m of progress"
+                + (f" and phase {current_phase!r}" if current_phase else ""))
             return False
         candidates.sort(key=lambda candidate: (candidate["distance"], candidate["s"]))
         best = candidates[0]
@@ -751,7 +816,8 @@ class PurePursuit:
             self.cleanup()
 
     def run_live(self, gps_receiver, logger=None, control_receiver=None,
-                 handheld_receiver=None, telemetry_port=0):
+                 handheld_receiver=None, telemetry_port=0,
+                 resume_stable_seconds=5.0):
         """Field-test mode. Logs every cycle to CSV if logger provided."""
         if not self.path:
             print("No path loaded.")
@@ -771,6 +837,7 @@ class PurePursuit:
         telemetry_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) if telemetry_port else None
         operator_cycle_required = handheld_receiver is not None
         operator_non_auto_seen = handheld_receiver is None
+        drivable_since = None
 
         try:
             while self.running:
@@ -779,7 +846,19 @@ class PurePursuit:
                 elapsed = now - self.start_time
 
                 pose = gps_receiver.get_pose()
-                ok, reason = gps_receiver.is_drivable(pose)
+                raw_ok, reason = gps_receiver.is_drivable(pose)
+                if raw_ok:
+                    if drivable_since is None:
+                        drivable_since = now
+                    stable_seconds = now - drivable_since
+                    ok = stable_seconds >= resume_stable_seconds
+                    if not ok:
+                        reason = (
+                            f"GPS/heading stable for {stable_seconds:.1f}/"
+                            f"{resume_stable_seconds:.1f} s")
+                else:
+                    drivable_since = None
+                    ok = False
                 software_paused = bool(control_receiver and control_receiver.is_paused())
                 handheld_ok, handheld_reason, handheld = (
                     handheld_receiver.auto_ready() if handheld_receiver
@@ -1052,6 +1131,12 @@ def main():
                         help='Near-tie distance that blocks ambiguous recovery')
     parser.add_argument('--ambiguity-progress', type=float, default=8.0,
                         help='Along-mission separation that makes a near tie ambiguous')
+    parser.add_argument('--reacquire-max-advance', type=float, default=30.0,
+                        help='Maximum along-path progress a recovery may advance')
+    parser.add_argument('--audit-file',
+                        help='Waypoint audit CSV; recovery remains in the current phase')
+    parser.add_argument('--resume-stable-seconds', type=float, default=5.0,
+                        help='Continuous healthy GPS/heading time required before driving')
     parser.add_argument('--no-pursuit-log', action='store_true',
                         help='Disable per-cycle CSV logging (on by default in live mode)')
     parser.add_argument('--control-port', type=int, default=0,
@@ -1071,6 +1156,7 @@ def main():
         reacquire_heading_deg=args.reacquire_heading,
         ambiguity_distance_m=args.ambiguity_distance,
         ambiguity_progress_m=args.ambiguity_progress,
+        reacquire_max_advance_m=args.reacquire_max_advance,
     )
 
     if args.mode in ('timed', 'live') and not args.mission_file:
@@ -1079,6 +1165,8 @@ def main():
 
     if args.mission_file:
         pp.load_path(args.mission_file)
+    if args.audit_file:
+        pp.load_audit_phases(args.audit_file)
 
     gps_receiver = None
     logger = None
@@ -1120,6 +1208,7 @@ def main():
                 control_receiver=control_receiver,
                 handheld_receiver=handheld_receiver,
                 telemetry_port=args.telemetry_port,
+                resume_stable_seconds=args.resume_stable_seconds,
             )
             gps_receiver.stop()
     finally:

@@ -91,7 +91,9 @@ on the field network from operating the buttons without the URL.
 - stripes omitted
 
 The dashboard starts
-`run_62_Collins_partial_rings_field_test_20260916.sh --dashboard`. The launcher
+`run_62_Collins_partial_rings_field_test_20260916.sh --dashboard`. As of the
+2026-09-16 clear-sky restart, it loads the resume route beginning at source
+waypoint 91 rather than the original route beginning. The launcher
 still verifies the exact mission checksum, report limitations, preflight,
 RTK/heading state, and starting pose before it starts Pure Pursuit.
 

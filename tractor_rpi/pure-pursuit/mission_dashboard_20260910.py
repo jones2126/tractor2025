@@ -27,11 +27,11 @@ PACKAGE = (
 )
 MISSION = (
     PACKAGE / "generated_rings_only"
-    / "62_Collins_rings_only_master_1mps_PARTIAL_REVIEW_ONLY_20260915.txt"
+    / "62_Collins_rings_only_resume_wp0091_20260916.txt"
 )
 AUDIT = (
     PACKAGE / "generated_rings_only"
-    / "62_Collins_rings_only_master_1mps_audit_20260915.csv"
+    / "62_Collins_rings_only_resume_wp0091_audit_20260916.csv"
 )
 LAUNCHER = PACKAGE / "run_62_Collins_partial_rings_field_test_20260916.sh"
 CONTROL_PORT = 6011
@@ -50,8 +50,8 @@ HTML = r'''<!doctype html>
 <style>
 :root{color-scheme:dark;font-family:system-ui,sans-serif}*{box-sizing:border-box}body{margin:0;background:#101418;color:#e8edf2}main{max-width:1500px;margin:auto;padding:14px}h1{margin:.2rem 0;font-size:1.5rem}.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px 0}.button{border:0;border-radius:6px;padding:12px 18px;font-weight:700;cursor:pointer}.button:disabled{opacity:.4;cursor:not-allowed}.start{background:#2fb344;color:#fff}.pause{background:#e03131;color:#fff}.resume{background:#1971c2;color:#fff}.messages{background:#495057;color:#fff}.badge{padding:7px 10px;border-radius:999px;background:#343a40;font-weight:700}.ok{background:#19713c}.warn{background:#9c640c}.bad{background:#9b2226}.layout{display:grid;grid-template-columns:minmax(0,2fr) minmax(330px,1fr);gap:14px}svg{width:100%;height:min(78vh,850px);background:#182028;border:1px solid #52606d}.side{min-width:0}.facts{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#52606d;border:1px solid #52606d}.fact{background:#182028;padding:8px;min-height:58px}.fact span{display:block;color:#9fb0bf;font-size:.78rem}.fact b{font-size:.96rem}.output{height:180px;overflow:auto;white-space:pre-wrap;background:#080b0d;border:1px solid #52606d;padding:8px;font:12px ui-monospace,monospace;margin-top:10px}.note{color:#b8c5cf;margin:.3rem 0 0}.mission{fill:none;stroke:#708090;stroke-width:1}.trail{fill:none;stroke:#35d0ba;stroke-width:2}.to-target{stroke:#ff5d8f;stroke-width:1.7;stroke-dasharray:5 3}.to-start{stroke:#ff922b;stroke-width:2.5;stroke-dasharray:8 4}.start-label{fill:#fff3bf;font:bold 16px system-ui,sans-serif;paint-order:stroke;stroke:#101418;stroke-width:4px}.heading{stroke:#ffd43b;stroke-width:2}.tractor{fill:#ffd43b;stroke:#111;stroke-width:1}.target{fill:#ff5d8f}.startpoint{fill:#2fb344}.endpoint{fill:#e03131}.progressbar{width:100%;height:9px;background:#343a40;border-radius:5px;overflow:hidden}.progressbar div{height:100%;background:#35d0ba;width:0}.safety{border-left:5px solid #e03131;background:#291719;padding:9px 12px;margin-bottom:10px}@media(max-width:850px){.layout{grid-template-columns:1fr}svg{height:60vh}.facts{grid-template-columns:1fr 1fr}}
 </style></head><body><main>
-<h1>Tractor01 — 62 Collins partial rings master</h1>
-<p class="note">Inner rings at 1.0 m/s. Over-road boundary only; over-road inner ring and stripes are omitted.</p>
+<h1>Tractor01 — 62 Collins clear-sky resume</h1>
+<p class="note">Resumes at source waypoint 91. Recovery stays in the current phase and may advance at most 30 m.</p>
 <div class="toolbar"><button id="start" class="button start">START MISSION</button><button id="pause" class="button pause" disabled>PAUSE</button><button id="clearPause" class="button resume" disabled>CLEAR PAUSE</button><button id="messages" class="button messages">OPEN MESSAGES</button><span id="state" class="badge">CONNECTING</span><span id="age" class="badge">No telemetry</span></div>
 <div class="safety"><b>Keep the handheld with you.</b> After a browser Pause: select handheld Pause, press CLEAR PAUSE, confirm HANDHELD PAUSE, then select Auto.</div>
 <div class="progressbar"><div id="progress"></div></div>
@@ -68,7 +68,7 @@ function pathD(points){return points.map((p,i)=>(i?'L':'M')+sx(p.x).toFixed(1)+'
 function setupMap(){const xs=DATA.path.map(p=>p.x),ys=DATA.path.map(p=>p.y),pad=15,minX=Math.min(...xs)-pad,maxX=Math.max(...xs)+pad,minY=Math.min(...ys)-pad,maxY=Math.max(...ys)+pad;const scale=Math.min(830/(maxX-minX),700/(maxY-minY));const ox=35+(830-(maxX-minX)*scale)/2,oy=725-(700-(maxY-minY)*scale)/2;sx=x=>ox+(x-minX)*scale;sy=y=>oy-(y-minY)*scale;const mission=el('path',{class:'mission',d:pathD(DATA.path)});trail=el('path',{class:'trail'});targetLine=el('line',{class:'to-target',visibility:'hidden'});startLine=el('line',{class:'to-start',visibility:'hidden'});startLabel=el('text',{class:'start-label','text-anchor':'middle'});heading=el('line',{class:'heading',visibility:'hidden'});tractor=el('circle',{class:'tractor',r:7,visibility:'hidden'});target=el('circle',{class:'target',r:5,visibility:'hidden'});const s=DATA.path[0],e=DATA.path.at(-1);svg.append(mission,trail,el('circle',{class:'startpoint',cx:sx(s.x),cy:sy(s.y),r:6}),el('rect',{class:'endpoint',x:sx(e.x)-5,y:sy(e.y)-5,width:10,height:10}),targetLine,startLine,startLabel,heading,tractor,target)}
 function fmt(v,d=2){return v===null||v===undefined||v===''?'—':Number(v).toFixed(d)}function fact(l,v){return `<div class="fact"><span>${l}</span><b>${v}</b></div>`}function mode(v){return Number(v)===2?'Pause':Number(v)===1?'Manual':Number(v)===0?'Auto':'—'}
 async function api(path,method='GET',body=null){const r=await fetch(path,{method,headers,body:body?JSON.stringify(body):null});const j=await r.json();if(!r.ok)throw Error(j.error||r.statusText);return j}
-async function command(name){try{if(name==='start'&&!confirm('Start the reviewed 59-minute partial rings mission with blades off? Tight connectors and innermost rings run at 0.5 m/s. The over-road boundary is included, but its inner ring and all stripes are omitted. Keep the handheld in Pause until the controller is ready.'))return;const body=name==='start'?{confirmation:'RUN PARTIAL RINGS BLADES OFF'}:{};await api('/api/'+name,'POST',body)}catch(e){alert(e.message)}}
+async function command(name){try{if(name==='start'&&!confirm('Start the reviewed clear-sky resume mission at source waypoint 91 with blades off? The launcher will require RTK Fixed, fixed-carrier heading, a 0.80-1.30 m baseline, and heading accuracy at or below 1 degree. Keep the handheld in Pause until the controller is ready.'))return;const body=name==='start'?{confirmation:'RUN PARTIAL RINGS BLADES OFF'}:{};await api('/api/'+name,'POST',body)}catch(e){alert(e.message)}}
 startBtn.onclick=()=>command('start');pauseBtn.onclick=()=>command('pause');clearPauseBtn.onclick=()=>command('clear-pause');
 messagesBtn.onclick=()=>window.open('/messages?key='+encodeURIComponent(key),'_blank');
 function finite(v){return v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v))}
@@ -121,7 +121,7 @@ function draw(s){
     if(finite(positionHeading)){const h=(90-Number(positionHeading))*Math.PI/180;heading.setAttribute('visibility','visible');heading.setAttribute('x1',sx(p.x));heading.setAttribute('y1',sy(p.y));heading.setAttribute('x2',sx(p.x+2*Math.cos(h)));heading.setAttribute('y2',sy(p.y+2*Math.sin(h)))}
   }
   const phase=(DATA.phases[idx]||'—').replaceAll('_',' ');
-  facts.innerHTML=fact('Distance to mission start',startDistance==null?'—':startDistance.toFixed(2)+' m')+fact('Drive toward start',startDirections)+fact('Mission phase',phase)+fact('Progress',idx+' / '+total+' ('+fmt(100*idx/Math.max(1,total),1)+'%)')+fact('Pause source',pauseSource)+fact('Controller state',c.controller_state||s.process_state)+fact('Wait reason',c.wait_reason||'—')+fact('Target / actual speed',fmt(c.speed_cmd_mps)+' / '+fmt(c.actual_speed_mps)+' m/s')+fact('Cross-track / lateral yt',fmt(c.cross_track_err_m,3)+' / '+fmt(c.yt_m,3)+' m')+fact('Target lookahead',fmt(c.lookahead_dist_m)+' m')+fact('Heading',fmt(positionHeading,1)+'°')+fact('Steering command',fmt(c.delta_deg,1)+'° / '+fmt(c.steer_normalized))+fact('Steering target / actual',(st.setpoint??'—')+' / '+(st.current??'—'))+fact('Steering error / PWM',(st.error??'—')+' / '+(st.pwm??'—'))+fact('JRK target / feedback',(tr.target??'—')+' / '+(tr.current??'—'))+fact('JRK motor current',tr.motor_current_mA==null?'—':tr.motor_current_mA+' mA')+fact('Radio / steering state',(b.radio?.signal||'—')+' / '+(st.state||'—'))+fact('Handheld modes',mode(st.mode)+' steering / '+mode(tr.mode)+' transmission')+fact('GPS / heading',(c.fix_quality||g.fix_quality||'—')+' / '+(String(c.head_valid??g.headValid).toLowerCase()==='true'?'valid':'invalid'));
+  facts.innerHTML=fact('Distance to mission start',startDistance==null?'—':startDistance.toFixed(2)+' m')+fact('Drive toward start',startDirections)+fact('Mission phase',phase)+fact('Progress',idx+' / '+total+' ('+fmt(100*idx/Math.max(1,total),1)+'%)')+fact('Pause source',pauseSource)+fact('Controller state',c.controller_state||s.process_state)+fact('Wait reason',c.wait_reason||'—')+fact('Target / actual speed',fmt(c.speed_cmd_mps)+' / '+fmt(c.actual_speed_mps)+' m/s')+fact('Cross-track / lateral yt',fmt(c.cross_track_err_m,3)+' / '+fmt(c.yt_m,3)+' m')+fact('Target lookahead',fmt(c.lookahead_dist_m)+' m')+fact('Heading',fmt(positionHeading,1)+'°')+fact('Heading carrier',c.carrier||g.carrier||'—')+fact('Heading baseline',fmt(c.relpos_length_m??g.relpos_length_m,3)+' m')+fact('Heading accuracy',fmt(c.heading_accuracy_deg??g.relpos_heading_accuracy_deg,3)+'°')+fact('Steering command',fmt(c.delta_deg,1)+'° / '+fmt(c.steer_normalized))+fact('Steering target / actual',(st.setpoint??'—')+' / '+(st.current??'—'))+fact('Steering error / PWM',(st.error??'—')+' / '+(st.pwm??'—'))+fact('JRK target / feedback',(tr.target??'—')+' / '+(tr.current??'—'))+fact('JRK motor current',tr.motor_current_mA==null?'—':tr.motor_current_mA+' mA')+fact('Radio / steering state',(b.radio?.signal||'—')+' / '+(st.state||'—'))+fact('Handheld modes',mode(st.mode)+' steering / '+mode(tr.mode)+' transmission')+fact('GPS / heading',(c.fix_quality||g.fix_quality||'—')+' / '+(String(c.head_valid??g.headValid).toLowerCase()==='true'?'valid':'invalid'));
   out.textContent=(s.output||[]).join('\n');out.scrollTop=out.scrollHeight;
 }
 async function poll(){try{const s=await api('/api/state');draw(s)}catch(e){stateEl.textContent='DISCONNECTED';stateEl.className='badge bad'}setTimeout(poll,250)}
@@ -243,6 +243,22 @@ def safe_to_start(state):
         return False, "Put the handheld in Pause before starting"
     if steering.get("state") != "PAUSE":
         return False, f"Steering state is {steering.get('state')!r}, not PAUSE"
+    if snap["gps_age_s"] is None or snap["gps_age_s"] > 1.0:
+        return False, "No fresh GPS/heading status; keep rtcm-server running"
+    gps = snap["gps"]
+    if gps.get("fix_quality") != "RTK Fixed":
+        return False, f"Position is {gps.get('fix_quality')!r}, not RTK Fixed"
+    if gps.get("headValid") is not True or str(gps.get("carrier", "")).lower() != "fixed":
+        return False, "Heading is not a valid fixed-carrier solution"
+    try:
+        baseline = float(gps["relpos_length_m"])
+        accuracy = float(gps["relpos_heading_accuracy_deg"])
+    except (KeyError, TypeError, ValueError):
+        return False, "Heading baseline or accuracy is missing"
+    if not math.isfinite(baseline) or not 0.80 <= baseline <= 1.30:
+        return False, f"Heading baseline {baseline:.3f} m is outside 0.80-1.30 m"
+    if not math.isfinite(accuracy) or accuracy > 1.0:
+        return False, f"Heading accuracy {accuracy:.3f} degrees exceeds 1.0 degree"
     return True, ""
 
 
