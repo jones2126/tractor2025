@@ -46,8 +46,22 @@ KEYS = (
     Key("CFG-UART1OUTPROT-RTCM3X", 0x10740004, "<B"),
     Key("CFG-USBINPROT-RTCM3X", 0x10770004, "<B"),
     Key("CFG-USBOUTPROT-UBX", 0x10780001, "<B"),
+    Key("CFG-USBOUTPROT-NMEA", 0x10780002, "<B"),
     Key("CFG-TMODE-MODE", 0x20030001, "<B"),
     Key("CFG-MSGOUT-UBX_NAV_RELPOSNED_USB", 0x20910090, "<B"),
+    Key("CFG-MSGOUT-NMEA_ID_DTM_USB", 0x209100A9, "<B"),
+    Key("CFG-MSGOUT-NMEA_ID_GBS_USB", 0x209100E0, "<B"),
+    Key("CFG-MSGOUT-NMEA_ID_GGA_USB", 0x209100BD, "<B"),
+    Key("CFG-MSGOUT-NMEA_ID_GLL_USB", 0x209100CC, "<B"),
+    Key("CFG-MSGOUT-NMEA_ID_GNS_USB", 0x209100B8, "<B"),
+    Key("CFG-MSGOUT-NMEA_ID_GRS_USB", 0x209100D1, "<B"),
+    Key("CFG-MSGOUT-NMEA_ID_GSA_USB", 0x209100C2, "<B"),
+    Key("CFG-MSGOUT-NMEA_ID_GST_USB", 0x209100D6, "<B"),
+    Key("CFG-MSGOUT-NMEA_ID_GSV_USB", 0x209100C7, "<B"),
+    Key("CFG-MSGOUT-NMEA_ID_RMC_USB", 0x209100AE, "<B"),
+    Key("CFG-MSGOUT-NMEA_ID_VLW_USB", 0x209100EA, "<B"),
+    Key("CFG-MSGOUT-NMEA_ID_VTG_USB", 0x209100B3, "<B"),
+    Key("CFG-MSGOUT-NMEA_ID_ZDA_USB", 0x209100DB, "<B"),
     Key("CFG-MSGOUT-RTCM_3X_TYPE1074_UART1", 0x2091035F, "<B"),
     Key("CFG-MSGOUT-RTCM_3X_TYPE1084_UART1", 0x20910364, "<B"),
     Key("CFG-MSGOUT-RTCM_3X_TYPE1094_UART1", 0x20910369, "<B"),
@@ -69,6 +83,11 @@ MSM4_NAMES = tuple(
 MSM7_NAMES = tuple(
     f"CFG-MSGOUT-RTCM_3X_TYPE{number}_UART1"
     for number in (1077, 1087, 1097, 1127)
+)
+NMEA_USB_NAMES = tuple(
+    item.name
+    for item in KEYS
+    if item.name.startswith("CFG-MSGOUT-NMEA_") and item.name.endswith("_USB")
 )
 
 
@@ -242,8 +261,19 @@ def audit_configuration(
     check_equal(checks, "heading", heading, "CFG-UART1INPROT-RTCM3X", 1)
     check_equal(checks, "heading", heading, "CFG-UART1OUTPROT-RTCM3X", 0)
     check_equal(checks, "heading", heading, "CFG-USBOUTPROT-UBX", 1)
+    check_equal(checks, "heading", heading, "CFG-USBOUTPROT-NMEA", 0)
     check_equal(
         checks, "heading", heading, "CFG-MSGOUT-UBX_NAV_RELPOSNED_USB", 1
+    )
+    heading_nmea = {name: heading.get(name) for name in NMEA_USB_NAMES}
+    checks.append(
+        {
+            "status": "PASS" if all(value == 0 for value in heading_nmea.values()) else "FAIL",
+            "receiver": "heading",
+            "check": "all standard NMEA messages disabled on USB",
+            "expected": 0,
+            "actual": heading_nmea,
+        }
     )
 
     msm4 = {name: base.get(name) for name in MSM4_NAMES}
@@ -320,20 +350,59 @@ def parse_relposned(payload: bytes) -> dict[str, object] | None:
 def observe_relposned(port_name: str, seconds: float) -> dict[str, object]:
     samples: list[dict[str, object]] = []
     observed_times: list[float] = []
+    nmea_types: dict[str, int] = {}
+    other_ubx_frames = 0
     with serial.Serial(port_name, 115200, timeout=0.15) as port:
         port.reset_input_buffer()
         started = time.monotonic()
         deadline = started + seconds
+        buffer = bytearray()
         while time.monotonic() < deadline:
-            message = read_frame(port, deadline)
-            if message is None:
-                break
-            message_class, message_id, payload = message
-            if message_class == CLASS_NAV and message_id == ID_RELPOSNED:
-                parsed = parse_relposned(payload)
-                if parsed is not None:
-                    samples.append(parsed)
-                    observed_times.append(time.monotonic())
+            chunk = port.read(max(1, port.in_waiting))
+            if chunk:
+                buffer.extend(chunk)
+            while buffer:
+                ubx_at = buffer.find(SYNC)
+                nmea_at = buffer.find(b"$")
+                markers = [position for position in (ubx_at, nmea_at) if position >= 0]
+                if not markers:
+                    if len(buffer) > 1:
+                        del buffer[:-1]
+                    break
+                marker = min(markers)
+                if marker:
+                    del buffer[:marker]
+
+                if buffer.startswith(b"$"):
+                    newline = buffer.find(b"\n")
+                    if newline < 0:
+                        break
+                    line = bytes(buffer[: newline + 1]).strip()
+                    del buffer[: newline + 1]
+                    sentence = line.split(b",", 1)[0].decode("ascii", errors="replace")
+                    nmea_types[sentence] = nmea_types.get(sentence, 0) + 1
+                    continue
+
+                if len(buffer) < 6:
+                    break
+                payload_length = struct.unpack_from("<H", buffer, 4)[0]
+                total_length = payload_length + 8
+                if len(buffer) < total_length:
+                    break
+                raw = bytes(buffer[:total_length])
+                del buffer[:total_length]
+                header = raw[2:6]
+                payload = raw[6:-2]
+                if checksum(header + payload) != (raw[-2], raw[-1]):
+                    continue
+                message_class, message_id = raw[2], raw[3]
+                if message_class == CLASS_NAV and message_id == ID_RELPOSNED:
+                    parsed = parse_relposned(payload)
+                    if parsed is not None:
+                        samples.append(parsed)
+                        observed_times.append(time.monotonic())
+                else:
+                    other_ubx_frames += 1
 
     valid = [
         sample
@@ -360,6 +429,9 @@ def observe_relposned(port_name: str, seconds: float) -> dict[str, object]:
         "median_interframe_seconds": round(statistics.median(intervals), 4) if intervals else None,
         "median_valid_baseline_m": round(statistics.median(baselines), 4) if baselines else None,
         "median_valid_accuracy_m": round(statistics.median(accuracies), 4) if accuracies else None,
+        "nmea_sentences": sum(nmea_types.values()),
+        "nmea_types": nmea_types,
+        "other_ubx_frames": other_ubx_frames,
         "invalid_examples": invalid_examples,
     }
 
