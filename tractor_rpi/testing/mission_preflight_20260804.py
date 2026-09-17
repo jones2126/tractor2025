@@ -151,6 +151,41 @@ def finite_number(value: Any) -> bool:
         return False
 
 
+def heading_nmea_check(samples: list[tuple[float, dict[str, Any]]]) -> Check:
+    """Require no Heading-F9P NMEA sentences during the live sample window."""
+    counts = [
+        int(float(message["heading_nmea_count"]))
+        for _, message in samples
+        if finite_number(message.get("heading_nmea_count"))
+    ]
+    if len(counts) < 2:
+        return Check(
+            "Heading USB NMEA output",
+            False,
+            "counter is absent; update and restart rtcm-server before preflight",
+        )
+    delta = max(counts) - min(counts)
+    latest = samples[-1][1]
+    cumulative = counts[-1]
+    if delta > 0:
+        sentence_types = latest.get("heading_nmea_types")
+        type_detail = (
+            ", ".join(f"{name}={count}" for name, count in sorted(sentence_types.items()))
+            if isinstance(sentence_types, dict) and sentence_types
+            else f"latest={latest.get('heading_nmea_last_type') or 'unknown'}"
+        )
+        return Check(
+            "Heading USB NMEA output",
+            False,
+            f"detected {delta} sentence(s) during sample; {type_detail}",
+        )
+    return Check(
+        "Heading USB NMEA output",
+        True,
+        f"none detected during sample; cumulative since service start={cumulative}",
+    )
+
+
 def gps_checks(
     samples: list[tuple[float, dict[str, Any]]],
     seconds: float,
@@ -234,6 +269,7 @@ def gps_checks(
                 else "RELPOSNED counter is absent; update/restart rtcm-server"
             ),
         ),
+        heading_nmea_check(samples),
         Check(
             "RELPOSNED solution flags",
             (

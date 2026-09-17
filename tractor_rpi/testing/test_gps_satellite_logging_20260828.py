@@ -68,6 +68,21 @@ class DashboardJsonTests(unittest.TestCase):
 
 
 class SatelliteParserTests(unittest.TestCase):
+    def test_heading_nmea_parser_accepts_valid_sentence(self):
+        self.assertEqual(
+            rtcm_server.parse_checksum_valid_nmea_type(
+                b"$GNGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*59\r\n"
+            ),
+            "GNGGA",
+        )
+
+    def test_heading_nmea_parser_rejects_bad_checksum(self):
+        self.assertIsNone(
+            rtcm_server.parse_checksum_valid_nmea_type(
+                b"$GNGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*00\r\n"
+            )
+        )
+
     def test_nav_pvt_satellites_used(self):
         payload = bytearray(92)
         payload[23] = 8
@@ -240,6 +255,38 @@ class JrkCurrentTelemetryTests(unittest.TestCase):
             check for check in checks if check.name == "JRK motor-current telemetry"
         )
         self.assertTrue(current_check.passed, current_check.detail)
+
+
+class HeadingNmeaPreflightTests(unittest.TestCase):
+    @staticmethod
+    def samples(counts, sentence_types=None):
+        return [
+            (
+                float(index),
+                {
+                    "heading_nmea_count": count,
+                    "heading_nmea_last_type": "GNGGA" if count else None,
+                    "heading_nmea_types": sentence_types or {},
+                },
+            )
+            for index, count in enumerate(counts)
+        ]
+
+    def test_passes_when_heading_nmea_counter_does_not_advance(self):
+        check = mission_preflight.heading_nmea_check(self.samples([0, 0, 0]))
+        self.assertTrue(check.passed, check.detail)
+
+    def test_fails_when_heading_nmea_counter_advances(self):
+        check = mission_preflight.heading_nmea_check(
+            self.samples([10, 11, 13], {"GNGGA": 3})
+        )
+        self.assertFalse(check.passed)
+        self.assertIn("detected 3 sentence(s)", check.detail)
+
+    def test_fails_closed_when_counter_is_missing(self):
+        check = mission_preflight.heading_nmea_check([(0.0, {}), (1.0, {})])
+        self.assertFalse(check.passed)
+        self.assertIn("restart rtcm-server", check.detail)
 
 
 class HeadingAnalysisTests(unittest.TestCase):

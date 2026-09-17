@@ -152,6 +152,10 @@ state = {
     "heading_cno_min_dbhz": None,
     "heading_cno_max_dbhz": None,
     "heading_satellite_timestamp": None,
+    "heading_nmea_count": 0,          # Checksum-valid NMEA sentences seen on Heading USB
+    "heading_nmea_last_type": None,   # Sentence identifier, for example GNGGA
+    "heading_nmea_timestamp": None,   # UTC time of latest Heading USB NMEA sentence
+    "heading_nmea_types": {},         # Cumulative sentence counts by identifier
     "timestamp": None,
     # Fatal connection info
     "fatal_error": False,
@@ -164,6 +168,48 @@ state = {
 }
 state_lock = threading.Lock()
 base_serial_write_lock = threading.Lock()
+
+
+def parse_checksum_valid_nmea_type(line: bytes):
+    """Return the NMEA sentence identifier, or None for invalid/non-NMEA data."""
+    candidate = line.strip()
+    if not candidate.startswith(b"$") or b"*" not in candidate:
+        return None
+    body, checksum_text = candidate[1:].rsplit(b"*", 1)
+    if len(checksum_text) != 2:
+        return None
+    try:
+        expected = int(checksum_text, 16)
+    except ValueError:
+        return None
+    actual = 0
+    for value in body:
+        actual ^= value
+    if actual != expected:
+        return None
+    sentence_id = body.split(b",", 1)[0]
+    if not 3 <= len(sentence_id) <= 10 or not sentence_id.isalnum():
+        return None
+    try:
+        return sentence_id.decode("ascii")
+    except UnicodeDecodeError:
+        return None
+
+
+def record_heading_nmea(line: bytes) -> bool:
+    """Record one valid Heading-F9P NMEA sentence for live preflight checks."""
+    sentence_type = parse_checksum_valid_nmea_type(line)
+    if sentence_type is None:
+        return False
+    observed_at = datetime.now(timezone.utc).isoformat()
+    with state_lock:
+        counts = dict(state.get("heading_nmea_types") or {})
+        counts[sentence_type] = counts.get(sentence_type, 0) + 1
+        state["heading_nmea_count"] += 1
+        state["heading_nmea_last_type"] = sentence_type
+        state["heading_nmea_timestamp"] = observed_at
+        state["heading_nmea_types"] = counts
+    return True
 
 # ---------------------------------------------------------------------------
 # NEW (7/2/26): WiFi monitoring helpers
@@ -561,6 +607,7 @@ def _parse_deg(raw: str, direction: str) -> float:
 def monitor_heading_ubx(serial_conn):
     """Read heading plus polled satellite diagnostics from one serial owner."""
     buf = bytearray()
+    nmea_buf = None
     last_diagnostic_poll = 0.0
     while True:
         try:
@@ -578,7 +625,21 @@ def monitor_heading_ubx(serial_conn):
                 time.sleep(0.01)
                 continue
 
-            buf.append(b[0])
+            value = b[0]
+            if value == ord("$"):
+                nmea_buf = bytearray(b)
+            elif nmea_buf is not None:
+                if value in (10, 13):
+                    nmea_buf.append(value)
+                    if value == 10:
+                        record_heading_nmea(bytes(nmea_buf))
+                        nmea_buf = None
+                elif 32 <= value <= 126 and len(nmea_buf) < 256:
+                    nmea_buf.append(value)
+                else:
+                    nmea_buf = None
+
+            buf.append(value)
 
             # Prevent unbounded growth if sync never found
             if len(buf) > 4096:
