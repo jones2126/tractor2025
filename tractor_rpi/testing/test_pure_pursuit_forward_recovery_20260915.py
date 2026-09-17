@@ -108,6 +108,7 @@ class HeadingHealthGateTests(unittest.TestCase):
         receiver.min_fix = "RTK Fixed"
         receiver.require_head_valid = True
         receiver.require_carrier_fixed = True
+        receiver.require_heading_geometry = True
         receiver.baseline_min_m = 0.80
         receiver.baseline_max_m = 1.30
         receiver.heading_accuracy_max_deg = 1.0
@@ -155,6 +156,25 @@ class HeadingHealthGateTests(unittest.TestCase):
         self.assertIn("moving=False", reason)
         self.assertIn("refObsMiss=True", reason)
         self.assertIn("headingSV=27", reason)
+
+    def test_basic_runtime_gate_matches_august_30_behavior(self):
+        receiver = self.receiver()
+        receiver.require_carrier_fixed = False
+        receiver.require_heading_geometry = False
+        pose = self.healthy_pose()
+        pose.update(carrier="float", relpos_length_m=3.8887,
+                    heading_accuracy_deg=18.44465)
+        self.assertEqual(receiver.is_drivable(pose), (True, ""))
+
+    def test_basic_runtime_gate_still_rejects_invalid_heading(self):
+        receiver = self.receiver()
+        receiver.require_carrier_fixed = False
+        receiver.require_heading_geometry = False
+        pose = self.healthy_pose()
+        pose["headValid"] = False
+        ok, reason = receiver.is_drivable(pose)
+        self.assertFalse(ok)
+        self.assertIn("headValid=False", reason)
 
 
 if __name__ == "__main__":

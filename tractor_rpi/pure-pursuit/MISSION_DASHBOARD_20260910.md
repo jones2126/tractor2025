@@ -74,6 +74,14 @@ on the field network from operating the buttons without the URL.
 8. At mission completion, the controller sends stop and the launcher closes
    the field logger normally.
 
+For this supervised partial-rings test, the runtime GPS/heading gate matches
+the successful 2026-08-30 controller behavior: RTK Fixed and `headValid` remain
+mandatory, but carrier, baseline, and heading-accuracy values are diagnostic
+rather than independent stop conditions. A healthy packet permits automatic
+recovery without a five-second timer or a required handheld switch cycle.
+Handheld Manual/Pause gating, dashboard software Pause, frozen progress outside
+AUTO, and bounded phase-locked path reacquisition remain enabled.
+
 ## Loaded mission
 
 - 19,250 remaining waypoints with 2.0 m lookahead (resume at source waypoint 91)

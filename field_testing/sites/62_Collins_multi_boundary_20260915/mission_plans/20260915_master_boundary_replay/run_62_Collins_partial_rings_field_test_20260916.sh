@@ -190,10 +190,11 @@ print("PASS: position and heading are suitable for mission start.")
 PY
 
 echo ""
-echo "This is the first field run of the guarded recovery controller and this master path."
+echo "This supervised test uses the August 30-style runtime heading gate."
 echo "Start in Pause. Select AUTO only after the controller reports that it is waiting."
-echo "If RTK Fixed is lost, select Manual, drive safely, then return to AUTO only"
-echo "after LED4 is green and the tractor is near and aligned with the intended path."
+echo "Loss of RTK Fixed or headValid stops motion; recovery is automatic on the first"
+echo "healthy packet if the handheld remains in AUTO. Select Manual/Pause whenever"
+echo "you do not want automatic recovery, and return to AUTO only when the route is safe."
 if [[ "${dashboard_mode}" == true ]]; then
     echo "Dashboard supplied the blades-off start confirmation."
 else
@@ -241,7 +242,9 @@ controller_args=(
     --tracking-window 6.0
     --audit-file "${AUDIT}"
     --reacquire-max-advance 30.0
-    --resume-stable-seconds 5.0
+    --resume-stable-seconds 0.0
+    --basic-runtime-heading-gate
+    --no-operator-cycle-after-safety-loss
 )
 if [[ "${dashboard_mode}" == true ]]; then
     controller_args+=(--control-port 6011 --telemetry-port 6012)

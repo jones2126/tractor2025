@@ -108,10 +108,22 @@ and begins at source waypoint 91 (19,250 waypoints remain). The selected start
 was 0.67 m from the field position recorded before rebuilding. Re-run the
 builder only if the reviewed source mission or selected start waypoint changes.
 
-Recovery is now limited to 30 m of forward path and to the current audit phase,
-preventing a nearby later ring from being selected. Driving also requires five
-continuous seconds of RTK Fixed position and healthy heading: fixed carrier,
-0.80-1.30 m baseline, and no more than 1.0 degree estimated heading error.
+Recovery remains limited to 30 m of forward path and to the current audit
+phase, preventing a nearby later ring from being selected. After the first
+field session showed that the five-second stable timer plus a required
+Manual/Pause switch cycle was too restrictive for supervised testing, this
+launcher was changed to the August 30 runtime heading gate. It still stops for
+stale GPS, a fatal receiver error, loss of RTK Fixed position, or
+`headValid=False`, but it resumes automatically on the first healthy cycle.
+Carrier state, baseline length, and heading-accuracy fields remain logged and
+visible on the dashboard but do not independently stop this test mission.
+
+The preflight, dashboard START gate, and launcher start-position check remain
+strict: the mission can start only with RTK Fixed position, valid fixed-carrier
+heading, a 0.80-1.30 m baseline, and no more than 1.0 degree estimated heading
+error. Handheld Manual/Pause still stops physical motion and freezes path
+progress. Returning to AUTO still uses the bounded, phase-locked forward path
+reacquisition checks.
 
 After an intermittent `headValid=False` stopped the first clear-sky attempt,
 the controller, dashboard, and field logger were extended to retain the full

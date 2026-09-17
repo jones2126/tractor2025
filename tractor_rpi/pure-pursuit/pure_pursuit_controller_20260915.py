@@ -188,12 +188,14 @@ class GPSReceiver:
     """
 
     def __init__(self, port=GPS_UDP_PORT, min_fix="RTK Fixed", require_head_valid=True,
-                 require_carrier_fixed=True, baseline_min_m=0.80,
+                 require_carrier_fixed=True, require_heading_geometry=True,
+                 baseline_min_m=0.80,
                  baseline_max_m=1.30, heading_accuracy_max_deg=1.0):
         self.port = port
         self.min_fix = min_fix
         self.require_head_valid = require_head_valid
         self.require_carrier_fixed = require_carrier_fixed
+        self.require_heading_geometry = require_heading_geometry
         self.baseline_min_m = baseline_min_m
         self.baseline_max_m = baseline_max_m
         self.heading_accuracy_max_deg = heading_accuracy_max_deg
@@ -294,24 +296,25 @@ class GPSReceiver:
                 f"headingCNO={pose.get('heading_cno_mean_dbhz')!r} dB-Hz)")
         if self.require_carrier_fixed and pose['carrier'] != 'fixed':
             return False, f"heading carrier={pose['carrier']!r}, expected 'fixed'"
-        try:
-            baseline_m = float(pose['relpos_length_m'])
-        except (TypeError, ValueError):
-            return False, "heading baseline length is absent"
-        if (not math.isfinite(baseline_m)
-                or not self.baseline_min_m <= baseline_m <= self.baseline_max_m):
-            return False, (
-                f"heading baseline={baseline_m:.3f} m outside "
-                f"{self.baseline_min_m:.2f}-{self.baseline_max_m:.2f} m")
-        try:
-            heading_accuracy_deg = float(pose['heading_accuracy_deg'])
-        except (TypeError, ValueError):
-            return False, "heading accuracy is absent"
-        if (not math.isfinite(heading_accuracy_deg)
-                or heading_accuracy_deg > self.heading_accuracy_max_deg):
-            return False, (
-                f"heading accuracy={heading_accuracy_deg:.3f} deg exceeds "
-                f"{self.heading_accuracy_max_deg:.2f} deg")
+        if self.require_heading_geometry:
+            try:
+                baseline_m = float(pose['relpos_length_m'])
+            except (TypeError, ValueError):
+                return False, "heading baseline length is absent"
+            if (not math.isfinite(baseline_m)
+                    or not self.baseline_min_m <= baseline_m <= self.baseline_max_m):
+                return False, (
+                    f"heading baseline={baseline_m:.3f} m outside "
+                    f"{self.baseline_min_m:.2f}-{self.baseline_max_m:.2f} m")
+            try:
+                heading_accuracy_deg = float(pose['heading_accuracy_deg'])
+            except (TypeError, ValueError):
+                return False, "heading accuracy is absent"
+            if (not math.isfinite(heading_accuracy_deg)
+                    or heading_accuracy_deg > self.heading_accuracy_max_deg):
+                return False, (
+                    f"heading accuracy={heading_accuracy_deg:.3f} deg exceeds "
+                    f"{self.heading_accuracy_max_deg:.2f} deg")
         return True, ""
 
     def stop(self):
@@ -854,7 +857,8 @@ class PurePursuit:
 
     def run_live(self, gps_receiver, logger=None, control_receiver=None,
                  handheld_receiver=None, telemetry_port=0,
-                 resume_stable_seconds=5.0):
+                 resume_stable_seconds=5.0,
+                 require_operator_cycle_after_safety_loss=True):
         """Field-test mode. Logs every cycle to CSV if logger provided."""
         if not self.path:
             print("No path loaded.")
@@ -862,7 +866,11 @@ class PurePursuit:
 
         print(f"[LIVE] GPS UDP {gps_receiver.port} -> cmd_vel UDP {self.target_port} "
               f"@ {self.rate_hz} Hz")
-        print(f"Gate: min-fix={gps_receiver.min_fix!r}, headValid={gps_receiver.require_head_valid}")
+        print(f"Gate: min-fix={gps_receiver.min_fix!r}, headValid={gps_receiver.require_head_valid}, "
+              f"carrier-fixed={gps_receiver.require_carrier_fixed}, "
+              f"heading-geometry={gps_receiver.require_heading_geometry}, "
+              f"recovery-stable={resume_stable_seconds:.1f}s, "
+              f"operator-cycle-after-loss={require_operator_cycle_after_safety_loss}")
         print(f"Speed cap: {self.max_speed_mps:.2f} m/s")
         if logger:
             print(f"Pursuit CSV: {logger.path}")
@@ -962,10 +970,14 @@ class PurePursuit:
                     if loop_count % 20 == 0:
                         print("[WAIT] software pause")
                 elif not ok:
-                    operator_cycle_required = handheld_receiver is not None
+                    if require_operator_cycle_after_safety_loss:
+                        operator_cycle_required = handheld_receiver is not None
                     self.reacquire_state = "REQUIRED"
-                    self.reacquire_detail = (
-                        f"{reason}; select Manual/Pause, then return to AUTO after recovery")
+                    if require_operator_cycle_after_safety_loss:
+                        self.reacquire_detail = (
+                            f"{reason}; select Manual/Pause, then return to AUTO after recovery")
+                    else:
+                        self.reacquire_detail = f"{reason}; automatic recovery enabled"
                     self._send_stop()
                     row['wait_reason'] = self.reacquire_detail
                     if loop_count % 20 == 0:
@@ -1188,6 +1200,13 @@ def main():
                         help='Waypoint audit CSV; recovery remains in the current phase')
     parser.add_argument('--resume-stable-seconds', type=float, default=5.0,
                         help='Continuous healthy GPS/heading time required before driving')
+    parser.add_argument('--basic-runtime-heading-gate', action='store_true',
+                        help=('Use the August 30 runtime heading gate: require RTK Fixed and '
+                              'headValid, but do not independently gate on carrier, baseline, '
+                              'or heading-accuracy fields'))
+    parser.add_argument('--no-operator-cycle-after-safety-loss', action='store_true',
+                        help=('Resume automatically after GPS/heading recovery without requiring '
+                              'a Manual/Pause-to-AUTO acknowledgement cycle'))
     parser.add_argument('--no-pursuit-log', action='store_true',
                         help='Disable per-cycle CSV logging (on by default in live mode)')
     parser.add_argument('--control-port', type=int, default=0,
@@ -1195,6 +1214,8 @@ def main():
     parser.add_argument('--telemetry-port', type=int, default=0,
                         help='Local UDP port for live dashboard controller telemetry')
     args = parser.parse_args()
+    if args.resume_stable_seconds < 0.0:
+        parser.error('--resume-stable-seconds must be zero or greater')
 
     pp = PurePursuit(
         target_ip=args.ip,
@@ -1227,7 +1248,9 @@ def main():
     if args.mode == 'live':
         min_fix = None if args.min_fix == 'any' else args.min_fix
         gps_receiver = GPSReceiver(port=args.gps_port, min_fix=min_fix,
-                                   require_head_valid=not args.allow_head_invalid)
+                                   require_head_valid=not args.allow_head_invalid,
+                                   require_carrier_fixed=not args.basic_runtime_heading_gate,
+                                   require_heading_geometry=not args.basic_runtime_heading_gate)
         handheld_receiver = HandheldStatusReceiver(port=args.status_port)
         if not args.no_pursuit_log:
             logger = PursuitLogger()
@@ -1260,6 +1283,8 @@ def main():
                 handheld_receiver=handheld_receiver,
                 telemetry_port=args.telemetry_port,
                 resume_stable_seconds=args.resume_stable_seconds,
+                require_operator_cycle_after_safety_loss=(
+                    not args.no_operator_cycle_after_safety_loss),
             )
             gps_receiver.stop()
     finally:
