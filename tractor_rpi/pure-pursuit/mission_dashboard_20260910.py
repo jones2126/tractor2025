@@ -48,11 +48,11 @@ HTML = r'''<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Tractor01 mission control</title>
 <style>
-:root{color-scheme:dark;font-family:system-ui,sans-serif}*{box-sizing:border-box}body{margin:0;background:#101418;color:#e8edf2}main{max-width:1500px;margin:auto;padding:14px}h1{margin:.2rem 0;font-size:1.5rem}.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px 0}.button{border:0;border-radius:6px;padding:12px 18px;font-weight:700;cursor:pointer}.button:disabled{opacity:.4;cursor:not-allowed}.start{background:#2fb344;color:#fff}.pause{background:#e03131;color:#fff}.resume{background:#1971c2;color:#fff}.messages{background:#495057;color:#fff}.badge{padding:7px 10px;border-radius:999px;background:#343a40;font-weight:700}.ok{background:#19713c}.warn{background:#9c640c}.bad{background:#9b2226}.layout{display:grid;grid-template-columns:minmax(0,2fr) minmax(330px,1fr);gap:14px}svg{width:100%;height:min(78vh,850px);background:#182028;border:1px solid #52606d}.side{min-width:0}.facts{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#52606d;border:1px solid #52606d}.fact{background:#182028;padding:8px;min-height:58px}.fact span{display:block;color:#9fb0bf;font-size:.78rem}.fact b{font-size:.96rem}.output{height:180px;overflow:auto;white-space:pre-wrap;background:#080b0d;border:1px solid #52606d;padding:8px;font:12px ui-monospace,monospace;margin-top:10px}.note{color:#b8c5cf;margin:.3rem 0 0}.mission{fill:none;stroke:#708090;stroke-width:1}.trail{fill:none;stroke:#35d0ba;stroke-width:2}.to-target{stroke:#ff5d8f;stroke-width:1.7;stroke-dasharray:5 3}.to-start{stroke:#ff922b;stroke-width:2.5;stroke-dasharray:8 4}.start-label{fill:#fff3bf;font:bold 16px system-ui,sans-serif;paint-order:stroke;stroke:#101418;stroke-width:4px}.heading{stroke:#ffd43b;stroke-width:2}.tractor{fill:#ffd43b;stroke:#111;stroke-width:1}.target{fill:#ff5d8f}.startpoint{fill:#2fb344}.endpoint{fill:#e03131}.progressbar{width:100%;height:9px;background:#343a40;border-radius:5px;overflow:hidden}.progressbar div{height:100%;background:#35d0ba;width:0}.safety{border-left:5px solid #e03131;background:#291719;padding:9px 12px;margin-bottom:10px}@media(max-width:850px){.layout{grid-template-columns:1fr}svg{height:60vh}.facts{grid-template-columns:1fr 1fr}}
+:root{color-scheme:dark;font-family:system-ui,sans-serif}*{box-sizing:border-box}body{margin:0;background:#101418;color:#e8edf2}main{max-width:1500px;margin:auto;padding:14px}h1{margin:.2rem 0;font-size:1.5rem}.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px 0}.button{border:0;border-radius:6px;padding:12px 18px;font-weight:700;cursor:pointer}.button:disabled{opacity:.4;cursor:not-allowed}.start{background:#2fb344;color:#fff}.pause{background:#e03131;color:#fff}.resume{background:#1971c2;color:#fff}.guide{background:#f08c00;color:#111}.guide.active{background:#ffd43b}.messages{background:#495057;color:#fff}.badge{padding:7px 10px;border-radius:999px;background:#343a40;font-weight:700}.ok{background:#19713c}.warn{background:#9c640c}.bad{background:#9b2226}.layout{display:grid;grid-template-columns:minmax(0,2fr) minmax(330px,1fr);gap:14px}svg{width:100%;height:min(78vh,850px);background:#182028;border:1px solid #52606d}.side{min-width:0}.facts{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#52606d;border:1px solid #52606d}.fact{background:#182028;padding:8px;min-height:58px}.fact span{display:block;color:#9fb0bf;font-size:.78rem}.fact b{font-size:.96rem}.output{height:180px;overflow:auto;white-space:pre-wrap;background:#080b0d;border:1px solid #52606d;padding:8px;font:12px ui-monospace,monospace;margin-top:10px}.note{color:#b8c5cf;margin:.3rem 0 0}.mission{fill:none;stroke:#708090;stroke-width:1}.trail{fill:none;stroke:#35d0ba;stroke-width:2}.to-target{stroke:#ff5d8f;stroke-width:1.7;stroke-dasharray:5 3}.to-start{stroke:#ff922b;stroke-width:2.5;stroke-dasharray:8 4}.start-label{fill:#fff3bf;font:bold 16px system-ui,sans-serif;paint-order:stroke;stroke:#101418;stroke-width:4px}.heading{stroke:#ffd43b;stroke-width:2}.tractor{fill:#ffd43b;stroke:#111;stroke-width:1}.target{fill:#ff5d8f}.startpoint{fill:#2fb344}.endpoint{fill:#e03131}.progressbar{width:100%;height:9px;background:#343a40;border-radius:5px;overflow:hidden}.progressbar div{height:100%;background:#35d0ba;width:0}.safety{border-left:5px solid #e03131;background:#291719;padding:9px 12px;margin-bottom:10px}@media(max-width:850px){.layout{grid-template-columns:1fr}svg{height:60vh}.facts{grid-template-columns:1fr 1fr}}
 </style></head><body><main>
 <h1>Tractor01 — 62 Collins clear-sky resume</h1>
 <p class="note">Resumes at source waypoint 91. Recovery stays in the current phase and may advance at most 30 m.</p>
-<div class="toolbar"><button id="start" class="button start">START MISSION</button><button id="pause" class="button pause" disabled>PAUSE</button><button id="clearPause" class="button resume" disabled>CLEAR PAUSE</button><button id="messages" class="button messages">OPEN MESSAGES</button><span id="state" class="badge">CONNECTING</span><span id="age" class="badge">No telemetry</span></div>
+<div class="toolbar"><button id="guide" class="button guide">START VOICE GUIDANCE</button><button id="start" class="button start">START MISSION</button><button id="pause" class="button pause" disabled>PAUSE</button><button id="clearPause" class="button resume" disabled>CLEAR PAUSE</button><button id="messages" class="button messages">OPEN MESSAGES</button><span id="state" class="badge">CONNECTING</span><span id="age" class="badge">No telemetry</span></div>
 <div class="safety"><b>Keep the handheld with you.</b> After a browser Pause: select handheld Pause, press CLEAR PAUSE, confirm HANDHELD PAUSE, then select Auto.</div>
 <div class="progressbar"><div id="progress"></div></div>
 <div class="layout"><svg id="map" viewBox="0 0 900 760" role="img" aria-label="Planned mission and live tractor path"></svg><div class="side"><div class="facts" id="facts"></div><div id="output" class="output"></div></div></div>
@@ -60,8 +60,8 @@ HTML = r'''<!doctype html>
 const key=new URLSearchParams(location.search).get('key')||'';
 const headers={'Content-Type':'application/json','X-Operator-Key':key};
 const svg=document.getElementById('map'),facts=document.getElementById('facts'),stateEl=document.getElementById('state'),ageEl=document.getElementById('age'),out=document.getElementById('output');
-const startBtn=document.getElementById('start'),pauseBtn=document.getElementById('pause'),clearPauseBtn=document.getElementById('clearPause'),messagesBtn=document.getElementById('messages'),progress=document.getElementById('progress');
-const TRAIL_SECONDS=30;let DATA=null,trailPoints=[];const NS='http://www.w3.org/2000/svg';
+const guideBtn=document.getElementById('guide'),startBtn=document.getElementById('start'),pauseBtn=document.getElementById('pause'),clearPauseBtn=document.getElementById('clearPause'),messagesBtn=document.getElementById('messages'),progress=document.getElementById('progress');
+const TRAIL_SECONDS=30;let DATA=null,trailPoints=[],voiceGuidance=false,lastGuidanceAt=0,lastGuidanceKey='';const NS='http://www.w3.org/2000/svg';
 const el=(n,a={})=>{const x=document.createElementNS(NS,n);for(const[k,v]of Object.entries(a))x.setAttribute(k,v);return x};
 let sx=x=>x,sy=y=>y,trail,tractor,target,targetLine,startLine,startLabel,heading;
 function pathD(points){return points.map((p,i)=>(i?'L':'M')+sx(p.x).toFixed(1)+' '+sy(p.y).toFixed(1)).join(' ')}
@@ -73,6 +73,44 @@ startBtn.onclick=()=>command('start');pauseBtn.onclick=()=>command('pause');clea
 messagesBtn.onclick=()=>window.open('/messages?key='+encodeURIComponent(key),'_blank');
 function finite(v){return v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v))}
 function axisText(value,positive,negative){if(Math.abs(value)<.1)return '';return Math.abs(value).toFixed(1)+' m '+(value>0?positive:negative)}
+function signedAngle(target,current){return (Number(target)-Number(current)+540)%360-180}
+function clockDirection(angle){let hour=Math.round(Number(angle)/30);hour=((hour%12)+12)%12;return hour===0?12:hour}
+function speak(text){if(!voiceGuidance||!('speechSynthesis' in window))return;window.speechSynthesis.cancel();const utterance=new SpeechSynthesisUtterance(text);utterance.rate=.9;utterance.volume=1;window.speechSynthesis.speak(utterance)}
+function stopGuidance(message='Voice guidance stopped.'){
+  voiceGuidance=false;guideBtn.textContent='START VOICE GUIDANCE';guideBtn.classList.remove('active');
+  if('speechSynthesis' in window)window.speechSynthesis.cancel();
+  if(message){const utterance=new SpeechSynthesisUtterance(message);utterance.rate=.9;window.speechSynthesis.speak(utterance)}
+}
+guideBtn.onclick=()=>{
+  if(voiceGuidance){stopGuidance();return}
+  if(!('speechSynthesis' in window)){alert('This browser does not provide voice guidance. Open this dashboard in Chrome, Edge, or Safari on the phone.');return}
+  voiceGuidance=true;lastGuidanceAt=0;lastGuidanceKey='';guideBtn.textContent='STOP VOICE GUIDANCE';guideBtn.classList.add('active');
+};
+function updateVoiceGuidance(s,p,heading,startDistance,toStartX,toStartY,handheldPaused){
+  if(!voiceGuidance)return;
+  if(s.mission_active){stopGuidance('Mission is active. Voice positioning guidance stopped.');return}
+  const now=Date.now()/1000,g=s.gps||{},gpsFresh=s.gps_age_s!=null&&s.gps_age_s<1;
+  let message='',key='',interval=10;
+  if(!gpsFresh||!p||startDistance==null){message='Waiting for fresh GPS position.';key='no position';interval=10}
+  else if(!finite(heading)||g.headValid!==true){message='Position is available, but heading is not valid. Stop until heading recovers.';key='no heading';interval=8}
+  else if(startDistance>1.5){
+    const bearing=(Math.atan2(toStartX,toStartY)*180/Math.PI+360)%360,relative=signedAngle(bearing,heading),clock=clockDirection(relative);
+    const rounded=startDistance>=20?Math.round(startDistance):Math.round(startDistance*2)/2;
+    message=`${rounded} meters to start, at ${clock} o'clock.`;
+    if(g.fix_quality!=='RTK Fixed')message+=' Warning, position is not RTK Fixed.';
+    key=`approach-${Math.round(startDistance)}-${clock}-${g.fix_quality}`;interval=startDistance>15?10:startDistance>5?6:4;
+  }else{
+    const headingError=signedAngle(DATA.start_heading_deg,heading),headingGood=Math.abs(headingError)<=20;
+    const qualityGood=g.fix_quality==='RTK Fixed'&&g.headValid===true&&String(g.carrier||'').toLowerCase()==='fixed'&&finite(g.relpos_length_m)&&Number(g.relpos_length_m)>=.8&&Number(g.relpos_length_m)<=1.3&&finite(g.relpos_heading_accuracy_deg)&&Number(g.relpos_heading_accuracy_deg)<=1;
+    interval=3;
+    if(!headingGood){message=`Inside the start circle. Align heading: turn ${headingError>0?'right':'left'} ${Math.round(Math.abs(headingError))} degrees. Target heading ${Math.round(DATA.start_heading_deg)}.`;key=`align-${Math.round(headingError/5)}`}
+    else if(!qualityGood){message='Position and heading alignment are good, but the RTK heading quality check is not ready.';key='quality not ready'}
+    else if(!handheldPaused){message='Stop. Position and heading are ready. Select handheld Pause.';key='ready select pause'}
+    else{stopGuidance('Start position, heading, and GPS checks are ready. Keep the handheld in Pause.');if(navigator.vibrate)navigator.vibrate([250,100,250]);return}
+  }
+  const urgentChange=key!==lastGuidanceKey&&['no position','no heading','quality not ready','ready select pause'].includes(key);
+  if(now-lastGuidanceAt>=interval||urgentChange){speak(message);lastGuidanceAt=now;lastGuidanceKey=key}
+}
 function draw(s){
   const c=s.controller||{},b=s.bridge||{},g=s.gps||{},st=b.steering||{},tr=b.transmission||{};
   const active=Boolean(s.mission_active);
@@ -96,7 +134,7 @@ function draw(s){
   let p=null,positionHeading=null;
   if(controllerFresh&&finite(c.pos_x_m)&&finite(c.pos_y_m)){p={x:Number(c.pos_x_m),y:Number(c.pos_y_m)};positionHeading=c.heading_compass_deg}
   else if(gpsFresh&&finite(g.lat)&&finite(g.lon)){p={x:(Number(g.lon)-DATA.origin_lon)*DATA.lon_scale,y:(Number(g.lat)-DATA.origin_lat)*DATA.lat_scale};positionHeading=g.heading_deg}
-  let startDistance=null,startDirections='—';
+  let startDistance=null,startDirections='—',toStartX=null,toStartY=null;
   if(p){
     const now=Date.now()/1000;p.t=now;const last=trailPoints.at(-1);
     if(!last||Math.hypot(p.x-last.x,p.y-last.y)>.03||now-last.t>=1)trailPoints.push(p);
@@ -104,7 +142,7 @@ function draw(s){
     trail.setAttribute('d',pathD(trailPoints));
     tractor.setAttribute('visibility','visible');
     tractor.setAttribute('cx',sx(p.x));tractor.setAttribute('cy',sy(p.y));
-    const missionStart=DATA.path[0],toStartX=missionStart.x-p.x,toStartY=missionStart.y-p.y;
+    const missionStart=DATA.path[0];toStartX=missionStart.x-p.x;toStartY=missionStart.y-p.y;
     startDistance=Math.hypot(toStartX,toStartY);
     startDirections=[axisText(toStartX,'east','west'),axisText(toStartY,'north','south')].filter(Boolean).join(', ')||'at start';
     if(!controllerFresh){
@@ -123,6 +161,7 @@ function draw(s){
   const phase=(DATA.phases[idx]||'—').replaceAll('_',' ');
   const flags='fixOK='+String(g.relpos_gnss_fix_ok??'—')+' diff='+String(g.relpos_diff_solution??'—')+' valid='+String(g.relpos_valid??'—')+' moving='+String(g.relpos_moving??'—')+' refPosMiss='+String(g.relpos_ref_pos_miss??'—')+' refObsMiss='+String(g.relpos_ref_obs_miss??'—');
   facts.innerHTML=fact('Distance to mission start',startDistance==null?'—':startDistance.toFixed(2)+' m')+fact('Drive toward start',startDirections)+fact('Mission phase',phase)+fact('Progress',idx+' / '+total+' ('+fmt(100*idx/Math.max(1,total),1)+'%)')+fact('Pause source',pauseSource)+fact('Controller state',c.controller_state||s.process_state)+fact('Wait reason',c.wait_reason||'—')+fact('Target / actual speed',fmt(c.speed_cmd_mps)+' / '+fmt(c.actual_speed_mps)+' m/s')+fact('Cross-track / lateral yt',fmt(c.cross_track_err_m,3)+' / '+fmt(c.yt_m,3)+' m')+fact('Target lookahead',fmt(c.lookahead_dist_m)+' m')+fact('Heading',fmt(positionHeading,1)+'°')+fact('Heading carrier',c.heading_carrier||g.carrier||'—')+fact('Heading baseline',fmt(c.relpos_length_m??g.relpos_length_m,3)+' m')+fact('Heading accuracy',fmt(c.heading_accuracy_deg??g.relpos_heading_accuracy_deg,3)+'°')+fact('RELPOSNED flags',flags)+fact('Heading satellites / C/N0',fmt(g.heading_numSV_used,0)+' / '+fmt(g.heading_cno_mean_dbhz,1)+' dB-Hz')+fact('Steering command',fmt(c.delta_deg,1)+'° / '+fmt(c.steer_normalized))+fact('Steering target / actual',(st.setpoint??'—')+' / '+(st.current??'—'))+fact('Steering error / PWM',(st.error??'—')+' / '+(st.pwm??'—'))+fact('JRK target / feedback',(tr.target??'—')+' / '+(tr.current??'—'))+fact('JRK motor current',tr.motor_current_mA==null?'—':tr.motor_current_mA+' mA')+fact('Radio / steering state',(b.radio?.signal||'—')+' / '+(st.state||'—'))+fact('Handheld modes',mode(st.mode)+' steering / '+mode(tr.mode)+' transmission')+fact('GPS / heading',(c.fix_quality||g.fix_quality||'—')+' / '+(String(c.head_valid??g.headValid).toLowerCase()==='true'?'valid':'invalid'));
+  updateVoiceGuidance(s,p,positionHeading,startDistance,toStartX,toStartY,handheldPaused);
   out.textContent=(s.output||[]).join('\n');out.scrollTop=out.scrollHeight;
 }
 async function poll(){try{const s=await api('/api/state');draw(s)}catch(e){stateEl.textContent='DISCONNECTED';stateEl.className='badge bad'}setTimeout(poll,250)}
@@ -322,6 +361,7 @@ def load_mission_payload():
         "origin_lon": lon0,
         "lon_scale": lon_scale,
         "lat_scale": 110_540.0,
+        "start_heading_deg": (90.0 - math.degrees(rows[0][2])) % 360.0,
     }
 
 

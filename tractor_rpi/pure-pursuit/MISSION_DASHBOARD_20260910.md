@@ -12,6 +12,28 @@ position, its distance from the mission start, and the east/west and
 north/south movement needed to reach the start. **OPEN MESSAGES** opens the
 complete launcher output in a separate browser tab with a copy button.
 
+## Voice guidance to the start
+
+Open the dashboard on a phone connected to the field network (or to ZeroTier),
+turn up its media volume, and press **START VOICE GUIDANCE**. The button press
+is required because phone browsers do not permit a page to begin speaking on
+its own. Keep the dashboard in the foreground and keep the phone awake.
+
+While the tractor is driven manually, the phone announces the distance to the
+mission start and its direction relative to the tractor as a clock position.
+Announcements occur every 10 seconds when far away, then every 6 or 4 seconds
+as the tractor approaches. Within the launcher's 1.50 m position tolerance,
+the guidance changes to the left/right correction needed to reach the mission
+start heading. It reports ready only when the launcher's strict RTK Fixed,
+heading-valid, fixed-carrier, baseline, heading-accuracy, position, and heading
+limits are all satisfied. After the handheld is moved to Pause, it announces
+that the start checks are ready and stops speaking.
+
+Voice guidance is advisory and sends no motion commands. Drive only in Manual,
+keep the handheld with you, watch the route and obstacles, and stop whenever an
+announcement disagrees with the physical situation. Browser speech may stop if
+the phone locks or the dashboard moves to the background.
+
 ## Safety behavior
 
 - The handheld Pause remains the independent safety override and must stay
@@ -59,7 +81,10 @@ on the field network from operating the buttons without the URL.
 ## Starting and running
 
 1. Keep the mower deck disengaged and the handheld in Pause.
-2. Open the dashboard URL and confirm live Teensy status is visible.
+2. Open the dashboard URL and confirm live Teensy status is visible. If the
+   tractor still needs positioning, open the same URL on a phone, select Manual,
+   press **START VOICE GUIDANCE**, and drive to the announced pose. Stop and
+   return the handheld to Pause when instructed.
 3. Confirm the map and mission note identify the **62 Collins partial rings
    master**, then press **START MISSION** and accept the blades-off confirmation.
 4. Watch the launcher output on the lower-right, or open **OPEN MESSAGES** in a

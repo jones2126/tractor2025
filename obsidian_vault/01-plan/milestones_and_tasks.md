@@ -202,8 +202,10 @@ systemctl is-active rtcm-server.service teensy-bridge.service && journalctl -u r
 
 ### Dashboard and mission start
 
-- [ ] In Manual, drive to the reviewed clear-sky mission start. Stop, select
-  Pause, and align with the intended route.
+- [ ] Open the dashboard URL on a phone connected through the field network or
+  ZeroTier. Turn up media volume and press **START VOICE GUIDANCE**. In Manual,
+  drive toward the announced clock direction. Inside 1.50 m, follow the spoken
+  heading correction; stop and select Pause when the dashboard reports ready.
 - [ ] Start the dashboard from the field/development computer:
 
   ```powershell
@@ -333,6 +335,8 @@ ssh al@192.168.193.88 "sudo shutdown now"
 - [x] Add consolidated stationary preflight with automatic GPS/heading failure
   diagnostics.
 - [x] Add live Heading-F9P NMEA detection to `rtcm-server` and preflight.
+- [x] Add phone-based spoken start-position and heading guidance to the mission
+  dashboard without adding an external notification dependency or motion path.
 - [ ] Copy the deployed tractor01 systemd unit files into
   `tractor_rpi/setup/` and verify them against the installed units.
 - [ ] Install and verify the service set on tractor02 when tractor02 work

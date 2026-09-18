@@ -3,6 +3,7 @@
 
 import importlib.util
 import json
+import math
 import struct
 import sys
 import time
@@ -65,6 +66,19 @@ class DashboardJsonTests(unittest.TestCase):
         self.assertIsNone(decoded["gps"]["speed_mps"])
         self.assertIsNone(decoded["gps"]["diff_age"])
         self.assertEqual(decoded["controller"]["cross_track_err_m"], 0.25)
+
+    def test_mission_payload_exposes_launcher_start_heading(self):
+        payload = mission_dashboard.load_mission_payload()
+        first = mission_dashboard.MISSION.read_text(encoding="utf-8").splitlines()[0].split()
+        expected_heading = (90.0 - math.degrees(float(first[2]))) % 360.0
+        self.assertAlmostEqual(payload["start_heading_deg"], expected_heading)
+        self.assertEqual(payload["path"][0]["x"], 0.0)
+        self.assertEqual(payload["path"][0]["y"], 0.0)
+
+    def test_voice_guidance_uses_launcher_position_and_heading_limits(self):
+        self.assertIn("startDistance>1.5", mission_dashboard.HTML)
+        self.assertIn("Math.abs(headingError)<=20", mission_dashboard.HTML)
+        self.assertIn("g.fix_quality==='RTK Fixed'", mission_dashboard.HTML)
 
 
 class SatelliteParserTests(unittest.TestCase):
