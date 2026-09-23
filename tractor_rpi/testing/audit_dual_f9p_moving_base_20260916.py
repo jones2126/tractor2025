@@ -238,6 +238,7 @@ def check_equal(
 def audit_configuration(
     base_layers: dict[str, dict[str, int]],
     heading_layers: dict[str, dict[str, int]],
+    expected_meas_ms: int = 100,
 ) -> tuple[list[dict[str, object]], list[str]]:
     checks: list[dict[str, object]] = []
     warnings: list[str] = []
@@ -245,7 +246,7 @@ def audit_configuration(
     heading = heading_layers.get("RAM", {})
 
     for receiver, values in (("base", base), ("heading", heading)):
-        check_equal(checks, receiver, values, "CFG-RATE-MEAS", 100)
+        check_equal(checks, receiver, values, "CFG-RATE-MEAS", expected_meas_ms)
         check_equal(checks, receiver, values, "CFG-RATE-NAV", 1)
         check_equal(checks, receiver, values, "CFG-UART1-ENABLED", 1)
         check_equal(checks, receiver, values, "CFG-UART1-BAUDRATE", 115200)
@@ -291,7 +292,7 @@ def audit_configuration(
     )
     if msm7_complete and not msm4_complete:
         warnings.append(
-            "Base-Link is sending the larger MSM7 family at every 10 Hz epoch. "
+            "Base-Link is sending the larger MSM7 family at every navigation epoch. "
             "Modern F9P moving-base guidance recommends MSM4 to reduce UART load."
         )
     if base.get("CFG-MSGOUT-RTCM_3X_TYPE4072_1_UART1", 0):
@@ -454,10 +455,18 @@ def main() -> int:
     parser.add_argument("--base-port", default="/dev/gps-base-link")
     parser.add_argument("--heading-port", default="/dev/gps-heading")
     parser.add_argument("--observe-seconds", type=float, default=120.0)
+    parser.add_argument(
+        "--expected-meas-ms",
+        type=int,
+        default=100,
+        help="expected CFG-RATE-MEAS on both receivers (100=10 Hz, 200=5 Hz)",
+    )
     parser.add_argument("--json-output")
     args = parser.parse_args()
     if not math.isfinite(args.observe_seconds) or args.observe_seconds < 5:
         parser.error("--observe-seconds must be at least 5")
+    if args.expected_meas_ms <= 0:
+        parser.error("--expected-meas-ms must be positive")
 
     print("READ-ONLY DUAL-F9P MOVING-BASE AUDIT")
     print("No receiver settings will be changed.\n")
@@ -468,7 +477,9 @@ def main() -> int:
     print(f"Heading: {args.heading_port} -> {heading_resolved}\n")
     print(f"         {json.dumps(heading_version, sort_keys=True)}\n")
 
-    checks, warnings = audit_configuration(base_layers, heading_layers)
+    checks, warnings = audit_configuration(
+        base_layers, heading_layers, expected_meas_ms=args.expected_meas_ms
+    )
     print_checks(checks)
     for warning in warnings:
         print(f"[WARN] {warning}")
