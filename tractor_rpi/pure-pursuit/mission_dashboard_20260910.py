@@ -17,6 +17,8 @@ import time
 from collections import deque
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from urllib import error as urllib_error
+from urllib import request as urllib_request
 from urllib.parse import parse_qs, urlparse
 
 
@@ -41,6 +43,7 @@ CMD_VEL_PORT = 6004
 GPS_DASHBOARD_PORT = 6013
 TRACTOR_LOCAL_IP = "192.168.1.151"
 TRACTOR_ZEROTIER_IP = "192.168.193.76"
+NTFY_TOPIC_URL = "https://ntfy.sh/rpi-tractor01-jones2126"
 EXPECTED_CONFIRMATION = "RUN PARTIAL RINGS BLADES OFF"
 
 
@@ -61,7 +64,7 @@ const key=new URLSearchParams(location.search).get('key')||'';
 const headers={'Content-Type':'application/json','X-Operator-Key':key};
 const svg=document.getElementById('map'),facts=document.getElementById('facts'),stateEl=document.getElementById('state'),ageEl=document.getElementById('age'),out=document.getElementById('output');
 const guideBtn=document.getElementById('guide'),startBtn=document.getElementById('start'),pauseBtn=document.getElementById('pause'),clearPauseBtn=document.getElementById('clearPause'),messagesBtn=document.getElementById('messages'),progress=document.getElementById('progress');
-const TRAIL_SECONDS=30;let DATA=null,trailPoints=[],voiceGuidance=false,lastGuidanceAt=0,lastGuidanceKey='',missionWasActive=false,missionHasDriven=false,safetyStopActive=false,lastSafetyVoiceKey='';const NS='http://www.w3.org/2000/svg';
+const TRAIL_SECONDS=30,SAFETY_VOICE_REPEAT_SECONDS=10;let DATA=null,trailPoints=[],voiceGuidance=false,lastGuidanceAt=0,lastGuidanceKey='',missionWasActive=false,missionHasDriven=false,safetyStopActive=false,lastSafetyVoiceKey='',lastSafetyVoiceAt=0;const NS='http://www.w3.org/2000/svg';
 const el=(n,a={})=>{const x=document.createElementNS(NS,n);for(const[k,v]of Object.entries(a))x.setAttribute(k,v);return x};
 let sx=x=>x,sy=y=>y,trail,tractor,target,targetLine,startLine,startLabel,heading;
 function pathD(points){return points.map((p,i)=>(i?'L':'M')+sx(p.x).toFixed(1)+' '+sy(p.y).toFixed(1)).join(' ')}
@@ -84,7 +87,7 @@ function stopGuidance(message='Voice guidance stopped.'){
 guideBtn.onclick=()=>{
   if(voiceGuidance){stopGuidance();return}
   if(!('speechSynthesis' in window)){alert('This browser does not provide voice guidance. Open this dashboard in Chrome, Edge, or Safari on the phone.');return}
-  voiceGuidance=true;lastGuidanceAt=0;lastGuidanceKey='';lastSafetyVoiceKey='';guideBtn.textContent='STOP VOICE GUIDANCE';guideBtn.classList.add('active');
+  voiceGuidance=true;lastGuidanceAt=0;lastGuidanceKey='';lastSafetyVoiceKey='';lastSafetyVoiceAt=0;guideBtn.textContent='STOP VOICE GUIDANCE';guideBtn.classList.add('active');
 };
 function missionSafetyVoice(s,handheldPaused){
   if(!voiceGuidance)return;
@@ -107,15 +110,16 @@ function missionSafetyVoice(s,handheldPaused){
   }else if(safetyStopActive&&reason.includes('reacquisition blocked')){
     key='reacquire-blocked';message='Path recovery is blocked. Keep the tractor in Pause and review the dashboard.';
   }else{return}
-  if(key!==lastSafetyVoiceKey){speak(message);lastSafetyVoiceKey=key;if(navigator.vibrate)navigator.vibrate(key.includes('loss')?[400,150,400]:[200,100,200])}
+  const now=Date.now()/1000;
+  if(key!==lastSafetyVoiceKey||now-lastSafetyVoiceAt>=SAFETY_VOICE_REPEAT_SECONDS){speak(message);lastSafetyVoiceKey=key;lastSafetyVoiceAt=now;if(navigator.vibrate)navigator.vibrate(key.includes('loss')?[400,150,400]:[200,100,200])}
 }
 function updateVoiceGuidance(s,p,heading,startDistance,toStartX,toStartY,handheldPaused){
   if(!voiceGuidance)return;
   if(s.mission_active){
-    if(!missionWasActive){missionWasActive=true;missionHasDriven=false;safetyStopActive=false;lastSafetyVoiceKey='';speak('Mission active. Safety voice monitoring enabled.')}
+    if(!missionWasActive){missionWasActive=true;missionHasDriven=false;safetyStopActive=false;lastSafetyVoiceKey='';lastSafetyVoiceAt=0;speak('Mission active. Safety voice monitoring enabled.')}
     missionSafetyVoice(s,handheldPaused);return
   }
-  if(missionWasActive){missionWasActive=false;missionHasDriven=false;safetyStopActive=false;lastSafetyVoiceKey=''}
+  if(missionWasActive){missionWasActive=false;missionHasDriven=false;safetyStopActive=false;lastSafetyVoiceKey='';lastSafetyVoiceAt=0}
   const now=Date.now()/1000,g=s.gps||{},gpsFresh=s.gps_age_s!=null&&s.gps_age_s<1;
   let message='',key='',interval=10;
   if(!gpsFresh||!p||startDistance==null){message='Waiting for fresh GPS position.';key='no position';interval=10}
@@ -441,6 +445,32 @@ def handler_factory(state, token, mission_payload):
     return Handler
 
 
+def notify_dashboard_url(dashboard_url):
+    """Send the temporary ZeroTier operator URL to the configured ntfy topic."""
+    message = (
+        "Open the Tractor01 mission dashboard. Keep the handheld available; "
+        "this temporary link includes the operator key.\n\n"
+        f"{dashboard_url}"
+    )
+    request = urllib_request.Request(
+        NTFY_TOPIC_URL,
+        data=message.encode("utf-8"),
+        headers={
+            "Title": "Tractor01 dashboard ready",
+            "Click": dashboard_url,
+            "Tags": "tractor",
+        },
+        method="POST",
+    )
+    try:
+        with urllib_request.urlopen(request, timeout=5) as response:
+            if not 200 <= response.status < 300:
+                raise RuntimeError(f"ntfy returned HTTP {response.status}")
+        print(f"ntfy: ZeroTier dashboard link sent to {NTFY_TOPIC_URL}")
+    except (urllib_error.URLError, OSError, RuntimeError) as exc:
+        print(f"WARNING: could not send dashboard link to ntfy: {exc}")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--host", default="0.0.0.0")
@@ -454,10 +484,12 @@ def main():
     threading.Thread(target=udp_listener, args=(state, STATUS_PORT, "bridge"), daemon=True).start()
     threading.Thread(target=udp_listener, args=(state, GPS_DASHBOARD_PORT, "gps"), daemon=True).start()
     server = ThreadingHTTPServer((args.host, args.port), handler_factory(state, token, load_mission_payload()))
+    zerotier_url = f"http://{TRACTOR_ZEROTIER_IP}:{args.port}/?key={token}"
     print("Tractor01 mission dashboard")
-    print(f"ZeroTier: http://{TRACTOR_ZEROTIER_IP}:{args.port}/?key={token}")
+    print(f"ZeroTier: {zerotier_url}")
     print(f"Local:    http://{TRACTOR_LOCAL_IP}:{args.port}/?key={token}")
     print(f"Hostname: http://raspberrypi:{args.port}/?key={token}")
+    notify_dashboard_url(zerotier_url)
     print("Keep this terminal open. Press Ctrl+C to close the dashboard safely.")
     try:
         server.serve_forever()

@@ -35,8 +35,9 @@ After the tractor has begun driving, the phone announces RTK-position loss,
 heading-solution loss, or handheld-radio loss when one of those gates stops
 the controller. It then announces when GPS and heading return, when the
 five-second stability timer is running, and when the required handheld
-Pause-to-Auto acknowledgement may be completed. Each state change is spoken
-once rather than on every dashboard refresh.
+Pause-to-Auto acknowledgement may be completed. A new state is spoken
+immediately, then the current safety or recovery instruction repeats every
+10 seconds until the state changes or driving resumes.
 
 Voice guidance is advisory and sends no motion commands. Drive only in Manual,
 keep the handheld with you, watch the route and obstacles, and stop whenever an
@@ -89,6 +90,13 @@ From a remote development machine, open the complete ZeroTier URL. Use the
 local URL only from a device on the tractor's local network. Keep the terminal open.
 The key changes whenever the dashboard restarts and prevents another device
 on the field network from operating the buttons without the URL.
+
+At startup, the dashboard also posts the complete ZeroTier URL to
+`https://ntfy.sh/rpi-tractor01-jones2126`. The notification body contains the
+URL and its click action opens the dashboard directly. Failure to reach ntfy
+is reported as a warning and does not prevent the local dashboard from
+starting. Because the URL contains the temporary operator key, anyone who can
+read that ntfy topic can use the dashboard controls for that server session.
 
 ## Starting and running
 
