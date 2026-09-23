@@ -150,7 +150,9 @@ controller_args=(
     --tracking-window 6.0
     --audit-file "${AUDIT}"
     --reacquire-max-advance 5.0
-    --resume-stable-seconds 5.0
+    --resume-stable-seconds 0.0
+    --basic-runtime-heading-gate
+    --no-operator-cycle-after-safety-loss
 )
 if [[ "${dashboard_mode}" == true ]]; then
     controller_args+=(--control-port 6011 --telemetry-port 6012)
