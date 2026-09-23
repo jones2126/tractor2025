@@ -137,10 +137,10 @@ function updateVoiceGuidance(s,p,heading,startDistance,toStartX,toStartY,handhel
     if(!headingGood){message=`Inside the start circle. Align heading: turn ${headingError>0?'right':'left'} ${Math.round(Math.abs(headingError))} degrees. Target heading ${Math.round(DATA.start_heading_deg)}.`;key=`align-${Math.round(headingError/5)}`}
     else if(!qualityGood){message='Position and heading alignment are good, but the RTK heading quality check is not ready.';key='quality not ready'}
     else if(!handheldPaused){message='Stop. Position and heading are ready. Select handheld Pause.';key='ready select pause'}
-    else{stopGuidance('Start position, heading, and GPS checks are ready. Keep the handheld in Pause.');if(navigator.vibrate)navigator.vibrate([250,100,250]);return}
+    else{message='Start position, heading, and GPS checks are ready. Keep the handheld in Pause and press Start Mission when ready.';key='ready';interval=10}
   }
-  const urgentChange=key!==lastGuidanceKey&&['no position','no heading','quality not ready','ready select pause'].includes(key);
-  if(now-lastGuidanceAt>=interval||urgentChange){speak(message);lastGuidanceAt=now;lastGuidanceKey=key}
+  const urgentChange=key!==lastGuidanceKey&&['no position','no heading','quality not ready','ready select pause','ready'].includes(key);
+  if(now-lastGuidanceAt>=interval||urgentChange){speak(message);lastGuidanceAt=now;lastGuidanceKey=key;if(key==='ready'&&navigator.vibrate)navigator.vibrate([250,100,250])}
 }
 function draw(s){
   const c=s.controller||{},b=s.bridge||{},g=s.gps||{},st=b.steering||{},tr=b.transmission||{};
