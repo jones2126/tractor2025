@@ -28,10 +28,14 @@ dashboard.EXPECTED_CONFIRMATION = "RUN MASTER MANUAL FIELD BLADES OFF"
 replacements = {
     "Tractor01 — 62 Collins clear-sky resume": "Tractor01 — reviewed master + manual field test",
     "Resumes at source waypoint 91. Recovery stays in the current phase and may advance at most 30 m.":
-        "Starts at original W1. Blades off. Recovery requires a handheld mode cycle and may advance at most 5 m.",
+        "Starts at original W1. Blades off. GPS/heading recovery is automatic and may advance at most 5 m.",
     "Start the reviewed clear-sky resume mission at source waypoint 91 with blades off?":
         "Start the reviewed master/manual field test at original W1 with blades off?",
     "RUN PARTIAL RINGS BLADES OFF": dashboard.EXPECTED_CONFIRMATION,
+    "Safety stop. RTK position lost. Select handheld Pause. Waiting for RTK Fixed.":
+        "Safety stop. RTK position lost. Waiting for RTK Fixed. Automatic recovery is enabled.",
+    "Safety stop. Heading solution lost. Select handheld Pause. Waiting for fixed heading.":
+        "Safety stop. Heading solution lost. Waiting for valid heading. Automatic recovery is enabled.",
 }
 for original, updated in replacements.items():
     if dashboard.HTML.count(original) != 1:
