@@ -61,7 +61,7 @@ const key=new URLSearchParams(location.search).get('key')||'';
 const headers={'Content-Type':'application/json','X-Operator-Key':key};
 const svg=document.getElementById('map'),facts=document.getElementById('facts'),stateEl=document.getElementById('state'),ageEl=document.getElementById('age'),out=document.getElementById('output');
 const guideBtn=document.getElementById('guide'),startBtn=document.getElementById('start'),pauseBtn=document.getElementById('pause'),clearPauseBtn=document.getElementById('clearPause'),messagesBtn=document.getElementById('messages'),progress=document.getElementById('progress');
-const TRAIL_SECONDS=30;let DATA=null,trailPoints=[],voiceGuidance=false,lastGuidanceAt=0,lastGuidanceKey='';const NS='http://www.w3.org/2000/svg';
+const TRAIL_SECONDS=30;let DATA=null,trailPoints=[],voiceGuidance=false,lastGuidanceAt=0,lastGuidanceKey='',missionWasActive=false,missionHasDriven=false,safetyStopActive=false,lastSafetyVoiceKey='';const NS='http://www.w3.org/2000/svg';
 const el=(n,a={})=>{const x=document.createElementNS(NS,n);for(const[k,v]of Object.entries(a))x.setAttribute(k,v);return x};
 let sx=x=>x,sy=y=>y,trail,tractor,target,targetLine,startLine,startLabel,heading;
 function pathD(points){return points.map((p,i)=>(i?'L':'M')+sx(p.x).toFixed(1)+' '+sy(p.y).toFixed(1)).join(' ')}
@@ -84,11 +84,38 @@ function stopGuidance(message='Voice guidance stopped.'){
 guideBtn.onclick=()=>{
   if(voiceGuidance){stopGuidance();return}
   if(!('speechSynthesis' in window)){alert('This browser does not provide voice guidance. Open this dashboard in Chrome, Edge, or Safari on the phone.');return}
-  voiceGuidance=true;lastGuidanceAt=0;lastGuidanceKey='';guideBtn.textContent='STOP VOICE GUIDANCE';guideBtn.classList.add('active');
+  voiceGuidance=true;lastGuidanceAt=0;lastGuidanceKey='';lastSafetyVoiceKey='';guideBtn.textContent='STOP VOICE GUIDANCE';guideBtn.classList.add('active');
 };
+function missionSafetyVoice(s,handheldPaused){
+  if(!voiceGuidance)return;
+  const c=s.controller||{},reason=String(c.wait_reason||''),driving=c.driving===true||String(c.driving).toLowerCase()==='true';
+  if(driving){missionHasDriven=true;safetyStopActive=false;lastSafetyVoiceKey='driving';return}
+  if(!missionHasDriven)return;
+  let key='',message='';
+  if(reason.includes('RADIO_LOSS')||reason.includes('stale or no Teensy status')){
+    key='radio-loss';message='Safety stop. Handheld radio link lost. Keep the tractor stopped and restore the radio link.';safetyStopActive=true;
+  }else if(reason.includes("fix_quality=")||reason.includes('stale or no GPS')){
+    key='position-loss';message='Safety stop. RTK position lost. Select handheld Pause. Waiting for RTK Fixed.';safetyStopActive=true;
+  }else if(reason.includes('headValid=False')||reason.includes('heading carrier=')||reason.includes('heading accuracy=')||reason.includes('heading baseline')){
+    key='heading-loss';message='Safety stop. Heading solution lost. Select handheld Pause. Waiting for fixed heading.';safetyStopActive=true;
+  }else if(safetyStopActive&&reason.startsWith('GPS/heading stable for')){
+    key='safety-recovering';message='GPS and heading have returned. Keep the tractor stopped while the safety timer verifies stability.';
+  }else if(safetyStopActive&&reason.includes('operator acknowledgement required')){
+    key='safety-ready-cycle';message='GPS and heading are stable. Select handheld Pause, then return to Auto when the path is clear.';
+  }else if(safetyStopActive&&handheldPaused){
+    key='safety-ready-auto';message='GPS and heading are stable and Pause is acknowledged. Return to Auto only when the path is clear.';
+  }else if(safetyStopActive&&reason.includes('reacquisition blocked')){
+    key='reacquire-blocked';message='Path recovery is blocked. Keep the tractor in Pause and review the dashboard.';
+  }else{return}
+  if(key!==lastSafetyVoiceKey){speak(message);lastSafetyVoiceKey=key;if(navigator.vibrate)navigator.vibrate(key.includes('loss')?[400,150,400]:[200,100,200])}
+}
 function updateVoiceGuidance(s,p,heading,startDistance,toStartX,toStartY,handheldPaused){
   if(!voiceGuidance)return;
-  if(s.mission_active){stopGuidance('Mission is active. Voice positioning guidance stopped.');return}
+  if(s.mission_active){
+    if(!missionWasActive){missionWasActive=true;missionHasDriven=false;safetyStopActive=false;lastSafetyVoiceKey='';speak('Mission active. Safety voice monitoring enabled.')}
+    missionSafetyVoice(s,handheldPaused);return
+  }
+  if(missionWasActive){missionWasActive=false;missionHasDriven=false;safetyStopActive=false;lastSafetyVoiceKey=''}
   const now=Date.now()/1000,g=s.gps||{},gpsFresh=s.gps_age_s!=null&&s.gps_age_s<1;
   let message='',key='',interval=10;
   if(!gpsFresh||!p||startDistance==null){message='Waiting for fresh GPS position.';key='no position';interval=10}

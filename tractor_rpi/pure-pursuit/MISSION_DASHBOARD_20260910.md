@@ -27,7 +27,16 @@ the guidance changes to the left/right correction needed to reach the mission
 start heading. It reports ready only when the launcher's strict RTK Fixed,
 heading-valid, fixed-carrier, baseline, heading-accuracy, position, and heading
 limits are all satisfied. After the handheld is moved to Pause, it announces
-that the start checks are ready and stops speaking.
+that the start checks are ready. When the mission becomes active, the same
+enabled voice guidance switches from positioning directions to safety-stop
+monitoring.
+
+After the tractor has begun driving, the phone announces RTK-position loss,
+heading-solution loss, or handheld-radio loss when one of those gates stops
+the controller. It then announces when GPS and heading return, when the
+five-second stability timer is running, and when the required handheld
+Pause-to-Auto acknowledgement may be completed. Each state change is spoken
+once rather than on every dashboard refresh.
 
 Voice guidance is advisory and sends no motion commands. Drive only in Manual,
 keep the handheld with you, watch the route and obstacles, and stop whenever an
@@ -52,6 +61,9 @@ the phone locks or the dashboard moves to the background.
   mission controller so its normal cleanup stops the tractor and logger.
 - The Start button is rejected unless fresh Teensy telemetry reports both
   steering and transmission in handheld Pause.
+- When voice guidance is enabled, an in-mission safety stop is announced with
+  its broad cause and recovery instructions. These announcements are advisory;
+  they do not weaken any controller gate or automatically resume motion.
 
 The dashboard is an additional operator control. It is not an emergency stop
 and does not replace the handheld.
