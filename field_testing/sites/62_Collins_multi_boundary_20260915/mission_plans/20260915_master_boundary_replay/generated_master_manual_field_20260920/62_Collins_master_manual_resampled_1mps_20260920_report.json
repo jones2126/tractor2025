@@ -1,0 +1,54 @@
+{
+  "status": "SUPERVISED_BLADES_OFF_FIELD_TEST",
+  "waypoints": 19825,
+  "mission_sha256": "0276fa22f2c7def0a516b2dcd5516bfd3b05fa647f3b50607a6ca5ec218436b4",
+  "audit_sha256": "844e3358195283bb3225e9958c4ce4637240c993c604a1d15484619249d67932",
+  "review_mission_sha256": "f4316ed7c909e80ed89a308c4721b148fdc5e84450069ad65e23087e487d6c09",
+  "review_audit_sha256": "b7224a3a5b81ed2bc131bae3cbfe45b571652f3a05822a91ee977e255dc0f223",
+  "manual_original_points": 2843,
+  "manual_resampled_points": 876,
+  "manual_recorded_length_m": 131.13826652085288,
+  "manual_resampled_length_m": 129.27946731080738,
+  "manual_spacing_target_m": 0.15,
+  "manual_spacing_actual_m": 0.14987230459526044,
+  "manual_hausdorff_deviation_m": 0.03501172727008932,
+  "max_consecutive_waypoint_gap_m": 0.5027413907418327,
+  "speed_counts": {
+    "1.0": 19825
+  },
+  "first_source_id": "W1",
+  "last_source_id": "W19250",
+  "preserved_review_cuts": [
+    [
+      12653,
+      12844
+    ],
+    [
+      13643,
+      13703
+    ],
+    [
+      13908,
+      13940
+    ],
+    [
+      14518,
+      14555
+    ],
+    [
+      15750,
+      15806
+    ],
+    [
+      15868,
+      15902
+    ]
+  ],
+  "limitations": [
+    "Blades-off supervised field test only; no autonomous mowing approval",
+    "RTK-fixed position and heading and handheld Pause required before start",
+    "New return and shortcut tracking remain untested on tractor01",
+    "Recorded manual source includes 22 DGPS samples; resampling does not improve source accuracy",
+    "Garden-right center stripe coverage is not included"
+  ]
+}

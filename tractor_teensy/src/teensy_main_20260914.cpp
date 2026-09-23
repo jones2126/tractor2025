@@ -23,8 +23,8 @@
       3138, 3063, 2987, 2912, 2836,
       2616, 2534, 2452, 2370, 2288
 
-  Auto calibration recommended after the 2026-09-08 four-value field run:
-      0.75 m/s -> JRK 2368  revised approach setting
+  Auto calibration recommended after field testing:
+      0.14 m/s -> JRK 2428  revised low-speed setting
       1.00 m/s -> JRK 2300  retained accurate setting
       1.20 m/s -> JRK 2233  revised test setting
       1.50 m/s -> JRK 2178  revised test setting
@@ -75,12 +75,11 @@
 //   * 2288 remains the Manual-mode maximum because bucketTargets[] comes
 //     unchanged from the archived 0804 firmware.
 //   * These values are approved only for the supervised follow-up test.
-//   * The inconsistent 0.87 and 0.94 anchors are omitted so this test table
-//     remains monotonic after the new 0.75 m/s field measurement.
+//   * The inconsistent 0.75, 0.87, and 0.94 anchors are omitted so this test
+//     table remains monotonic with the revised 0.14 m/s low-speed setting.
 const SpeedCalPoint SPEED_CAL_20260908_1P8_TEST[] = {
     {0.00f, 2836},
-    {0.40f, 2452},
-    {0.75f, 2368},  // 2350 produced a 0.820 m/s steady median
+    {0.14f, 2428},
     {1.00f, 2300},  // produced a 1.017 m/s steady median
     {1.20f, 2233},  // 2246 produced a 1.164 m/s steady median
     {1.50f, 2178},  // interpolated between 2200 -> 1.344 and 2160 -> 1.620
