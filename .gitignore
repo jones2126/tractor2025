@@ -47,3 +47,6 @@ node_modules/
 
 # Generated analysis outputs
 outputs/
+
+# PlatformIO build files
+.pio/
