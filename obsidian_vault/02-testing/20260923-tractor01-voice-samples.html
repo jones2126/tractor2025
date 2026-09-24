@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tractor01 Voice Samples</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #101712;
+      color: #f3f7f3;
+    }
+    body {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 24px 16px 48px;
+    }
+    h1 { margin-bottom: 6px; }
+    h2 { margin-top: 30px; }
+    .note, .status {
+      padding: 12px 14px;
+      border-radius: 10px;
+      background: #1b2a20;
+      line-height: 1.45;
+    }
+    .status { margin-top: 12px; color: #d4f7dc; }
+    label { display: block; margin: 18px 0 6px; font-weight: 700; }
+    select, button {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid #52705b;
+      border-radius: 10px;
+      background: #203527;
+      color: #fff;
+      font: inherit;
+    }
+    select { padding: 12px; }
+    button {
+      min-height: 50px;
+      margin: 7px 0;
+      padding: 10px 14px;
+      cursor: pointer;
+      font-weight: 700;
+      text-align: left;
+    }
+    button:hover, button:focus { background: #2d5037; }
+    button.primary { background: #27743c; border-color: #68b77a; text-align: center; }
+    button.stop { background: #68302c; border-color: #b76d68; text-align: center; }
+    .phrase { display: block; margin-top: 3px; color: #d4dfd6; font-weight: 400; }
+    footer { margin-top: 30px; color: #aab8ad; font-size: .9rem; }
+  </style>
+</head>
+<body>
+  <h1>Tractor01 voice samples</h1>
+  <p class="note">
+    The live dashboard uses the browser's default voice at rate 0.9. Leave
+    <strong>Dashboard default</strong> selected and open this page on the same phone/browser
+    to hear the same voice. Speech starts only after pressing a button.
+    Al's preferred voice is <strong>Microsoft Clara Online (Natural) — English
+    (Canada), en-CA</strong>.
+  </p>
+
+  <label for="voice">Voice</label>
+  <select id="voice">
+    <option value="">Dashboard default</option>
+  </select>
+  <div id="status" class="status">Loading the voices available on this device…</div>
+
+  <h2>Starting-point guidance</h2>
+  <button class="primary" id="play-guidance">Play a complete approach sample</button>
+  <button data-phrase="18 meters to start, at 2 o'clock.">
+    Approach guidance
+    <span class="phrase">“18 meters to start, at 2 o'clock.”</span>
+  </button>
+  <button data-phrase="Inside the start circle. Align heading: turn right 15 degrees. Target heading 274.">
+    Heading alignment
+    <span class="phrase">“Inside the start circle. Align heading: turn right 15 degrees. Target heading 274.”</span>
+  </button>
+  <button data-phrase="Stop. Position and heading are ready. Select handheld Pause.">
+    Ready—select Pause
+    <span class="phrase">“Stop. Position and heading are ready. Select handheld Pause.”</span>
+  </button>
+  <button data-phrase="Start position, heading, and GPS checks are ready. Keep the handheld in Pause and press Start Mission when ready.">
+    Ready—start mission
+    <span class="phrase">“Start position, heading, and GPS checks are ready. Keep the handheld in Pause and press Start Mission when ready.”</span>
+  </button>
+  <button data-phrase="Mission active. Safety voice monitoring enabled.">
+    Mission active
+    <span class="phrase">“Mission active. Safety voice monitoring enabled.”</span>
+  </button>
+
+  <h2>Proposed safety responses</h2>
+  <p>During a real safety pause, the applicable pause message will repeat every 10 seconds.</p>
+  <button data-phrase="Pausing, RTK fix lost.">
+    RTK
+    <span class="phrase">“Pausing, RTK fix lost.”</span>
+  </button>
+  <button data-phrase="Pausing, heading invalid.">
+    Heading
+    <span class="phrase">“Pausing, heading invalid.”</span>
+  </button>
+  <button data-phrase="Pausing, handheld radio issue.">
+    Handheld radio
+    <span class="phrase">“Pausing, handheld radio issue.”</span>
+  </button>
+  <button data-phrase="Resuming.">
+    Recovery
+    <span class="phrase">“Resuming.”</span>
+  </button>
+  <button class="primary" id="play-safety">Play all four safety samples</button>
+  <button class="stop" id="stop">Stop speaking</button>
+
+  <footer>
+    This page is a voice demonstration only. It does not connect to or control Tractor01.
+  </footer>
+
+  <script>
+    const voiceSelect = document.getElementById('voice');
+    const status = document.getElementById('status');
+    let voices = [];
+    let sequenceStopped = false;
+
+    function loadVoices() {
+      if (!('speechSynthesis' in window)) {
+        status.textContent = 'This browser does not provide speech synthesis. Try Chrome, Edge, or Safari.';
+        return;
+      }
+      const selected = voiceSelect.value;
+      voices = window.speechSynthesis.getVoices().filter(
+        voice => String(voice.lang || '').toLowerCase().startsWith('en')
+      );
+      voiceSelect.length = 1;
+      voices.forEach((voice, index) => {
+        const option = document.createElement('option');
+        option.value = String(index);
+        const preferred = voice.name === 'Microsoft Clara Online (Natural)' && voice.lang.toLowerCase() === 'en-ca';
+        option.textContent = `${voice.name} — ${voice.lang}${preferred ? ' (preferred)' : ''}${voice.default ? ' (device default)' : ''}`;
+        voiceSelect.appendChild(option);
+      });
+      if (selected && Number(selected) < voices.length) voiceSelect.value = selected;
+      const defaultVoice = voices.find(voice => voice.default);
+      status.textContent = defaultVoice
+        ? `Dashboard default on this device: ${defaultVoice.name} (${defaultVoice.lang})`
+        : `Showing ${voices.length} English voice${voices.length === 1 ? '' : 's'}. The browser will choose its default when Dashboard default is selected.`;
+    }
+
+    function makeUtterance(text) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.9;
+      utterance.volume = 1;
+      if (voiceSelect.value !== '') utterance.voice = voices[Number(voiceSelect.value)] || null;
+      return utterance;
+    }
+
+    function speakOne(text) {
+      if (!('speechSynthesis' in window)) return;
+      sequenceStopped = true;
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(makeUtterance(text));
+    }
+
+    async function speakSequence(phrases) {
+      if (!('speechSynthesis' in window)) return;
+      sequenceStopped = false;
+      window.speechSynthesis.cancel();
+      for (const phrase of phrases) {
+        if (sequenceStopped) break;
+        await new Promise(resolve => {
+          const utterance = makeUtterance(phrase);
+          utterance.onend = () => setTimeout(resolve, 650);
+          utterance.onerror = resolve;
+          window.speechSynthesis.speak(utterance);
+        });
+      }
+    }
+
+    document.querySelectorAll('[data-phrase]').forEach(button => {
+      button.addEventListener('click', () => speakOne(button.dataset.phrase));
+    });
+
+    document.getElementById('play-guidance').addEventListener('click', () => speakSequence([
+      "18 meters to start, at 2 o'clock.",
+      "6 meters to start, at 1 o'clock.",
+      'Inside the start circle. Align heading: turn right 15 degrees. Target heading 274.',
+      'Stop. Position and heading are ready. Select handheld Pause.',
+      'Start position, heading, and GPS checks are ready. Keep the handheld in Pause and press Start Mission when ready.',
+      'Mission active. Safety voice monitoring enabled.'
+    ]));
+
+    document.getElementById('play-safety').addEventListener('click', () => speakSequence([
+      'Pausing, RTK fix lost.',
+      'Resuming.',
+      'Pausing, heading invalid.',
+      'Resuming.',
+      'Pausing, handheld radio issue.',
+      'Resuming.'
+    ]));
+
+    document.getElementById('stop').addEventListener('click', () => {
+      sequenceStopped = true;
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    });
+
+    loadVoices();
+    if ('speechSynthesis' in window) window.speechSynthesis.onvoiceschanged = loadVoices;
+  </script>
+</body>
+</html>

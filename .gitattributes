@@ -16,3 +16,8 @@
 
 # Preserve archived Git patch files exactly
 *.patch -text
+
+# Preserve the checksum-archived September 18/23 field runs byte-for-byte so
+# recorded SHA-256 manifests and replay provenance remain valid across systems.
+field_testing/sites/**/runs/20260918_*/** -text -eol
+field_testing/sites/**/runs/20260923_*/** -text -eol

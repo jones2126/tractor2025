@@ -1,13 +1,20 @@
 # Dual-F9P guarded 5 Hz moving-base test — 2026-09-23
 
-## Why this test is blocked from autonomous use
+> [!update] Final session status
+> This note records the pre-mission test plan and initial blocking evidence.
+> The guarded 5 Hz profile was subsequently applied and retained for a
+> completed 19,825-waypoint supervised master mission. See
+> [[20260923-master-manual-field-session-summary]] for final measurements,
+> decisions, lessons learned, and follow-up actions.
+
+## Initial blocking evidence
 
 The clearer-sky 120-second baseline produced 533 valid Fixed heading frames
 and 48 invalid frames (91.738% valid). The invalid frames retained a Fixed
 carrier flag but reported `headValid=false`, `relPosValid=false`,
 `isMoving=false`, and a 0.0 m baseline. A single such frame stops the current
-fail-closed controller. Do not run an autonomous mission until the revised
-profile passes the parked audit reliably.
+strict fail-closed controller. At this point in the session, the revised
+profile had not yet passed the parked audit reliably.
 
 ## Controlled change
 
@@ -95,3 +102,10 @@ mission use is zero or nearly zero poison frames. Any repeated Fixed-carrier,
 zero-baseline frame remains a mission blocker even if the audit process exits
 zero. Review the complete report before moving or selecting Auto.
 
+## Result after this plan was written
+
+The 5 Hz audit produced 594/598 valid fixed frames (**99.331%**) at 4.982 Hz.
+The profile was then evaluated while moving and retained for the completed
+master mission. Runtime policy was explicitly changed to the September 18
+basic gate while strict preflight/start checks remained. This was a supervised
+risk decision, not a claim that every heading frame was perfect.

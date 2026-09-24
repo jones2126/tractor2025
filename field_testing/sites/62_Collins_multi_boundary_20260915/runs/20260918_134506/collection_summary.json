@@ -1,0 +1,41 @@
+{
+  "run_id": "20260918_134506",
+  "site_name": "62_Collins_multi_boundary_20260915",
+  "tractor": "al@192.168.193.76",
+  "collected_utc": "2026-09-18T18:43:43.9096172Z",
+  "tractor_git_commit": "f6b6a64",
+  "pursuit_log": "pursuit_log_20260918_134506.csv",
+  "pursuit_data_rows": 64854,
+  "pursuit_sha256": "0B561BE49B513BF047A7045D668567C51F53A0E71E2F1228129679B568F29921",
+  "field_log": "continuation_all_1mps_20260918_134504.csv",
+  "field_log_data_rows": 64973,
+  "field_log_sha256": "262C68CF705E7A01872FE6DB8A891AE2C913DAD0B9A7D94D558887DCEA4D5CAD",
+  "mission_package": "20260915_master_boundary_replay",
+  "mission_package_files": 49,
+  "runtime_snapshot": "runtime_snapshot",
+  "runtime_snapshot_files": 4,
+  "shutdown_state": {
+    "dashboard_controller_and_field_logger_stopped_cleanly": true,
+    "rtcm_server_active_after_run": true,
+    "teensy_bridge_active_after_run": true
+  },
+  "incident": {
+    "maximum_waypoint_idx": 1821,
+    "frozen_waypoint_idx": 1798,
+    "first_radio_loss_elapsed_s": 378.82,
+    "first_radio_loss_lat": 40.48582983,
+    "first_radio_loss_lon": -80.3328685,
+    "post_radio_loss_driving_true_samples": 0,
+    "position_fix_values_while_available": [
+      "RTK Fixed"
+    ],
+    "heading_invalid_samples_after_radio_loss": 373,
+    "final_fix_quality": "RTK Fixed",
+    "final_heading_valid": true,
+    "final_heading_carrier": "fixed",
+    "final_handheld_mode": 9,
+    "final_handheld_state": "NO_SIG",
+    "final_actual_speed_mps": 0.005
+  },
+  "checksum_manifest": "file_hashes.csv"
+}

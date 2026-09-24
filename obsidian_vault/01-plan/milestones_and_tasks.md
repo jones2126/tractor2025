@@ -6,73 +6,66 @@
 > subsystem. The command-rich startup and shutdown runbooks remain here for
 > field use.
 >
-> Last workflow review: **2026-09-17**
+> Last workflow review: **2026-09-23**
 
 ## Current priorities
 
-1. **Run the 62 Collins partial-rings master mission** from the reviewed
-   clear-sky resume point at source waypoint 91.
-2. Use the **August 30-style runtime safety gate** for this supervised test:
-   RTK Fixed and `headValid` remain mandatory, but carrier, baseline, and
-   heading-accuracy values are diagnostic rather than independent runtime stop
-   conditions. Recovery has no five-second delay and does not require a
-   Manual/Pause-to-AUTO acknowledgement cycle.
-3. Preserve both the field log and Pure Pursuit log, then compare tracking,
-   heading interruptions, stops, recovery behavior, and cross-track error with
-   the successful 2026-08-30 run.
-4. Retain the current master's conservative **1.63 m** planning radius. The
-   2026-09-16 manual full-lock data measured approximately **1.14 m left** and
-   **1.04 m right**; use **1.20 m** only as a candidate for future planning
-   after a supervised AUTO validation at 0.5 m/s.
-5. After the 62 Collins master mission is proven, use the documented boundary
-   workflow to map and build the first mission for **70 Collins Drive**.
+1. **Map and score the completed September 23 master mission and manual
+   stripes.** Combine them with the earlier recorded runs, locate missed and
+   duplicate coverage, overlay safety/recovery events, and replan the next
+   coverage paths from measured results.
+2. **Investigate repeated NRF24 losses.** Compare the same route with the
+   garden electric fence energized and de-energized; inspect radio power,
+   grounding, antennas, connectors, ACK rate, and spatial clustering.
+3. **Make heading startup deterministic.** Add an idempotent Heading-F9P
+   readback/guarded-repair step and make `rtcm-server` recover when the USB
+   device appears after service startup instead of latching a fatal state.
+4. **Make long-duration dashboard voice observable and resilient.** Add phone
+   Wake Lock, client/voice heartbeat, speech start/end/error logging, and a
+   stalled-speech watchdog.
+5. **Prototype supervised low-speed phone/Wi-Fi manual control** with dead-man,
+   authentication, bounded commands, and explicit stop behavior. Treat it as
+   an experiment, not an NRF24 replacement, until latency/loss tests pass.
+6. **Complete field hardware and infrastructure follow-up:** permanently mount
+   the Cub Cadet EFI ignition module, automate RTK-base ZeroTier recovery after
+   internet returns, and begin repeatable fuel/engine-runtime recording.
+7. Retain the current master's conservative **1.63 m** planning radius. Use
+   **1.20 m** only as a future candidate after supervised AUTO validation at
+   0.5 m/s.
 
-## Next field test — 62 Collins partial-rings master
+## Next field test — coverage, radio, and recovery validation
 
 ### Objective
 
-Run as much of the reviewed rings-only master mission as conditions safely
-allow. This remains a blades-off, closely supervised test. Stripes are deferred
-until the inner-ring mission executes acceptably.
+Validate revised coverage geometry and collect controlled evidence for radio
+loss and recovery behavior. Keep the test blades-off and closely supervised.
+Do not combine a new coverage path, new radio-control method, and new steering
+geometry in the same first run; change one risk-bearing variable at a time.
 
-### Runtime behavior being tested
+### Prerequisites
 
-- The mission starts only after strict preflight and start-position checks.
-- During AUTO, motion stops immediately for:
-  - stale/no GPS data;
-  - a fatal receiver error;
-  - loss of RTK Fixed position; or
-  - `headValid=False`.
-- Carrier state, heading baseline, and estimated heading accuracy remain
-  visible and logged, but they do not independently interrupt this test.
-- If RTK Fixed and `headValid=True`, the AUTO mission may continue. If either
-  condition is false, the controller immediately commands zero speed. This is
-  a controller safety wait, not a dashboard software Pause.
-- Once RTK Fixed and `headValid` recover, the controller may resume without a
-  five-second timer or handheld acknowledgement cycle.
-- Handheld Manual or Pause still prevents motion and freezes path progress.
-- The operator may select Manual and drive forward along the understood mission
-  route. On returning to AUTO, the controller attempts to reacquire the best
-  matching forward path segment; it does not intentionally move mission
-  progress backward.
-- Dashboard software Pause still requires an explicit **CLEAR PAUSE**.
-- Resumption remains subject to bounded, phase-locked forward reacquisition:
-  within 2 m of the path, within 60 degrees of path heading, no more than 30 m
-  ahead of previous progress, within the current mission phase, and without an
-  ambiguous near-tie to another portion of the path. If these checks fail, the
-  tractor remains stopped and reports that reacquisition is blocked.
+- Complete the coverage and event overlays from the September 23 logs.
+- Define cross-track and recovery acceptance limits before generating a new
+  mission.
+- Verify Heading-F9P targeted settings rather than assuming a physical antenna
+  fault or blindly applying a factory reset.
+- Confirm the dashboard voice/client heartbeat remains live for a bench test
+  longer than the approximately 20-minute field failure point.
+- Define the radio A/B route and fence states before driving.
+- Keep the proven strict preflight/basic runtime split unless a separately
+  reviewed test intentionally changes it.
 
 ### Success criteria
 
-- Preflight passes with the tractor stationary in Pause.
-- Heading USB reports no NMEA sentences during the preflight sample.
-- The dashboard and both telemetry logs remain live for the complete test.
-- The tractor enters AUTO, follows the expected forward route, and does not
-  select a nearby later ring.
-- Short heading interruptions recover as expected without creating repeated
-  five-second waits or demanding a handheld switch cycle.
-- Cross-track error remains acceptable relative to the 2026-08-30 baseline.
-- Any stop or operator intervention can be matched to telemetry afterward.
+- Preflight passes with the tractor stationary in Pause and the targeted
+  heading configuration is recorded.
+- Every radio loss, GPS/heading stop, recovery, and operator intervention can
+  be matched to telemetry and location.
+- The phone dashboard records client heartbeat and speech success/error state
+  throughout the run.
+- Cross-track median/RMS/p95/max stay within the limits defined before the run.
+- Revised coverage reduces known missed areas without creating unsafe joins or
+  excessive overlap.
 
 ### Stop conditions
 
@@ -209,12 +202,14 @@ systemctl is-active rtcm-server.service teensy-bridge.service && journalctl -u r
 - [ ] Start the dashboard from the field/development computer:
 
   ```powershell
-  ssh -t -i "$env:USERPROFILE\.ssh\id_ed25519_tractor01" al@192.168.193.76 "cd /home/al/tractor2025 && sudo -v && python3 tractor_rpi/pure-pursuit/mission_dashboard_20260910.py"
+  ssh -t -i "$env:USERPROFILE\.ssh\id_ed25519_tractor01" al@192.168.193.76 "cd /home/al/tractor2025 && sudo -v && python3 tractor_rpi/pure-pursuit/mission_dashboard_master_manual_field_20260920.py"
   ```
 
 - [ ] Open the printed `http://192.168.193.76:8088/?key=...` URL.
-- [ ] Verify that the dashboard identifies the **62 Collins partial-rings
-  master** and shows live GPS, heading, steering, transmission, and radio data.
+- [ ] Verify that the dashboard identifies the intended reviewed mission and
+  shows live GPS, heading, steering, transmission, and radio data. Update this
+  command when a newly reviewed coverage launcher replaces the current
+  master/manual launcher.
 - [ ] Keep the handheld in Pause and select **START MISSION**. The launcher
   reruns preflight and validates the reviewed mission, start position, and
   heading.
@@ -269,7 +264,10 @@ ssh al@192.168.193.88 "sudo shutdown now"
 
 ### A — Navigation and mission planning
 
-- [ ] Complete the 62 Collins partial-rings master mission end-to-end.
+- [x] Complete the 62 Collins master/manual mission end-to-end at 5 Hz with
+  preserved field and pursuit logs.
+- [ ] Build combined coverage maps from earlier runs, the completed September
+  23 mission, and the September 23 manual stripes; replan missed coverage.
 - [ ] Complete A/B testing for the heading solution; see
   [`potential-Dual-F9PHeading-A-B-Test.md`](../02-testing/potential-Dual-F9PHeading-A-B-Test.md).
 - [ ] Review the resulting cross-track error and recovery behavior against the
@@ -301,6 +299,12 @@ ssh al@192.168.193.88 "sudo shutdown now"
 - [ ] Improve `configure_heading_f9p_20260727.py` handling and reporting of
   missed UBX-CFG-VALSET acknowledgements while retaining verified readback as
   the authoritative result.
+- [ ] Add an idempotent startup verifier that compares both F9Ps with the
+  approved profile and offers guarded repair only when readback differs.
+- [ ] Make `rtcm-server` retry late/missing GPS device opens or add appropriate
+  systemd device ordering so a boot race cannot latch a fatal state forever.
+- [ ] Add a rate-limited RTK-base network recovery job that detects restored
+  internet access and restores ZeroTier connectivity with persistent logs.
 - [ ] Add direct 12 V monitoring at the RTK-base ESP32.
 - [ ] Update the base boot notification to include all IP addresses and
   ZeroTier reachability.
@@ -327,16 +331,21 @@ ssh al@192.168.193.88 "sudo shutdown now"
   interruptions.
 - [ ] Keep the optional Ring 13 1.2/1.5/1.8 m/s firmware test deferred until
   the 1.0 m/s master mission is stable.
+- [ ] Run controlled NRF24 A/B tests with the garden electric fence on and off;
+  correlate failures with location, ACK rate, and radio power/grounding.
+- [ ] Prototype phone/Wi-Fi manual control at low speed with dead-man behavior,
+  bounded commands, authentication, and immediate stop on client loss.
 
 ### D — Tractor computer, services, and web tools
 
 - [x] Provide a live web dashboard that starts, pauses, monitors, and logs the
-  partial-rings master mission.
+  reviewed master/manual mission.
 - [x] Add consolidated stationary preflight with automatic GPS/heading failure
   diagnostics.
 - [x] Add live Heading-F9P NMEA detection to `rtcm-server` and preflight.
-- [x] Add phone-based spoken start-position and heading guidance to the mission
-  dashboard without adding an external notification dependency or motion path.
+- [x] Add phone-based spoken start-position and heading guidance, repeating
+  safety-stop messages, and ntfy delivery of the temporary ZeroTier operator
+  URL without adding a dashboard-generated motion path.
 - [ ] Copy the deployed tractor01 systemd unit files into
   `tractor_rpi/setup/` and verify them against the installed units.
 - [ ] Install and verify the service set on tractor02 when tractor02 work
@@ -344,6 +353,8 @@ ssh al@192.168.193.88 "sudo shutdown now"
 - [ ] Add tractor01 CPU utilization to the field telemetry.
 - [ ] Complete browser teleoperation and OAK-D mounting while keeping DepthAI
   pinned to `2.30.0.0`.
+- [ ] Add phone Wake Lock, a visible voice/client heartbeat, browser speech
+  start/end/error telemetry, and a speech watchdog to the mission dashboard.
 
 ### E — Data collection and analysis
 
@@ -360,6 +371,10 @@ ssh al@192.168.193.88 "sudo shutdown now"
   ESP32 data.
 - [ ] Standardize a single report containing RTK-loss, heading-validity,
   carrier, cross-track RMS/median/p95/max, speed, steering, and recovery events.
+- [ ] Produce the September 23 location-aware coverage/tracking report and use
+  it as the first acceptance baseline for replanned coverage.
+- [ ] Record engine-on time or hour-meter readings and repeatable fuel level;
+  refine the preliminary September 23 fuel estimate with a controlled test.
 - [ ] Add radio breadcrumb inputs, CPU utilization, and wheel odometry to the
   logger.
 - [ ] Decide whether TimescaleDB/Grafana remains useful after the file-based
@@ -376,12 +391,15 @@ ssh al@192.168.193.88 "sudo shutdown now"
   enclosures.
 - [ ] Create and cut the final electronics mounting board.
 - [ ] Fabricate the cutting-deck bracket.
+- [ ] Cut and mount a permanent board for the Cub Cadet EFI ignition module
+  using the captured dimensions/photos; include strain relief and weather
+  protection in the review.
 
 ### G — Maintenance and documentation
 
 - [ ] Service the mower: tune-up kit, spark plug, oil/filter, blades, grease,
   and general inspection.
-- [ ] Write the next dated field-test summary after the master-mission retry.
+- [x] Write the September 23 master/manual mission field-test summary.
 - [ ] Prepare the next project video update.
 - [ ] Keep confirmed code, mission artifacts, analysis, and documentation
   synchronized with GitHub after each test session.
@@ -404,12 +422,21 @@ ssh al@192.168.193.88 "sudo shutdown now"
 - [x] Audited the dual-F9P moving-base configuration and isolated Heading USB
   NMEA cleanup from MSM/UART changes.
 - [x] Added Heading USB NMEA detection to preflight.
-- [x] Restored August 30-style runtime gating for the supervised partial-rings
+- [x] Restored August 30-style runtime gating for the supervised master/manual
   test while retaining strict startup checks and bounded reacquisition.
 - [x] Calibrated current steering center/mechanical limits and measured the
   final manual full-lock radii at approximately 1.14 m left and 1.04 m right.
 - [x] Confirmed `teensy_main_20260914` and JRK neutral target **2836** in
   preflight.
+- [x] Applied and preserved the guarded dual-F9P 5 Hz/MSM4 profile, including
+  pre-change backup and stationary audit reports.
+- [x] Completed all 19,825 waypoints of the reviewed master/manual mission and
+  preserved checksum-verified field and pursuit logs.
+- [x] Added ntfy delivery of the temporary ZeroTier dashboard URL, repeating
+  ten-second safety-stop voice messages, and one-tap transition from start
+  guidance to mission monitoring.
+- [x] Preserved all eleven September 23 tractor logs/configuration artifacts
+  locally with matching SHA-256 hashes.
 
 ## Key references
 
@@ -418,3 +445,4 @@ ssh al@192.168.193.88 "sudo shutdown now"
 - `field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20260915_master_boundary_replay/README.md`
 - `tractor_rpi/pure-pursuit/MISSION_DASHBOARD_20260910.md`
 - `field_testing/sites/62_Collins_multi_boundary_20260915/analysis/HEADING_CARRIER_HISTORY_20260916.md`
+- `obsidian_vault/02-testing/20260923-master-manual-field-session-summary.md`

@@ -1,0 +1,223 @@
+******************************************************************************************************************************************
+Specific prompt created to prepare replay .html file for 9/23/26 data
+******************************************************************************************************************************************
+
+Please create a self-contained interactive HTML replay of yesterday’s completed Tractor01 automatic mission from September 23, 2026.
+Repository:
+C:\Repos\tractor2025
+Source run:
+field_testing/sites/62_Collins_multi_boundary_20260915/runs/20260923_124933_master_manual_5hz
+Source logs:
+- master_manual_field_20260923_124933.csv
+- pursuit_log_20260923_124935.csv
+The planned mission and waypoint audit are:
+- field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20260915_master_boundary_replay/generated_master_manual_field_20260920/62_Collins_master_manual_resampled_1mps_20260920.txt
+- field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20260915_master_boundary_replay/generated_master_manual_field_20260920/62_Collins_master_manual_resampled_1mps_20260920_audit.csv
+Use the existing September 18 replay as the design and behavior reference:
+- field_testing/tools/build_tractor_mission_replays_20260919.py
+- field_testing/tools/tractor-mission-replay-template.html
+- field_testing/sites/62_Collins_multi_boundary_20260915/analysis/20260918_mission_replays
+Create a dedicated, reproducible builder for the September 23 run and generate the replay under:
+field_testing/sites/62_Collins_multi_boundary_20260915/analysis/20260923_mission_replay
+The HTML must:
+- Be completely self-contained and work locally without internet access, a web server, or a Tractor01 connection.
+- Clearly identify itself as a historical replay, not a simulation.
+- Show the complete planned mission and recorded tractor trail.
+- Animate the tractor position, heading, and recorded pursuit target.
+- Include Play, Previous, Next, timeline, playback-rate, full-mission/local-map, Previous event, and Next event controls.
+- Retain safety waits and every important state transition.
+- Clearly mark and make searchable RTK-loss, invalid-heading, handheld-radio-loss, Pause/Manual/Auto, stopped-driving, resumed-driving, and path-reacquisition events.
+- Show waypoint and mission phase, cross-track error, commanded and actual speed, GPS fix, heading validity/carrier, handheld mode, radio quality, transmission status, wait reason, and recovery details.
+- Include a commanded-versus-actual-speed graph.
+- Preserve the original logs without modifying them.
+- Compute and embed SHA-256 hashes for every source file used.
+- Add a short README explaining how to open and rebuild the replay.
+Reuse or safely generalize the existing replay code instead of duplicating unnecessary logic, but do not break the September 18 replays. Account for the fact that this September 23 run folder currently contains the two raw CSV logs rather than the September 18 collection_summary.json archive structure.
+Validate the generated HTML and embedded data, report the number of replay samples and detected events, and open the finished replay for my review. Do not commit or push anything unless I ask.
+
+
+
+
+******************************************************************************************************************************************
+Generic prompt created on 9/24/26
+******************************************************************************************************************************************
+
+Please create a self-contained interactive HTML replay of this completed Tractor01 field mission.
+
+Repository:
+`[REPOSITORY_PATH]`
+
+Source run folder:
+`[RUN_FOLDER_PATH]`
+
+Source logs:
+
+- Field/master telemetry: `[FIELD_LOG_FILENAME.csv]`
+- Pure-pursuit/controller log: `[PURSUIT_LOG_FILENAME.csv]`
+
+Planned mission and waypoint audit:
+
+- Mission: `[MISSION_FILE_PATH.txt]`
+- Audit: `[WAYPOINT_AUDIT_PATH.csv]`
+
+Use the existing Tractor01 replay implementation as the design and behavior reference:
+
+- `field_testing/tools/build_tractor_mission_replays_20260919.py`
+- `field_testing/tools/tractor-mission-replay-template.html`
+- Any newer dedicated Tractor01 replay builder already in the repository
+
+Generate the replay under:
+
+`[OUTPUT_DIRECTORY]`
+
+Use a descriptive output filename containing the run date and run identifier.
+
+Requirements
+
+Create a dedicated, reproducible builder for this run. Reuse or safely generalize the existing replay helpers and shared HTML template instead of duplicating unnecessary logic. Do not break older replay builders or previously generated replays.
+
+The run folder might contain raw CSV logs directly rather than a `collection_summary.json` archive. Inspect the actual files and support the structure that exists.
+
+The generated HTML must:
+
+- Be completely self-contained.
+- Work locally without internet access, a web server, external map tiles, or a Tractor01 connection.
+- Clearly identify itself as a “Historical Replay — Not a Simulation.”
+- Display the complete planned mission.
+- Display the complete recorded tractor trail using all valid recorded positions, even if animation samples are downsampled.
+- Visually distinguish the full trail from the portion traversed at the current replay position.
+- Animate the tractor position, recorded heading, and recorded pure-pursuit target.
+- Include Play/Pause, Previous sample, Next sample, timeline, playback-rate, full-mission/local-map, Previous event, and Next event controls.
+- Include a searchable event list. Previous Event and Next Event should follow the filtered event list when a search is active.
+- Retain all important state transitions exactly, even if ordinary driving data is downsampled for performance.
+- Retain representative samples throughout every safety wait.
+- Make simultaneous transitions separately searchable, even when they refer to the same replay sample.
+- Include a commanded-versus-actual-speed graph with a current-time cursor.
+- Clearly show the mission’s recorded start, completion, and goal-reached state when present.
+
+Detect, label, and make searchable at least these events:
+
+- RTK loss or degradation
+- RTK Fixed restored
+- Invalid heading
+- Heading valid again
+- Handheld radio loss
+- Handheld Pause
+- Handheld Manual
+- Handheld Auto
+- Stopped driving
+- Resumed driving
+- Path reacquisition required or blocked
+- Path reacquired
+- Mission-phase changes
+- Mission goal reached
+- Dashboard/software pause changes, if present
+
+Base event detection on transitions in the source data, not on assumed times. Preserve the original event descriptions and recovery details where useful.
+
+At the current replay position, show:
+
+- Local timestamp and controller elapsed time
+- Replay sample number
+- Driving/waiting state
+- Active waypoint and total waypoint count
+- Mission phase
+- Mission/path progress
+- Cross-track error
+- Commanded speed
+- Actual GPS speed
+- Tractor heading
+- Steering command
+- GPS fix quality and GPS age
+- Heading validity, carrier state, accuracy, and available satellite information
+- Handheld mode and state
+- Radio signal/quality and ACK rate
+- Transmission mode and commanded velocity
+- Transmission bucket
+- JRK target, feedback, validity, motor current, and error status when available
+- Wait reason
+- Path-reacquisition state and detailed recovery message
+- Goal-reached state
+
+Coordinate and data handling
+
+- Read the actual CSV headers and units rows before implementing mappings.
+- Do not assume that mode-number meanings are identical across documentation and logs. Prefer the definitions recorded in the log’s units/description row and verify them against state strings.
+- Match pursuit samples to the nearest field-telemetry row by timestamp.
+- Store the matching age or time difference so synchronization quality can be inspected.
+- Handle missing coordinates and startup rows safely.
+- Clamp waypoint indexes safely to the mission/audit range.
+- Confirm that the mission waypoint count matches the audit row count.
+- Use mission-relative local coordinates consistently for the mission, tractor positions, and pursuit targets.
+- Preserve the final source row even if it falls between normal downsampling intervals.
+- Keep the complete valid recorded trail separately from the downsampled animation samples.
+
+Events and sampling
+
+Use a transition-aware strategy:
+
+- Always retain the first and last valid rows.
+- Always retain rows containing important state transitions.
+- Keep ordinary driving samples at a practical rate for smooth local playback.
+- Keep periodic samples during stopped/waiting periods.
+- Do not create hundreds of false events merely because a detailed wait-reason string changes numeric diagnostics slightly.
+- It is acceptable for multiple categorized events to reference the same replay sample.
+
+Provenance and safety
+
+- Do not modify, normalize, rewrite, or relocate the original logs, mission, or audit.
+- Compute SHA-256 hashes for every source used to build the replay.
+- Embed hashes for the two logs, mission, audit, shared template, shared helper/builder, and the new dedicated builder.
+- Display the hashes in the replay.
+- State that the source files were embedded at build time and were not changed.
+- Do not commit or push anything unless I explicitly ask.
+
+README
+
+Add a short README beside the generated replay explaining:
+
+- That this is a historical replay, not a simulation.
+- How to open the HTML directly in a browser.
+- That no internet, web server, or Tractor01 connection is required.
+- How to rebuild it from the repository root.
+- How event search and filtered Previous/Next Event navigation work.
+- Which files are treated as authoritative sources.
+
+Validation
+
+After generation, independently validate:
+
+- The embedded JSON can be extracted and parsed.
+- The embedded payload round-trips without changes.
+- The JavaScript compiles without syntax errors.
+- All event sample indexes are valid.
+- Mission and audit counts match.
+- The complete-trail point count is plausible relative to valid pursuit rows.
+- The first and final timestamps and waypoints are correct.
+- The goal-reached event exists when the log records completion.
+- Every required event category that occurs in the logs appears in the replay.
+- Every embedded SHA-256 hash matches a fresh independent calculation.
+- All requested controls and display fields exist in the HTML.
+- The updated shared template remains compatible with an older replay payload.
+- Repository whitespace/diff checks pass for files created or changed.
+
+Report:
+
+- Raw pursuit-row count
+- Raw field-telemetry-row count
+- Mission waypoint count
+- Complete recorded-trail point count
+- Replay sample count
+- Total detected-event count
+- Event count by category
+- Replay duration
+- First and final waypoint
+- Whether the goal was reached
+- Number of source hashes verified
+- Generated HTML size
+- Generated HTML SHA-256
+- Exact output paths for the replay, README, and builder
+
+Finally, open the finished replay for my review. If the environment prevents opening local HTML automatically, say so clearly and provide a clickable absolute path.
+
+Do not commit or push anything.

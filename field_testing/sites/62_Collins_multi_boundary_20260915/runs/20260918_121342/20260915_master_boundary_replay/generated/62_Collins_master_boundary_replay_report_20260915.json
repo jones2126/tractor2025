@@ -1,0 +1,267 @@
+{
+  "status": "REVIEW_ONLY_NOT_FIELD_READY",
+  "source_directory": "C:\\Repos\\tractor2025\\field_testing\\sites\\62_Collins_multi_boundary_20260915\\runs\\20260915_133923\\boundary_review",
+  "selected_segments": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17
+  ],
+  "omitted_segment": 1,
+  "master_waypoints": 2643,
+  "master_path_length_m": 776.858,
+  "lookahead_m": 2.0,
+  "speed_mps": 0.5,
+  "phases": [
+    {
+      "segment": 2,
+      "label": "transition to segment 3",
+      "role": "transition",
+      "waypoint_start": 1,
+      "waypoint_end": 90,
+      "points": 90,
+      "path_length_m": 24.978
+    },
+    {
+      "segment": 3,
+      "label": "main backyard 1",
+      "role": "polygon-backyard",
+      "waypoint_start": 91,
+      "waypoint_end": 321,
+      "points": 231,
+      "path_length_m": 71.094
+    },
+    {
+      "segment": 4,
+      "label": "main backyard 2",
+      "role": "polygon-backyard",
+      "waypoint_start": 322,
+      "waypoint_end": 644,
+      "points": 323,
+      "path_length_m": 90.078
+    },
+    {
+      "segment": 5,
+      "label": "transition to segment 6",
+      "role": "transition",
+      "waypoint_start": 645,
+      "waypoint_end": 713,
+      "points": 69,
+      "path_length_m": 19.117
+    },
+    {
+      "segment": 6,
+      "label": "right of garden",
+      "role": "polygon-garden-right",
+      "waypoint_start": 714,
+      "waypoint_end": 903,
+      "points": 190,
+      "path_length_m": 53.618
+    },
+    {
+      "segment": 7,
+      "label": "transition to segment 8",
+      "role": "transition",
+      "waypoint_start": 904,
+      "waypoint_end": 1011,
+      "points": 108,
+      "path_length_m": 30.41
+    },
+    {
+      "segment": 8,
+      "label": "left of garden",
+      "role": "polygon-garden-left",
+      "waypoint_start": 1012,
+      "waypoint_end": 1385,
+      "points": 374,
+      "path_length_m": 104.232
+    },
+    {
+      "segment": 9,
+      "label": "transition to 10",
+      "role": "transition",
+      "waypoint_start": 1386,
+      "waypoint_end": 1561,
+      "points": 176,
+      "path_length_m": 56.234
+    },
+    {
+      "segment": 10,
+      "label": "front yard",
+      "role": "polygon-front-yard",
+      "waypoint_start": 1562,
+      "waypoint_end": 1873,
+      "points": 312,
+      "path_length_m": 88.461
+    },
+    {
+      "segment": 11,
+      "label": "transition to 12",
+      "role": "transition",
+      "waypoint_start": 1874,
+      "waypoint_end": 1941,
+      "points": 68,
+      "path_length_m": 21.09
+    },
+    {
+      "segment": 12,
+      "label": "travel over driveway",
+      "role": "guided transition",
+      "waypoint_start": 1942,
+      "waypoint_end": 1970,
+      "points": 29,
+      "path_length_m": 7.981
+    },
+    {
+      "segment": 13,
+      "label": "first half over the road",
+      "role": "polygon-over-the-road",
+      "waypoint_start": 1971,
+      "waypoint_end": 2388,
+      "points": 418,
+      "path_length_m": 131.072
+    },
+    {
+      "segment": 14,
+      "label": "telephone pole #1",
+      "role": "obstacle",
+      "waypoint_start": 2389,
+      "waypoint_end": 2465,
+      "points": 77,
+      "path_length_m": 20.821
+    },
+    {
+      "segment": 15,
+      "label": "second half over the road",
+      "role": "polygon-over-the-road",
+      "waypoint_start": 2466,
+      "waypoint_end": 2534,
+      "points": 69,
+      "path_length_m": 21.497
+    },
+    {
+      "segment": 16,
+      "label": "travel over driveway",
+      "role": "guided transition",
+      "waypoint_start": 2535,
+      "waypoint_end": 2560,
+      "points": 26,
+      "path_length_m": 6.984
+    },
+    {
+      "segment": 17,
+      "label": "return to base",
+      "role": "transition",
+      "waypoint_start": 2561,
+      "waypoint_end": 2643,
+      "points": 83,
+      "path_length_m": 26.415
+    }
+  ],
+  "inter_segment_gaps": [
+    {
+      "from_segment": 2,
+      "to_segment": 3,
+      "gap_m": 0.0
+    },
+    {
+      "from_segment": 3,
+      "to_segment": 4,
+      "gap_m": 0.023
+    },
+    {
+      "from_segment": 4,
+      "to_segment": 5,
+      "gap_m": 0.037
+    },
+    {
+      "from_segment": 5,
+      "to_segment": 6,
+      "gap_m": 0.193
+    },
+    {
+      "from_segment": 6,
+      "to_segment": 7,
+      "gap_m": 0.136
+    },
+    {
+      "from_segment": 7,
+      "to_segment": 8,
+      "gap_m": 0.131
+    },
+    {
+      "from_segment": 8,
+      "to_segment": 9,
+      "gap_m": 0.014
+    },
+    {
+      "from_segment": 9,
+      "to_segment": 10,
+      "gap_m": 0.014
+    },
+    {
+      "from_segment": 10,
+      "to_segment": 11,
+      "gap_m": 0.805
+    },
+    {
+      "from_segment": 11,
+      "to_segment": 12,
+      "gap_m": 0.046
+    },
+    {
+      "from_segment": 12,
+      "to_segment": 13,
+      "gap_m": 0.186
+    },
+    {
+      "from_segment": 13,
+      "to_segment": 14,
+      "gap_m": 0.023
+    },
+    {
+      "from_segment": 14,
+      "to_segment": 15,
+      "gap_m": 0.101
+    },
+    {
+      "from_segment": 15,
+      "to_segment": 16,
+      "gap_m": 0.657
+    },
+    {
+      "from_segment": 16,
+      "to_segment": 17,
+      "gap_m": 0.409
+    }
+  ],
+  "maximum_inter_segment_gap_m": 0.805,
+  "telephone_pole": {
+    "source_segment": 14,
+    "loop_source_indices_zero_based": [
+      13,
+      63
+    ],
+    "loop_points": 51,
+    "loop_length_m": 13.957,
+    "closure_gap_m": 0.07,
+    "note": "Segment 14 remains in master replay; no straight 13-to-15 shortcut was created."
+  },
+  "limitations": [
+    "This is an exact-drive boundary/transition replay, not a mowing coverage mission.",
+    "No launcher is supplied; recovery controller still requires recorded-data and tractor validation.",
+    "The over-road outer boundary is represented by Segments 13 and 15; Segment 14 is separate obstacle geometry and remains in replay order as the safe driven connection."
+  ]
+}

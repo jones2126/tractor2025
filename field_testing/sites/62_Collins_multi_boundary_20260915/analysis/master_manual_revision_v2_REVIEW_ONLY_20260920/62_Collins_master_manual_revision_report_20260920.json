@@ -1,0 +1,65 @@
+{
+  "status": "REVIEW_ONLY_NOT_APPROVED_FOR_TRACTOR",
+  "source_mission": "runs\\20260918_121342\\20260915_master_boundary_replay\\generated_rings_only\\62_Collins_rings_only_resume_wp0091_20260916.txt",
+  "source_mission_sha256": "8A324391B762A82EB28EBE542F8F5BCD9DA4C4A1897D921C41A2AFCEA1338DEE",
+  "source_field_log": "runs\\20260918_121342\\partial_rings_master_20260918_121342.csv",
+  "source_field_log_sha256": "D1DF7C43681E04BEA0A5F252AB632A75AA3CF93F331C612E0A93EA477C2EA6EF",
+  "original_waypoints": 19250,
+  "revised_waypoints": 21792,
+  "manual_points": 2843,
+  "manual_fix_quality": {
+    "RTK Fixed": 2821,
+    "DGPS": 22
+  },
+  "removed_original_ranges": [
+    [
+      12653,
+      12844
+    ],
+    [
+      13643,
+      13703
+    ],
+    [
+      13908,
+      13940
+    ],
+    [
+      14518,
+      14555
+    ],
+    [
+      15750,
+      15806
+    ],
+    [
+      15868,
+      15902
+    ]
+  ],
+  "connectors": {
+    "W12652_to_M18": 3,
+    "M2860_to_W12845": 86,
+    "W13642_to_W13704": 6,
+    "W13907_to_W13941": 15,
+    "W14517_to_W14556": 2,
+    "W15749_to_W15807": 1,
+    "W15867_to_W15903": 2
+  },
+  "garden_left_cut_direct_distance_m": {
+    "W14517_to_W14556": 0.519,
+    "W15749_to_W15807": 0.383,
+    "W15867_to_W15903": 0.628
+  },
+  "max_consecutive_gap_m": 0.5027413907418327,
+  "speed_policy": "All output rows set to 1.00 m/s for review, including tight curves; NOT field-approved.",
+  "unresolved": [
+    "Return connector terrain/obstacle clearance not field-verified",
+    "New connector curvature and controller tracking not field-validated",
+    "W12652-to-M18 entry changes heading by about 28 degrees in only 0.82 m",
+    "W13704 resumes with a heading about 34 degrees left of the W13642-to-W13704 shortcut bearing",
+    "22 recorded manual points have DGPS, not RTK Fixed",
+    "Three garden-left circle-removal joins still require heading/clearance and controller-tracking review",
+    "Garden-right center stripes not included; turn geometry requires separate review"
+  ]
+}

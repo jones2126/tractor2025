@@ -1,0 +1,14 @@
+﻿{
+    "run_id":  "20260918_121342",
+    "site_name":  "62_Collins_multi_boundary_20260915",
+    "base_station":  "al@192.168.193.88",
+    "collected_utc":  "2026-09-18T17:18:30.2838569Z",
+    "remote_file":  "/home/al/esp32_data/esp32_data_20260918_121342_rtkbase.csv",
+    "local_file":  "esp32_data_20260918_121342_rtkbase.csv",
+    "data_rows":  1021,
+    "sha256":  "6A7C2BB45EB236ADBEC61DEF341E60B3982C46540333044352B3ECB65B6CFD57",
+    "local_file_reused":  false,
+    "reused_existing_base_file":  true,
+    "base_copy_removal_requested":  false,
+    "base_copy_removed":  false
+}

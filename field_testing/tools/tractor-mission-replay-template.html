@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tractor01 mission replay</title>
+<style>
+  :root { font: 15px system-ui, sans-serif; color-scheme: dark; }
+  body { margin: 0; padding: 18px; background: #101820; color: #edf3f7; }
+  main { max-width: 1440px; margin: auto; }
+  h1 { margin: 0 0 5px; font-size: 1.5rem; }
+  .badge { display:inline-block; margin-bottom:7px; padding:4px 8px; border:1px solid #e8ae50; border-radius:999px; color:#ffd166; font-weight:700; letter-spacing:.04em; }
+  p { margin: 5px 0 14px; color: #adbdc8; }
+  .controls { display: flex; flex-wrap: wrap; gap: 9px; align-items: center; margin: 10px 0; }
+  button, select { font: inherit; border: 1px solid #678097; background: #243746; color: #fff; border-radius: 5px; padding: 6px 10px; }
+  button:hover, select:hover { background: #345066; }
+  input[type=range] { flex: 1; min-width: 240px; }
+  .layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(310px, 1fr); gap: 14px; }
+  canvas { display: block; width: 100%; background: #17232d; border: 1px solid #506675; border-radius: 4px; }
+  #map { height: auto; aspect-ratio: 1000 / 680; }
+  #speed { height: auto; aspect-ratio: 1000 / 160; margin-top: 10px; }
+  .facts { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #435766; border: 1px solid #435766; }
+  .fact { min-height: 43px; background: #1b2a34; padding: 7px; overflow-wrap: anywhere; }
+  .fact span { display: block; color: #a5b8c5; font-size: .78rem; }
+  .fact b { font-weight: 600; }
+  .wide { grid-column: 1 / -1; }
+  .legend { display: flex; flex-wrap: wrap; gap: 13px; font-size: .85rem; color: #c5d4de; margin: 9px 0; }
+  .legend i { display: inline-block; width: 13px; height: 3px; margin-right: 5px; vertical-align: middle; }
+  .provenance { font-size: .75rem; overflow-wrap: anywhere; white-space:pre-line; }
+  #eventSearch { min-width:260px; flex:1; font:inherit; border:1px solid #678097; background:#182832; color:#fff; border-radius:5px; padding:6px 10px; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body><main>
+  <div class="badge">HISTORICAL REPLAY · NOT A SIMULATION</div>
+  <h1 id="title"></h1>
+  <p>Historical, read-only replay from the archived mission, pursuit, and field logs. Open this file locally; it needs no internet connection. Step samples include safety waits and radio loss.</p>
+  <div class="controls">
+    <button id="prev" type="button">Previous</button>
+    <button id="play" type="button">Play</button>
+    <button id="next" type="button">Next</button>
+    <label>Playback <select id="rate"><option value="1">1 step</option><option value="5" selected>5 steps</option><option value="20">20 steps</option></select></label>
+    <label>Map <select id="view"><option value="all">Full mission</option><option value="40">40 m around tractor</option><option value="15">15 m around tractor</option></select></label>
+  </div>
+  <div class="controls"><label for="step">Timeline</label><input id="step" type="range" min="0" value="0"><output id="position"></output></div>
+  <div class="controls"><button id="previousEvent" type="button">Previous event</button><button id="nextEvent" type="button">Next event</button><input id="eventSearch" type="search" placeholder="Search events: RTK, heading, radio loss, Manual…" aria-label="Search recorded events"><select id="events" aria-label="Jump to a recorded event"></select></div>
+  <div class="legend"><span><i style="background:#8097aa"></i>planned route</span><span><i style="background:#3bd7ab"></i>recorded tractor trail</span><span><i style="background:#ffd166"></i>tractor and heading</span><span><i style="background:#ef6681"></i>recorded target</span><span><i style="background:#e1e8ee"></i>actual speed</span><span><i style="background:#e8ae50"></i>commanded speed</span></div>
+  <div class="layout">
+    <div><canvas id="map" width="1000" height="680"></canvas><canvas id="speed" width="1000" height="160"></canvas></div>
+    <div class="facts" id="facts"></div>
+  </div>
+  <p class="provenance" id="source"></p>
+</main>
+<script>
+const D=__DATA__;
+const samples=D.samples, mission=D.mission, events=D.events;
+const map=document.getElementById('map'), speed=document.getElementById('speed');
+const m=map.getContext('2d'), v=speed.getContext('2d');
+const step=document.getElementById('step'), pos=document.getElementById('position');
+const view=document.getElementById('view'), rate=document.getElementById('rate'), facts=document.getElementById('facts');
+const eventMenu=document.getElementById('events'), play=document.getElementById('play');
+const eventSearch=document.getElementById('eventSearch');
+const esc=x=>String(x??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=(x,n=2)=>x==null?'—':Number(x).toFixed(n);
+document.getElementById('title').textContent=D.title+' · '+D.run;
+const sourceText=D.source.files?D.source.files.map(x=>`${x.name} [SHA-256 ${x.sha256}]`).join('\n'):`${D.source.pursuit} [${D.source.pursuitSha256}] · ${D.source.field} [${D.source.fieldSha256}] · ${D.source.mission} [${D.source.missionSha256}]`;
+document.getElementById('source').textContent=`Sources embedded at build time; originals were not changed:\n${sourceText}`;
+step.max=samples.length-1;
+let visibleEvents=events;
+function fillEvents(){const query=eventSearch.value.trim().toLowerCase();visibleEvents=events.filter(e=>`${e.category||''} ${e.label}`.toLowerCase().includes(query));eventMenu.replaceChildren(new Option(`Jump to event (${visibleEvents.length} of ${events.length})`,''));for(const e of visibleEvents){const s=samples[e.sample];const time=new Date(s.t*1000).toLocaleTimeString('en-US',{hour12:false,timeZone:'America/New_York'});eventMenu.add(new Option(`${time} · ${e.label}`,String(e.sample)));}}
+fillEvents();
+let timer=null;
+const trail=D.trail||samples.filter(s=>s.x!=null&&s.y!=null).map(s=>[s.x,s.y]);
+const coords=mission.concat(trail);
+const allBounds={minX:Math.min(...coords.map(p=>p[0]))-4,maxX:Math.max(...coords.map(p=>p[0]))+4,minY:Math.min(...coords.map(p=>p[1]))-4,maxY:Math.max(...coords.map(p=>p[1]))+4};
+function viewport(s){const z=view.value;if(z==='all'||s.x==null)return allBounds;const r=Number(z)/2;return {minX:s.x-r,maxX:s.x+r,minY:s.y-r,maxY:s.y+r};}
+function transform(bounds,w,h){const dx=Math.max(.001,bounds.maxX-bounds.minX),dy=Math.max(.001,bounds.maxY-bounds.minY),scale=Math.min((w-52)/dx,(h-52)/dy),cx=(bounds.maxX+bounds.minX)/2,cy=(bounds.maxY+bounds.minY)/2;return {x:a=>w/2+(a-cx)*scale,y:b=>h/2-(b-cy)*scale,scale};}
+function linePath(ctx,points,T,color,width){ctx.beginPath();let begun=false;for(const p of points){if(p[0]==null||p[1]==null){begun=false;continue}const x=T.x(p[0]),y=T.y(p[1]);if(!begun){ctx.moveTo(x,y);begun=true}else ctx.lineTo(x,y)}ctx.strokeStyle=color;ctx.lineWidth=width;ctx.stroke();}
+function circle(ctx,x,y,r,color){ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();}
+function drawMap(i){const s=samples[i],T=transform(viewport(s),map.width,map.height);m.clearRect(0,0,map.width,map.height);m.fillStyle='#17232d';m.fillRect(0,0,map.width,map.height);
+  m.strokeStyle='#29404d';m.lineWidth=1;for(let q=0;q<=10;q++){m.beginPath();m.moveTo(q*100,0);m.lineTo(q*100,680);m.moveTo(0,q*68);m.lineTo(1000,q*68);m.stroke();}
+  linePath(m,mission,T,'#8097aa',1.3);
+  linePath(m,trail,T,'#245f57',1.2);
+  const trailEnd=s.trailIndex==null?i:s.trailIndex;
+  linePath(m,trail.slice(0,trailEnd+1),T,'#3bd7ab',2.2);
+  if(s.x!=null&&s.y!=null){const px=T.x(s.x),py=T.y(s.y);if(s.targetX!=null&&s.targetY!=null){m.beginPath();m.moveTo(px,py);m.lineTo(T.x(s.targetX),T.y(s.targetY));m.strokeStyle='#ef6681';m.lineWidth=1.5;m.stroke();circle(m,T.x(s.targetX),T.y(s.targetY),4,'#ef6681');}
+    circle(m,px,py,6,s.driving?'#ffd166':'#ff9367');if(s.heading!=null){const h=(90-s.heading)*Math.PI/180;m.beginPath();m.moveTo(px,py);m.lineTo(px+23*Math.cos(h),py-23*Math.sin(h));m.strokeStyle='#ffd166';m.lineWidth=3;m.stroke();}}
+  m.fillStyle='#e4edf3';m.font='15px system-ui';m.fillText(view.value==='all'?'Full mission':`${view.value} m local view`,15,25);
+  if(!s.driving){m.fillStyle='#ffb073';m.fillText('WAIT / STOPPED',15,48);}
+}
+function drawSpeed(i){v.clearRect(0,0,speed.width,speed.height);v.fillStyle='#17232d';v.fillRect(0,0,speed.width,speed.height);const start=samples[0].t,end=samples.at(-1).t,px=t=>30+(t-start)/Math.max(1,end-start)*940,py=y=>135-Math.min(1.5,Math.max(0,y))*75;
+  for(const [key,color] of [['speedCmd','#e8ae50'],['speed','#e1e8ee']]){v.beginPath();let started=false;for(const s of samples){const val=s[key];if(val==null){started=false;continue}const x=px(s.t),y=py(val);if(!started){v.moveTo(x,y);started=true}else v.lineTo(x,y)}v.strokeStyle=color;v.lineWidth=1.5;v.stroke();}
+  for(const e of events){if(!e.label.includes('RADIO_LOSS'))continue;v.beginPath();v.moveTo(px(samples[e.sample].t),8);v.lineTo(px(samples[e.sample].t),140);v.strokeStyle='#f56e7e';v.lineWidth=2;v.stroke();}
+  const x=px(samples[i].t);v.beginPath();v.moveTo(x,5);v.lineTo(x,145);v.strokeStyle='#3bd7ab';v.lineWidth=2;v.stroke();v.fillStyle='#c8d8e2';v.font='13px system-ui';v.fillText('Speed (m/s) · orange command · white actual',12,16);v.fillText('0',5,140);v.fillText('1.0',2,py(1.0)+4);
+}
+function fact(label,value,wide=false){return `<div class="fact${wide?' wide':''}"><span>${esc(label)}</span><b>${esc(value)}</b></div>`;}
+function drawFacts(i){const s=samples[i],time=new Date(s.t*1000).toLocaleString('en-US',{timeZone:'America/New_York'});const state=s.driving?'DRIVING':'WAIT / STOPPED';const f=[
+  ['Local time',time],['Sample',`${i+1} / ${samples.length}`],['Controller elapsed',`${fmt(s.elapsed,1)} s`],['State',state],
+  ['Waypoint',`${s.idx} / ${s.waypointsTotal||mission.length}`],['Mission phase',s.phase],['Command / actual speed',`${fmt(s.speedCmd,2)} / ${fmt(s.speed,2)} m/s`],['Path progress',`${fmt(s.pathProgress,1)} m${s.goal?' · GOAL REACHED':''}`],
+  ['Handheld / transmission',`${s.mode} / ${s.transMode}`],['Radio quality',`${s.radioSignal||'—'} · ${fmt(s.ackRate,1)} Hz ACK`],['GPS fix / age',`${s.fix||'—'} / ${fmt(s.gpsAge,2)} s`],['Heading validity / carrier',`${s.headValid?'valid':'INVALID'} / ${s.carrier||'—'}`],
+  ['Transmission status',`bucket ${s.bucket??'—'} · cmd ${fmt(s.transCmd,2)} m/s · JRK ${s.jrkValid?'valid':'INVALID'}`],['JRK target / feedback',`${s.jrkTarget??'—'} / ${s.jrkFeedback??'—'} · current ${s.jrkMotorCurrent??'—'} mA`],
+  ['Heading / steering',`${fmt(s.heading,1)}° / ${fmt(s.steer,2)}`],['Cross-track error',`${fmt(s.cte,3)} m`],['Dashboard Pause',s.pause?'YES':'No'],['Recovery state',s.reacquire||'—'],
+  ['Wait reason',s.wait||'—',true],['Recovery detail',s.reacquireDetail||'—',true]
+];facts.innerHTML=f.map(x=>fact(...x)).join('');}
+function draw(){const i=Number(step.value);pos.value=`${i+1} / ${samples.length}`;drawMap(i);drawSpeed(i);drawFacts(i);}
+function jump(i){step.value=Math.max(0,Math.min(samples.length-1,i));draw();}
+step.addEventListener('input',draw);view.addEventListener('change',draw);eventSearch.addEventListener('input',fillEvents);eventMenu.addEventListener('change',()=>{if(eventMenu.value)jump(Number(eventMenu.value));});
+document.getElementById('prev').onclick=()=>jump(Number(step.value)-1);document.getElementById('next').onclick=()=>jump(Number(step.value)+1);
+document.getElementById('previousEvent').onclick=()=>{const i=Number(step.value),e=[...visibleEvents].reverse().find(x=>x.sample<i);if(e)jump(e.sample);};
+document.getElementById('nextEvent').onclick=()=>{const i=Number(step.value),e=visibleEvents.find(x=>x.sample>i);if(e)jump(e.sample);};
+play.onclick=()=>{if(timer){clearInterval(timer);timer=null;play.textContent='Play';return;}play.textContent='Pause';timer=setInterval(()=>{const next=Math.min(samples.length-1,Number(step.value)+Number(rate.value));jump(next);if(next===samples.length-1){clearInterval(timer);timer=null;play.textContent='Play';}},120);};
+draw();
+</script></body></html>

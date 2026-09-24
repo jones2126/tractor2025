@@ -1,0 +1,28 @@
+{
+  "status": "SUPERVISED_BLADES_OFF_RESUME",
+  "source_start_waypoint": 91,
+  "trimmed_source_waypoints": 90,
+  "waypoints": 19250,
+  "start_lat": 40.485619897,
+  "start_lon": -80.332363813,
+  "start_heading_compass_deg": 172.6637723713971,
+  "field_position_lat": 40.485618833333334,
+  "field_position_lon": -80.33235599999999,
+  "field_position_distance_to_start_m": 0.6718677688097826,
+  "speed_counts": {
+    "0.50": 2945,
+    "1.00": 16305
+  },
+  "mission_sha256": "8a324391b762a82eb28ebe542f8f5bcd9da4c4a1897d921c41a2afcea1338dee",
+  "safety_guards": {
+    "reacquire_max_advance_m": 30.0,
+    "phase_locked_recovery": true,
+    "resume_stable_seconds": 5.0,
+    "required_heading_carrier": "fixed",
+    "baseline_range_m": [
+      0.8,
+      1.3
+    ],
+    "maximum_heading_accuracy_deg": 1.0
+  }
+}

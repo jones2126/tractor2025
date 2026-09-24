@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tractor01 revised master mission — review only</title>
+<style>
+:root{font:15px system-ui,sans-serif;color-scheme:dark}*{box-sizing:border-box}
+body{margin:0;background:#101820;color:#edf3f7;padding:16px}main{max-width:1500px;margin:auto}
+h1{font-size:1.45rem;margin:0 0 6px}.warn{border:1px solid #f0a075;background:#40251e;color:#ffe6d6;padding:9px 12px;border-radius:5px;margin:9px 0}
+p{color:#bfd0da;margin:8px 0 12px}.controls,.legend{display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin:10px 0}
+button,input{font:inherit;border:1px solid #6c879a;background:#233746;color:#fff;border-radius:5px;padding:7px 10px}
+select{font:inherit;border:1px solid #6c879a;background:#233746;color:#fff;border-radius:5px;padding:7px 10px}
+button:hover{background:#35556b}button:focus-visible,input:focus-visible{outline:2px solid #ffd166;outline-offset:2px}
+input[type=text]{width:165px}.legend{gap:17px;color:#bdccd6;font-size:.86rem}.legend i{display:inline-block;width:18px;height:3px;vertical-align:middle;margin-right:5px}
+#step{flex:1 1 340px;min-width:160px;accent-color:#ffd166}#position{min-width:130px;text-align:right;font-variant-numeric:tabular-nums}
+.layout{display:grid;grid-template-columns:minmax(0,2.2fr) minmax(290px,1fr);gap:14px;align-items:start}
+canvas{display:block;width:100%;aspect-ratio:1100/760;background:#17232d;border:1px solid #516a79;border-radius:4px;touch-action:none;cursor:crosshair}
+.facts{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#445968;border:1px solid #445968}
+.fact{background:#1b2b36;padding:8px;min-height:49px;overflow-wrap:anywhere}.fact span{display:block;color:#a7bac6;font-size:.79rem}.fact b{font-weight:600}.wide{grid-column:1/-1}
+#status{min-height:1.4em;color:#ffd166}.foot{font-size:.8rem;overflow-wrap:anywhere}.muted{color:#aabdc9}
+@media(max-width:900px){.layout{grid-template-columns:1fr}}
+</style>
+</head><body><main>
+<h1 id="title">Master mission revision</h1>
+<div class="warn"><strong>REVIEW ONLY — do not copy this draft to tractor01 or select Auto.</strong> New joins, clearance, and 1.0 m/s tracking are not field-approved. Garden-right center stripes are not included.</div>
+<p>Revised route with the original 19,250-point route for comparison. Enter a retained original ID (W12652), recorded ID (M2860), connector ID (R1), or a new mission row number. Click the revised path to inspect it; drag to pan and scroll to zoom. Entirely offline and read-only.</p>
+<div class="controls">
+  <label for="lookup">Point</label><input id="lookup" type="text" placeholder="W12845, M2860, R1, or 15400" aria-label="Source ID or revised waypoint number">
+  <button id="go">Go</button><button id="prev">Previous</button><button id="play">Play</button><button id="next">Next</button>
+  <label for="rate">Step size</label><select id="rate"><option value="1">1 waypoint</option><option value="5" selected>5 waypoints</option></select>
+  <button id="backyard">Backyard splice</button><button id="garden">Garden-right cuts</button>
+  <button id="left1">W14517 cut</button><button id="left2">W15749 cut</button><button id="left3">W15867 cut</button>
+  <button id="full">Full mission</button>
+</div>
+<div class="controls"><label for="step">Mission position</label><input id="step" type="range" min="1" value="1" aria-label="Revised mission waypoint position"><output id="position"></output></div>
+<div class="controls"><button id="zoomIn">Zoom +</button><button id="zoomOut">Zoom −</button><span id="zoomLabel"></span>
+  <label><input id="showOriginal" type="checkbox" checked> Show original route and omitted detours</label>
+</div>
+<div class="legend">
+  <span><i style="background:#6d7e8a"></i>original route</span><span><i style="background:#f5a253"></i>omitted detours</span>
+  <span><i style="background:#d1dce4"></i>retained route</span><span><i style="background:#38c878"></i>recorded manual M18–M2860</span>
+  <span><i style="background:#d18cff"></i>new joins E/R/G/X/L/Q/T</span><span><i style="background:#ffd166"></i>selected point</span>
+</div>
+<div class="layout"><canvas id="map" width="1100" height="760" aria-label="Interactive map of revised master mission"></canvas><div>
+  <div class="facts" id="facts"></div><p id="status" role="status"></p>
+  <p class="muted">W numbers refer to the original mission; M numbers refer to the recorded manual path. A revised mission row has its own new number. Overlapping passes can be hard to distinguish—use the point lookup or zoom in.</p>
+</div></div>
+<p class="foot" id="source"></p>
+</main>
+<script>
+const D=__DATA__;
+const P=D.revised,O=D.original,map=document.getElementById('map'),ctx=map.getContext('2d');
+const lookup=document.getElementById('lookup'),facts=document.getElementById('facts'),status=document.getElementById('status');
+const step=document.getElementById('step'),position=document.getElementById('position');
+const play=document.getElementById('play'),rate=document.getElementById('rate');
+step.max=P.length;
+let timer=null;
+const byId=new Map(P.map((p,i)=>[p[5].toUpperCase(),i]));
+const markerIds=D.markers, markerIndexes=markerIds.map(id=>byId.get(id));
+const colors={W:'#d1dce4',M:'#38c878',E:'#d18cff',R:'#d18cff',G:'#d18cff',X:'#d18cff',L:'#d18cff',Q:'#d18cff',T:'#d18cff'};
+const type=p=>p[5][0];
+const fmt=(x,n=2)=>Number(x).toFixed(n);
+const esc=x=>String(x??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const sourceLabel=p=>p[5].startsWith('W')?'original planned waypoint':p[5].startsWith('M')?'recorded manual point':'new review connector';
+document.getElementById('title').textContent=`Revised master mission · ${P.length.toLocaleString()} draft waypoints`;
+document.getElementById('source').textContent=`Original: ${D.originalCount.toLocaleString()} waypoints · SHA-256 ${D.sourceHash}. Revised draft SHA-256 ${D.draftHash}. Embedded data; this page makes no network requests and changes no files.`;
+let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
+for(const p of P){minX=Math.min(minX,p[0]);maxX=Math.max(maxX,p[0]);minY=Math.min(minY,p[1]);maxY=Math.max(maxY,p[1]);}
+const fullWidth=Math.max(maxX-minX,(maxY-minY)*map.width/map.height)*1.13;
+let centerX=0,centerY=0,widthMeters=40,selected=null;
+const scale=()=>map.width/widthMeters;
+const sx=x=>map.width/2+(x-centerX)*scale();
+const sy=y=>map.height/2-(y-centerY)*scale();
+const world=(x,y)=>({x:centerX+(x-map.width/2)/scale(),y:centerY-(y-map.height/2)/scale()});
+function pointer(e){const r=map.getBoundingClientRect();return {x:(e.clientX-r.left)*map.width/r.width,y:(e.clientY-r.top)*map.height/r.height};}
+function fit(indices,padding=1.32,minWidth=8){const xs=indices.map(i=>P[i][0]),ys=indices.map(i=>P[i][1]);const l=Math.min(...xs),r=Math.max(...xs),b=Math.min(...ys),t=Math.max(...ys);centerX=(l+r)/2;centerY=(b+t)/2;widthMeters=Math.max(minWidth,(r-l)*padding,(t-b)*map.width/map.height*padding);draw();}
+function grid(){const step=widthMeters<=12?1:widthMeters<=40?2:widthMeters<=100?5:20,s=scale();const l=centerX-map.width/2/s,r=centerX+map.width/2/s,b=centerY-map.height/2/s,t=centerY+map.height/2/s;
+ ctx.strokeStyle='#2a3e4b';ctx.lineWidth=1;ctx.fillStyle='#8da5b4';ctx.font='12px system-ui';
+ for(let x=Math.ceil(l/step)*step;x<=r;x+=step){let q=sx(x);ctx.beginPath();ctx.moveTo(q,0);ctx.lineTo(q,map.height);ctx.stroke();if(q>25&&q<map.width-35)ctx.fillText(`${x.toFixed(0)} E`,q+3,map.height-9);}
+ for(let y=Math.ceil(b/step)*step;y<=t;y+=step){let q=sy(y);ctx.beginPath();ctx.moveTo(0,q);ctx.lineTo(map.width,q);ctx.stroke();if(q>22&&q<map.height-20)ctx.fillText(`${y.toFixed(0)} N`,9,q-4);}}
+function path(points,color,width=1.5,dash=[]){if(points.length<2)return;ctx.beginPath();ctx.moveTo(sx(points[0][0]),sy(points[0][1]));for(let i=1;i<points.length;i++)ctx.lineTo(sx(points[i][0]),sy(points[i][1]));ctx.strokeStyle=color;ctx.lineWidth=width;ctx.setLineDash(dash);ctx.stroke();ctx.setLineDash([]);}
+function drawRoute(){if(document.getElementById('showOriginal').checked){path(O,'#6d7e8a',1.15);for(const [first,last] of D.removed)path(O.slice(first-1,last),'#f5a253',2,[7,5]);}
+ // Segment coloring keeps every new join visibly connected to the retained route.
+ let start=0;
+ for(let i=1;i<=P.length;i++)if(i===P.length||type(P[i])!==type(P[start])){
+   const color=colors[type(P[start])]||'#fff';path(P.slice(Math.max(0,start-1),i),color,type(P[start])==='W'?2:3.2);start=i;
+ }
+}
+function mark(x,y,r,color){ctx.beginPath();ctx.arc(x,y,r,0,2*Math.PI);ctx.fillStyle=color;ctx.fill();ctx.strokeStyle='#101820';ctx.lineWidth=2;ctx.stroke();}
+function draw(){ctx.fillStyle='#17232d';ctx.fillRect(0,0,map.width,map.height);grid();drawRoute();
+ for(let k=0;k<markerIds.length;k++){const p=P[markerIndexes[k]],x=sx(p[0]),y=sy(p[1]);if(x<-35||x>map.width+35||y<-35||y>map.height+35)continue;mark(x,y,5,'#ffe0b5');ctx.fillStyle='#ffe6c9';ctx.font='bold 13px system-ui';ctx.fillText(markerIds[k],x+8,y-7);}
+ if(selected!==null){const p=P[selected],x=sx(p[0]),y=sy(p[1]);mark(x,y,8,'#ffd166');ctx.fillStyle='#fff2ba';ctx.font='bold 16px system-ui';ctx.fillText(`${p[5]} · new #${selected+1}`,x+12,y+22);}
+ ctx.fillStyle='#dbe7ee';ctx.font='14px system-ui';ctx.fillText('North ↑    East →',map.width-150,24);
+ document.getElementById('zoomLabel').textContent=`${fmt(widthMeters,0)} m across map`;
+}
+function fact(name,value,wide=false){return `<div class="fact${wide?' wide':''}"><span>${esc(name)}</span><b>${esc(value)}</b></div>`;}
+function updateFacts(){if(selected===null){facts.innerHTML=fact('Select a point','Click the revised route or enter a source ID',true)+fact('Draft waypoints',P.length.toLocaleString())+fact('Original waypoints',D.originalCount.toLocaleString());return;}
+ const p=P[selected];facts.innerHTML=[['Revised row',`${selected+1} of ${P.length}`],['Source ID',p[5]],['Point type',sourceLabel(p),true],['Phase',D.phases[p[4]],true],['Latitude',fmt(p[2],9)],['Longitude',fmt(p[3],9)],['Heading',`${fmt(p[6],1)}°`],['Commanded speed',`${fmt(p[7],2)} m/s`],['Local east / north',`${fmt(p[0],2)} / ${fmt(p[1],2)} m`,true],['Recorded GPS quality',p[8]||'Not a recorded manual point',true]].map(x=>fact(...x)).join('');}
+function choose(i,center=true){if(i<0||i>=P.length)return;selected=i;lookup.value=P[i][5];step.value=i+1;position.value=`${(i+1).toLocaleString()} / ${P.length.toLocaleString()}`;if(center){centerX=P[i][0];centerY=P[i][1];widthMeters=Math.min(widthMeters,20);}status.textContent='';draw();updateFacts();}
+function stopPlayback(){if(timer!==null){clearInterval(timer);timer=null;}play.textContent='Play';}
+function reveal(i){const p=P[i],x=sx(p[0]),y=sy(p[1]);if(x<map.width*.1||x>map.width*.9||y<map.height*.1||y>map.height*.9){centerX=p[0];centerY=p[1];}}
+function advance(amount){const next=Math.max(0,Math.min(P.length-1,(selected??0)+amount));reveal(next);choose(next,false);if(next===P.length-1)stopPlayback();}
+function go(){const v=lookup.value.trim().toUpperCase();let i=byId.get(v);if(i===undefined&&/^\d+$/.test(v)){const n=Number(v);if(n>=1&&n<=P.length)i=n-1;}if(i===undefined){status.textContent='Point not in this revision. Removed original W ranges are listed in the review notes.';return;}stopPlayback();choose(i);}
+function zoom(f,px=map.width/2,py=map.height/2){const before=world(px,py);widthMeters=Math.max(3,Math.min(fullWidth,widthMeters*f));const after=world(px,py);centerX+=before.x-after.x;centerY+=before.y-after.y;draw();}
+document.getElementById('go').onclick=go;lookup.addEventListener('keydown',e=>{if(e.key==='Enter')go();});
+document.getElementById('prev').onclick=()=>{stopPlayback();advance(-Number(rate.value));};
+document.getElementById('next').onclick=()=>{stopPlayback();advance(Number(rate.value));};
+play.onclick=()=>{if(timer!==null){stopPlayback();return;}if(selected===P.length-1||selected===null){reveal(0);choose(0,false);}play.textContent='Pause';timer=setInterval(()=>advance(Number(rate.value)),120);};
+step.addEventListener('input',()=>{stopPlayback();const i=Number(step.value)-1;reveal(i);choose(i,false);});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)stopPlayback();});
+document.getElementById('backyard').onclick=()=>{stopPlayback();const a=byId.get('W12652'),b=byId.get('W12845');fit(Array.from({length:b-a+1},(_,i)=>a+i),1.24);};
+document.getElementById('garden').onclick=()=>{stopPlayback();const a=byId.get('W12860'),b=byId.get('W13941');fit(Array.from({length:b-a+1},(_,i)=>a+i),1.27);};
+for(const [button,first,last] of [['left1','W14517','W14556'],['left2','W15749','W15807'],['left3','W15867','W15903']]){
+  document.getElementById(button).onclick=()=>{stopPlayback();const a=byId.get(first),b=byId.get(last);fit(Array.from({length:b-a+1},(_,i)=>a+i),1.45,3.5);choose(a,false);};
+}
+document.getElementById('full').onclick=()=>{stopPlayback();centerX=(minX+maxX)/2;centerY=(minY+maxY)/2;widthMeters=fullWidth;draw();};
+document.getElementById('zoomIn').onclick=()=>zoom(.7);document.getElementById('zoomOut').onclick=()=>zoom(1/.7);
+document.getElementById('showOriginal').onchange=draw;
+map.addEventListener('wheel',e=>{e.preventDefault();const p=pointer(e);zoom(e.deltaY < 0 ? 0.8 : 1.25,p.x,p.y);},{passive:false});
+let drag=null;
+map.addEventListener('pointerdown',e=>{const p=pointer(e);drag={x:p.x,y:p.y,lastX:p.x,lastY:p.y,moved:false};map.setPointerCapture(e.pointerId);});
+map.addEventListener('pointermove',e=>{if(!drag)return;const p=pointer(e),dx=p.x-drag.lastX,dy=p.y-drag.lastY;if(Math.hypot(p.x-drag.x,p.y-drag.y)>4)drag.moved=true;if(drag.moved){centerX-=dx/scale();centerY+=dy/scale();draw();}drag.lastX=p.x;drag.lastY=p.y;});
+map.addEventListener('pointerup',e=>{if(!drag)return;const p=pointer(e),moved=drag.moved;drag=null;if(moved)return;let best=-1,d2=18*18;for(let i=0;i<P.length;i++){const x=sx(P[i][0]),y=sy(P[i][1]);if(Math.abs(x-p.x)>18||Math.abs(y-p.y)>18)continue;const d=(x-p.x)**2+(y-p.y)**2;if(d<d2){best=i;d2=d;}}if(best>=0){stopPlayback();choose(best,false);}else status.textContent='No revised waypoint near that click; zoom in or use point lookup.';});
+map.addEventListener('pointercancel',()=>{drag=null;});
+document.getElementById('backyard').click();choose(byId.get('W12652'),false);
+</script></body></html>

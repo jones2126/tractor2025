@@ -1,0 +1,25 @@
+{
+  "status": "REVIEW_ONLY_NOT_A_NAVIGATION_MISSION",
+  "approved_stripe_end_time": "2026-09-18T17:01:30.938+00:00",
+  "recorded_connector_end_time": "2026-09-18T17:01:50.018+00:00",
+  "planned_rejoin_waypoint": 12775,
+  "planned_rejoin_phase": "main_backyard_exit_connector",
+  "recorded_points": 61,
+  "constructed_points_including_rejoin": 13,
+  "total_connector_points": 74,
+  "constructed_bridge_endpoint_separation_m": 3.901,
+  "recorded_heading_at_bridge_deg": 35.96,
+  "planned_heading_at_rejoin_deg": 46.68,
+  "heading_difference_deg": 10.72,
+  "maximum_candidate_point_gap_m": 0.48,
+  "minimum_constructed_merge_three_point_radius_m": 2.87,
+  "source_field_log_sha256": "d1df7c43681e04bea0a5f252ab632a75aa3cf93f331c612e0a93ea477c2ea6ef",
+  "source_stripe_trace_sha256": "fa38ff87a971696b802dc2bc5e70add9044756aa03816e94fcf5c9aa406a0616",
+  "source_planned_audit_sha256": "55abcafd353f39146dec99c5391d70b19fd9a3607e14037638ad984bb5194858",
+  "candidate_csv_sha256": "ef5a117e46cba61f8e6f767298dc859f3b9e68e466e0f8a8e55c995a530cd798",
+  "limitations": [
+    "No point in the constructed curved merge was manually driven or field verified.",
+    "The existing master and continuation missions remain unchanged.",
+    "Obstacle clearance and achievable turn radius require separate validation before operation."
+  ]
+}

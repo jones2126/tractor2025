@@ -1,0 +1,466 @@
+{
+  "base": {
+    "layers": {
+      "BBR": {
+        "CFG-MSGOUT-RTCM_3X_TYPE1074_UART1": 1,
+        "CFG-MSGOUT-RTCM_3X_TYPE1077_UART1": 0,
+        "CFG-MSGOUT-RTCM_3X_TYPE1084_UART1": 1,
+        "CFG-MSGOUT-RTCM_3X_TYPE1087_UART1": 0,
+        "CFG-MSGOUT-RTCM_3X_TYPE1094_UART1": 1,
+        "CFG-MSGOUT-RTCM_3X_TYPE1097_UART1": 0,
+        "CFG-MSGOUT-RTCM_3X_TYPE1124_UART1": 1,
+        "CFG-MSGOUT-RTCM_3X_TYPE1127_UART1": 0,
+        "CFG-MSGOUT-RTCM_3X_TYPE1230_UART1": 1,
+        "CFG-MSGOUT-RTCM_3X_TYPE4072_0_UART1": 1,
+        "CFG-MSGOUT-RTCM_3X_TYPE4072_1_UART1": 0,
+        "CFG-RATE-MEAS": 200,
+        "CFG-RATE-NAV": 1,
+        "CFG-UART1-BAUDRATE": 115200,
+        "CFG-UART1-ENABLED": 1,
+        "CFG-UART1INPROT-RTCM3X": 0,
+        "CFG-UART1OUTPROT-RTCM3X": 1,
+        "CFG-USBINPROT-RTCM3X": 1
+      },
+      "FLASH": {
+        "CFG-MSGOUT-NMEA_ID_DTM_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GBS_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GGA_USB": 1,
+        "CFG-MSGOUT-NMEA_ID_GLL_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GNS_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GRS_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GSA_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GST_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GSV_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_RMC_USB": 1,
+        "CFG-MSGOUT-NMEA_ID_VLW_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_VTG_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_ZDA_USB": 0,
+        "CFG-MSGOUT-RTCM_3X_TYPE1074_UART1": 1,
+        "CFG-MSGOUT-RTCM_3X_TYPE1077_UART1": 0,
+        "CFG-MSGOUT-RTCM_3X_TYPE1084_UART1": 1,
+        "CFG-MSGOUT-RTCM_3X_TYPE1087_UART1": 0,
+        "CFG-MSGOUT-RTCM_3X_TYPE1094_UART1": 1,
+        "CFG-MSGOUT-RTCM_3X_TYPE1097_UART1": 0,
+        "CFG-MSGOUT-RTCM_3X_TYPE1124_UART1": 1,
+        "CFG-MSGOUT-RTCM_3X_TYPE1127_UART1": 0,
+        "CFG-MSGOUT-RTCM_3X_TYPE1230_UART1": 1,
+        "CFG-MSGOUT-RTCM_3X_TYPE4072_0_UART1": 1,
+        "CFG-MSGOUT-RTCM_3X_TYPE4072_1_UART1": 0,
+        "CFG-MSGOUT-UBX_NAV_RELPOSNED_USB": 0,
+        "CFG-RATE-MEAS": 200,
+        "CFG-RATE-NAV": 1,
+        "CFG-TMODE-MODE": 0,
+        "CFG-UART1-BAUDRATE": 115200,
+        "CFG-UART1-ENABLED": 1,
+        "CFG-UART1INPROT-RTCM3X": 0,
+        "CFG-UART1OUTPROT-RTCM3X": 1,
+        "CFG-USBINPROT-RTCM3X": 1,
+        "CFG-USBOUTPROT-NMEA": 1,
+        "CFG-USBOUTPROT-UBX": 1
+      },
+      "RAM": {
+        "CFG-MSGOUT-NMEA_ID_DTM_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GBS_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GGA_USB": 1,
+        "CFG-MSGOUT-NMEA_ID_GLL_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GNS_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GRS_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GSA_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GST_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GSV_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_RMC_USB": 1,
+        "CFG-MSGOUT-NMEA_ID_VLW_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_VTG_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_ZDA_USB": 0,
+        "CFG-MSGOUT-RTCM_3X_TYPE1074_UART1": 1,
+        "CFG-MSGOUT-RTCM_3X_TYPE1077_UART1": 0,
+        "CFG-MSGOUT-RTCM_3X_TYPE1084_UART1": 1,
+        "CFG-MSGOUT-RTCM_3X_TYPE1087_UART1": 0,
+        "CFG-MSGOUT-RTCM_3X_TYPE1094_UART1": 1,
+        "CFG-MSGOUT-RTCM_3X_TYPE1097_UART1": 0,
+        "CFG-MSGOUT-RTCM_3X_TYPE1124_UART1": 1,
+        "CFG-MSGOUT-RTCM_3X_TYPE1127_UART1": 0,
+        "CFG-MSGOUT-RTCM_3X_TYPE1230_UART1": 1,
+        "CFG-MSGOUT-RTCM_3X_TYPE4072_0_UART1": 1,
+        "CFG-MSGOUT-RTCM_3X_TYPE4072_1_UART1": 0,
+        "CFG-MSGOUT-UBX_NAV_RELPOSNED_USB": 0,
+        "CFG-RATE-MEAS": 200,
+        "CFG-RATE-NAV": 1,
+        "CFG-TMODE-MODE": 0,
+        "CFG-UART1-BAUDRATE": 115200,
+        "CFG-UART1-ENABLED": 1,
+        "CFG-UART1INPROT-RTCM3X": 0,
+        "CFG-UART1OUTPROT-RTCM3X": 1,
+        "CFG-USBINPROT-RTCM3X": 1,
+        "CFG-USBOUTPROT-NMEA": 1,
+        "CFG-USBOUTPROT-UBX": 1
+      }
+    },
+    "port": "/dev/gps-base-link",
+    "resolved": "/dev/ttyACM1",
+    "version": {
+      "extensions": [
+        "ROM BASE 0x118B2060",
+        "FWVER=HPG 1.32",
+        "PROTVER=27.31",
+        "MOD=ZED-F9P",
+        "GPS;GLO;GAL;BDS",
+        "SBAS;QZSS"
+      ],
+      "hardware": "00190000",
+      "software": "EXT CORE 1.00 (0fa0ae)"
+    }
+  },
+  "checks": [
+    {
+      "actual": 200,
+      "check": "CFG-RATE-MEAS",
+      "expected": 200,
+      "receiver": "base",
+      "status": "PASS"
+    },
+    {
+      "actual": 1,
+      "check": "CFG-RATE-NAV",
+      "expected": 1,
+      "receiver": "base",
+      "status": "PASS"
+    },
+    {
+      "actual": 1,
+      "check": "CFG-UART1-ENABLED",
+      "expected": 1,
+      "receiver": "base",
+      "status": "PASS"
+    },
+    {
+      "actual": 115200,
+      "check": "CFG-UART1-BAUDRATE",
+      "expected": 115200,
+      "receiver": "base",
+      "status": "PASS"
+    },
+    {
+      "actual": 0,
+      "check": "CFG-TMODE-MODE",
+      "expected": 0,
+      "receiver": "base",
+      "status": "PASS"
+    },
+    {
+      "actual": 200,
+      "check": "CFG-RATE-MEAS",
+      "expected": 200,
+      "receiver": "heading",
+      "status": "PASS"
+    },
+    {
+      "actual": 1,
+      "check": "CFG-RATE-NAV",
+      "expected": 1,
+      "receiver": "heading",
+      "status": "PASS"
+    },
+    {
+      "actual": 1,
+      "check": "CFG-UART1-ENABLED",
+      "expected": 1,
+      "receiver": "heading",
+      "status": "PASS"
+    },
+    {
+      "actual": 115200,
+      "check": "CFG-UART1-BAUDRATE",
+      "expected": 115200,
+      "receiver": "heading",
+      "status": "PASS"
+    },
+    {
+      "actual": 0,
+      "check": "CFG-TMODE-MODE",
+      "expected": 0,
+      "receiver": "heading",
+      "status": "PASS"
+    },
+    {
+      "actual": 0,
+      "check": "CFG-UART1INPROT-RTCM3X",
+      "expected": 0,
+      "receiver": "base",
+      "status": "PASS"
+    },
+    {
+      "actual": 1,
+      "check": "CFG-UART1OUTPROT-RTCM3X",
+      "expected": 1,
+      "receiver": "base",
+      "status": "PASS"
+    },
+    {
+      "actual": 1,
+      "check": "CFG-USBINPROT-RTCM3X",
+      "expected": 1,
+      "receiver": "base",
+      "status": "PASS"
+    },
+    {
+      "actual": 1,
+      "check": "CFG-MSGOUT-RTCM_3X_TYPE4072_0_UART1",
+      "expected": 1,
+      "receiver": "base",
+      "status": "PASS"
+    },
+    {
+      "actual": 1,
+      "check": "CFG-UART1INPROT-RTCM3X",
+      "expected": 1,
+      "receiver": "heading",
+      "status": "PASS"
+    },
+    {
+      "actual": 0,
+      "check": "CFG-UART1OUTPROT-RTCM3X",
+      "expected": 0,
+      "receiver": "heading",
+      "status": "PASS"
+    },
+    {
+      "actual": 1,
+      "check": "CFG-USBOUTPROT-UBX",
+      "expected": 1,
+      "receiver": "heading",
+      "status": "PASS"
+    },
+    {
+      "actual": 0,
+      "check": "CFG-USBOUTPROT-NMEA",
+      "expected": 0,
+      "receiver": "heading",
+      "status": "PASS"
+    },
+    {
+      "actual": 1,
+      "check": "CFG-MSGOUT-UBX_NAV_RELPOSNED_USB",
+      "expected": 1,
+      "receiver": "heading",
+      "status": "PASS"
+    },
+    {
+      "actual": {
+        "CFG-MSGOUT-NMEA_ID_DTM_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GBS_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GGA_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GLL_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GNS_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GRS_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GSA_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GST_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GSV_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_RMC_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_VLW_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_VTG_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_ZDA_USB": 0
+      },
+      "check": "all standard NMEA messages disabled on USB",
+      "expected": 0,
+      "receiver": "heading",
+      "status": "PASS"
+    },
+    {
+      "actual": {
+        "MSM4": {
+          "CFG-MSGOUT-RTCM_3X_TYPE1074_UART1": 1,
+          "CFG-MSGOUT-RTCM_3X_TYPE1084_UART1": 1,
+          "CFG-MSGOUT-RTCM_3X_TYPE1094_UART1": 1,
+          "CFG-MSGOUT-RTCM_3X_TYPE1124_UART1": 1
+        },
+        "MSM7": {
+          "CFG-MSGOUT-RTCM_3X_TYPE1077_UART1": 0,
+          "CFG-MSGOUT-RTCM_3X_TYPE1087_UART1": 0,
+          "CFG-MSGOUT-RTCM_3X_TYPE1097_UART1": 0,
+          "CFG-MSGOUT-RTCM_3X_TYPE1127_UART1": 0
+        }
+      },
+      "check": "complete MSM4 or MSM7 constellation set on UART1",
+      "expected": "1074/1084/1094/1124 or 1077/1087/1097/1127",
+      "receiver": "base",
+      "status": "PASS"
+    }
+  ],
+  "heading": {
+    "layers": {
+      "BBR": {
+        "CFG-MSGOUT-NMEA_ID_DTM_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GBS_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GGA_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GLL_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GNS_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GRS_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GSA_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GST_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GSV_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_RMC_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_VLW_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_VTG_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_ZDA_USB": 0,
+        "CFG-MSGOUT-UBX_NAV_RELPOSNED_USB": 1,
+        "CFG-RATE-MEAS": 200,
+        "CFG-RATE-NAV": 1,
+        "CFG-UART1-BAUDRATE": 115200,
+        "CFG-UART1-ENABLED": 1,
+        "CFG-UART1INPROT-RTCM3X": 1,
+        "CFG-UART1OUTPROT-RTCM3X": 0,
+        "CFG-USBOUTPROT-NMEA": 0,
+        "CFG-USBOUTPROT-UBX": 1
+      },
+      "FLASH": {
+        "CFG-MSGOUT-NMEA_ID_DTM_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GBS_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GGA_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GLL_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GNS_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GRS_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GSA_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GST_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GSV_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_RMC_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_VLW_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_VTG_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_ZDA_USB": 0,
+        "CFG-MSGOUT-UBX_NAV_RELPOSNED_USB": 1,
+        "CFG-RATE-MEAS": 200,
+        "CFG-RATE-NAV": 1,
+        "CFG-UART1-BAUDRATE": 115200,
+        "CFG-UART1-ENABLED": 1,
+        "CFG-UART1INPROT-RTCM3X": 1,
+        "CFG-UART1OUTPROT-RTCM3X": 0,
+        "CFG-USBOUTPROT-NMEA": 0,
+        "CFG-USBOUTPROT-UBX": 1
+      },
+      "RAM": {
+        "CFG-MSGOUT-NMEA_ID_DTM_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GBS_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GGA_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GLL_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GNS_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GRS_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GSA_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GST_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_GSV_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_RMC_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_VLW_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_VTG_USB": 0,
+        "CFG-MSGOUT-NMEA_ID_ZDA_USB": 0,
+        "CFG-MSGOUT-RTCM_3X_TYPE1074_UART1": 0,
+        "CFG-MSGOUT-RTCM_3X_TYPE1077_UART1": 0,
+        "CFG-MSGOUT-RTCM_3X_TYPE1084_UART1": 0,
+        "CFG-MSGOUT-RTCM_3X_TYPE1087_UART1": 0,
+        "CFG-MSGOUT-RTCM_3X_TYPE1094_UART1": 0,
+        "CFG-MSGOUT-RTCM_3X_TYPE1097_UART1": 0,
+        "CFG-MSGOUT-RTCM_3X_TYPE1124_UART1": 0,
+        "CFG-MSGOUT-RTCM_3X_TYPE1127_UART1": 0,
+        "CFG-MSGOUT-RTCM_3X_TYPE1230_UART1": 0,
+        "CFG-MSGOUT-RTCM_3X_TYPE4072_0_UART1": 0,
+        "CFG-MSGOUT-RTCM_3X_TYPE4072_1_UART1": 0,
+        "CFG-MSGOUT-UBX_NAV_RELPOSNED_USB": 1,
+        "CFG-RATE-MEAS": 200,
+        "CFG-RATE-NAV": 1,
+        "CFG-TMODE-MODE": 0,
+        "CFG-UART1-BAUDRATE": 115200,
+        "CFG-UART1-ENABLED": 1,
+        "CFG-UART1INPROT-RTCM3X": 1,
+        "CFG-UART1OUTPROT-RTCM3X": 0,
+        "CFG-USBINPROT-RTCM3X": 1,
+        "CFG-USBOUTPROT-NMEA": 0,
+        "CFG-USBOUTPROT-UBX": 1
+      }
+    },
+    "port": "/dev/gps-heading",
+    "resolved": "/dev/ttyACM4",
+    "version": {
+      "extensions": [
+        "ROM BASE 0x118B2060",
+        "FWVER=HPG 1.32",
+        "PROTVER=27.31",
+        "MOD=ZED-F9P",
+        "GPS;GLO;GAL;BDS",
+        "SBAS;QZSS"
+      ],
+      "hardware": "00190000",
+      "software": "EXT CORE 1.00 (0fa0ae)"
+    }
+  },
+  "relposned_observation": {
+    "frame_rate_hz": 4.982,
+    "frames": 598,
+    "invalid_examples": [
+      {
+        "accuracy_m": 0.0,
+        "baseline_m": 0.0,
+        "carrier": "fixed",
+        "diff_solution": true,
+        "fix_ok": true,
+        "head_valid": false,
+        "itow_ms": 316077800,
+        "moving": false,
+        "ref_obs_miss": false,
+        "ref_pos_miss": false,
+        "relpos_valid": false
+      },
+      {
+        "accuracy_m": 0.0,
+        "baseline_m": 0.0,
+        "carrier": "fixed",
+        "diff_solution": true,
+        "fix_ok": true,
+        "head_valid": false,
+        "itow_ms": 316078200,
+        "moving": false,
+        "ref_obs_miss": false,
+        "ref_pos_miss": false,
+        "relpos_valid": false
+      },
+      {
+        "accuracy_m": 0.0,
+        "baseline_m": 0.0,
+        "carrier": "fixed",
+        "diff_solution": true,
+        "fix_ok": true,
+        "head_valid": false,
+        "itow_ms": 316078400,
+        "moving": false,
+        "ref_obs_miss": false,
+        "ref_pos_miss": false,
+        "relpos_valid": false
+      },
+      {
+        "accuracy_m": 0.0,
+        "baseline_m": 0.0,
+        "carrier": "fixed",
+        "diff_solution": true,
+        "fix_ok": true,
+        "head_valid": false,
+        "itow_ms": 316078600,
+        "moving": false,
+        "ref_obs_miss": false,
+        "ref_pos_miss": false,
+        "relpos_valid": false
+      }
+    ],
+    "invalid_frames": 4,
+    "median_interframe_seconds": 0.1991,
+    "median_valid_accuracy_m": 0.01,
+    "median_valid_baseline_m": 1.0857,
+    "nmea_sentences": 0,
+    "nmea_types": {},
+    "observed_seconds": 120.037,
+    "other_ubx_frames": 0,
+    "requested_seconds": 120.0,
+    "valid_fixed_frames": 594,
+    "valid_percent": 99.331
+  },
+  "result": "PASS_WITH_WARNINGS",
+  "warnings": [
+    "Observed 4 invalid RELPOSNED frame(s)."
+  ]
+}

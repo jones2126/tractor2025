@@ -1,0 +1,56 @@
+{
+  "base": {
+    "port": "/dev/gps-base-link",
+    "resolved": "/dev/ttyACM1",
+    "values": {
+      "CFG-MSGOUT-RTCM_3X_TYPE1074_UART1": 0,
+      "CFG-MSGOUT-RTCM_3X_TYPE1077_UART1": 1,
+      "CFG-MSGOUT-RTCM_3X_TYPE1084_UART1": 0,
+      "CFG-MSGOUT-RTCM_3X_TYPE1087_UART1": 1,
+      "CFG-MSGOUT-RTCM_3X_TYPE1094_UART1": 0,
+      "CFG-MSGOUT-RTCM_3X_TYPE1097_UART1": 1,
+      "CFG-MSGOUT-RTCM_3X_TYPE1124_UART1": 0,
+      "CFG-MSGOUT-RTCM_3X_TYPE1127_UART1": 1,
+      "CFG-MSGOUT-RTCM_3X_TYPE1230_UART1": 1,
+      "CFG-MSGOUT-RTCM_3X_TYPE4072_0_UART1": 1,
+      "CFG-MSGOUT-RTCM_3X_TYPE4072_1_UART1": 1,
+      "CFG-RATE-MEAS": 100,
+      "CFG-RATE-NAV": 1,
+      "CFG-UART1-BAUDRATE": 115200,
+      "CFG-UART1-ENABLED": 1,
+      "CFG-UART1INPROT-RTCM3X": 0,
+      "CFG-UART1OUTPROT-RTCM3X": 1,
+      "CFG-USBINPROT-RTCM3X": 1
+    }
+  },
+  "created_utc": "2026-09-23T15:45:11.880607+00:00",
+  "heading": {
+    "port": "/dev/gps-heading",
+    "resolved": "/dev/ttyACM4",
+    "values": {
+      "CFG-MSGOUT-NMEA_ID_DTM_USB": 0,
+      "CFG-MSGOUT-NMEA_ID_GBS_USB": 0,
+      "CFG-MSGOUT-NMEA_ID_GGA_USB": 0,
+      "CFG-MSGOUT-NMEA_ID_GLL_USB": 0,
+      "CFG-MSGOUT-NMEA_ID_GNS_USB": 0,
+      "CFG-MSGOUT-NMEA_ID_GRS_USB": 0,
+      "CFG-MSGOUT-NMEA_ID_GSA_USB": 0,
+      "CFG-MSGOUT-NMEA_ID_GST_USB": 0,
+      "CFG-MSGOUT-NMEA_ID_GSV_USB": 0,
+      "CFG-MSGOUT-NMEA_ID_RMC_USB": 0,
+      "CFG-MSGOUT-NMEA_ID_VLW_USB": 0,
+      "CFG-MSGOUT-NMEA_ID_VTG_USB": 0,
+      "CFG-MSGOUT-NMEA_ID_ZDA_USB": 0,
+      "CFG-MSGOUT-UBX_NAV_RELPOSNED_USB": 1,
+      "CFG-RATE-MEAS": 100,
+      "CFG-RATE-NAV": 1,
+      "CFG-UART1-BAUDRATE": 115200,
+      "CFG-UART1-ENABLED": 1,
+      "CFG-UART1INPROT-RTCM3X": 1,
+      "CFG-UART1OUTPROT-RTCM3X": 0,
+      "CFG-USBOUTPROT-NMEA": 0,
+      "CFG-USBOUTPROT-UBX": 1
+    }
+  },
+  "schema": "tractor01-dual-f9p-targeted-backup-v1"
+}

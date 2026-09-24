@@ -1,0 +1,30 @@
+{
+  "status": "REVIEW_SOURCE_ONLY_NOT_A_NAVIGATION_MISSION",
+  "source_log": "field_testing/sites/62_Collins_multi_boundary_20260915/runs/20260918_121342/partial_rings_master_20260918_121342.csv",
+  "source_log_sha256": "d1df7c43681e04bea0a5f252ab632a75aa3cf93f331c612e0a93ea477c2ea6ef",
+  "recorded_source_csv": "field_testing/sites/62_Collins_multi_boundary_20260915/analysis/manual_center_stripes_20260918_recorded_source.csv",
+  "recorded_source_sha256": "fa38ff87a971696b802dc2bc5e70add9044756aa03816e94fcf5c9aa406a0616",
+  "selection_start_utc": "2026-09-18T16:56:19+00:00",
+  "selection_end_utc": "2026-09-18T17:01:31+00:00",
+  "first_recorded_time": "2026-09-18T16:56:19.024+00:00",
+  "last_recorded_time": "2026-09-18T17:01:30.938+00:00",
+  "recorded_samples": 6240,
+  "consecutive_unique_positions": 2863,
+  "fix_quality_counts": {
+    "DGPS": 44,
+    "RTK Fixed": 6196
+  },
+  "first_position": {
+    "lat": "40.48544233333334",
+    "lon": "-80.332597"
+  },
+  "last_position": {
+    "lat": "40.485485000000004",
+    "lon": "-80.3325385"
+  },
+  "limitations": [
+    "Raw 20 Hz logger positions include repeated GPS fixes; they are not mission waypoints.",
+    "No connector to the existing master mission has been approved.",
+    "Some selected positions had DGPS rather than RTK Fixed quality."
+  ]
+}

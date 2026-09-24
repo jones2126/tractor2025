@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tractor01 master mission · target waypoints</title>
+<style>
+  :root { font: 15px system-ui,sans-serif; color-scheme: dark; }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; padding: 17px; background: #101820; color: #edf3f7; }
+  main { max-width: 1450px; margin: auto; }
+  h1 { margin: 0 0 5px; font-size: 1.5rem; }
+  p { margin: 5px 0 13px; color: #afc0cb; }
+  a { color: #8bc7ff; }
+  .controls { display: flex; flex-wrap: wrap; gap: 9px; align-items: center; margin: 10px 0; }
+  button, select, input[type=number] { font: inherit; border: 1px solid #678097; background: #243746; color: #fff; border-radius: 5px; padding: 6px 10px; }
+  button:hover, select:hover { background: #345066; }
+  button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid #ffd166; outline-offset: 2px; }
+  input[type=number] { width: 125px; }
+  #phase { max-width: min(100%, 350px); }
+  .layout { display: grid; grid-template-columns: minmax(0,2.1fr) minmax(290px,1fr); gap: 14px; align-items: start; }
+  canvas { display: block; width: 100%; aspect-ratio: 1100 / 760; background: #17232d; border: 1px solid #506675; border-radius: 4px; touch-action: none; cursor: crosshair; }
+  .facts { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #435766; border: 1px solid #435766; }
+  .fact { min-height: 47px; background: #1b2a34; padding: 8px; overflow-wrap: anywhere; }
+  .fact span { display: block; color: #a5b8c5; font-size: .78rem; }
+  .fact b { font-weight: 600; }
+  .wide { grid-column: 1 / -1; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: .85rem; color: #c5d4de; margin: 10px 0; }
+  .legend i { display: inline-block; width: 13px; height: 3px; margin-right: 5px; vertical-align: middle; }
+  .legend .dot { width: 9px; height: 9px; border-radius: 50%; }
+  .provenance { font-size: .76rem; overflow-wrap: anywhere; }
+  #status { min-height: 1.2em; color: #ffd166; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body><main>
+  <h1 id="title">Source template — mission data is not embedded here</h1>
+  <p id="templateNotice">Open the <a href="../sites/62_Collins_multi_boundary_20260915/analysis/master_target_mission_20260918.html">generated master mission viewer</a> instead. This template is only used to build it.</p>
+  <p>Planned target mission only. Click a route point or enter its waypoint number; drag to pan and use the mouse wheel or buttons to zoom. Offline and read-only.</p>
+  <div class="controls">
+    <label for="waypoint">Waypoint</label>
+    <input id="waypoint" type="number" min="1" step="1" aria-label="Master mission waypoint number">
+    <button id="go" type="button">Go</button>
+    <button id="previous" type="button">Previous</button>
+    <button id="next" type="button">Next</button>
+    <button id="endpointView" type="button">Approved stripe endpoint</button>
+    <button id="fullView" type="button">Full mission</button>
+  </div>
+  <div class="controls">
+    <button id="zoomIn" type="button" aria-label="Zoom in">Zoom +</button>
+    <button id="zoomOut" type="button" aria-label="Zoom out">Zoom −</button>
+    <span id="zoomLabel"></span>
+    <label for="phase">Highlight phase</label>
+    <select id="phase"><option value="all">All phases</option></select>
+  </div>
+  <div class="controls" id="manualControls" hidden>
+    <label for="manualPoint">Manual point</label>
+    <input id="manualPoint" type="number" min="1" step="1" aria-label="Recorded manual point number">
+    <button id="manualGo" type="button">Go to manual point</button>
+    <button id="manualPrevious" type="button">Previous manual</button>
+    <button id="manualNext" type="button">Next manual</button>
+    <button id="fitManualTarget" type="button">Fit approved trace + W12845</button>
+    <label for="pickMode">Click selects</label>
+    <select id="pickMode"><option value="manual">Manual path</option><option value="mission">Mission waypoint</option></select>
+  </div>
+  <div class="legend">
+    <span><i style="background:#829aab"></i>planned mission</span>
+    <span><i style="background:#48d5ad"></i>highlighted phase</span>
+    <span><i class="dot" style="background:#ef6681"></i>approved stripe endpoint</span>
+    <span><i class="dot" style="background:#ffd166"></i>selected waypoint</span>
+    <span id="manualLegend" hidden><i style="background:#54a9e3"></i>approved manual trace · pale before · orange after</span>
+    <span id="targetLegend" hidden><i class="dot" style="background:#dd8cff"></i>W12845 target</span>
+  </div>
+  <div class="layout">
+    <canvas id="map" width="1100" height="760" aria-label="Interactive planned mission route map"></canvas>
+    <div>
+      <div class="facts" id="facts"></div>
+      <p id="status" role="status"></p>
+      <p>Distance and heading are inspection aids, not an approved connector. Overlapping passes may have several different waypoint numbers at nearly the same location.</p>
+    </div>
+  </div>
+  <p class="provenance" id="source"></p>
+</main>
+<script>
+const D=__DATA__;
+const P=D.points, phases=D.phases, end=D.endpoint, manual=D.manual||[];
+const hasManual=manual.length>0, joinIndex=hasManual?D.joinWaypoint-1:null;
+const map=document.getElementById('map'),ctx=map.getContext('2d');
+const waypointInput=document.getElementById('waypoint'),phaseMenu=document.getElementById('phase');
+const manualInput=document.getElementById('manualPoint'),pickMode=document.getElementById('pickMode');
+const facts=document.getElementById('facts'),status=document.getElementById('status');
+const esc=x=>String(x??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=(x,n=2)=>Number(x).toFixed(n);
+const angleDiff=(a,b)=>Math.abs((a-b+540)%360-180);
+document.getElementById('templateNotice').remove();
+document.getElementById('title').textContent=D.title+' · '+P.length.toLocaleString()+' waypoints';
+document.getElementById('source').textContent=`Archived run ${D.run}. Mission: ${D.source.mission} [SHA-256 ${D.source.missionSha256}]. Audit: ${D.source.audit} [${D.source.auditSha256}]. Endpoint: ${D.source.stripeEndpoint} [${D.source.stripeSourceSha256}]. ${hasManual?`Manual log: ${D.source.manualLog} [${D.source.manualLogSha256}]. `:''}Embedded locally; source files and tractor are unchanged.`;
+waypointInput.max=P.length;
+if(hasManual){
+  document.getElementById('manualControls').hidden=false;
+  document.getElementById('manualLegend').hidden=false;
+  document.getElementById('targetLegend').hidden=false;
+  manualInput.max=manual.length;
+}
+for(let i=0;i<phases.length;i++)phaseMenu.add(new Option(phases[i],String(i)));
+let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
+for(const p of P){minX=Math.min(minX,p[0]);maxX=Math.max(maxX,p[0]);minY=Math.min(minY,p[1]);maxY=Math.max(maxY,p[1]);}
+const fullWidth=Math.max(maxX-minX,(maxY-minY)*map.width/map.height)*1.14;
+let centerX=end.x,centerY=end.y,widthMeters=20,selected=null,selectedManual=null;
+const scale=()=>map.width/widthMeters;
+const sx=x=>map.width/2+(x-centerX)*scale();
+const sy=y=>map.height/2-(y-centerY)*scale();
+const toWorld=(px,py)=>({x:centerX+(px-map.width/2)/scale(),y:centerY-(py-map.height/2)/scale()});
+function canvasPoint(event){const rect=map.getBoundingClientRect();return {x:(event.clientX-rect.left)*map.width/rect.width,y:(event.clientY-rect.top)*map.height/rect.height};}
+function grid(){
+  const s=scale(),step=widthMeters<=12?1:widthMeters<=35?2:widthMeters<=80?5:20;
+  const left=centerX-map.width/(2*s),right=centerX+map.width/(2*s);
+  const bottom=centerY-map.height/(2*s),top=centerY+map.height/(2*s);
+  ctx.strokeStyle='#2a3e4b';ctx.lineWidth=1;ctx.fillStyle='#8da5b4';ctx.font='12px system-ui';
+  for(let x=Math.ceil(left/step)*step;x<=right;x+=step){const q=sx(x);ctx.beginPath();ctx.moveTo(q,0);ctx.lineTo(q,map.height);ctx.stroke();if(q>24&&q<map.width-30)ctx.fillText(`${x.toFixed(0)} E`,q+3,map.height-9);}
+  for(let y=Math.ceil(bottom/step)*step;y<=top;y+=step){const q=sy(y);ctx.beginPath();ctx.moveTo(0,q);ctx.lineTo(map.width,q);ctx.stroke();if(q>20&&q<map.height-20)ctx.fillText(`${y.toFixed(0)} N`,9,q-4);}
+}
+function route(){
+  ctx.beginPath();let started=false;
+  for(const p of P){const x=sx(p[0]),y=sy(p[1]);if(!started){ctx.moveTo(x,y);started=true;}else ctx.lineTo(x,y);}
+  ctx.strokeStyle='#829aab';ctx.lineWidth=1.5;ctx.stroke();
+  if(phaseMenu.value!=='all'){
+    const active=Number(phaseMenu.value);ctx.beginPath();started=false;
+    for(const p of P){if(p[4]!==active){started=false;continue;}const x=sx(p[0]),y=sy(p[1]);if(!started){ctx.moveTo(x,y);started=true;}else ctx.lineTo(x,y);}
+    ctx.strokeStyle='#48d5ad';ctx.lineWidth=3;ctx.stroke();
+  }
+}
+function mark(x,y,r,color,stroke='#101820'){ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();ctx.strokeStyle=stroke;ctx.lineWidth=2;ctx.stroke();}
+function drawManual(){
+  if(!hasManual)return;
+  const colors=['#7798bd','#54a9e3','#eaa04f'];
+  for(let group=0;group<3;group++){
+    ctx.beginPath();let previous=null;
+    for(const p of manual){
+      if(p[8]!==group){previous=null;continue;}
+      const x=sx(p[0]),y=sy(p[1]);
+      if(previous===null||Date.parse(p[4])-Date.parse(previous[4])>2000)ctx.moveTo(x,y);
+      else ctx.lineTo(x,y);
+      previous=p;
+    }
+    ctx.strokeStyle=colors[group];ctx.lineWidth=group===1?3:2.3;ctx.stroke();
+  }
+  for(const p of manual){if(p[5]==='RTK Fixed')continue;mark(sx(p[0]),sy(p[1]),2.2,'#ff9c8f','#ff9c8f');}
+}
+function draw(){
+  ctx.fillStyle='#17232d';ctx.fillRect(0,0,map.width,map.height);grid();route();drawManual();
+  const ex=sx(end.x),ey=sy(end.y);mark(ex,ey,8,'#ef6681');
+  if(ex>=0&&ex<map.width&&ey>=0&&ey<map.height){ctx.fillStyle='#ffd0da';ctx.font='bold 15px system-ui';ctx.fillText('Approved stripe end',ex+12,ey-11);}
+  if(hasManual){const target=P[joinIndex],tx=sx(target[0]),ty=sy(target[1]);ctx.fillStyle='#dd8cff';ctx.fillRect(tx-7,ty-7,14,14);ctx.strokeStyle='#101820';ctx.lineWidth=2;ctx.strokeRect(tx-7,ty-7,14,14);if(tx>=0&&tx<map.width&&ty>=0&&ty<map.height){ctx.fillStyle='#efceff';ctx.font='bold 15px system-ui';ctx.fillText(`W${D.joinWaypoint}`,tx+12,ty-10);}}
+  if(selected!==null){const p=P[selected],x=sx(p[0]),y=sy(p[1]);mark(x,y,8,'#ffd166');
+    const h=p[6]*Math.PI/180;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+28*Math.sin(h),y-28*Math.cos(h));ctx.strokeStyle='#ffd166';ctx.lineWidth=3;ctx.stroke();
+    ctx.fillStyle='#fff1bc';ctx.font='bold 16px system-ui';ctx.fillText(`W${selected+1}`,x+12,y+23);
+  }
+  if(selectedManual!==null){const p=manual[selectedManual],x=sx(p[0]),y=sy(p[1]);mark(x,y,9,'#ffffff','#2b8bca');const h=p[6]*Math.PI/180;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+26*Math.sin(h),y-26*Math.cos(h));ctx.strokeStyle='#ffffff';ctx.lineWidth=3;ctx.stroke();ctx.fillStyle='#ffffff';ctx.font='bold 16px system-ui';ctx.fillText(`M${selectedManual+1}`,x+12,y+23);}
+  ctx.fillStyle='#dbe7ee';ctx.font='14px system-ui';ctx.fillText('North ↑    East →',map.width-150,24);
+  document.getElementById('zoomLabel').textContent=`${fmt(widthMeters,0)} m across map`;
+}
+function fact(name,value,wide=false){return `<div class="fact${wide?' wide':''}"><span>${esc(name)}</span><b>${esc(value)}</b></div>`;}
+function drawFacts(){
+  if(selectedManual!==null){
+    const p=manual[selectedManual],target=P[joinIndex],ringId=phases.indexOf('main_backyard_ring_19');
+    let ringWaypoint=null,ringDistance=Infinity;
+    for(let i=0;i<P.length;i++){if(P[i][4]!==ringId)continue;const distance=Math.hypot(P[i][0]-p[0],P[i][1]-p[1]);if(distance<ringDistance){ringDistance=distance;ringWaypoint=i+1;}}
+    const localTime=new Date(p[4]).toLocaleString('en-US',{timeZone:'America/New_York'});
+    const group=['Before approved stripe window','Approved stripe trace','After approved stripe window'][p[8]];
+    facts.innerHTML=[
+      ['Manual point',`M${selectedManual+1} of ${manual.length}`],['Field-log row',p[7]],
+      ['Local time',localTime,true],['Manual section',group,true],
+      ['Latitude',fmt(p[2],9)],['Longitude',fmt(p[3],9)],
+      ['GPS quality',p[5]],['Heading',`${fmt(p[6],1)}°`],
+      ['Distance to W12845',`${fmt(Math.hypot(p[0]-target[0],p[1]-target[1]),2)} m`,true],
+      ['Nearest ring-19 waypoint',`W${ringWaypoint} · ${fmt(ringDistance,2)} m`,true]
+    ].map(x=>fact(...x)).join('');
+    return;
+  }
+  if(selected===null){facts.innerHTML=fact('Selected waypoint','Click the planned route or enter a number',true)+fact('Approved stripe endpoint',`${fmt(end.lat,9)}, ${fmt(end.lon,9)}`,true)+fact('Endpoint heading',`${fmt(end.heading,1)}°`)+fact('Mission waypoints',P.length.toLocaleString());return;}
+  const p=P[selected],dist=Math.hypot(p[0]-end.x,p[1]-end.y);
+  facts.innerHTML=[
+    ['Mission waypoint',`W${selected+1} of ${P.length}`],['Original source waypoint',`W${p[5]}`],
+    ['Phase',phases[p[4]],true],['Target latitude',fmt(p[2],9)],['Target longitude',fmt(p[3],9)],
+    ['Straight-line distance from stripe end',`${fmt(dist,2)} m`,true],
+    ['Target heading',`${fmt(p[6],1)}°`],['Heading difference from stripe end',`${fmt(angleDiff(p[6],end.heading),1)}°`],
+    ['Commanded speed',`${fmt(p[7],2)} m/s`],['Local east / north',`${fmt(p[0],2)} / ${fmt(p[1],2)} m`]
+  ].map(x=>fact(...x)).join('');
+}
+function choose(index,center=false){
+  if(index<0||index>=P.length)return;
+  selected=index;selectedManual=null;waypointInput.value=index+1;manualInput.value='';phaseMenu.value=String(P[index][4]);
+  if(center){centerX=P[index][0];centerY=P[index][1];widthMeters=Math.min(widthMeters,20);}
+  status.textContent='';draw();drawFacts();
+}
+function chooseManual(index,center=false){
+  if(!hasManual||index<0||index>=manual.length)return;
+  selectedManual=index;selected=null;manualInput.value=index+1;waypointInput.value='';pickMode.value='manual';
+  if(center){centerX=manual[index][0];centerY=manual[index][1];widthMeters=Math.min(widthMeters,20);}
+  status.textContent='';draw();drawFacts();
+}
+function closest(px,py){
+  let best=-1,bestD=18*18;
+  for(let i=0;i<P.length;i++){const x=sx(P[i][0]),y=sy(P[i][1]);if(Math.abs(x-px)>18||Math.abs(y-py)>18)continue;const d=(x-px)**2+(y-py)**2;if(d<bestD){best=i;bestD=d;}}
+  return best;
+}
+function closestManual(px,py){
+  let best=-1,bestD=18*18;
+  for(let i=0;i<manual.length;i++){const x=sx(manual[i][0]),y=sy(manual[i][1]);if(Math.abs(x-px)>18||Math.abs(y-py)>18)continue;const d=(x-px)**2+(y-py)**2;if(d<bestD){best=i;bestD=d;}}
+  return best;
+}
+function zoom(factor,px=map.width/2,py=map.height/2){
+  const before=toWorld(px,py),next=Math.max(4,Math.min(fullWidth,widthMeters*factor));
+  widthMeters=next;const after=toWorld(px,py);centerX+=before.x-after.x;centerY+=before.y-after.y;draw();
+}
+document.getElementById('go').onclick=()=>{const n=Number(waypointInput.value);if(!Number.isInteger(n)||n<1||n>P.length){status.textContent=`Enter a waypoint from 1 to ${P.length}.`;return;}choose(n-1,true);};
+waypointInput.addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('go').click();});
+document.getElementById('previous').onclick=()=>{if(selected!==null)choose(selected-1,true);};
+document.getElementById('next').onclick=()=>{if(selected!==null)choose(selected+1,true);};
+document.getElementById('endpointView').onclick=()=>{centerX=end.x;centerY=end.y;widthMeters=20;selected=null;selectedManual=null;waypointInput.value='';phaseMenu.value=hasManual?String(phases.indexOf('main_backyard_ring_19')):'all';status.textContent='';if(hasManual){const i=manual.findIndex(p=>p[4]===end.time);if(i>=0){chooseManual(i);return;}}draw();drawFacts();};
+document.getElementById('fullView').onclick=()=>{centerX=(minX+maxX)/2;centerY=(minY+maxY)/2;widthMeters=fullWidth;phaseMenu.value='all';draw();};
+function fitApproved(){
+  if(!hasManual)return;
+  const relevant=manual.filter(p=>p[8]===1),target=P[joinIndex];
+  const xs=relevant.map(p=>p[0]).concat([target[0]]),ys=relevant.map(p=>p[1]).concat([target[1]]);
+  const lx=Math.min(...xs),rx=Math.max(...xs),by=Math.min(...ys),ty=Math.max(...ys);
+  centerX=(lx+rx)/2;centerY=(by+ty)/2;
+  widthMeters=Math.max(12,(rx-lx)*1.25,(ty-by)*map.width/map.height*1.25);
+  draw();
+}
+document.getElementById('fitManualTarget').onclick=fitApproved;
+document.getElementById('manualGo').onclick=()=>{const n=Number(manualInput.value);if(!Number.isInteger(n)||n<1||n>manual.length){status.textContent=`Enter a manual point from 1 to ${manual.length}.`;return;}chooseManual(n-1,true);};
+manualInput.addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('manualGo').click();});
+document.getElementById('manualPrevious').onclick=()=>{if(selectedManual!==null)chooseManual(selectedManual-1,true);};
+document.getElementById('manualNext').onclick=()=>{if(selectedManual!==null)chooseManual(selectedManual+1,true);};
+document.getElementById('zoomIn').onclick=()=>zoom(0.7);
+document.getElementById('zoomOut').onclick=()=>zoom(1/0.7);
+phaseMenu.addEventListener('change',draw);
+map.addEventListener('wheel',e=>{e.preventDefault();const p=canvasPoint(e);zoom(e.deltaY<0?0.8:1.25,p.x,p.y);},{passive:false});
+let drag=null;
+map.addEventListener('pointerdown',e=>{const p=canvasPoint(e);drag={x:p.x,y:p.y,lastX:p.x,lastY:p.y,moved:false};map.setPointerCapture(e.pointerId);});
+map.addEventListener('pointermove',e=>{if(!drag)return;const p=canvasPoint(e),dx=p.x-drag.lastX,dy=p.y-drag.lastY;if(Math.hypot(p.x-drag.x,p.y-drag.y)>4)drag.moved=true;if(drag.moved){centerX-=dx/scale();centerY+=dy/scale();draw();}drag.lastX=p.x;drag.lastY=p.y;});
+map.addEventListener('pointerup',e=>{if(!drag)return;const p=canvasPoint(e),wasMoved=drag.moved;drag=null;if(!wasMoved){const useManual=hasManual&&pickMode.value==='manual';const index=useManual?closestManual(p.x,p.y):closest(p.x,p.y);if(index>=0){if(useManual)chooseManual(index);else choose(index);}else status.textContent=useManual?'No manual point near that click. Zoom in or click on the colored trace.':'No waypoint close to that click. Zoom in or click directly on the planned route.';}});
+map.addEventListener('pointercancel',()=>{drag=null;});
+if(hasManual){
+  phaseMenu.value=String(phases.indexOf('main_backyard_ring_19'));
+  fitApproved();
+  const approvedEndIndex=manual.findIndex(p=>p[4]===end.time);
+  if(approvedEndIndex>=0)chooseManual(approvedEndIndex);else{draw();drawFacts();}
+}else{draw();drawFacts();}
+</script></body></html>
