@@ -303,8 +303,15 @@ ssh al@192.168.193.88 "sudo shutdown now"
   approved profile and offers guarded repair only when readback differs.
 - [ ] Make `rtcm-server` retry late/missing GPS device opens or add appropriate
   systemd device ordering so a boot race cannot latch a fatal state forever.
-- [ ] Add a rate-limited RTK-base network recovery job that detects restored
-  internet access and restores ZeroTier connectivity with persistent logs.
+- [ ] Add a rate-limited RTK-base network/ZeroTier recovery watchdog for the
+  recurring Starlink power-cycle failure. It must first prove that ordinary
+  internet access has returned, then verify `zerotier-one` service state, the
+  assigned ZeroTier address, and reachability of an always-on ZeroTier peer.
+  If internet is healthy but ZeroTier remains unhealthy for repeated checks,
+  restart `zerotier-one` with a cooldown/backoff; keep persistent logs and
+  notify on recovery or exhausted retries. Acceptance test: power Starlink
+  off, restore it without rebooting the RTK base, and confirm
+  `192.168.193.88:6001` becomes reachable again automatically.
 - [ ] Add direct 12 V monitoring at the RTK-base ESP32.
 - [ ] Update the base boot notification to include all IP addresses and
   ZeroTier reachability.
