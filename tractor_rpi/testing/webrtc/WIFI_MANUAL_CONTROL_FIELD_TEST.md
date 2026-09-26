@@ -1,25 +1,31 @@
 # NRF-supervised Wi-Fi manual-control field experiment
 
-This experiment tests phone speed/steering control through tractor01 without
-changing the known-good Teensy firmware or Teensy bridge. It is deliberately
+This experiment tests phone drive/steering control through tractor01 using a
+dedicated extension to the Teensy firmware and Teensy bridge. It is deliberately
 not an NRF24 replacement yet.
 
 ## Control path and limitations
 
 ```text
 phone browser -> keyed field server on tractor01 -> localhost UDP 6004
-              -> existing Teensy bridge -> CMD serial message -> Teensy
+              -> Teensy bridge -> WIFI serial message -> Teensy
 ```
 
 - The physical handheld remains the authoritative mode selector.
-- Put the handheld in **Auto** to allow phone `cmd_vel` control.
+- Put the handheld in **Auto** to authorize phone control.
 - Put the handheld in **Pause** for the authoritative normal stop.
 - NRF loss continues to force the existing Teensy radio-loss safety state.
-- The experiment is **forward only**, bounded to `0.00–0.30 m/s`.
+- Phone drive demand is continuously bounded to `-100%..+100%` and mapped
+  inside the Teensy to the proven handheld envelope: full reverse `3138`,
+  exact neutral `2836`, and full forward `2288`.
+- The dedicated `WIFI` serial message leaves ordinary autonomous `CMD`
+  messages and their positive-forward m/s calibration unchanged.
 - Steering is bounded to `-100%..+100%` and converted to the Teensy's existing
   normalized Auto steering convention.
 - Phone commands are sent at 5 Hz with a single in-flight HTTP request,
   monotonically increasing sequence numbers, and full-state messages.
+- The phone displays the rolling average of successful command round trips
+  received during the most recent five seconds.
 - The server accepts one phone owner, starts in Pause, rejects stale sequences,
   and requires a new guarded Manual selection after reconnection.
 - The Teensy's existing 500 ms `cmd_vel` timeout remains the final command-loss
@@ -64,7 +70,7 @@ python3 tractor_rpi/testing/webrtc/wifi_manual_control_field_server.py --dry-run
 
    ```bash
    cd /home/al/tractor2025
-   sudo python3 tractor_rpi/testing/mission_preflight_20260804.py --expected-firmware teensy_main_20260914
+   sudo python3 tractor_rpi/testing/mission_preflight_20260804.py --expected-firmware teensy_main_20260926
    ```
 
 5. Start the existing field logger in a separate terminal if it is not already
@@ -100,11 +106,11 @@ python3 tractor_rpi/testing/webrtc/wifi_manual_control_field_server.py --dry-run
    - Phone mode `PAUSE`
    - Live phone link
    - Expected RTK and heading indicators
-2. Set phone speed to `0.00 m/s` and steering to `0%`.
+2. Set phone drive to `0%` and steering to `0%`.
 3. Select **handheld Auto**.
 4. On the phone, hold **MODE SELECT + Manual**. This arms phone commands; it
    does not change the physical handheld mode.
-5. Begin with straight steering and `0.14 m/s` or less.
+5. Begin with straight steering and a small positive drive demand.
 6. Exercise small steering changes before larger ones.
 7. To stop from the phone, hold **MODE SELECT + STOP** or select guarded phone
    Pause. Then select **handheld Pause**.
@@ -117,7 +123,7 @@ Perform the first loss test with the tractor stationary or unable to propel
 itself.
 
 1. Establish phone Manual with the handheld in Auto.
-2. Request `0.00 m/s` and a visible steering offset.
+2. Request `0%` drive and a visible steering offset.
 3. Disable the phone network or ZeroTier.
 4. Confirm phone commands expire, the Teensy reports `NO_CMD`, and steering
    drive stops after the existing 500 ms timeout.
@@ -150,7 +156,7 @@ Preserve it together with the normal field logger CSV.
 
 End the test in this order:
 
-1. Set phone speed to neutral.
+1. Set phone drive demand to neutral (`0%`).
 2. Select guarded phone Pause/STOP.
 3. Select physical handheld Pause.
 4. Press `Ctrl+C` in the phone-server terminal; shutdown sends another neutral

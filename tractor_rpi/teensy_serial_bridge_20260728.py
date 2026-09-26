@@ -17,6 +17,10 @@ CHANGED 20260728:
 CHANGED 20260908:
   - Publish the Teensy firmware identity and steering rate received in SYS
     startup telemetry so mission pre-flight can require the matching build.
+
+CHANGED 20260926:
+  - Forward the phone experiment's dedicated drive_percent field as a WIFI
+    serial command. Normal CMD linear_x commands remain meters per second.
 """
 
 import serial
@@ -310,6 +314,34 @@ class TeensySerialBridge:
             logger.error(f"Failed to send cmd_vel: {e}")
         return False
 
+    def send_wifi_drive_to_teensy(self, drive_percent, angular_z):
+        """Send the phone experiment's signed drive demand without changing CMD semantics."""
+        try:
+            drive_percent = float(drive_percent)
+            angular_z = float(angular_z)
+            if not -100.0 <= drive_percent <= 100.0:
+                raise ValueError("drive_percent is outside -100..100")
+            if not -1.0 <= angular_z <= 1.0:
+                raise ValueError("angular_z is outside -1..1")
+            if self.ser.out_waiting < 256:
+                command = f"WIFI,{drive_percent:.1f},{angular_z:.4f}\n"
+                self.ser.write(command.encode('utf-8'))
+                self.ser.flush()
+                self.cmd_vel_sent_count += 1
+                self.stats['commands_sent'] += 1
+                self.last_cmd_vel = {
+                    'linear_x': 0.0,
+                    'drive_percent': drive_percent,
+                    'angular_z': angular_z,
+                    'timestamp': time.time(),
+                }
+                return True
+        except (TypeError, ValueError) as e:
+            logger.error(f"Rejected Wi-Fi drive command: {e}")
+        except Exception as e:
+            logger.error(f"Failed to send Wi-Fi drive command: {e}")
+        return False
+
     def listen_for_commands(self):
         logger.info("Command listener started")
         while self.running:
@@ -322,11 +354,14 @@ class TeensySerialBridge:
                             data, _ = self.command_sock.recvfrom(1024)
                             packets_read += 1
                             command = json.loads(data.decode())
-                            linear_x = command.get('linear_x', 0.0)
                             angular_z = command.get('angular_z', 0.0)
                             self.cmd_vel_received_count += 1
                             self.stats['commands_received'] += 1
-                            self.send_cmd_vel_to_teensy(linear_x, angular_z)
+                            if 'drive_percent' in command:
+                                self.send_wifi_drive_to_teensy(command['drive_percent'], angular_z)
+                            else:
+                                linear_x = command.get('linear_x', 0.0)
+                                self.send_cmd_vel_to_teensy(linear_x, angular_z)
                         except socket.error:
                             break
                         except json.JSONDecodeError:
@@ -429,6 +464,7 @@ class TeensySerialBridge:
 
         message['cmd_vel'] = {
             'last_linear_x': self.last_cmd_vel['linear_x'],
+            'last_drive_percent': self.last_cmd_vel.get('drive_percent'),
             'last_angular_z': self.last_cmd_vel['angular_z'],
             'commands_received': self.cmd_vel_received_count,
             'commands_sent': self.cmd_vel_sent_count,

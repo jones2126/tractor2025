@@ -1,5 +1,5 @@
 /*********************************************************************
-  teensy_main_20260914.cpp
+  teensy_main_20260914.cpp (2026-09-26 Wi-Fi drive extension)
   --------------------------------------------------------------
   2026-09-14 production candidate with recalibrated steering limits.
 
@@ -39,6 +39,11 @@
   This build also samples the JRK G2 motor-current variable at offset 0x19 so
   the field logger can record actual current in mA during target movements.
 
+  2026-09-26 adds a dedicated WIFI,<drive_percent>,<steering> command for the
+  NRF-supervised phone experiment. It continuously maps -100..+100 percent to
+  the proven handheld envelope 3138..2836..2288. Ordinary CMD speed messages
+  remain positive-forward meters per second and retain the calibration above.
+
   Requires:
       src/archive/teensy_main_20260804.cpp
 *********************************************************************/
@@ -48,6 +53,7 @@
 // is compiled directly from the known-good archived 0804 source.
 #define mpsToJrkTarget      mpsToJrkTarget_20260804
 #define controlTransmission controlTransmission_20260804
+#define parseSerialCommand  parseSerialCommand_20260804
 #define setup               setup_20260804
 #define loop                loop_20260804
 
@@ -60,6 +66,7 @@
 
 #undef loop
 #undef setup
+#undef parseSerialCommand
 #undef controlTransmission
 #undef mpsToJrkTarget
 #undef STEER_POT_LEFT_CAL
@@ -93,6 +100,8 @@ const int SPEED_CAL_20260908_1P8_TEST_POINTS =
 uint16_t jrkMotorCurrentMa = 0;
 uint16_t jrkPeakCurrentMaSincePrint = 0;
 bool jrkMotorCurrentValid = false;
+bool wifiDriveCommand = false;
+float wifiDrivePercent = 0.0f;
 
 uint16_t mpsToJrkTarget(float mps) {
     if (mps <= SPEED_CAL_20260908_1P8_TEST[0].mps)
@@ -120,6 +129,22 @@ uint16_t mpsToJrkTarget(float mps) {
     return SPEED_CAL_20260908_1P8_TEST[0].jrkTarget;  // defensive/unreachable
 }
 
+// Map the phone experiment's signed percentage continuously across the same
+// endpoints used by the physical handheld. The two sides are intentionally
+// interpolated separately because the JRK spans are asymmetric.
+uint16_t drivePercentToJrkTarget(float percent) {
+    if (percent <= -100.0f) return 3138;
+    if (percent >= 100.0f) return 2288;
+
+    if (percent < 0.0f) {
+        float target = 2836.0f + (-percent / 100.0f) * (3138.0f - 2836.0f);
+        return (uint16_t)(target + 0.5f);
+    }
+
+    float target = 2836.0f - (percent / 100.0f) * (2836.0f - 2288.0f);
+    return (uint16_t)(target + 0.5f);
+}
+
 
 // -------------------------------------------------------------------
 // Transmission control (10 Hz).
@@ -140,13 +165,16 @@ void controlTransmission() {
 
     switch (radioData.control_mode) {
         case 0:
-            // Auto mode: cmd_vel speed in m/s.
+            // Handheld Auto authorizes either normal autonomous m/s commands
+            // or the dedicated signed phone drive command.
             if (cmdVel.received) {
-                requestedTarget = mpsToJrkTarget(cmdVel.linear_x);
-                bucketTmp = 5;
+                requestedTarget = wifiDriveCommand
+                    ? drivePercentToJrkTarget(wifiDrivePercent)
+                    : mpsToJrkTarget(cmdVel.linear_x);
+                bucketTmp = 4;
             } else {
                 requestedTarget = transmissionNeutralPos;
-                bucketTmp = 5;
+                bucketTmp = 4;
             }
             break;
 
@@ -243,7 +271,7 @@ void controlTransmission() {
             "1,%lu,TRANS,m=%d,b=%d,tgt=%u,cur=%u,at=%u,sfb=%u,"
             "it=%d,dtt=%d,dc=%d,jma=%u,jmp=%u,jmv=%d,"
             "eh=%u,eo=%u,jq=%lu,jv=%d,jl=%u,"
-            "jto=%lu,jdb=%lu,rv=%d,x=%.3f,ca=%lu",
+            "jto=%lu,jdb=%lu,rv=%d,x=%.3f,wd=%d,wp=%.1f,ca=%lu",
             currentMillis,
             radioData.control_mode,
             bucket,
@@ -266,6 +294,8 @@ void controlTransmission() {
             (unsigned long)jrkDiagnostics.discardedBytes,
             (int)radioData.transmission_val,
             cmdVel.linear_x,
+            wifiDriveCommand ? 1 : 0,
+            wifiDrivePercent,
             cmdVel.received
                 ? currentMillis - cmdVel.timestamp
                 : 999999UL
@@ -322,6 +352,126 @@ void controlTransmission() {
     #endif
 
     lastTransmissionControlRun = currentMillis;
+}
+
+
+// -------------------------------------------------------------------
+// Serial command parsing.
+//   CMD,<mps>,<steering>           normal autonomous command
+//   WIFI,<drive_percent>,<steering> dedicated phone experiment command
+//   GPS,<status>                    existing GPS status command
+void parseSerialCommand() {
+    if (currentMillis - lastSerialProcessTime < serialProcessInterval) return;
+
+    unsigned long startTime = millis();
+    static char buffer[64];
+    static uint8_t idx = 0;
+    static unsigned long lastRateCalc = 0;
+    static unsigned long msgSinceCalc = 0;
+
+    int processed = 0;
+    const int maxPerCall = 128;
+
+    while (Serial.available() > 0 &&
+           processed < maxPerCall &&
+           (millis() - startTime) < maxSerialProcessTime) {
+
+        char c = Serial.read();
+        processed++;
+
+        if (c == '\n') {
+            buffer[idx] = '\0';
+
+            if (idx >= 4 && memcmp(buffer, "CMD,", 4) == 0) {
+                float lx, az;
+                if (sscanf(buffer + 4, "%f,%f", &lx, &az) == 2 &&
+                    isfinite(lx) && isfinite(az) &&
+                    az >= -1.0f && az <= 1.0f) {
+                    wifiDriveCommand = false;
+                    wifiDrivePercent = 0.0f;
+                    cmdVel.linear_x = lx;
+                    cmdVel.angular_z = az;
+                    cmdVel.timestamp = millis();
+                    cmdVel.received = true;
+                    cmdVel.message_count++;
+                    msgSinceCalc++;
+                    last_cmd_vel_time = millis();
+
+                    if (cmdVel.message_count % 50 == 0) {
+                        char echo[64];
+                        snprintf(echo, sizeof(echo),
+                                 "3,%lu,CE,x=%.2f,z=%.2f,hz=%.1f",
+                                 millis(), lx, az, cmdVel.current_hz);
+                        Serial.println(echo);
+                    }
+                }
+            } else if (idx >= 5 && memcmp(buffer, "WIFI,", 5) == 0) {
+                float drivePercent, az;
+                if (sscanf(buffer + 5, "%f,%f", &drivePercent, &az) == 2 &&
+                    isfinite(drivePercent) && isfinite(az) &&
+                    drivePercent >= -100.0f && drivePercent <= 100.0f &&
+                    az >= -1.0f && az <= 1.0f) {
+                    wifiDriveCommand = true;
+                    wifiDrivePercent = drivePercent;
+                    cmdVel.linear_x = 0.0f;
+                    cmdVel.angular_z = az;
+                    cmdVel.timestamp = millis();
+                    cmdVel.received = true;
+                    cmdVel.message_count++;
+                    msgSinceCalc++;
+                    last_cmd_vel_time = millis();
+
+                    if (cmdVel.message_count % 50 == 0) {
+                        char echo[64];
+                        snprintf(echo, sizeof(echo),
+                                 "3,%lu,CE,x=0.00,z=%.2f,hz=%.1f",
+                                 millis(), az, cmdVel.current_hz);
+                        Serial.println(echo);
+                    }
+                }
+            } else if (idx >= 4 && memcmp(buffer, "GPS,", 4) == 0) {
+                int status;
+                if (sscanf(buffer + 4, "%d", &status) == 1) {
+                    if (status >= 0 && status <= 3) {
+                        updateGpsStatus((byte)status);
+                        if (gpsStatus.messages_received % 20 == 0) {
+                            char echo[48];
+                            snprintf(echo, sizeof(echo),
+                                     "3,%lu,GPS_ECHO,s=%d,cnt=%lu",
+                                     millis(), status,
+                                     gpsStatus.messages_received);
+                            Serial.println(echo);
+                        }
+                    } else {
+                        char warn[48];
+                        snprintf(warn, sizeof(warn),
+                                 "2,%lu,GPS,invalid_status=%d",
+                                 millis(), status);
+                        safeTextLog(warn);
+                    }
+                }
+            }
+            idx = 0;
+        } else if (idx < 63) {
+            buffer[idx++] = c;
+        } else {
+            idx = 0;
+            serialStats.overrunCount++;
+            if (currentMillis - serialStats.lastWarning > 5000) {
+                safeTextLog("2,0,SERIAL,buffer_overflow");
+                serialStats.lastWarning = currentMillis;
+            }
+        }
+    }
+
+    if (currentMillis - lastRateCalc >= 1000) {
+        float elapsed = (currentMillis - lastRateCalc) / 1000.0f;
+        cmdVel.current_hz = msgSinceCalc / elapsed;
+        msgSinceCalc = 0;
+        lastRateCalc = currentMillis;
+    }
+
+    lastSerialProcessTime = currentMillis;
 }
 
 
@@ -451,14 +601,14 @@ extern "C" void setup() {
         "  transmission_val 1023 -> bucket 0 -> JRK 3138 (FULL REVERSE)"
     );
     Serial.println(
-        "  transmission_val ~512 -> bucket 5 -> JRK 2836 (NEUTRAL)"
+        "  transmission_val 562..653 -> bucket 4 -> JRK 2836 (NEUTRAL)"
     );
     Serial.println(
         "  transmission_val 1    -> bucket 9 -> JRK 2288 (MANUAL FORWARD MAX)"
     );
 
     Serial.println(
-        "1,0,SYS,start,fw=teensy_main_20260914,steer_hz=20"
+        "1,0,SYS,start,fw=teensy_main_20260926,steer_hz=20"
     );
     Serial.println(
         "1,0,SYS,steer_cal,right=191,center=525,left=885,"

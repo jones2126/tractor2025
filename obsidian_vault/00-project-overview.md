@@ -99,7 +99,10 @@ Local clone: `~/tractor2025/`
 See `firmware_versions.md` for flash history and commit tracking.
 
 ### Tractor Teensy 4.1 Firmware
-**Current production build:** `tractor_teensy/src/teensy_main_20260914.cpp`
+**Current production source:** `tractor_teensy/src/teensy_main_20260914.cpp`
+reports firmware identity `teensy_main_20260926` after the dedicated signed
+Wi-Fi drive-demand extension. The filename is retained because it remains the
+selected 2026-09-14 steering/transmission calibration wrapper.
 
 Uses the recalibrated steering values right/center/left = `191/525/885`, with
 20-count margins inside the measured physical stops `171/905`. It retains the

@@ -45,9 +45,9 @@
     <main>
       <section class="control speed">
         <button class="thumb" id="neutral" type="button">Neutral</button>
-        <h2>Speed <span id="speed-value">0.00 m/s</span></h2>
-        <input id="speed" type="range" min="0" max="0.30" step="0.01" value="0" aria-label="Forward speed from zero to 0.30 meters per second">
-        <div class="scale"><span>Stop</span><span>Forward .15</span><span>Forward .30</span></div>
+        <h2>Drive <span id="speed-value">0%</span></h2>
+        <input id="speed" type="range" min="-100" max="100" step="1" value="0" aria-label="Drive demand from full reverse through neutral to full forward">
+        <div class="scale"><span>Full reverse</span><span>Neutral</span><span>Full forward</span></div>
       </section>
       <section class="control steering">
         <button class="thumb" id="straight" type="button">Straight</button>
@@ -59,12 +59,12 @@
     <div class="bottom">
       <div class="identity">
         <button class="mode-select" id="mode-select" type="button">HOLD<br>MODE SELECT</button>
-        <div class="screen-id"><strong>Wi-Fi Manual Field Test</strong>Forward only · 5 Hz<span class="help" id="help">Start with handheld Pause</span></div>
+        <div class="screen-id"><strong>Wi-Fi Manual Field Test</strong>Signed drive demand · 5 Hz<span class="help" id="help">Start with handheld Pause</span></div>
       </div>
       <div class="summary">
         <div class="metric"><div class="label">Handheld mode</div><div class="value bad-text" id="handheld-mode">--</div></div>
         <div class="metric"><div class="label">Phone mode</div><div class="value bad-text" id="phone-mode">PAUSE</div></div>
-        <div class="metric"><div class="label">Round trip</div><div class="value" id="rtt">-- ms</div></div>
+        <div class="metric"><div class="label">RTT average · 5 sec</div><div class="value" id="rtt">-- ms</div></div>
       </div>
       <div class="actions"><button class="stop" id="stop" type="button">STOP<small>Hold MODE SELECT too</small></button></div>
     </div>
@@ -81,24 +81,28 @@
     let clientId=localStorage.getItem('tractorWifiClientId');
     if(!clientId){clientId=crypto.randomUUID?crypto.randomUUID():String(Date.now())+'-'+Math.random();localStorage.setItem('tractorWifiClientId',clientId)}
     let session=null,sequence=0,phoneMode='pause',nextReason='heartbeat',modeSelectHeld=false,pendingMode=null,stopHeld=false,sending=false;
+    let rttSamples=[];
 
-    function renderValues(){speedValue.textContent=Number(speed.value).toFixed(2)+' m/s';steeringValue.textContent=Number(steering.value)+'%'}
+    function signedPercent(value){const number=Number(value);return (number>0?'+':'')+number+'%'}
+    function renderValues(){speedValue.textContent=signedPercent(speed.value);steeringValue.textContent=signedPercent(steering.value)}
     function setPhoneMode(mode){phoneMode=mode;document.getElementById('phone-mode').textContent=mode.toUpperCase();document.getElementById('phone-mode').className='value '+(mode==='manual'?'good-text':'bad-text');modeButtons.forEach(b=>b.classList.toggle('selected',b.dataset.mode===mode))}
     function setConnection(ok,title,detail){connection.classList.toggle('connected',ok);connectionState.textContent=title;connectionDetail.textContent=detail;document.getElementById('link-light').className='lamp-light '+(ok?'good':'bad');document.getElementById('link-value').textContent=ok?'LIVE':'LOST'}
     function setLamp(name,level,value){document.getElementById(name+'-light').className='lamp-light '+(level||'');document.getElementById(name+'-value').textContent=value}
     function modeName(mode){return mode===0?'AUTO':mode===1?'MANUAL':mode===2?'PAUSE':mode===9?'RADIO LOSS':'--'}
+    function recordRtt(value){const now=performance.now();rttSamples.push({at:now,value});rttSamples=rttSamples.filter(sample=>now-sample.at<=5000);const average=rttSamples.reduce((sum,sample)=>sum+sample.value,0)/rttSamples.length;document.getElementById('rtt').textContent=Math.round(average)+' ms'}
+    function clearRtt(){rttSamples=[];document.getElementById('rtt').textContent='-- ms'}
 
     async function api(path,method='GET',body=null){const started=performance.now();const response=await fetch(path,{method,headers,body:body?JSON.stringify(body):null,cache:'no-store'});const data=await response.json();data._rtt=performance.now()-started;if(!response.ok){const e=new Error(data.error||'HTTP '+response.status);e.data=data;throw e}return data}
 
     async function claim(){
-      try{const data=await api('/api/claim','POST',{client_id:clientId});session=data.session;sequence=0;setPhoneMode('pause');speed.value='0';steering.value='0';renderValues();setConnection(true,'CONNECTED','Handheld Pause confirmed');help.textContent='Set handheld AUTO, then hold Mode Select + Manual'}
-      catch(error){session=null;setPhoneMode('pause');setConnection(false,'WAITING',error.message);help.textContent='Physical handheld must be in Pause with good NRF'}
+      try{const data=await api('/api/claim','POST',{client_id:clientId});session=data.session;sequence=0;clearRtt();setPhoneMode('pause');speed.value='0';steering.value='0';renderValues();setConnection(true,'CONNECTED','Handheld Pause confirmed');help.textContent='Set handheld AUTO, then hold Mode Select + Manual'}
+      catch(error){session=null;clearRtt();setPhoneMode('pause');setConnection(false,'WAITING',error.message);help.textContent='Physical handheld must be in Pause with good NRF'}
     }
 
     async function sendLatest(){
-      if(!session||sending)return;sending=true;const reason=nextReason;nextReason='heartbeat';const payload={client_id:clientId,session,sequence:++sequence,mode:phoneMode,speed_mps:Number(speed.value),steering_percent:Number(steering.value),reason,client_time_ms:Date.now()};
-      try{const data=await api('/api/command','POST',payload);document.getElementById('rtt').textContent=Math.round(data._rtt)+' ms';setConnection(true,'CONTROL LIVE','Sequence '+data.sequence);if(data.phone_mode==='pause'&&phoneMode!=='pause'&&payload.mode===phoneMode)setPhoneMode('pause')}
-      catch(error){document.getElementById('rtt').textContent='-- ms';setPhoneMode('pause');speed.value='0';steering.value='0';renderValues();if(error.data?.reclaim){session=null;setConnection(false,'SESSION LOST','Return handheld to Pause to reconnect')}else{setConnection(false,'COMMAND HELD',error.message);help.textContent=error.message}}
+      if(!session||sending)return;sending=true;const reason=nextReason;nextReason='heartbeat';const payload={client_id:clientId,session,sequence:++sequence,mode:phoneMode,drive_percent:Number(speed.value),steering_percent:Number(steering.value),reason,client_time_ms:Date.now()};
+      try{const data=await api('/api/command','POST',payload);recordRtt(data._rtt);setConnection(true,'CONTROL LIVE','Sequence '+data.sequence);if(data.phone_mode==='pause'&&phoneMode!=='pause'&&payload.mode===phoneMode)setPhoneMode('pause')}
+      catch(error){clearRtt();setPhoneMode('pause');speed.value='0';steering.value='0';renderValues();if(error.data?.reclaim){session=null;setConnection(false,'SESSION LOST','Return handheld to Pause to reconnect')}else{setConnection(false,'COMMAND HELD',error.message);help.textContent=error.message}}
       finally{sending=false}
     }
 

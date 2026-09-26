@@ -3,7 +3,7 @@
 
 The physical handheld remains the authoritative mode selector. For phone
 driving, the handheld must be in AUTO; this server then publishes bounded
-forward-only cmd_vel messages to the existing localhost UDP 6004 bridge path.
+signed drive-demand messages to the existing localhost UDP 6004 bridge path.
 Handheld PAUSE, NRF loss, the Teensy's cmd_vel timeout, or loss of the phone
 session stops motion. This program does not provide NRF-independent control.
 """
@@ -37,7 +37,7 @@ STATUS_PORT = 6003
 # Dedicated RTK dashboard feed; do not compete with the Teensy bridge on 6002.
 GPS_PORT = 6013
 CMD_VEL_PORT = 6004
-MAX_FORWARD_MPS = 0.30
+MAX_DRIVE_PERCENT = 100
 MAX_STEERING_PERCENT = 100
 BRIDGE_FRESH_S = 0.75
 PHONE_FRESH_S = 0.80
@@ -135,9 +135,11 @@ class FieldState:
         bridge, age = self.bridge_snapshot()
         return age <= BRIDGE_FRESH_S and bridge.get("radio", {}).get("signal") == "GOOD"
 
-    def send_cmd_vel(self, speed_mps: float, steering_percent: float, sequence: int, reason: str) -> None:
+    def send_drive_command(self, drive_percent: float, steering_percent: float, sequence: int, reason: str) -> None:
         payload = {
-            "linear_x": round(speed_mps, 3),
+            # Dedicated field-experiment command. The bridge converts this to
+            # WIFI,<drive_percent>,<angular_z>; ordinary cmd_vel remains in m/s.
+            "drive_percent": round(drive_percent, 1),
             # Existing Teensy convention: angular_z +1 is full left.
             "angular_z": round(-steering_percent / 100.0, 3),
             "timestamp": time.time(),
@@ -151,7 +153,7 @@ class FieldState:
 
     def send_stop_burst(self, reason: str, sequence: int = -1, steering_percent: float = 0.0) -> None:
         for _ in range(5):
-            self.send_cmd_vel(0.0, steering_percent, sequence, reason)
+            self.send_drive_command(0.0, steering_percent, sequence, reason)
             time.sleep(0.02)
         self.last_stop_reason = reason
         self.log("stop_burst", reason=reason, sequence=sequence, steering_percent=steering_percent)
@@ -176,7 +178,13 @@ class FieldState:
             session = self.owner_session
             self.log("owner_claimed", client_id=client_id, session=session)
         self.send_stop_burst("owner_claim", steering_percent=0.0)
-        return {"session": session, "phone_mode": "pause", "rate_hz": 5, "max_forward_mps": MAX_FORWARD_MPS}
+        return {
+            "session": session,
+            "phone_mode": "pause",
+            "rate_hz": 5,
+            "min_drive_percent": -MAX_DRIVE_PERCENT,
+            "max_drive_percent": MAX_DRIVE_PERCENT,
+        }
 
     def accept_command(self, data: Any) -> tuple[HTTPStatus, dict[str, Any]]:
         received = time.monotonic()
@@ -187,7 +195,7 @@ class FieldState:
             session = str(data["session"])
             sequence = int(data["sequence"])
             phone_mode = str(data["mode"]).lower()
-            speed = float(data["speed_mps"])
+            drive = float(data["drive_percent"])
             steering = float(data["steering_percent"])
             reason = str(data.get("reason", "heartbeat"))[:40]
         except (KeyError, TypeError, ValueError):
@@ -204,9 +212,9 @@ class FieldState:
             if phone_mode not in ("manual", "pause"):
                 self.rejected += 1
                 return HTTPStatus.BAD_REQUEST, {"accepted": False, "error": "this experiment supports phone Manual or Pause only"}
-            if not finite_number(speed) or not 0.0 <= speed <= MAX_FORWARD_MPS:
+            if not finite_number(drive) or not -MAX_DRIVE_PERCENT <= drive <= MAX_DRIVE_PERCENT:
                 self.rejected += 1
-                return HTTPStatus.BAD_REQUEST, {"accepted": False, "error": f"speed must be 0.00 to {MAX_FORWARD_MPS:.2f} m/s"}
+                return HTTPStatus.BAD_REQUEST, {"accepted": False, "error": "drive demand must be -100 to +100 percent"}
             if not finite_number(steering) or not -MAX_STEERING_PERCENT <= steering <= MAX_STEERING_PERCENT:
                 self.rejected += 1
                 return HTTPStatus.BAD_REQUEST, {"accepted": False, "error": "steering must be -100 to +100 percent"}
@@ -232,17 +240,17 @@ class FieldState:
                 decision = "handheld_not_auto"
             else:
                 self.phone_mode = "manual"
-                self.last_decision = "bounded cmd_vel accepted"
+                self.last_decision = "bounded signed drive demand accepted"
                 decision = "drive"
 
-            effective_speed = speed if decision == "drive" else 0.0
+            effective_drive = drive if decision == "drive" else 0.0
             effective_steering = steering if decision == "drive" else 0.0
             command = {
                 "client_id": client_id,
                 "session": session,
                 "sequence": sequence,
                 "mode": self.phone_mode,
-                "speed_mps": round(effective_speed, 2),
+                "drive_percent": round(effective_drive, 1),
                 "steering_percent": round(effective_steering),
                 "reason": reason,
                 "decision": decision,
@@ -252,7 +260,7 @@ class FieldState:
                 self.accepted += 1
 
         if decision == "drive":
-            self.send_cmd_vel(speed, steering, sequence, reason)
+            self.send_drive_command(drive, steering, sequence, reason)
         else:
             self.send_stop_burst(decision, sequence)
 
