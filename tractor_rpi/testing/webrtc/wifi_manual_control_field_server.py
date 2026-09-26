@@ -16,6 +16,7 @@ import math
 import os
 import secrets
 import socket
+import sys
 import threading
 import time
 from datetime import datetime, timezone
@@ -425,6 +426,21 @@ def handler_factory(state: FieldState, operator_key: str):
     return Handler
 
 
+class QuietThreadingHTTPServer(ThreadingHTTPServer):
+    """Suppress expected mobile-browser disconnect noise, not server errors."""
+
+    daemon_threads = True
+
+    def handle_error(self, request: Any, client_address: Any) -> None:
+        error = sys.exc_info()[1]
+        if isinstance(
+            error,
+            (BrokenPipeError, ConnectionAbortedError, ConnectionResetError),
+        ):
+            return
+        super().handle_error(request, client_address)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--host", default="0.0.0.0")
@@ -449,7 +465,10 @@ def main() -> None:
     threading.Thread(target=udp_listener, args=(state, STATUS_PORT, "bridge"), daemon=True).start()
     threading.Thread(target=udp_listener, args=(state, GPS_PORT, "gps"), daemon=True).start()
     threading.Thread(target=state.safety_loop, daemon=True).start()
-    server = ThreadingHTTPServer((args.host, args.port), handler_factory(state, operator_key))
+    server = QuietThreadingHTTPServer(
+        (args.host, args.port),
+        handler_factory(state, operator_key),
+    )
 
     zerotier_url = f"http://{TRACTOR_ZEROTIER_IP}:{args.port}/?key={operator_key}"
     local_url = f"http://{TRACTOR_LOCAL_IP}:{args.port}/?key={operator_key}"
