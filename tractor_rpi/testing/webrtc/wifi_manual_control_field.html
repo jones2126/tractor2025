@@ -91,14 +91,14 @@
     async function api(path,method='GET',body=null){const started=performance.now();const response=await fetch(path,{method,headers,body:body?JSON.stringify(body):null,cache:'no-store'});const data=await response.json();data._rtt=performance.now()-started;if(!response.ok){const e=new Error(data.error||'HTTP '+response.status);e.data=data;throw e}return data}
 
     async function claim(){
-      try{const data=await api('/api/claim','POST',{client_id:clientId});session=data.session;sequence=0;setPhoneMode('pause');speed.value='0';renderValues();setConnection(true,'CONNECTED','Handheld Pause confirmed');help.textContent='Set handheld AUTO, then hold Mode Select + Manual'}
+      try{const data=await api('/api/claim','POST',{client_id:clientId});session=data.session;sequence=0;setPhoneMode('pause');speed.value='0';steering.value='0';renderValues();setConnection(true,'CONNECTED','Handheld Pause confirmed');help.textContent='Set handheld AUTO, then hold Mode Select + Manual'}
       catch(error){session=null;setPhoneMode('pause');setConnection(false,'WAITING',error.message);help.textContent='Physical handheld must be in Pause with good NRF'}
     }
 
     async function sendLatest(){
       if(!session||sending)return;sending=true;const reason=nextReason;nextReason='heartbeat';const payload={client_id:clientId,session,sequence:++sequence,mode:phoneMode,speed_mps:Number(speed.value),steering_percent:Number(steering.value),reason,client_time_ms:Date.now()};
       try{const data=await api('/api/command','POST',payload);document.getElementById('rtt').textContent=Math.round(data._rtt)+' ms';setConnection(true,'CONTROL LIVE','Sequence '+data.sequence);if(data.phone_mode==='pause'&&phoneMode!=='pause')setPhoneMode('pause')}
-      catch(error){document.getElementById('rtt').textContent='-- ms';setPhoneMode('pause');speed.value='0';renderValues();if(error.data?.reclaim){session=null;setConnection(false,'SESSION LOST','Return handheld to Pause to reconnect')}else{setConnection(false,'COMMAND HELD',error.message);help.textContent=error.message}}
+      catch(error){document.getElementById('rtt').textContent='-- ms';setPhoneMode('pause');speed.value='0';steering.value='0';renderValues();if(error.data?.reclaim){session=null;setConnection(false,'SESSION LOST','Return handheld to Pause to reconnect')}else{setConnection(false,'COMMAND HELD',error.message);help.textContent=error.message}}
       finally{sending=false}
     }
 
@@ -111,7 +111,7 @@
       setTimeout(pollState,500);
     }
 
-    function tryGuarded(){if(!modeSelectHeld)return;if(stopHeld){speed.value='0';setPhoneMode('pause');nextReason='guarded_stop';renderValues();sendLatest();help.textContent='Guarded STOP requested'}else if(pendingMode){setPhoneMode(pendingMode);nextReason=pendingMode==='manual'?'guarded_manual':'guarded_pause';sendLatest();help.textContent=pendingMode.toUpperCase()+' requested'}}
+    function tryGuarded(){if(!modeSelectHeld)return;if(stopHeld){speed.value='0';steering.value='0';setPhoneMode('pause');nextReason='guarded_stop';renderValues();sendLatest();help.textContent='Guarded STOP requested'}else if(pendingMode){if(pendingMode==='pause'){speed.value='0';steering.value='0';renderValues()}setPhoneMode(pendingMode);nextReason=pendingMode==='manual'?'guarded_manual':'guarded_pause';sendLatest();help.textContent=pendingMode.toUpperCase()+' requested'}}
     function holdSelect(e){e.preventDefault();modeSelectHeld=true;modeSelect.classList.add('held');if(modeSelect.setPointerCapture&&e.pointerId!=null)modeSelect.setPointerCapture(e.pointerId);help.textContent='Now hold Manual, Pause, or STOP';tryGuarded()}
     function releaseSelect(){modeSelectHeld=false;modeSelect.classList.remove('held');help.textContent='Hold Mode Select + Manual, Pause, or STOP'}
     function holdMode(e){e.preventDefault();pendingMode=e.currentTarget.dataset.mode;e.currentTarget.classList.add('pressed');if(e.currentTarget.setPointerCapture&&e.pointerId!=null)e.currentTarget.setPointerCapture(e.pointerId);if(!modeSelectHeld)help.textContent='Also hold Mode Select';tryGuarded()}
@@ -125,7 +125,7 @@
     modeSelect.addEventListener('pointerdown',holdSelect);modeSelect.addEventListener('pointerup',releaseSelect);modeSelect.addEventListener('pointercancel',releaseSelect);modeSelect.addEventListener('lostpointercapture',releaseSelect);
     modeButtons.forEach(b=>{b.addEventListener('pointerdown',holdMode);b.addEventListener('pointerup',releaseMode);b.addEventListener('pointercancel',releaseMode);b.addEventListener('lostpointercapture',releaseMode)});
     stop.addEventListener('pointerdown',holdStop);stop.addEventListener('pointerup',releaseStop);stop.addEventListener('pointercancel',releaseStop);stop.addEventListener('lostpointercapture',releaseStop);
-    window.addEventListener('blur',releaseAll);document.addEventListener('visibilitychange',()=>{if(document.hidden){setPhoneMode('pause');speed.value='0';nextReason='page_hidden';renderValues();sendLatest();releaseAll()}});
+    window.addEventListener('blur',releaseAll);document.addEventListener('visibilitychange',()=>{if(document.hidden){setPhoneMode('pause');speed.value='0';steering.value='0';nextReason='page_hidden';renderValues();sendLatest();releaseAll()}});
     renderValues();setPhoneMode('pause');pollState();setInterval(sendLatest,200);
   })();
   </script>

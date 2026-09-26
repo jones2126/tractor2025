@@ -235,13 +235,15 @@ class FieldState:
                 self.last_decision = "bounded cmd_vel accepted"
                 decision = "drive"
 
+            effective_speed = speed if decision == "drive" else 0.0
+            effective_steering = steering if decision == "drive" else 0.0
             command = {
                 "client_id": client_id,
                 "session": session,
                 "sequence": sequence,
                 "mode": self.phone_mode,
-                "speed_mps": round(speed, 2),
-                "steering_percent": round(steering),
+                "speed_mps": round(effective_speed, 2),
+                "steering_percent": round(effective_steering),
                 "reason": reason,
                 "decision": decision,
             }
@@ -252,7 +254,7 @@ class FieldState:
         if decision == "drive":
             self.send_cmd_vel(speed, steering, sequence, reason)
         else:
-            self.send_stop_burst(decision, sequence, steering)
+            self.send_stop_burst(decision, sequence)
 
         self.log("command", **command, actual_mode=actual_mode, radio_good=radio_good)
         status = HTTPStatus.OK if decision in ("pause", "drive") else HTTPStatus.CONFLICT
@@ -300,7 +302,6 @@ class FieldState:
             should_stop = False
             reason = ""
             sequence = -1
-            steering = 0.0
             with self.lock:
                 owner_age = time.monotonic() - self.owner_at if self.owner_at else math.inf
                 actual_mode = self.actual_mode()
@@ -316,9 +317,8 @@ class FieldState:
                     self.stop_sent_for_expiry = True
                     if self.last_command:
                         sequence = int(self.last_command.get("sequence", -1))
-                        steering = float(self.last_command.get("steering_percent", 0.0))
             if should_stop:
-                self.send_stop_burst(reason, sequence, steering)
+                self.send_stop_burst(reason, sequence)
             time.sleep(0.05)
 
     def close(self) -> None:
