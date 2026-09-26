@@ -31,6 +31,8 @@ phone browser -> keyed field server on tractor01 -> localhost UDP 6004
 - The Teensy's existing 500 ms `cmd_vel` timeout remains the final command-loss
   watchdog. The field server also pauses after 800 ms without a fresh phone
   command.
+- Firmware identity is repeated every five seconds so a bridge started after a
+  Teensy reboot can still report the correct build to mission preflight.
 - Do not run Pure Pursuit or another UDP 6004 publisher at the same time.
 
 ## Files

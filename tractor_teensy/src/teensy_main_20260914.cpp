@@ -475,6 +475,26 @@ void parseSerialCommand() {
 }
 
 
+// Repeat identity because the Linux bridge may start after the Teensy has
+// completed setup (especially immediately after a firmware upload). The
+// startup-only message was easy for the bridge and preflight to miss.
+void publishSystemIdentity() {
+    Serial.println(
+        "1,0,SYS,start,fw=teensy_main_20260926,steer_hz=20"
+    );
+}
+
+void publishPeriodicSystemIdentity() {
+    static unsigned long lastIdentityPrint = 0;
+    const unsigned long identityPrintInterval = 5000;
+
+    if (currentMillis - lastIdentityPrint >= identityPrintInterval) {
+        publishSystemIdentity();
+        lastIdentityPrint = currentMillis;
+    }
+}
+
+
 // -------------------------------------------------------------------
 // Setup copied from the 0804 production firmware.  The only intended
 // difference is the machine-readable firmware identity at the end.
@@ -607,9 +627,7 @@ extern "C" void setup() {
         "  transmission_val 1    -> bucket 9 -> JRK 2288 (MANUAL FORWARD MAX)"
     );
 
-    Serial.println(
-        "1,0,SYS,start,fw=teensy_main_20260926,steer_hz=20"
-    );
+    publishSystemIdentity();
     Serial.println(
         "1,0,SYS,steer_cal,right=191,center=525,left=885,"
         "hard_right=171,hard_left=905"
@@ -631,6 +649,7 @@ extern "C" void loop() {
     parseSerialCommand();
     checkCmdVelTimeout();
     monitorSerialBuffer();
+    publishPeriodicSystemIdentity();
 
     // 3. Radio
     handleRadio();
