@@ -97,7 +97,7 @@
 
     async function sendLatest(){
       if(!session||sending)return;sending=true;const reason=nextReason;nextReason='heartbeat';const payload={client_id:clientId,session,sequence:++sequence,mode:phoneMode,speed_mps:Number(speed.value),steering_percent:Number(steering.value),reason,client_time_ms:Date.now()};
-      try{const data=await api('/api/command','POST',payload);document.getElementById('rtt').textContent=Math.round(data._rtt)+' ms';setConnection(true,'CONTROL LIVE','Sequence '+data.sequence);if(data.phone_mode==='pause'&&phoneMode!=='pause')setPhoneMode('pause')}
+      try{const data=await api('/api/command','POST',payload);document.getElementById('rtt').textContent=Math.round(data._rtt)+' ms';setConnection(true,'CONTROL LIVE','Sequence '+data.sequence);if(data.phone_mode==='pause'&&phoneMode!=='pause'&&payload.mode===phoneMode)setPhoneMode('pause')}
       catch(error){document.getElementById('rtt').textContent='-- ms';setPhoneMode('pause');speed.value='0';steering.value='0';renderValues();if(error.data?.reclaim){session=null;setConnection(false,'SESSION LOST','Return handheld to Pause to reconnect')}else{setConnection(false,'COMMAND HELD',error.message);help.textContent=error.message}}
       finally{sending=false}
     }
