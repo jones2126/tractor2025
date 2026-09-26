@@ -105,7 +105,7 @@
     async function pollState(){
       try{const state=await api('/api/state');const mode=state.actual_mode;const modeEl=document.getElementById('handheld-mode');modeEl.textContent=modeName(mode);modeEl.className='value '+(mode===0?'good-text':'bad-text');
         const fix=String(state.gps?.fix_quality||'--'),rtkGood=fix==='RTK Fixed',rtkWarn=fix==='RTK Float';setLamp('rtk',rtkGood?'good':rtkWarn?'warn':'bad',fix.replace('RTK ',''));
-        const headValid=state.gps?.headValid===true||String(state.gps?.headValid).toLowerCase()==='true';const heading=state.gps?.heading??state.gps?.relpos_heading_deg;setLamp('heading',headValid?'good':'bad',headValid&&heading!=null?Math.round(Number(heading))+'°':'INVALID');
+        const headValid=state.gps?.headValid===true||String(state.gps?.headValid).toLowerCase()==='true';const heading=state.gps?.heading_deg;setLamp('heading',headValid?'good':'bad',headValid&&heading!=null?Math.round(Number(heading))+'°':'INVALID');
         if(!session&&mode===2)await claim();
       }catch(error){setLamp('rtk','bad','--');setLamp('heading','bad','--');setConnection(false,'SERVER LOST',error.message)}
       setTimeout(pollState,500);

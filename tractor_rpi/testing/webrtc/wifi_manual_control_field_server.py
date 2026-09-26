@@ -33,7 +33,8 @@ PAGE_PATH = HERE / "wifi_manual_control_field.html"
 TRACTOR_ZEROTIER_IP = "192.168.193.76"
 TRACTOR_LOCAL_IP = "192.168.1.151"
 STATUS_PORT = 6003
-GPS_PORT = 6002
+# Dedicated RTK dashboard feed; do not compete with the Teensy bridge on 6002.
+GPS_PORT = 6013
 CMD_VEL_PORT = 6004
 MAX_FORWARD_MPS = 0.30
 MAX_STEERING_PERCENT = 100
