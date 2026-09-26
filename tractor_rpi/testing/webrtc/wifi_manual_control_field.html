@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#0b1118">
+  <title>Tractor Wi-Fi Field Experiment</title>
+  <style>
+    :root{color-scheme:dark;--bg:#090f15;--panel:#14202b;--panel2:#1a2a38;--border:#334b5e;--text:#f4f8fb;--muted:#9cafbd;--blue:#59b9ff;--green:#42d37b;--amber:#ffb52e;--orange:#ff7a2f;--red:#ff5353}
+    *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text)}
+    body{min-height:100dvh;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
+    button,input{font:inherit}button{touch-action:none;user-select:none;-webkit-user-select:none}.app{min-height:100dvh;display:grid;grid-template-rows:auto auto 1fr auto}
+    .topbar{min-height:58px;display:grid;grid-template-columns:minmax(245px,1fr) auto minmax(155px,1fr);align-items:center;gap:12px;padding:7px max(12px,env(safe-area-inset-left)) 7px max(12px,env(safe-area-inset-right));background:#101923;border-bottom:1px solid var(--border)}
+    .lamps{display:flex;align-items:center;gap:clamp(10px,2vw,22px)}.lamp{display:grid;grid-template-columns:18px auto;align-items:center;gap:6px}.lamp-light{width:18px;height:18px;border:2px solid #607487;border-radius:50%;background:#273440;box-shadow:inset 0 0 5px #000b}.lamp-light.good{border-color:var(--green);background:var(--green);box-shadow:0 0 9px #42d37bb3}.lamp-light.warn{border-color:var(--amber);background:var(--amber);box-shadow:0 0 9px #ffb52ea6}.lamp-light.bad{border-color:var(--red);background:var(--red);box-shadow:0 0 9px #ff5353a6}.lamp-text{line-height:1.05}.lamp-name{display:block;color:var(--muted);font-size:10px;font-weight:750;text-transform:uppercase}.lamp-value{display:block;margin-top:3px;font-size:11px;font-weight:800}
+    .modes{display:flex;gap:7px;justify-content:center}.mode{min-width:clamp(72px,10vw,112px);min-height:42px;padding:5px 12px;border:2px solid #536879;border-radius:9px;background:#20303d;color:#d4dee5;font-size:13px;font-weight:850;text-transform:uppercase}.mode:disabled{opacity:.38}.mode.pressed{transform:translateY(1px);border-color:var(--amber)}.mode.selected[data-mode="manual"]{background:#0e6796;border-color:#6dcbff;color:#fff}.mode.selected[data-mode="pause"]{background:#93412b;border-color:#ff9974;color:#fff}
+    .connection{justify-self:end;text-align:right}.connection strong{display:block;color:var(--amber);font-size:11px;letter-spacing:.04em}.connection.connected strong{color:var(--green)}.connection span{color:var(--muted);font-size:10px}
+    .safety{padding:4px 12px;background:#4a250d;color:#ffe2a0;text-align:center;font-size:11px;font-weight:750}
+    main{min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:clamp(8px,1.4vw,16px);padding:clamp(8px,1.4vw,16px)}
+    .control{position:relative;min-width:0;min-height:150px;padding:14px clamp(70px,11vw,112px) 12px;border:1px solid var(--border);border-radius:17px;background:var(--panel)}.control h2{margin:0;font-size:17px;text-align:center}.control h2 span{color:var(--blue);font-size:19px;font-variant-numeric:tabular-nums}
+    .thumb{position:absolute;top:50%;width:clamp(62px,9vw,88px);aspect-ratio:1;transform:translateY(-50%);border:2px solid #43bce7;border-radius:50%;background:#08789f;color:#fff;font-size:clamp(11px,1.5vw,15px);font-weight:850;box-shadow:0 6px 14px #0005}.thumb:active{transform:translateY(-49%) scale(.97);background:#0a91bd}.speed .thumb{left:clamp(7px,1.5vw,18px)}.steering .thumb{right:clamp(7px,1.5vw,18px)}
+    input[type="range"]{width:100%;height:42px;margin:9px 0 0;accent-color:var(--blue);touch-action:none}.scale{display:flex;justify-content:space-between;gap:6px;color:var(--muted);font-size:10px}
+    .bottom{display:grid;grid-template-columns:minmax(195px,.9fr) minmax(300px,1.7fr) minmax(125px,.55fr);align-items:stretch;gap:9px;padding:0 max(8px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left))}.identity{display:grid;grid-template-columns:104px 1fr;gap:8px;min-width:0}.mode-select{min-height:72px;border:2px solid #ff9c68;border-radius:14px;background:#b64c21;color:#fff;font-size:13px;font-weight:900;line-height:1.1}.mode-select.held{background:var(--orange);box-shadow:0 0 0 4px #ff7a2f33}.screen-id{align-self:end;min-width:0;padding-bottom:4px;color:var(--muted);font-size:10px;line-height:1.25}.screen-id strong{display:block;overflow:hidden;color:#fff;font-size:13px;text-overflow:ellipsis;white-space:nowrap}.help{display:block;margin-top:4px;color:var(--amber)}
+    .summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:7px;border:1px solid var(--border);border-radius:14px;background:var(--panel)}.metric{min-width:0;align-content:center;padding:5px 8px;border-radius:9px;background:var(--panel2)}.label{color:var(--muted);font-size:9px;text-transform:uppercase}.value{margin-top:3px;overflow:hidden;font-size:clamp(12px,1.7vw,18px);font-weight:850;text-overflow:ellipsis;white-space:nowrap}.good-text{color:var(--green)}.bad-text{color:var(--red)}
+    .actions{display:grid}.stop{min-height:72px;border:0;border-radius:14px;background:var(--red);color:#260000;font-size:clamp(14px,2vw,19px);font-weight:900;line-height:1.1}.stop.armed{background:#ff7d7d;box-shadow:0 0 0 4px #ff535338}.stop small{display:block;margin-top:4px;font-size:9px;font-weight:800}
+    @media(orientation:landscape) and (max-height:520px){.topbar{min-height:48px;padding-block:4px}.lamp-light{width:15px;height:15px}.mode{min-height:36px}main{padding-block:6px}.control{min-height:126px;padding-top:9px;padding-bottom:7px}input[type="range"]{height:34px;margin-top:4px}.mode-select,.stop{min-height:61px}}
+    @media(max-width:700px) and (orientation:portrait){.topbar{grid-template-columns:1fr auto}.modes{grid-column:1/-1;grid-row:2}.connection{grid-column:2;grid-row:1}main{grid-template-columns:1fr}.bottom{grid-template-columns:1fr}.identity{grid-template-columns:112px 1fr}}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="lamps">
+        <div class="lamp"><span class="lamp-light" id="link-light"></span><span class="lamp-text"><span class="lamp-name">Phone link</span><span class="lamp-value" id="link-value">--</span></span></div>
+        <div class="lamp"><span class="lamp-light" id="rtk-light"></span><span class="lamp-text"><span class="lamp-name">RTK</span><span class="lamp-value" id="rtk-value">--</span></span></div>
+        <div class="lamp"><span class="lamp-light" id="heading-light"></span><span class="lamp-text"><span class="lamp-name">Heading</span><span class="lamp-value" id="heading-value">--</span></span></div>
+      </div>
+      <nav class="modes" aria-label="Phone control mode">
+        <button class="mode" type="button" data-mode="auto" disabled title="Phone Auto is not enabled in this experiment">Auto</button>
+        <button class="mode" type="button" data-mode="manual">Manual</button>
+        <button class="mode selected" type="button" data-mode="pause">Pause</button>
+      </nav>
+      <div class="connection" id="connection"><strong id="connection-state">CONNECTING</strong><span id="connection-detail">Waiting for handheld Pause</span></div>
+    </header>
+    <div class="safety">NRF-supervised test — blades off. Handheld must be AUTO to drive; handheld PAUSE and physical e-stop remain authoritative.</div>
+    <main>
+      <section class="control speed">
+        <button class="thumb" id="neutral" type="button">Neutral</button>
+        <h2>Speed <span id="speed-value">0.00 m/s</span></h2>
+        <input id="speed" type="range" min="0" max="0.30" step="0.01" value="0" aria-label="Forward speed from zero to 0.30 meters per second">
+        <div class="scale"><span>Stop</span><span>Forward .15</span><span>Forward .30</span></div>
+      </section>
+      <section class="control steering">
+        <button class="thumb" id="straight" type="button">Straight</button>
+        <h2>Steering <span id="steering-value">0%</span></h2>
+        <input id="steering" type="range" min="-100" max="100" step="1" value="0" aria-label="Steering from full left to full right">
+        <div class="scale"><span>Full left</span><span>Straight</span><span>Full right</span></div>
+      </section>
+    </main>
+    <div class="bottom">
+      <div class="identity">
+        <button class="mode-select" id="mode-select" type="button">HOLD<br>MODE SELECT</button>
+        <div class="screen-id"><strong>Wi-Fi Manual Field Test</strong>Forward only · 5 Hz<span class="help" id="help">Start with handheld Pause</span></div>
+      </div>
+      <div class="summary">
+        <div class="metric"><div class="label">Handheld mode</div><div class="value bad-text" id="handheld-mode">--</div></div>
+        <div class="metric"><div class="label">Phone mode</div><div class="value bad-text" id="phone-mode">PAUSE</div></div>
+        <div class="metric"><div class="label">Round trip</div><div class="value" id="rtt">-- ms</div></div>
+      </div>
+      <div class="actions"><button class="stop" id="stop" type="button">STOP<small>Hold MODE SELECT too</small></button></div>
+    </div>
+  </div>
+  <script>
+  (()=>{'use strict';
+    const key=new URLSearchParams(location.search).get('key')||'';
+    const headers={'Content-Type':'application/json','X-Operator-Key':key};
+    const speed=document.getElementById('speed'),steering=document.getElementById('steering');
+    const speedValue=document.getElementById('speed-value'),steeringValue=document.getElementById('steering-value');
+    const modeSelect=document.getElementById('mode-select'),stop=document.getElementById('stop'),help=document.getElementById('help');
+    const modeButtons=[...document.querySelectorAll('.mode:not(:disabled)')];
+    const connection=document.getElementById('connection'),connectionState=document.getElementById('connection-state'),connectionDetail=document.getElementById('connection-detail');
+    let clientId=localStorage.getItem('tractorWifiClientId');
+    if(!clientId){clientId=crypto.randomUUID?crypto.randomUUID():String(Date.now())+'-'+Math.random();localStorage.setItem('tractorWifiClientId',clientId)}
+    let session=null,sequence=0,phoneMode='pause',nextReason='heartbeat',modeSelectHeld=false,pendingMode=null,stopHeld=false,sending=false;
+
+    function renderValues(){speedValue.textContent=Number(speed.value).toFixed(2)+' m/s';steeringValue.textContent=Number(steering.value)+'%'}
+    function setPhoneMode(mode){phoneMode=mode;document.getElementById('phone-mode').textContent=mode.toUpperCase();document.getElementById('phone-mode').className='value '+(mode==='manual'?'good-text':'bad-text');modeButtons.forEach(b=>b.classList.toggle('selected',b.dataset.mode===mode))}
+    function setConnection(ok,title,detail){connection.classList.toggle('connected',ok);connectionState.textContent=title;connectionDetail.textContent=detail;document.getElementById('link-light').className='lamp-light '+(ok?'good':'bad');document.getElementById('link-value').textContent=ok?'LIVE':'LOST'}
+    function setLamp(name,level,value){document.getElementById(name+'-light').className='lamp-light '+(level||'');document.getElementById(name+'-value').textContent=value}
+    function modeName(mode){return mode===0?'AUTO':mode===1?'MANUAL':mode===2?'PAUSE':mode===9?'RADIO LOSS':'--'}
+
+    async function api(path,method='GET',body=null){const started=performance.now();const response=await fetch(path,{method,headers,body:body?JSON.stringify(body):null,cache:'no-store'});const data=await response.json();data._rtt=performance.now()-started;if(!response.ok){const e=new Error(data.error||'HTTP '+response.status);e.data=data;throw e}return data}
+
+    async function claim(){
+      try{const data=await api('/api/claim','POST',{client_id:clientId});session=data.session;sequence=0;setPhoneMode('pause');speed.value='0';renderValues();setConnection(true,'CONNECTED','Handheld Pause confirmed');help.textContent='Set handheld AUTO, then hold Mode Select + Manual'}
+      catch(error){session=null;setPhoneMode('pause');setConnection(false,'WAITING',error.message);help.textContent='Physical handheld must be in Pause with good NRF'}
+    }
+
+    async function sendLatest(){
+      if(!session||sending)return;sending=true;const reason=nextReason;nextReason='heartbeat';const payload={client_id:clientId,session,sequence:++sequence,mode:phoneMode,speed_mps:Number(speed.value),steering_percent:Number(steering.value),reason,client_time_ms:Date.now()};
+      try{const data=await api('/api/command','POST',payload);document.getElementById('rtt').textContent=Math.round(data._rtt)+' ms';setConnection(true,'CONTROL LIVE','Sequence '+data.sequence);if(data.phone_mode==='pause'&&phoneMode!=='pause')setPhoneMode('pause')}
+      catch(error){document.getElementById('rtt').textContent='-- ms';setPhoneMode('pause');speed.value='0';renderValues();if(error.data?.reclaim){session=null;setConnection(false,'SESSION LOST','Return handheld to Pause to reconnect')}else{setConnection(false,'COMMAND HELD',error.message);help.textContent=error.message}}
+      finally{sending=false}
+    }
+
+    async function pollState(){
+      try{const state=await api('/api/state');const mode=state.actual_mode;const modeEl=document.getElementById('handheld-mode');modeEl.textContent=modeName(mode);modeEl.className='value '+(mode===0?'good-text':'bad-text');
+        const fix=String(state.gps?.fix_quality||'--'),rtkGood=fix==='RTK Fixed',rtkWarn=fix==='RTK Float';setLamp('rtk',rtkGood?'good':rtkWarn?'warn':'bad',fix.replace('RTK ',''));
+        const headValid=state.gps?.headValid===true||String(state.gps?.headValid).toLowerCase()==='true';const heading=state.gps?.heading??state.gps?.relpos_heading_deg;setLamp('heading',headValid?'good':'bad',headValid&&heading!=null?Math.round(Number(heading))+'°':'INVALID');
+        if(!session&&mode===2)await claim();
+      }catch(error){setLamp('rtk','bad','--');setLamp('heading','bad','--');setConnection(false,'SERVER LOST',error.message)}
+      setTimeout(pollState,500);
+    }
+
+    function tryGuarded(){if(!modeSelectHeld)return;if(stopHeld){speed.value='0';setPhoneMode('pause');nextReason='guarded_stop';renderValues();sendLatest();help.textContent='Guarded STOP requested'}else if(pendingMode){setPhoneMode(pendingMode);nextReason=pendingMode==='manual'?'guarded_manual':'guarded_pause';sendLatest();help.textContent=pendingMode.toUpperCase()+' requested'}}
+    function holdSelect(e){e.preventDefault();modeSelectHeld=true;modeSelect.classList.add('held');if(modeSelect.setPointerCapture&&e.pointerId!=null)modeSelect.setPointerCapture(e.pointerId);help.textContent='Now hold Manual, Pause, or STOP';tryGuarded()}
+    function releaseSelect(){modeSelectHeld=false;modeSelect.classList.remove('held');help.textContent='Hold Mode Select + Manual, Pause, or STOP'}
+    function holdMode(e){e.preventDefault();pendingMode=e.currentTarget.dataset.mode;e.currentTarget.classList.add('pressed');if(e.currentTarget.setPointerCapture&&e.pointerId!=null)e.currentTarget.setPointerCapture(e.pointerId);if(!modeSelectHeld)help.textContent='Also hold Mode Select';tryGuarded()}
+    function releaseMode(e){e.currentTarget.classList.remove('pressed');if(pendingMode===e.currentTarget.dataset.mode)pendingMode=null}
+    function holdStop(e){e.preventDefault();stopHeld=true;stop.classList.add('armed');if(stop.setPointerCapture&&e.pointerId!=null)stop.setPointerCapture(e.pointerId);if(!modeSelectHeld)help.textContent='Also hold Mode Select to STOP';tryGuarded()}
+    function releaseStop(){stopHeld=false;stop.classList.remove('armed')}
+    function releaseAll(){releaseSelect();releaseStop();pendingMode=null;modeButtons.forEach(b=>b.classList.remove('pressed'))}
+
+    speed.addEventListener('input',()=>{renderValues();nextReason='speed'});steering.addEventListener('input',()=>{renderValues();nextReason='steering'});
+    document.getElementById('neutral').addEventListener('click',()=>{speed.value='0';nextReason='neutral';renderValues()});document.getElementById('straight').addEventListener('click',()=>{steering.value='0';nextReason='straight';renderValues()});
+    modeSelect.addEventListener('pointerdown',holdSelect);modeSelect.addEventListener('pointerup',releaseSelect);modeSelect.addEventListener('pointercancel',releaseSelect);modeSelect.addEventListener('lostpointercapture',releaseSelect);
+    modeButtons.forEach(b=>{b.addEventListener('pointerdown',holdMode);b.addEventListener('pointerup',releaseMode);b.addEventListener('pointercancel',releaseMode);b.addEventListener('lostpointercapture',releaseMode)});
+    stop.addEventListener('pointerdown',holdStop);stop.addEventListener('pointerup',releaseStop);stop.addEventListener('pointercancel',releaseStop);stop.addEventListener('lostpointercapture',releaseStop);
+    window.addEventListener('blur',releaseAll);document.addEventListener('visibilitychange',()=>{if(document.hidden){setPhoneMode('pause');speed.value='0';nextReason='page_hidden';renderValues();sendLatest();releaseAll()}});
+    renderValues();setPhoneMode('pause');pollState();setInterval(sendLatest,200);
+  })();
+  </script>
+</body>
+</html>

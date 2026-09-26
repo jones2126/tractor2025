@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#0b1118">
+  <title>Tractor Wi-Fi Manual Control — Prototype</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #090f15; --panel: #14202b; --panel-2: #1a2a38; --border: #334b5e;
+      --text: #f4f8fb; --muted: #9cafbd; --blue: #59b9ff; --green: #42d37b;
+      --amber: #ffb52e; --orange: #ff7a2f; --red: #ff5353;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--text); }
+    body { min-height: 100dvh; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
+    button, input { font: inherit; }
+    button { touch-action: none; user-select: none; -webkit-user-select: none; }
+    .app { min-height: 100dvh; display: grid; grid-template-rows: auto auto 1fr auto; }
+    .topbar {
+      min-height: 58px; display: grid; grid-template-columns: minmax(230px, 1fr) auto minmax(145px, 1fr);
+      align-items: center; gap: 12px; padding: 7px max(12px, env(safe-area-inset-left)) 7px max(12px, env(safe-area-inset-right));
+      background: #101923; border-bottom: 1px solid var(--border);
+    }
+    .lamps { display: flex; align-items: center; gap: clamp(11px, 2.2vw, 24px); }
+    .lamp { display: grid; grid-template-columns: 18px auto; align-items: center; gap: 6px; }
+    .lamp-light { width: 18px; height: 18px; border: 2px solid #607487; border-radius: 50%; background: #273440; box-shadow: inset 0 0 5px rgba(0, 0, 0, .7); }
+    .lamp-light.good { border-color: var(--green); background: var(--green); box-shadow: 0 0 9px rgba(66, 211, 123, .7); }
+    .lamp-light.warn { border-color: var(--amber); background: var(--amber); box-shadow: 0 0 9px rgba(255, 181, 46, .65); }
+    .lamp-light.bad { border-color: var(--red); background: var(--red); box-shadow: 0 0 9px rgba(255, 83, 83, .65); }
+    .lamp-text { line-height: 1.05; }
+    .lamp-name { display: block; color: var(--muted); font-size: 10px; font-weight: 750; text-transform: uppercase; }
+    .lamp-value { display: block; margin-top: 3px; font-size: 11px; font-weight: 800; }
+    .modes { display: flex; gap: 7px; justify-content: center; }
+    .mode { min-width: clamp(70px, 10vw, 112px); min-height: 42px; padding: 5px 12px; border: 2px solid #536879; border-radius: 9px; background: #20303d; color: #d4dee5; font-size: 13px; font-weight: 850; text-transform: uppercase; }
+    .mode.pressed { transform: translateY(1px); border-color: var(--amber); }
+    .mode.selected[data-mode="auto"] { background: #136b45; border-color: #5ee29a; color: white; }
+    .mode.selected[data-mode="manual"] { background: #0e6796; border-color: #6dcbff; color: white; }
+    .mode.selected[data-mode="pause"] { background: #93412b; border-color: #ff9974; color: white; }
+    .demo-badge { justify-self: end; text-align: right; }
+    .demo-badge strong { display: block; color: var(--amber); font-size: 11px; letter-spacing: .05em; }
+    .demo-badge span { color: var(--muted); font-size: 10px; }
+    .demo-badge.connected strong { color: var(--green); }
+    .safety-strip { padding: 4px 12px; background: #392b0d; color: #ffe2a0; text-align: center; font-size: 11px; font-weight: 700; }
+    main { min-height: 0; display: grid; grid-template-columns: 1fr 1fr; gap: clamp(8px, 1.4vw, 16px); padding: clamp(8px, 1.4vw, 16px); }
+    .control-panel { position: relative; min-width: 0; min-height: 150px; padding: 14px clamp(70px, 11vw, 112px) 12px; border: 1px solid var(--border); border-radius: 17px; background: var(--panel); }
+    .control-panel h2 { margin: 0; font-size: 17px; text-align: center; }
+    .control-panel h2 .live-value { color: var(--blue); font-size: 19px; font-variant-numeric: tabular-nums; }
+    .thumb-reset { position: absolute; top: 50%; width: clamp(62px, 9vw, 88px); aspect-ratio: 1; transform: translateY(-50%); border: 2px solid #43bce7; border-radius: 50%; background: #08789f; color: white; font-size: clamp(11px, 1.5vw, 15px); font-weight: 850; box-shadow: 0 6px 14px rgba(0, 0, 0, .28); }
+    .thumb-reset:active { transform: translateY(-49%) scale(.97); background: #0a91bd; }
+    .speed-panel .thumb-reset { left: clamp(7px, 1.5vw, 18px); }
+    .steering-panel .thumb-reset { right: clamp(7px, 1.5vw, 18px); }
+    input[type="range"] { width: 100%; height: 42px; margin: 9px 0 0; accent-color: var(--blue); touch-action: none; }
+    .scale { display: flex; justify-content: space-between; gap: 6px; color: var(--muted); font-size: 10px; }
+    .bottom-deck { display: grid; grid-template-columns: minmax(120px, .8fr) minmax(280px, 1.7fr) minmax(125px, .55fr); align-items: stretch; gap: 9px; padding: 0 max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); }
+    .identity { display: grid; grid-template-columns: 104px 1fr; gap: 8px; min-width: 0; }
+    .mode-select { min-height: 72px; border: 2px solid #ff9c68; border-radius: 14px; background: #b64c21; color: white; font-size: 13px; font-weight: 900; line-height: 1.1; }
+    .mode-select.held { background: var(--orange); box-shadow: 0 0 0 4px rgba(255, 122, 47, .2); }
+    .screen-id { align-self: end; min-width: 0; padding-bottom: 4px; color: var(--muted); font-size: 10px; line-height: 1.25; }
+    .screen-id strong { display: block; overflow: hidden; color: white; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+    .mode-help { display: block; margin-top: 4px; color: var(--amber); }
+    .command-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; padding: 7px; border: 1px solid var(--border); border-radius: 14px; background: var(--panel); }
+    .metric { min-width: 0; align-content: center; padding: 5px 8px; border-radius: 9px; background: var(--panel-2); }
+    .metric-label { color: var(--muted); font-size: 9px; text-transform: uppercase; }
+    .metric-value { margin-top: 3px; overflow: hidden; font-size: clamp(12px, 1.7vw, 18px); font-weight: 850; text-overflow: ellipsis; white-space: nowrap; }
+    .status-drive { color: var(--green); }
+    .status-stop { color: var(--red); }
+    .actions { display: grid; }
+    .stop { min-height: 72px; border: 0; border-radius: 14px; font-size: clamp(14px, 2vw, 19px); font-weight: 900; line-height: 1.1; }
+    .stop { background: var(--red); color: #260000; }
+    .stop.armed { background: #ff7d7d; box-shadow: 0 0 0 4px rgba(255, 83, 83, .22); }
+    .stop small { display: block; margin-top: 4px; font-size: 9px; font-weight: 800; }
+    @media (orientation: landscape) and (max-height: 520px) {
+      .topbar { min-height: 48px; padding-block: 4px; }
+      .lamp-light { width: 15px; height: 15px; }
+      .mode { min-height: 36px; }
+      main { padding-block: 6px; }
+      .control-panel { min-height: 126px; padding-top: 9px; padding-bottom: 7px; }
+      input[type="range"] { height: 34px; margin-top: 4px; }
+      .mode-select, .stop { min-height: 61px; }
+    }
+    @media (max-width: 700px) and (orientation: portrait) {
+      .topbar { grid-template-columns: 1fr auto; }
+      .modes { grid-column: 1 / -1; grid-row: 2; }
+      .demo-badge { grid-column: 2; grid-row: 1; }
+      main { grid-template-columns: 1fr; }
+      .bottom-deck { grid-template-columns: 1fr; }
+      .identity { grid-template-columns: 112px 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <!-- TEST UI ONLY. It exchanges JSON with the companion test server; it does not command the tractor. -->
+  <div class="app">
+    <header class="topbar">
+      <div class="lamps" aria-label="Tractor status indicators">
+        <div class="lamp"><span class="lamp-light" id="wifi-light"></span><span class="lamp-text"><span class="lamp-name">Wi-Fi</span><span class="lamp-value" id="wifi-value">--</span></span></div>
+        <div class="lamp"><span class="lamp-light" id="rtk-light"></span><span class="lamp-text"><span class="lamp-name">RTK</span><span class="lamp-value" id="rtk-value">--</span></span></div>
+        <div class="lamp"><span class="lamp-light" id="heading-light"></span><span class="lamp-text"><span class="lamp-name">Heading</span><span class="lamp-value" id="heading-value">--</span></span></div>
+      </div>
+      <nav class="modes" aria-label="Operating mode">
+        <button class="mode" type="button" data-mode="auto">Auto</button>
+        <button class="mode" type="button" data-mode="manual">Manual</button>
+        <button class="mode selected" type="button" data-mode="pause">Pause</button>
+      </nav>
+      <div class="demo-badge" id="connection-badge"><strong id="connection-state">CONNECTING</strong><span id="connection-detail">192.168.193.183:8765</span></div>
+    </header>
+    <div class="safety-strip">Test platform only — values go to the development computer, not the tractor.</div>
+    <main>
+      <section class="control-panel speed-panel" aria-labelledby="speed-heading">
+        <button class="thumb-reset" id="neutral" type="button" aria-label="Set requested speed to neutral">Neutral</button>
+        <h2 id="speed-heading">Speed <span class="live-value" id="speed-readout">0.00 m/s</span></h2>
+        <input id="speed" type="range" min="-0.60" max="0.60" step="0.01" value="0" aria-label="Requested speed from reverse 0.60 to forward 0.60 meters per second">
+        <div class="scale"><span>Reverse .60</span><span>Neutral</span><span>Forward .60</span></div>
+      </section>
+      <section class="control-panel steering-panel" aria-labelledby="steering-heading">
+        <button class="thumb-reset" id="straight" type="button" aria-label="Set requested steering to straight">Straight</button>
+        <h2 id="steering-heading">Steering <span class="live-value" id="steering-readout">0%</span></h2>
+        <input id="steering" type="range" min="-100" max="100" step="1" value="0" aria-label="Requested steering from full left to full right">
+        <div class="scale"><span>Full left</span><span>Straight</span><span>Full right</span></div>
+      </section>
+    </main>
+    <div class="bottom-deck">
+      <div class="identity">
+        <button class="mode-select" id="mode-select" type="button">HOLD<br>MODE SELECT</button>
+        <div class="screen-id"><strong>Tractor Manual Control</strong>ZeroTier test interface<span class="mode-help" id="mode-help">Hold Mode Select + mode or STOP</span></div>
+      </div>
+      <div class="command-summary" aria-live="polite">
+        <div class="metric"><div class="metric-label">Mode</div><div class="metric-value status-stop" id="state-value">PAUSE</div></div>
+        <div class="metric"><div class="metric-label">Sent speed</div><div class="metric-value" id="effective-speed">0.00 m/s</div></div>
+        <div class="metric"><div class="metric-label">Sent steering</div><div class="metric-value" id="effective-steering">0%</div></div>
+      </div>
+      <div class="actions">
+        <button class="stop" id="stop" type="button">STOP<small>Hold MODE SELECT too</small></button>
+      </div>
+    </div>
+  </div>
+  <script>
+    (() => {
+      'use strict';
+      const speed = document.getElementById('speed');
+      const steering = document.getElementById('steering');
+      const speedReadout = document.getElementById('speed-readout');
+      const steeringReadout = document.getElementById('steering-readout');
+      const stateValue = document.getElementById('state-value');
+      const effectiveSpeed = document.getElementById('effective-speed');
+      const effectiveSteering = document.getElementById('effective-steering');
+      const stop = document.getElementById('stop');
+      const modeSelect = document.getElementById('mode-select');
+      const modeHelp = document.getElementById('mode-help');
+      const modeButtons = [...document.querySelectorAll('.mode')];
+      const connectionBadge = document.getElementById('connection-badge');
+      const connectionState = document.getElementById('connection-state');
+      const connectionDetail = document.getElementById('connection-detail');
+      let modeSelectHeld = false;
+      let pendingMode = null;
+      let stopHeld = false;
+      let selectedMode = 'pause';
+      let lastSendAt = 0;
+      let sendTimer = null;
+      let telemetryTimer = null;
+      let connectionFailures = 0;
+
+      function requestedSpeed() { return Number(speed.value); }
+      function requestedSteering() { return Number(steering.value); }
+
+      function renderRequested() {
+        const speedValue = requestedSpeed();
+        const steeringValue = requestedSteering();
+        speedReadout.textContent = `${speedValue.toFixed(2)} m/s`;
+        steeringReadout.textContent = `${steeringValue}%`;
+        effectiveSpeed.textContent = `${speedValue.toFixed(2)} m/s`;
+        effectiveSteering.textContent = `${steeringValue}%`;
+      }
+
+      function commandPayload(reason = 'update') {
+        return {
+          type: 'control',
+          reason,
+          mode: selectedMode,
+          speed_mps: requestedSpeed(),
+          steering_percent: requestedSteering(),
+          client_time_ms: Date.now()
+        };
+      }
+
+      function setConnection(connected, detail) {
+        connectionBadge.classList.toggle('connected', connected);
+        connectionState.textContent = connected ? 'TEST CONNECTED' : 'TEST DISCONNECTED';
+        connectionDetail.textContent = detail;
+      }
+
+      async function sendCommand(reason = 'update') {
+        lastSendAt = Date.now();
+        try {
+          const response = await fetch('/api/command', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(commandPayload(reason)),
+            cache: 'no-store'
+          });
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          connectionFailures = 0;
+          setConnection(true, `${location.host} · commands flowing`);
+        } catch (error) {
+          connectionFailures += 1;
+          setConnection(false, `${location.host || 'local file'} · ${error.message}`);
+        }
+      }
+
+      function scheduleCommand(reason = 'slider') {
+        renderRequested();
+        const wait = Math.max(0, 100 - (Date.now() - lastSendAt));
+        clearTimeout(sendTimer);
+        sendTimer = setTimeout(() => sendCommand(reason), wait);
+      }
+
+      function setLamp(name, level, value) {
+        const light = document.getElementById(`${name}-light`);
+        light.className = `lamp-light ${level || ''}`.trim();
+        document.getElementById(`${name}-value`).textContent = value;
+      }
+
+      async function readTelemetry() {
+        try {
+          const response = await fetch('/api/telemetry', { cache: 'no-store' });
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          const data = await response.json();
+          setLamp('wifi', data.wifi.level, `${data.wifi.rssi_dbm} dBm`);
+          setLamp('rtk', data.rtk.level, data.rtk.status);
+          setLamp('heading', data.heading.level, `${data.heading.degrees}°`);
+          connectionFailures = 0;
+          setConnection(true, `${location.host} · telemetry ${data.sequence}`);
+        } catch (error) {
+          connectionFailures += 1;
+          if (connectionFailures > 1) {
+            setLamp('wifi', 'bad', 'LOST');
+            setLamp('rtk', '', '--');
+            setLamp('heading', '', '--');
+            setConnection(false, `${location.host || 'local file'} · ${error.message}`);
+          }
+        } finally {
+          telemetryTimer = setTimeout(readTelemetry, 750);
+        }
+      }
+
+      function setMode(nextMode) {
+        selectedMode = nextMode;
+        modeButtons.forEach(button => button.classList.toggle('selected', button.dataset.mode === nextMode));
+        stateValue.textContent = nextMode.toUpperCase();
+        stateValue.className = `metric-value ${nextMode === 'pause' ? 'status-stop' : 'status-drive'}`;
+        modeHelp.textContent = `${nextMode.toUpperCase()} selected`;
+        scheduleCommand('mode');
+      }
+
+      function tryGuardedAction() {
+        if (!modeSelectHeld) return;
+        if (pendingMode) setMode(pendingMode);
+        if (stopHeld) applyStop();
+      }
+
+      function holdModeSelect(event) {
+        event.preventDefault();
+        modeSelectHeld = true;
+        modeSelect.classList.add('held');
+        modeHelp.textContent = 'Now hold a mode or STOP';
+        if (modeSelect.setPointerCapture && event.pointerId != null) modeSelect.setPointerCapture(event.pointerId);
+        tryGuardedAction();
+      }
+      function releaseModeSelect() {
+        modeSelectHeld = false;
+        modeSelect.classList.remove('held');
+        modeHelp.textContent = 'Hold Mode Select + mode or STOP';
+      }
+
+      function holdModeButton(event) {
+        event.preventDefault();
+        const button = event.currentTarget;
+        pendingMode = button.dataset.mode;
+        button.classList.add('pressed');
+        if (button.setPointerCapture && event.pointerId != null) button.setPointerCapture(event.pointerId);
+        if (!modeSelectHeld) modeHelp.textContent = 'Also hold Mode Select';
+        tryGuardedAction();
+      }
+
+      function releaseModeButton(event) {
+        event.currentTarget.classList.remove('pressed');
+        if (pendingMode === event.currentTarget.dataset.mode) pendingMode = null;
+        if (!modeSelectHeld) modeHelp.textContent = 'Hold Mode Select + mode or STOP';
+      }
+
+      function holdStop(event) {
+        event.preventDefault();
+        stopHeld = true;
+        stop.classList.add('armed');
+        if (stop.setPointerCapture && event.pointerId != null) stop.setPointerCapture(event.pointerId);
+        if (!modeSelectHeld) modeHelp.textContent = 'Also hold Mode Select to STOP';
+        tryGuardedAction();
+      }
+
+      function releaseStop() {
+        stopHeld = false;
+        stop.classList.remove('armed');
+        if (!modeSelectHeld) modeHelp.textContent = 'Hold Mode Select + mode or STOP';
+      }
+
+      function applyStop() {
+        speed.value = '0';
+        steering.value = '0';
+        selectedMode = 'pause';
+        modeButtons.forEach(button => button.classList.toggle('selected', button.dataset.mode === 'pause'));
+        stateValue.textContent = 'STOP';
+        stateValue.className = 'metric-value status-stop';
+        modeHelp.textContent = 'GUARDED STOP sent';
+        renderRequested();
+        sendCommand('guarded_stop');
+      }
+
+      speed.addEventListener('input', () => scheduleCommand('speed'));
+      steering.addEventListener('input', () => scheduleCommand('steering'));
+      speed.addEventListener('change', () => sendCommand('speed_final'));
+      steering.addEventListener('change', () => sendCommand('steering_final'));
+      document.getElementById('neutral').addEventListener('click', () => { speed.value = '0'; scheduleCommand('neutral'); });
+      document.getElementById('straight').addEventListener('click', () => { steering.value = '0'; scheduleCommand('straight'); });
+      modeSelect.addEventListener('pointerdown', holdModeSelect);
+      modeSelect.addEventListener('pointerup', releaseModeSelect);
+      modeSelect.addEventListener('pointercancel', releaseModeSelect);
+      modeSelect.addEventListener('lostpointercapture', releaseModeSelect);
+      modeButtons.forEach(button => {
+        button.addEventListener('pointerdown', holdModeButton);
+        button.addEventListener('pointerup', releaseModeButton);
+        button.addEventListener('pointercancel', releaseModeButton);
+        button.addEventListener('lostpointercapture', releaseModeButton);
+      });
+
+      stop.addEventListener('pointerdown', holdStop);
+      stop.addEventListener('pointerup', releaseStop);
+      stop.addEventListener('pointercancel', releaseStop);
+      stop.addEventListener('lostpointercapture', releaseStop);
+
+      function releaseAllControls() {
+        releaseModeSelect();
+        releaseStop();
+        pendingMode = null;
+        modeButtons.forEach(button => button.classList.remove('pressed'));
+      }
+      window.addEventListener('blur', releaseAllControls);
+      document.addEventListener('visibilitychange', () => { if (document.hidden) releaseAllControls(); });
+      renderRequested();
+      sendCommand('page_load');
+      readTelemetry();
+      setInterval(() => sendCommand('heartbeat'), 1000);
+    })();
+  </script>
+</body>
+</html>
