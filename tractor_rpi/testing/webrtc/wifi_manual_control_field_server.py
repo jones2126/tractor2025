@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import secrets
 import socket
 import threading
@@ -22,6 +23,8 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
+from urllib import error as urllib_error
+from urllib import request as urllib_request
 from urllib.parse import parse_qs, urlparse
 
 
@@ -37,6 +40,7 @@ MAX_STEERING_PERCENT = 100
 BRIDGE_FRESH_S = 0.75
 PHONE_FRESH_S = 0.80
 OWNER_EXPIRE_S = 3.0
+DEFAULT_NTFY_TOPIC = "rpi-tractor01-jones2126"
 
 
 def utc_now() -> str:
@@ -48,6 +52,33 @@ def finite_number(value: Any) -> bool:
         return math.isfinite(float(value))
     except (TypeError, ValueError):
         return False
+
+
+def notify_control_urls(topic: str, zerotier_url: str, local_url: str) -> None:
+    """Send the temporary operator URLs without preventing server startup."""
+    message = (
+        "Open the NRF-supervised Wi-Fi control page. This temporary link "
+        "includes the operator key.\n\n"
+        f"ZeroTier: {zerotier_url}\n"
+        f"Local Wi-Fi: {local_url}"
+    )
+    request = urllib_request.Request(
+        f"https://ntfy.sh/{topic}",
+        data=message.encode("utf-8"),
+        headers={
+            "Title": "Tractor01 Wi-Fi control ready",
+            "Click": zerotier_url,
+            "Tags": "tractor",
+        },
+        method="POST",
+    )
+    try:
+        with urllib_request.urlopen(request, timeout=5) as response:
+            if not 200 <= response.status < 300:
+                raise RuntimeError(f"ntfy returned HTTP {response.status}")
+        print(f"ntfy: control links sent to https://ntfy.sh/{topic}")
+    except (urllib_error.URLError, OSError, RuntimeError) as exc:
+        print(f"WARNING: could not send control links to ntfy: {exc}")
 
 
 class FieldState:
@@ -400,6 +431,12 @@ def main() -> None:
     parser.add_argument("--command-ip", default="127.0.0.1")
     parser.add_argument("--dry-run", action="store_true", help="log accepted commands without sending UDP 6004")
     parser.add_argument("--log-dir", type=Path, default=Path("/home/al/field_logs"))
+    parser.add_argument(
+        "--ntfy-topic",
+        default=os.environ.get("TRACTOR_NTFY_TOPIC", DEFAULT_NTFY_TOPIC),
+        help="ntfy.sh topic for the temporary control URLs",
+    )
+    parser.add_argument("--no-ntfy", action="store_true", help="do not send the startup URLs to ntfy.sh")
     args = parser.parse_args()
 
     if not PAGE_PATH.is_file():
@@ -413,13 +450,18 @@ def main() -> None:
     threading.Thread(target=state.safety_loop, daemon=True).start()
     server = ThreadingHTTPServer((args.host, args.port), handler_factory(state, operator_key))
 
+    zerotier_url = f"http://{TRACTOR_ZEROTIER_IP}:{args.port}/?key={operator_key}"
+    local_url = f"http://{TRACTOR_LOCAL_IP}:{args.port}/?key={operator_key}"
+
     print("NRF-supervised Wi-Fi manual-control FIELD EXPERIMENT")
     print("Blades off. Keep the handheld and physical emergency stop available.")
     print("Start with the handheld in Pause; use handheld Auto only while phone control is armed.")
-    print(f"ZeroTier: http://{TRACTOR_ZEROTIER_IP}:{args.port}/?key={operator_key}")
-    print(f"Local:    http://{TRACTOR_LOCAL_IP}:{args.port}/?key={operator_key}")
+    print(f"ZeroTier: {zerotier_url}")
+    print(f"Local:    {local_url}")
     print(f"Log:      {log_path}")
     print(f"UDP 6004: {'DISABLED (--dry-run)' if args.dry_run else args.command_ip}")
+    if not args.no_ntfy:
+        notify_control_urls(args.ntfy_topic, zerotier_url, local_url)
     print("Press Ctrl+C to stop; shutdown sends a neutral command burst.")
     try:
         server.serve_forever(poll_interval=0.2)

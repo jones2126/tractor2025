@@ -85,6 +85,11 @@ python3 tractor_rpi/testing/webrtc/wifi_manual_control_field_server.py --dry-run
 
 8. Open the printed URL containing the temporary `?key=...` value. Use the
    ZeroTier URL when remote or the local URL on the tractor field network.
+   At startup the server also sends both URLs to the existing
+   `rpi-tractor01-jones2126` ntfy topic; tapping the notification opens the
+   ZeroTier URL. An ntfy delivery failure is only a warning and does not stop
+   the server. Use `--no-ntfy` when a notification is not wanted, or
+   `--ntfy-topic TOPIC` to select another topic.
 9. The phone cannot claim control until fresh UDP 6003 telemetry confirms
    handheld Pause and a good NRF link.
 
