@@ -8,6 +8,7 @@ Wants=network.target
 Type=simple
 User=al
 WorkingDirectory=/home/al/tractor2025/tractor_rpi
+ExecStartPre=/usr/bin/python3 -u /home/al/tractor2025/tractor_rpi/testing/configure_dual_f9p_5hz_profile_20260923.py --heading-startup --device-wait-seconds 30
 ExecStart=/usr/bin/python3 -u /home/al/tractor2025/tractor_rpi/rtcm_server_20260828.py
 Restart=always
 RestartSec=5

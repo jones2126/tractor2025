@@ -1,14 +1,19 @@
 #!/usr/bin/env python3
 """Guarded tractor01 dual-F9P 5 Hz moving-base A/B configuration.
 
-The utility is read-only unless --apply or --restore is supplied.  It changes
-only the listed navigation-rate, UART1 protocol/message, and Heading USB output
-keys.  Apply writes RAM, battery-backed RAM, and flash, saves every changed key
-for both receivers first, and verifies the stored target values independently.
+The utility is read-only unless --apply, --restore, or --heading-startup is
+supplied. It changes only the listed navigation-rate, UART1 protocol/message,
+and Heading USB output keys. Apply writes RAM, battery-backed RAM, and flash,
+saves every changed key for both receivers first, and verifies the stored
+target values independently.
 
 Stop rtcm-server before running because it normally owns both serial devices.
 Do not use ArduSimple stock configuration files on the tractor's custom
 UART1-to-UART1 wiring.
+
+The non-interactive --heading-startup action is intended only for the
+rtcm-server systemd ExecStartPre step. It rewrites and verifies the known
+heading profile in volatile RAM on every service start without wearing flash.
 """
 
 from __future__ import annotations
@@ -32,6 +37,7 @@ CLASS_ACK = 0x05
 ID_ACK_NAK = 0x00
 ID_ACK_ACK = 0x01
 LAYERS_RAM_BBR_FLASH = 0x07
+LAYER_RAM = 0x01
 
 
 @dataclass(frozen=True)
@@ -194,8 +200,13 @@ def wait_for_ack(port: serial.Serial) -> str:
     return "NO_ACK"
 
 
-def valset(port: serial.Serial, settings: tuple[Setting, ...], values: dict[str, int]):
-    payload = struct.pack("<BBBB", 0, LAYERS_RAM_BBR_FLASH, 0, 0)
+def valset(
+    port: serial.Serial,
+    settings: tuple[Setting, ...],
+    values: dict[str, int],
+    layer_mask: int = LAYERS_RAM_BBR_FLASH,
+):
+    payload = struct.pack("<BBBB", 0, layer_mask, 0, 0)
     for setting in settings:
         payload += struct.pack("<I", setting.key_id)
         payload += struct.pack(setting.fmt, int(values[setting.name]))
@@ -216,10 +227,11 @@ def write_and_verify(
     port_name: str,
     settings: tuple[Setting, ...],
     values: dict[str, int],
+    layer_mask: int = LAYERS_RAM_BBR_FLASH,
 ) -> None:
     with serial.Serial(port_name, 115200, timeout=0.15) as port:
         time.sleep(0.4)
-        ack = valset(port, settings, values)
+        ack = valset(port, settings, values, layer_mask=layer_mask)
         print(f"{label}: UBX-CFG-VALSET response: {ack}")
         if ack == "NAK":
             raise RuntimeError(f"{label}: receiver rejected UBX-CFG-VALSET")
@@ -253,12 +265,56 @@ def main() -> int:
     action = parser.add_mutually_exclusive_group()
     action.add_argument("--apply", action="store_true")
     action.add_argument("--restore", metavar="BACKUP_JSON")
+    action.add_argument(
+        "--heading-startup",
+        action="store_true",
+        help=(
+            "non-interactively rewrite and verify the Heading 5 Hz profile "
+            "in volatile RAM for the rtcm-server ExecStartPre step"
+        ),
+    )
+    parser.add_argument(
+        "--device-wait-seconds",
+        type=float,
+        default=30.0,
+        help="maximum wait for --heading-port to appear in startup mode",
+    )
     parser.add_argument(
         "--backup",
         default="/home/al/dual_f9p_before_5hz_20260923.json",
         help="targeted-value backup written before --apply",
     )
     args = parser.parse_args()
+
+    if args.heading_startup:
+        if args.device_wait_seconds < 0:
+            parser.error("--device-wait-seconds must not be negative")
+        deadline = time.monotonic() + args.device_wait_seconds
+        heading_path = Path(args.heading_port)
+        while not heading_path.exists() and time.monotonic() < deadline:
+            time.sleep(0.25)
+        if not heading_path.exists():
+            raise RuntimeError(
+                f"heading device did not appear within "
+                f"{args.device_wait_seconds:.1f}s: {args.heading_port}"
+            )
+        heading_target = target_values(HEADING_SETTINGS)
+        print(
+            "HEADING STARTUP RECOVERY: writing the tractor01 5 Hz moving-base "
+            "profile to volatile RAM"
+        )
+        write_and_verify(
+            "Heading startup",
+            args.heading_port,
+            HEADING_SETTINGS,
+            heading_target,
+            layer_mask=LAYER_RAM,
+        )
+        print(
+            "PASS: heading startup profile is verified in RAM; releasing "
+            "the serial port to rtcm-server"
+        )
+        return 0
 
     if args.restore:
         backup_path = Path(args.restore)

@@ -73,6 +73,7 @@ Wants=network.target
 Type=simple
 User=$USER
 WorkingDirectory=$SCRIPT_DIR
+ExecStartPre=$PYTHON_BIN -u $SCRIPT_DIR/testing/configure_dual_f9p_5hz_profile_20260923.py --heading-startup --device-wait-seconds 30
 ExecStart=$PYTHON_BIN -u $SCRIPT_DIR/rtcm_server_20260828.py
 Restart=always
 RestartSec=5

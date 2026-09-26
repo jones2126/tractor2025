@@ -193,6 +193,13 @@ sudo systemctl daemon-reload
 sudo systemctl restart rtcm-server
 ```
 
+The tractor01 service runs the guarded 5 Hz Heading-F9P profile before every
+RTCM-server start. The pre-start action writes only volatile RAM, independently
+reads the targeted values back, and prevents the RTCM server from starting if
+configuration verification fails. This deliberately treats every boot or
+service restart as if the heading receiver has returned to factory defaults;
+it does not repeatedly write battery-backed RAM or flash.
+
 ### Helper scripts (in `~/tractor2025/tractor_rpi/`)
 
 ```bash
