@@ -14,14 +14,16 @@ This package is the first supervised validation of the three outer perimeter pat
 - Return by the recorded front-yard and base routes.
 - The left edge of the 42-inch deck is the perimeter-side edge.
 
-The mission has 4,200 waypoints, is 836.702 m long, and takes about 13.95 minutes at the nominal 1.00 m/s command. Lookahead is 2.00 m normally and 1.00 m within 3 m of reviewed tight joins.
+After the first field attempt exposed turns that were too tight, the path was rebuilt conservatively with a 2.00 m turn-softening radius. It deliberately stands farther inside narrow or sharply notched portions of the surveyed perimeter.
+
+The revised mission has 3,462 waypoints, is 689.949 m long, and takes about 11.50 minutes at the nominal 1.00 m/s command. Lookahead is 2.00 m throughout.
 
 ## First-run rules
 
 1. Keep the mower deck disengaged for the entire run.
 2. Run the normal preflight and do not proceed unless it passes.
 3. Keep the legacy handheld ready; select Pause for excessive cross-track error, an unsuitable access connector, or any unexpected behavior.
-4. Closely supervise the newly generated short access connectors. The longest is 3.59 m between the front-yard boundary and its recorded over-road transition route.
+4. Closely supervise the newly generated short access connectors. The longest is 2.88 m between the front-yard boundary and its recorded over-road transition route.
 5. Use the dashboard's spoken left/right and distance guidance to approach and align with the mission's initial point.
 
 ## On tractor01

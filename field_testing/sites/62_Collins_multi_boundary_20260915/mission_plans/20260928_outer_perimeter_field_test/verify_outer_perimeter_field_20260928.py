@@ -16,9 +16,9 @@ STEM = "62_Collins_outer_perimeter_field_test_1mps_20260928"
 MISSION = GENERATED / f"{STEM}.txt"
 AUDIT = GENERATED / f"{STEM}_audit.csv"
 REPORT = GENERATED / f"{STEM}_report.json"
-EXPECTED_MISSION_SHA256 = "16f673bd670db3f7e9cf957e8ce08afd989b8ec9b7a7a5f4f8a9602679f33e37"
-EXPECTED_AUDIT_SHA256 = "c13560f4ec3a6d15f505c37286d757e4c61f1b4b55a0dd802e594dccdb30f6ab"
-EXPECTED_ROWS = 4_200
+EXPECTED_MISSION_SHA256 = "b47660b4c74d5e26ca5d9448f069fd7193c068cf62e3c0b62d5c083d9aed4d64"
+EXPECTED_AUDIT_SHA256 = "54072d526370447f4efd22a84052798543135fc45298e6bda80e983178f5cf25"
+EXPECTED_ROWS = 3_462
 EXPECTED_PHASES = {
     "base_to_backyard",
     "backyard_outer_perimeter",
@@ -61,6 +61,8 @@ def verify() -> None:
         raise ValueError("Perimeter direction changed")
     if report.get("deck_edge_rule") != "left deck edge follows outer perimeter":
         raise ValueError("Left-deck-edge perimeter rule changed")
+    if float(report.get("turn_softening_radius_m", 0)) != 2.0:
+        raise ValueError("Turn-softening radius changed")
     if float(report.get("maximum_waypoint_gap_m", 99)) > 0.21:
         raise ValueError("Report waypoint gap exceeds 0.21 m")
 
@@ -72,7 +74,7 @@ def verify() -> None:
     if any(row[4] != "1.00" for row in rows):
         raise ValueError("Every speed command must remain 1.00 m/s")
     lookaheads = {row[3] for row in rows}
-    if lookaheads != {"1.00", "2.00"}:
+    if lookaheads != {"2.00"}:
         raise ValueError(f"Unexpected lookahead policy: {sorted(lookaheads)}")
 
     with AUDIT.open(newline="", encoding="utf-8-sig") as handle:
@@ -107,7 +109,7 @@ def verify() -> None:
     print("PASS: exact reviewed outer-perimeter field package verified.")
     print(f"      {EXPECTED_ROWS:,} waypoints; {report['path_length_m']:.3f} m; nominal {report['nominal_motion_time_minutes_at_1mps']:.2f} min.")
     print("      Clockwise route; left deck edge at perimeter; every speed command 1.00 m/s.")
-    print(f"      Lookahead 2.00 m normally and 1.00 m near reviewed tight joins; maximum gap {max_gap:.3f} m.")
+    print(f"      Geometry softened to a 2.00 m radius; lookahead 2.00 m; maximum gap {max_gap:.3f} m.")
     print("      FIRST RUN: blades disengaged, direct supervision, handheld ready for Pause.")
 
 

@@ -1,78 +1,79 @@
 {
   "status": "SUPERVISED_BLADES_OFF_FIELD_TEST",
-  "mission_sha256": "16f673bd670db3f7e9cf957e8ce08afd989b8ec9b7a7a5f4f8a9602679f33e37",
-  "audit_sha256": "c13560f4ec3a6d15f505c37286d757e4c61f1b4b55a0dd802e594dccdb30f6ab",
-  "waypoints": 4200,
-  "path_length_m": 836.702,
-  "nominal_motion_time_minutes_at_1mps": 13.95,
+  "mission_sha256": "b47660b4c74d5e26ca5d9448f069fd7193c068cf62e3c0b62d5c083d9aed4d64",
+  "audit_sha256": "54072d526370447f4efd22a84052798543135fc45298e6bda80e983178f5cf25",
+  "waypoints": 3462,
+  "path_length_m": 689.949,
+  "nominal_motion_time_minutes_at_1mps": 11.5,
   "maximum_waypoint_gap_m": 0.201,
   "speed_mps": 1.0,
   "normal_lookahead_m": 2.0,
   "tight_join_lookahead_m": 1.0,
   "tight_join_zone_m": 3.0,
+  "turn_softening_radius_m": 2.0,
   "route_direction": "clockwise",
   "deck_edge_rule": "left deck edge follows outer perimeter",
   "phases": {
     "base_to_backyard": 104,
-    "enter_backyard_perimeter": 3,
-    "backyard_outer_perimeter": 2167,
-    "backyard_boundary_exit_arc": 30,
-    "backyard_to_front_access": 3,
+    "enter_backyard_perimeter": 14,
+    "backyard_outer_perimeter": 1790,
+    "backyard_boundary_exit_arc": 61,
+    "backyard_to_front_access": 5,
     "backyard_to_front": 105,
-    "enter_front_perimeter": 5,
-    "front_outer_perimeter": 550,
-    "front_boundary_outbound_arc": 97,
-    "front_to_overroad_access": 18,
+    "enter_front_perimeter": 8,
+    "front_outer_perimeter": 547,
+    "front_boundary_outbound_arc": 174,
+    "front_to_overroad_access": 15,
     "front_to_overroad": 68,
     "enter_overroad_perimeter": 2,
-    "overroad_outer_perimeter": 870,
-    "overroad_boundary_exit_arc": 5,
+    "overroad_outer_perimeter": 391,
+    "overroad_boundary_exit_arc": 6,
     "overroad_to_front_access": 2,
     "overroad_to_front": 69,
     "reenter_front_for_return": 7,
-    "front_boundary_return_arc": 26,
+    "front_boundary_return_arc": 25,
     "front_to_base_access": 2,
     "front_to_base": 67
   },
   "connectors": [
     {
       "phase": "enter_backyard_perimeter",
-      "length_m": 0.55227231628402
+      "length_m": 2.6879043863575194
     },
     {
       "phase": "backyard_to_front_access",
-      "length_m": 0.5402991970750872
+      "length_m": 0.9227385240490202
     },
     {
       "phase": "enter_front_perimeter",
-      "length_m": 0.9858146433889663
+      "length_m": 1.4365614789175998
     },
     {
       "phase": "front_to_overroad_access",
-      "length_m": 3.5871760120776077
+      "length_m": 2.881796893910675
     },
     {
       "phase": "enter_overroad_perimeter",
-      "length_m": 0.09206173248429482
+      "length_m": 0.06311759549366475
     },
     {
       "phase": "overroad_to_front_access",
-      "length_m": 0.09429723189329485
+      "length_m": 0.08308710117713497
     },
     {
       "phase": "reenter_front_for_return",
-      "length_m": 1.3714150435101098
+      "length_m": 1.3744217732971742
     },
     {
       "phase": "front_to_base_access",
-      "length_m": 0.38607129512514204
+      "length_m": 0.38653322947734897
     }
   ],
   "source_review_report": "field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20260927_outer_perimeter_1mps_REVIEW_ONLY/62_Collins_outer_perimeter_1mps_report.json",
   "limitations": [
     "Mower deck must remain disengaged for this first supervised perimeter validation.",
     "Recorded between-area routes are reused; short access connectors are newly generated straight joins and require close supervision.",
-    "The 1.0 m lookahead zones reduce Pure Pursuit corner cutting at reviewed tight joins; they do not change the 1.0 m/s command.",
+    "The perimeter geometry is conservatively opened with a 2.0 m turn-softening radius; this deliberately stands farther inside narrow or sharply notched areas.",
     "Keep the handheld available and select Pause immediately for excessive cross-track error or an unsuitable connector."
   ]
 }
