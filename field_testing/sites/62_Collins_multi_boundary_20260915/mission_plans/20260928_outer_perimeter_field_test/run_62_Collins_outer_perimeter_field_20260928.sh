@@ -56,9 +56,9 @@ echo "============================================================"
 
 echo "=== 4/7: Running tractor preflight; keep the tractor in Pause ==="
 if [[ "${dashboard_mode}" == true ]]; then
-    python3 "${PREFLIGHT}" --expected-firmware teensy_main_20260914
+    python3 "${PREFLIGHT}" --expected-firmware teensy_main_20260926
 else
-    sudo python3 "${PREFLIGHT}" --expected-firmware teensy_main_20260914
+    sudo python3 "${PREFLIGHT}" --expected-firmware teensy_main_20260926
 fi
 
 echo "=== 5/7: Checking RTK position and heading at the mission start ==="
