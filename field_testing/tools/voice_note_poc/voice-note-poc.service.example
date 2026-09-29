@@ -1,0 +1,21 @@
+[Unit]
+Description=Standalone Tractor Voice Note Proof of Concept
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=al
+Group=al
+WorkingDirectory=/home/al/repos/tractor2025/field_testing/tools/voice_note_poc
+ExecStart=/usr/bin/bash /home/al/repos/tractor2025/field_testing/tools/voice_note_poc/run.sh
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/al/field_logs/voice_note_poc
+
+[Install]
+WantedBy=multi-user.target

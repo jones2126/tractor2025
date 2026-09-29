@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#15220f">
+  <title>Tractor Voice Notes</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <main>
+    <header>
+      <p class="eyebrow">STANDALONE FIELD TEST</p>
+      <h1>Tractor Voice Notes</h1>
+      <p class="instruction">Begin every saved note with <strong>“Tractor note”</strong>.</p>
+    </header>
+
+    <section id="statusPanel" class="status-panel idle" aria-live="assertive">
+      <span id="statusDot" class="status-dot"></span>
+      <span id="statusText">MICROPHONE READY</span>
+    </section>
+
+    <section class="controls">
+      <button id="startButton" class="start">START LISTENING</button>
+      <button id="stopButton" class="stop" disabled>STOP LISTENING</button>
+    </section>
+
+    <section class="card">
+      <div class="count-row">
+        <span>NOTES THIS SESSION</span>
+        <strong id="noteCount">0</strong>
+      </div>
+      <div class="latest-label">MOST RECENTLY SAVED</div>
+      <div id="latestNote" class="latest-note">No notes saved yet.</div>
+    </section>
+
+    <section class="card diagnostic">
+      <div><span>Connection</span><strong id="connectionState">Not connected</strong></div>
+      <div><span>Audio format</span><strong id="audioFormat">Checking…</strong></div>
+      <div><span>Last heard</span><strong id="lastHeard">—</strong></div>
+    </section>
+
+    <p class="privacy">Audio is streamed through the NAS to Google while listening. This test does not save raw audio.</p>
+  </main>
+  <script src="/static/app.js" defer></script>
+</body>
+</html>
