@@ -5,54 +5,75 @@ The initial test remains directly supervised and blades-off. Keep the handheld
 and physical e-stop immediately available. Do not select Auto unless preflight
 ends with `MISSION PREFLIGHT PASS`.
 
-## Before leaving: install the approved package on Tractor01
+## 1. Establish the field network
 
-The approved package is tracked in the main GitHub workflow. Run this command
-in Windows PowerShell while Tractor01 is reachable.
+Turn on Starlink or the field router and wait for a working network. Power up
+Tractor01 and allow the Raspberry Pi and GPS receivers to boot.
 
-Update Tractor01 and display the installed revision and working-tree status:
+## 2. Open PuTTY
 
-```powershell
-ssh -t -i "$env:USERPROFILE\.ssh\id_ed25519_tractor01" al@192.168.193.76 'cd /home/al/tractor2025 && git pull --ff-only origin main && git rev-parse --short HEAD && git status --short'
+Connect PuTTY to Tractor01 as user `al`:
+
+```text
+192.168.193.76
 ```
 
-Verify the pulled package without starting services or motion:
+If ZeroTier is unavailable but the laptop is connected directly to the
+tractor's local network, use `192.168.1.151`.
 
-```powershell
-ssh -t -i "$env:USERPROFILE\.ssh\id_ed25519_tractor01" al@192.168.193.76 'cd /home/al/tractor2025 && python3 field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20260929_consolidated_perimeter_field_test/verify_consolidated_perimeter_20260929.py'
+All commands below are single Linux shell lines pasted directly into PuTTY.
+
+## 3. Pull the approved mission from GitHub
+
+This fetches GitHub, shows the local and GitHub revisions, performs only a
+fast-forward pull, and displays the installed revision and any local changes:
+
+```bash
+cd /home/al/tractor2025 && git fetch origin && echo "Before pull: local=$(git rev-parse --short HEAD) GitHub=$(git rev-parse --short origin/main)" && git pull --ff-only origin main && echo "Installed revision: $(git rev-parse --short HEAD)" && git status --short
+```
+
+Verify the pulled mission package without starting services or motion:
+
+```bash
+cd /home/al/tractor2025 && python3 field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20260929_consolidated_perimeter_field_test/verify_consolidated_perimeter_20260929.py
 ```
 
 Expected result: `PASS: exact approved supervised blades-off field package verified.`
 
-## Field Window 1 — configure Heading F9P and run preflight
+## 4. Push and verify the non-interactive Heading-F9P profile
 
 Before running: tractor stationary, handheld in Pause, blades disengaged.
-This stops `rtcm-server`, runs the guarded Heading-F9P configuration, restores
-`rtcm-server` even if configuration fails, waits for startup, and runs the
-preflight expecting firmware `teensy_main_20260926`.
 
-```powershell
-ssh -t -i "$env:USERPROFILE\.ssh\id_ed25519_tractor01" al@192.168.193.76 'cd /home/al/tractor2025 || exit 1; sudo systemctl stop rtcm-server.service || exit 1; bash field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20260929_consolidated_perimeter_field_test/run_62_Collins_consolidated_perimeter_20260929.sh --configure-heading; config_rc=$?; sudo systemctl start rtcm-server.service; start_rc=$?; if [ $config_rc -ne 0 ] || [ $start_rc -ne 0 ]; then echo "HEADING CONFIGURATION OR RTCM RESTART FAILED — DO NOT SELECT AUTO"; exit 1; fi; echo "Waiting 30 seconds for corrections and heading startup..."; sleep 30; systemctl is-active rtcm-server.service teensy-bridge.service; sudo python3 tractor_rpi/testing/mission_preflight_20260804.py --expected-firmware teensy_main_20260926'
+This command stops `rtcm-server`, writes the known 5 Hz Heading-F9P profile to
+volatile RAM, independently reads back every targeted value, and restarts
+`rtcm-server`. It enables UBX `NAV-RELPOSNED` on USB and disables the USB NMEA
+protocol and all targeted USB NMEA messages. It does not prompt and does not
+write flash. The service startup repeats the same verified RAM-only recovery.
+
+```bash
+cd /home/al/tractor2025 || exit 1; sudo systemctl stop rtcm-server.service || exit 1; sudo python3 -u tractor_rpi/testing/configure_dual_f9p_5hz_profile_20260923.py --heading-startup --device-wait-seconds 30; config_rc=$?; sudo systemctl start rtcm-server.service; start_rc=$?; systemctl is-active rtcm-server.service; if [ "$config_rc" -ne 0 ] || [ "$start_rc" -ne 0 ]; then echo "FAIL: Heading configuration or rtcm-server restart failed — DO NOT SELECT AUTO"; false; else echo "PASS: Heading profile verified and rtcm-server is active"; fi
 ```
 
-When prompted by the guarded tool, type exactly:
+Require both the configurator's independent-readback PASS and active
+`rtcm-server`. If either fails, do not select Auto.
 
-```text
-CONFIGURE HEADING
+## 5. Run preflight
+
+RTK Fixed and fixed-carrier heading may need time to settle. Rerun this same
+command as needed while the tractor remains stationary in Pause:
+
+```bash
+cd /home/al/tractor2025 && sudo python3 tractor_rpi/testing/mission_preflight_20260804.py --expected-firmware teensy_main_20260926
 ```
 
-If RTK or heading has not settled yet, rerun preflight with:
+Do not continue until the final result is `MISSION PREFLIGHT PASS`.
 
-```powershell
-ssh -t -i "$env:USERPROFILE\.ssh\id_ed25519_tractor01" al@192.168.193.76 'cd /home/al/tractor2025 && sudo python3 tractor_rpi/testing/mission_preflight_20260804.py --expected-firmware teensy_main_20260926'
-```
+## 6. Start the approved dashboard
 
-## Field Window 2 — launch the approved dashboard
+Open a second PuTTY window and keep it open for the entire dashboard session:
 
-Keep this PowerShell/SSH window open for the entire dashboard session:
-
-```powershell
-ssh -t -i "$env:USERPROFILE\.ssh\id_ed25519_tractor01" al@192.168.193.76 'cd /home/al/tractor2025 && sudo -v && python3 field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20260929_consolidated_perimeter_field_test/mission_dashboard_consolidated_perimeter_20260929.py'
+```bash
+cd /home/al/tractor2025 && sudo -v && python3 field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20260929_consolidated_perimeter_field_test/mission_dashboard_consolidated_perimeter_20260929.py
 ```
 
 Open the printed URL beginning with:
@@ -67,10 +88,10 @@ the dashboard reports ready. Press `START MISSION` only while stationary in
 Pause; the launcher runs its safety gates again. Select Auto only after the
 controller is live and the route is clear.
 
-## Optional status/log window
+## Optional Tractor01 status/log command
 
-```powershell
-ssh -t -i "$env:USERPROFILE\.ssh\id_ed25519_tractor01" al@192.168.193.76 'systemctl is-active rtcm-server.service teensy-bridge.service led-controller.service; journalctl -u rtcm-server.service -u teensy-bridge.service --since "10 minutes ago" --no-pager -n 120'
+```bash
+systemctl is-active rtcm-server.service teensy-bridge.service led-controller.service; journalctl -u rtcm-server.service -u teensy-bridge.service --since "10 minutes ago" --no-pager -n 120
 ```
 
 ## NoMachine diagnostics on either Windows computer

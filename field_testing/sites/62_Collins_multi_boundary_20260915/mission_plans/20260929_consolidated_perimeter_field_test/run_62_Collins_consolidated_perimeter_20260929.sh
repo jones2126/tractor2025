@@ -7,7 +7,7 @@ MISSION="${SCRIPT_DIR}/generated/62_Collins_consolidated_perimeter_1mps_20260929
 AUDIT="${SCRIPT_DIR}/generated/62_Collins_consolidated_perimeter_1mps_20260929_audit.csv"
 VERIFY="${SCRIPT_DIR}/verify_consolidated_perimeter_20260929.py"
 PREFLIGHT="${TRACTOR_REPO}/tractor_rpi/testing/mission_preflight_20260804.py"
-HEADING_CONFIG="${TRACTOR_REPO}/tractor_rpi/testing/configure_heading_f9p_20260727.py"
+HEADING_CONFIG="${TRACTOR_REPO}/tractor_rpi/testing/configure_dual_f9p_5hz_profile_20260923.py"
 CONTROLLER="${TRACTOR_REPO}/tractor_rpi/pure-pursuit/pure_pursuit_controller_20260915.py"
 LOGGER="${TRACTOR_REPO}/tractor_rpi/field_test_logger_20260828.py"
 APPROVED_FOR_FIELD=true
@@ -36,8 +36,9 @@ if [[ "${APPROVED_FOR_FIELD}" != true ]]; then
 fi
 
 if [[ "${configure_heading}" == true ]]; then
-    echo "Stop rtcm-server before continuing. This guarded tool requires CONFIGURE HEADING."
-    sudo python3 "${HEADING_CONFIG}" --apply
+    echo "Stop rtcm-server before continuing. Applying the verified RAM-only Heading-F9P startup profile."
+    sudo python3 -u "${HEADING_CONFIG}" --heading-startup --device-wait-seconds 30
+    echo "Heading profile verified without an interactive confirmation."
     echo "Restart rtcm-server, then allow correction and heading solutions to settle before launch."
     exit 0
 fi
