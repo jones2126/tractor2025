@@ -26,16 +26,12 @@ All commands below are single Linux shell lines pasted directly into PuTTY.
 ## 3. Pull the approved mission from GitHub
 
 This fetches GitHub, shows the local and GitHub revisions, performs only a
-fast-forward pull, and displays the installed revision and any local changes:
+fast-forward pull, displays the installed revision and local changes, and
+verifies the exact approved mission package without starting services or
+motion:
 
 ```bash
-cd /home/al/tractor2025 && git fetch origin && echo "Before pull: local=$(git rev-parse --short HEAD) GitHub=$(git rev-parse --short origin/main)" && git pull --ff-only origin main && echo "Installed revision: $(git rev-parse --short HEAD)" && git status --short
-```
-
-Verify the pulled mission package without starting services or motion:
-
-```bash
-cd /home/al/tractor2025 && python3 field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20260929_consolidated_perimeter_field_test/verify_consolidated_perimeter_20260929.py
+cd /home/al/tractor2025 && git fetch origin && echo "Before pull: local=$(git rev-parse --short HEAD) GitHub=$(git rev-parse --short origin/main)" && git pull --ff-only origin main && echo "Installed revision: $(git rev-parse --short HEAD)" && git status --short && python3 field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20260929_consolidated_perimeter_field_test/verify_consolidated_perimeter_20260929.py
 ```
 
 Expected result: `PASS: exact approved supervised blades-off field package verified.`
