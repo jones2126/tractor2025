@@ -267,6 +267,20 @@ curl --cacert /home/al/.config/tractor-voice-notes/tls/tractor-voice-root-ca.crt
 
 Set `VOICE_NOTE_FAKE_TRANSCRIPTS=0` and restart before the phone acceptance test.
 
+## How repeated hands-free notes are finalized
+
+Google's v1 continuous mode can wait until the input stream closes before it
+guarantees a final transcript. That delay is unsuitable for short field notes.
+This POC therefore uses the v1 `command_and_search` model with
+`single_utterance` enabled. After a speech pause, Google finalizes one utterance
+and ends that recognition stream. The phone immediately creates a new recorder
+with a fresh Opus container header and resumes listening automatically. The
+screen can briefly show **TRANSCRIBING** between utterances.
+
+This restart occurs for ordinary speech too, but only a final transcript with
+“Tractor note” is written to the logs. The browser microphone permission and
+the overall listening session remain active across these short Google streams.
+
 ## Automatic restarts during a long session
 
 Google limits one streaming recognition connection to about five minutes. The

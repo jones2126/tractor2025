@@ -37,6 +37,7 @@ class Settings:
     model: str
     sample_rate_hertz: int
     max_stream_seconds: int
+    single_utterance: bool
     fake_transcripts: bool
 
     @classmethod
@@ -44,14 +45,20 @@ class Settings:
         return cls(
             log_dir=Path(os.getenv("VOICE_NOTE_LOG_DIR", "/home/al/field_logs/voice_note_poc")),
             language_code=os.getenv("VOICE_NOTE_LANGUAGE", "en-US"),
-            model=os.getenv("VOICE_NOTE_MODEL", "latest_short"),
+            model=os.getenv("VOICE_NOTE_MODEL", "command_and_search"),
             sample_rate_hertz=int(os.getenv("VOICE_NOTE_SAMPLE_RATE", "48000")),
             max_stream_seconds=min(int(os.getenv("VOICE_NOTE_MAX_STREAM_SECONDS", "270")), 285),
+            single_utterance=os.getenv("VOICE_NOTE_SINGLE_UTTERANCE", "1") == "1",
             fake_transcripts=os.getenv("VOICE_NOTE_FAKE_TRANSCRIPTS", "0") == "1",
         )
 
 
 settings = Settings.from_environment()
+if settings.single_utterance and settings.model != "command_and_search":
+    raise RuntimeError(
+        "VOICE_NOTE_SINGLE_UTTERANCE=1 requires VOICE_NOTE_MODEL=command_and_search "
+        "with the Google Speech-to-Text v1 API."
+    )
 note_logger = NoteLogger(settings.log_dir)
 duplicates = DuplicateGuard()
 app = FastAPI(title="Tractor Voice Note POC", docs_url=None, redoc_url=None)
@@ -70,6 +77,7 @@ async def status() -> JSONResponse:
             "ok": True,
             "wake_phrase": "Tractor note",
             "max_stream_seconds": settings.max_stream_seconds,
+            "single_utterance": settings.single_utterance,
             "fake_transcripts": settings.fake_transcripts,
         },
         headers={"Cache-Control": "no-store"},
@@ -102,7 +110,11 @@ def recognition_config(mime_type: str) -> speech.StreamingRecognitionConfig:
         audio_channel_count=1,
         speech_contexts=[speech.SpeechContext(phrases=["Tractor note"], boost=20.0)],
     )
-    return speech.StreamingRecognitionConfig(config=config, interim_results=True)
+    return speech.StreamingRecognitionConfig(
+        config=config,
+        interim_results=True,
+        single_utterance=settings.single_utterance,
+    )
 
 
 async def websocket_send(websocket: WebSocket, payload: dict) -> None:

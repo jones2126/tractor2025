@@ -28,6 +28,7 @@ const state = {
   reconnectDelay: 1000,
   generation: 0,
   streamEndResolver: null,
+  expectedStreamEnd: false,
 };
 
 function setStatus(text, kind = "idle") {
@@ -165,6 +166,10 @@ function handleServerMessage(message, generation) {
     if (state.streamEndResolver) {
       state.streamEndResolver();
       state.streamEndResolver = null;
+    } else if (state.wanted) {
+      state.expectedStreamEnd = true;
+      setStatus("TRANSCRIBING", "busy");
+      ui.connection.textContent = "Renewing listener…";
     }
   }
 }
@@ -191,7 +196,14 @@ function connect(generation) {
     stopRecorder();
     if (state.socket === socket) {
       state.socket = null;
-      if (state.wanted && generation === state.generation) scheduleReconnect(generation);
+      if (state.wanted && generation === state.generation) {
+        if (state.expectedStreamEnd) {
+          state.expectedStreamEnd = false;
+          setTimeout(() => connect(generation), 150);
+        } else {
+          scheduleReconnect(generation);
+        }
+      }
     }
   };
 }
@@ -224,6 +236,7 @@ async function startListening() {
   state.sessionStartedAt = Date.now();
   state.noteCount = 0;
   state.reconnectDelay = 1000;
+  state.expectedStreamEnd = false;
   ui.count.textContent = "0";
   ui.start.disabled = true;
   ui.stop.disabled = false;
@@ -233,6 +246,7 @@ async function startListening() {
 
 async function stopListening() {
   state.wanted = false;
+  state.expectedStreamEnd = false;
   clearTimeout(state.reconnectTimer);
   clearTimeout(state.restartTimer);
   ui.stop.disabled = true;
