@@ -281,6 +281,11 @@ exponential backoff. It does not retain outage audio, because retaining it
 would conflict with the default no-raw-audio rule. Speak the note again after
 **LISTENING** returns.
 
+When you press **STOP LISTENING**, the page can remain on **TRANSCRIBING** for up
+to eight seconds. This intentionally gives Google time to finalize the last
+utterance, save it, and update the phone's note counter before the microphone
+connection closes.
+
 ## Optional systemd service for later
 
 Use this only after the manual test works. It is intentionally not installed or

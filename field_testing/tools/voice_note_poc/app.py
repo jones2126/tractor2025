@@ -20,7 +20,7 @@ from google.api_core.exceptions import GoogleAPICallError
 from google.auth.exceptions import DefaultCredentialsError
 from google.cloud import speech_v1 as speech
 
-from core import DuplicateGuard, NoteLogger, WakePhraseDetector
+from core import DuplicateGuard, NoteLogger, TranscriptDeltaFilter, WakePhraseDetector
 
 
 HERE = Path(__file__).resolve().parent
@@ -182,6 +182,7 @@ async def accept_transcript(
 
 async def run_google_stream(websocket: WebSocket, queue: asyncio.Queue[bytes | None], context: StreamContext) -> None:
     detector = WakePhraseDetector()
+    delta_filter = TranscriptDeltaFilter()
     client = speech.SpeechAsyncClient()
     responses = await client.streaming_recognize(requests=google_requests(queue, context.mime_type))
     async for response in responses:
@@ -194,7 +195,9 @@ async def run_google_stream(websocket: WebSocket, queue: asyncio.Queue[bytes | N
                 continue
             if result.is_final:
                 confidence = float(alternative.confidence) if alternative.confidence else None
-                await accept_transcript(websocket, detector, context, transcript, confidence)
+                delta = delta_filter.feed(transcript)
+                if delta:
+                    await accept_transcript(websocket, detector, context, delta, confidence)
             else:
                 await websocket_send(websocket, {"type": "interim", "transcript": transcript})
 

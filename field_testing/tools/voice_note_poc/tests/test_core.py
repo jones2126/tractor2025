@@ -7,7 +7,13 @@ import unittest
 from datetime import datetime, timezone
 from pathlib import Path
 
-from core import AcceptedPhrase, DuplicateGuard, NoteLogger, WakePhraseDetector
+from core import (
+    AcceptedPhrase,
+    DuplicateGuard,
+    NoteLogger,
+    TranscriptDeltaFilter,
+    WakePhraseDetector,
+)
 
 
 class WakePhraseDetectorTests(unittest.TestCase):
@@ -71,6 +77,32 @@ class PersistenceTests(unittest.TestCase):
         self.assertTrue(guard.is_duplicate("a", "move one foot left", now=2))
         self.assertFalse(guard.is_duplicate("b", "move one foot left", now=2))
         self.assertFalse(guard.is_duplicate("a", "move one foot left", now=20))
+
+
+class TranscriptDeltaFilterTests(unittest.TestCase):
+    def test_cumulative_result_returns_only_new_words(self) -> None:
+        transcript_filter = TranscriptDeltaFilter()
+        self.assertEqual(
+            transcript_filter.feed("Tractor note move. One foot left."),
+            "Tractor note move. One foot left",
+        )
+        self.assertEqual(
+            transcript_filter.feed("Tractor note move. One foot left. Talking to my robot."),
+            "Talking to my robot",
+        )
+
+    def test_separate_note_is_not_stripped(self) -> None:
+        transcript_filter = TranscriptDeltaFilter()
+        transcript_filter.feed("Tractor note too close.")
+        self.assertEqual(
+            transcript_filter.feed("Tractor note, move back."),
+            "Tractor note, move back",
+        )
+
+    def test_exact_repeated_result_is_empty(self) -> None:
+        transcript_filter = TranscriptDeltaFilter()
+        transcript_filter.feed("Tractor note too close.")
+        self.assertEqual(transcript_filter.feed("Tractor note too close."), "")
 
 
 if __name__ == "__main__":

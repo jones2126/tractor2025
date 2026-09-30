@@ -19,6 +19,15 @@ set +a
 
 if [[ ! -x "$VENV/bin/python" ]]; then
   python3 -m venv "$VENV"
+fi
+
+if ! "$VENV/bin/python" -m pip --version >/dev/null 2>&1; then
+  echo "Repairing an incomplete Python environment..."
+  python3 -m venv --clear "$VENV"
+fi
+
+if ! "$VENV/bin/python" -c 'import fastapi, google.cloud.speech_v1, uvicorn' >/dev/null 2>&1; then
+  echo "Installing voice-note dependencies..."
   "$VENV/bin/python" -m pip install --upgrade pip
   "$VENV/bin/python" -m pip install -r "$HERE/requirements.txt"
 fi

@@ -27,6 +27,7 @@ const state = {
   maxStreamSeconds: 270,
   reconnectDelay: 1000,
   generation: 0,
+  streamEndResolver: null,
 };
 
 function setStatus(text, kind = "idle") {
@@ -81,9 +82,11 @@ function stopRecorder() {
   state.recorder = null;
 }
 
-function closeSocket() {
+function closeSocket(sendStop = true) {
   if (state.socket && state.socket.readyState === WebSocket.OPEN) {
-    try { state.socket.send(JSON.stringify({ type: "stop" })); } catch (_) { /* disconnected */ }
+    if (sendStop) {
+      try { state.socket.send(JSON.stringify({ type: "stop" })); } catch (_) { /* disconnected */ }
+    }
   }
   if (state.socket && state.socket.readyState < WebSocket.CLOSING) state.socket.close();
   state.socket = null;
@@ -158,6 +161,11 @@ function handleServerMessage(message, generation) {
   } else if (message.type === "error") {
     setStatus(message.message || "TRANSCRIPTION ERROR", "error");
     ui.connection.textContent = "Server error";
+  } else if (message.type === "stream_ended") {
+    if (state.streamEndResolver) {
+      state.streamEndResolver();
+      state.streamEndResolver = null;
+    }
   }
 }
 
@@ -225,16 +233,37 @@ async function startListening() {
 
 async function stopListening() {
   state.wanted = false;
-  state.generation += 1;
   clearTimeout(state.reconnectTimer);
   clearTimeout(state.restartTimer);
-  stopRecorder();
-  closeSocket();
+  ui.stop.disabled = true;
+  setStatus("TRANSCRIBING", "busy");
+
+  const recorder = state.recorder;
+  state.recorder = null;
+  if (recorder && recorder.state !== "inactive") {
+    await new Promise((resolve) => {
+      const timeout = setTimeout(resolve, 1500);
+      recorder.addEventListener("stop", () => { clearTimeout(timeout); resolve(); }, { once: true });
+      try { recorder.stop(); } catch (_) { clearTimeout(timeout); resolve(); }
+    });
+  }
+
+  if (state.socket && state.socket.readyState === WebSocket.OPEN) {
+    try { state.socket.send(JSON.stringify({ type: "stop" })); } catch (_) { /* disconnected */ }
+    await new Promise((resolve) => {
+      const timeout = setTimeout(() => {
+        state.streamEndResolver = null;
+        resolve();
+      }, 8000);
+      state.streamEndResolver = () => { clearTimeout(timeout); resolve(); };
+    });
+  }
+  closeSocket(false);
+  state.generation += 1;
   if (state.stream) state.stream.getTracks().forEach((track) => track.stop());
   state.stream = null;
   await releaseWakeLock();
   ui.start.disabled = false;
-  ui.stop.disabled = true;
   ui.connection.textContent = "Stopped";
   setStatus("MICROPHONE READY", "idle");
 }

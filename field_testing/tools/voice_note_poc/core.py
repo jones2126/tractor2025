@@ -18,6 +18,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 WAKE_PATTERN = re.compile(r"\btractor\s+note\b[\s,:;.!?-]*(.*)$", re.IGNORECASE)
 PARTIAL_WAKE_PATTERN = re.compile(r"\btractor\s*$", re.IGNORECASE)
 SPACE_PATTERN = re.compile(r"\s+")
+WORD_PATTERN = re.compile(r"[\w']+", re.UNICODE)
 
 
 def new_york_time(value: datetime) -> datetime:
@@ -98,6 +99,30 @@ class WakePhraseDetector:
     def _clear_pending(self) -> None:
         self._pending_prefix = ""
         self._pending_until = 0.0
+
+
+class TranscriptDeltaFilter:
+    """Remove a prior final result when a provider repeats it as a prefix."""
+
+    def __init__(self) -> None:
+        self._previous_tokens: list[str] = []
+
+    def feed(self, transcript: str) -> str:
+        transcript = clean_text(transcript)
+        matches = list(WORD_PATTERN.finditer(transcript))
+        tokens = [match.group(0).casefold() for match in matches]
+        if not tokens:
+            return ""
+
+        delta = transcript
+        if self._previous_tokens and tokens[: len(self._previous_tokens)] == self._previous_tokens:
+            if len(tokens) == len(self._previous_tokens):
+                delta = ""
+            else:
+                delta = transcript[matches[len(self._previous_tokens)].start() :]
+
+        self._previous_tokens = tokens
+        return clean_text(delta).strip(" ,:;.!?-")
 
 
 CSV_FIELDS = [
