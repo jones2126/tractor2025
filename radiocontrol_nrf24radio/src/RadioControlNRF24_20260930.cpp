@@ -1,8 +1,11 @@
 // 
-// Rccntrl_nrf24_20260517.cpp
+// RadioControlNRF24_20260930.cpp
 // NRF24L01 Radio Control Unit / Transmitter Code with PL9823 LEDs
 // - See RadioControlStruct for hardware pin assignments.
 // - LEDs: #1=Signal, #2=E-stop, #3=Mode, #4=GPS Status.
+//
+// 2026-09-30: Steering input moved from analog pin 16 to the known-good
+// additional pot on analog pin 14 and then back to pin16 with a new Teensy board.
 //
 
 #include <SPI.h>
@@ -36,11 +39,11 @@ Color colors[] = {
 int numColors = sizeof(colors) / sizeof(Color);
 
 struct __attribute__((packed)) RadioControlStruct {
-    int16_t steering_val;      // 2B: Pin 15 
-    int16_t throttle_val;      // 2B: Pin 14 
-    int16_t transmission_val;  // 2B: Pin 16 
+    int16_t steering_val;      // 2B: Pin 16
+    int16_t throttle_val;      // 2B: Pin 14 (tbd not implemented)
+    int16_t transmission_val;  // 2B: Pin 15
     uint16_t voltage_mv;       // 2B: Voltage in millivolts 
-    int16_t pot4_val;          // 2B: Pin 17 
+    int16_t pot4_val;          // 2B: Pin 17 (tbd unallocated)
     byte estop;                // 1B: Pin 10
     byte control_mode;         // 1B: Pin 3 & 4  From mode switch
     byte button02;             // 1B: Pin 9
@@ -67,10 +70,10 @@ const uint8_t ADDR_TRACTOR_TO_HANDHELD[6] = "2Node";
 
 // Hardware Pin definitions
 const int steeringPin = 16;      // Analog for steering
-const int throttlePin = 14;      // Analog for throttle  
+const int throttlePin = 14;      // future use.  tractor has fixed throttle at the moment
 const int voltagePin = 18;       // Analog for voltage (TBD - placeholder; adjust scaling as needed)
 const int transmissionPin = 15;  // Analog for transmission
-const int pot4Pin = 17;          // Analog for pot4
+const int pot4Pin = 17;          // Analog for pot4 - unused
 const int estopPin = 10;         // Digital for e-stop (active LOW with pullup)
 const int button02Pin = 9;       // Digital for button02 (active LOW with pullup)
 const int button03Pin = 6;       // Digital for button03 (active LOW with pullup)
@@ -86,11 +89,15 @@ const unsigned long transmitInterval = 100;  // Send every 100ms = 10 Hz
 // Variables for ACK rate calculation
 unsigned long currentMillis = 0;
 unsigned long lastRateCalc = 0;
-const unsigned long rateCalcInterval = 10000;  // Print rate every 10 seconds
+const unsigned long rateCalcInterval = 30000;       // ACK summary every 30 seconds
+const unsigned long ackDebugInterval = 30000;       // Detailed ACK payload every 30 seconds
+const unsigned long statusPrintInterval = 10000;    // Signal/GPS/voltage/mode every 10 seconds
+const unsigned long txFailurePrintInterval = 5000;  // Rate-limit repeated transmission errors
 unsigned long lastLedUpdate = 0;
 const unsigned long ledUpdateInterval = 500;   // Update LEDs every 500ms (2 Hz)
 unsigned long lastModeCheck = 0;
 const unsigned long modeCheckInterval = 100;   // Check mode switch every 100ms (10 Hz)
+const unsigned long potRawPrintInterval = 2000;  // Raw pot diagnostics every 2s = 0.5 Hz
 unsigned long ackCount = 0;
 unsigned long shortTermAckCount = 0;
 float currentRate = 0.0;
@@ -113,7 +120,8 @@ void blinkStartup() {
 
 void setup() {
     Serial.begin(115200);
-    Serial.println("Production Radio Controller Starting...");
+    Serial.println("Radio Controller starting...");
+    Serial.println("Input map: steering=16 throttle/additional=14 transmission=15 pot4=17");
     
     // Initialize PL9823 LEDs
     strip.begin();
@@ -123,7 +131,14 @@ void setup() {
     Serial.println("PL9823 LEDs initialized");
     blinkStartup();
 
-    
+    // Initialize potentiometer pins
+    analogReference(DEFAULT);
+    analogReadRes(10);
+    pinMode(14, INPUT_DISABLE);
+    pinMode(15, INPUT_DISABLE);
+    pinMode(16, INPUT_DISABLE);
+    pinMode(17, INPUT_DISABLE);
+
     // Initialize input pins (pull-ups for buttons/switches)
     pinMode(modeSwitchPin3, INPUT_PULLUP);
     pinMode(modeSwitchPin4, INPUT_PULLUP);
@@ -228,12 +243,32 @@ void setup() {
 void sendData(){
     // Send data every transmitInterval milliseconds (10 Hz)
     if (currentMillis - lastTransmit >= transmitInterval) {
-        
+
+        // Read each pot once so the transmitted and diagnostic values come
+        // from the same ADC samples.
+        const int pot1Raw = analogRead(steeringPin);      // Pin 14: steering
+        const int pot2Raw = analogRead(throttlePin);      // Pin 16: former steering input
+        const int pot3Raw = analogRead(transmissionPin);  // Pin 15: transmission
+        const int pot4Raw = analogRead(pot4Pin);          // Pin 17: spare
+
         // ========== Lines 207-210: CHANGED to cast to int16_t (values already 0-1024 range) ==========
-        radioData.steering_val = (int16_t)map(analogRead(steeringPin), 0, 1023, 0, 1024);
-        radioData.throttle_val = (int16_t)map(analogRead(throttlePin), 0, 1023, 0, 1024);
-        radioData.transmission_val = (int16_t)map(analogRead(transmissionPin), 0, 1023, 0, 1024);
-        radioData.pot4_val = (int16_t)map(analogRead(pot4Pin), 0, 1023, 0, 1024);
+        radioData.steering_val = (int16_t)map(pot1Raw, 0, 1023, 0, 1024);
+        radioData.throttle_val = (int16_t)map(pot2Raw, 0, 1023, 0, 1024);
+        radioData.transmission_val = (int16_t)map(pot3Raw, 0, 1023, 0, 1024);
+        radioData.pot4_val = (int16_t)map(pot4Raw, 0, 1023, 0, 1024);
+
+        static unsigned long lastPotRawPrint = 0;
+        if (currentMillis - lastPotRawPrint >= potRawPrintInterval) {
+            Serial.print("POT_RAW p1_pin14_steering=");
+            Serial.print(pot1Raw);
+            Serial.print(" p2_pin16_former_steering=");
+            Serial.print(pot2Raw);
+            Serial.print(" p3_pin15_transmission=");
+            Serial.print(pot3Raw);
+            Serial.print(" p4_pin17_spare=");
+            Serial.println(pot4Raw);
+            lastPotRawPrint = currentMillis;
+        }
 
         // ========== Lines 215-216: CHANGED voltage to millivolts (uint16_t) ==========
         // Voltage: Convert ADC reading to millivolts
@@ -258,10 +293,14 @@ void sendData(){
 // start new code
         // ========== ADD COMPREHENSIVE ACK DEBUG ==========
         static unsigned long lastAckDebug = 0;
+        static unsigned long lastTxFailurePrint = 0;
         
         if (!report) {
-            Serial.print("TX FAILED at ");
-            Serial.println(currentMillis);
+            if (currentMillis - lastTxFailurePrint >= txFailurePrintInterval) {
+                Serial.print("TX FAILED at ");
+                Serial.println(currentMillis);
+                lastTxFailurePrint = currentMillis;
+            }
         } else {
             // Transmission succeeded
             if (radio.isAckPayloadAvailable()) {
@@ -275,8 +314,7 @@ void sendData(){
                 ackCount++;
                 shortTermAckCount++;
                 
-                // Debug every 20th ACK (reduce spam)
-                if (ackCount % 20 == 0 || currentMillis - lastAckDebug > 5000) {
+                if (currentMillis - lastAckDebug >= ackDebugInterval) {
                     Serial.println("===== ACK PAYLOAD DEBUG =====");
                     Serial.print("ACK Size: "); Serial.println(payloadSize);
                     Serial.print("GPS Status: "); Serial.println(ackPayload.gps_status);
@@ -289,7 +327,7 @@ void sendData(){
                 }
             } else {
                 // TX succeeded but no ACK payload
-                if (currentMillis - lastAckDebug > 5000) {
+                if (currentMillis - lastAckDebug >= ackDebugInterval) {
                     Serial.println("TX OK but NO ACK PAYLOAD");
                     lastAckDebug = currentMillis;
                 }
@@ -303,7 +341,7 @@ void sendData(){
 }
 
 void printACKRate(){
-    // Calculate and display rate every 10 seconds
+    // Calculate and display a low-rate background summary.
     if (currentMillis - lastRateCalc >= rateCalcInterval) {
         float timeElapsed = (currentMillis - lastRateCalc) / 1000.0;  // Convert to seconds
         float rate = ackCount / timeElapsed;  // Calculate Hz
@@ -312,7 +350,9 @@ void printACKRate(){
         Serial.print(rate);
         Serial.print(" Hz (");
         Serial.print(ackCount);
-        Serial.println(" ACKs in 10 seconds)");
+        Serial.print(" ACKs in ");
+        Serial.print(timeElapsed, 1);
+        Serial.println(" seconds)");
         
         // Reset long-term counter
         ackCount = 0;
@@ -351,6 +391,8 @@ void checkModeSW() {
 }
 
 void updateLEDs() {
+    static unsigned long lastStatusPrint = 0;
+
     // Update LEDs every 500ms (2 Hz)
     if (currentMillis - lastLedUpdate >= ledUpdateInterval) {
         float timeElapsed = (currentMillis - lastLedUpdate) / 1000.0;  // Convert to seconds
@@ -363,15 +405,12 @@ void updateLEDs() {
         if (currentRate < 2.0) {
             // Poor signal - Red
             strip.setPixelColor(0, colors[0].r, colors[0].g, colors[0].b);
-            Serial.print("Signal: POOR (");
         } else if (currentRate >= 2.0 && currentRate <= 5.0) {
             // Moderate signal - Orange
             strip.setPixelColor(0, colors[6].r, colors[6].g, colors[6].b);
-            Serial.print("Signal: MODERATE (");
         } else {
             // Good signal - Green
             strip.setPixelColor(0, colors[1].r, colors[1].g, colors[1].b);
-            Serial.print("Signal: GOOD (");
         }
         
         // LED #2: E-Stop status
@@ -413,14 +452,22 @@ void updateLEDs() {
         
         strip.show(); // Update all LEDs
         
-        // ========== Line 348: CHANGED voltage display to show millivolts/volts ==========
-        Serial.print(currentRate);
-        Serial.print(" Hz) | GPS=");
-        Serial.print(gps);
-        Serial.print(" | Volt=");
-        Serial.print(radioData.voltage_mv / 1000.0, 2);  // CHANGED: Convert millivolts to volts for display
-        Serial.print("V | Mode=");
-        Serial.println(radioData.control_mode);
+        if (currentMillis - lastStatusPrint >= statusPrintInterval) {
+            const char* signalQuality = currentRate < 2.0
+                ? "POOR"
+                : (currentRate <= 5.0 ? "MODERATE" : "GOOD");
+            Serial.print("Signal: ");
+            Serial.print(signalQuality);
+            Serial.print(" (");
+            Serial.print(currentRate);
+            Serial.print(" Hz) | GPS=");
+            Serial.print(gps);
+            Serial.print(" | Volt=");
+            Serial.print(radioData.voltage_mv / 1000.0, 2);
+            Serial.print("V | Mode=");
+            Serial.println(radioData.control_mode);
+            lastStatusPrint = currentMillis;
+        }
         
         shortTermAckCount = 0;  // Reset short-term counter
         lastLedUpdate = currentMillis;        
@@ -432,5 +479,5 @@ void loop() {
     checkModeSW();  // Check mode switch at 10 Hz
     sendData();     // Send data at 10 Hz
     updateLEDs();   // Update LEDs at 2 Hz
-    printACKRate(); // Print ACK rate every 10s
+    printACKRate(); // Print ACK rate every 30s
 }
