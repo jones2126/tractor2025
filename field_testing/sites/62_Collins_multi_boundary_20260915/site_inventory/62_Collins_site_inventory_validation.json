@@ -1,0 +1,140 @@
+{
+  "status": "PASS",
+  "inventory_revision": 2,
+  "asset_rows": 19,
+  "geojson_features": 22,
+  "unique_feature_ids": true,
+  "all_geometries_valid_and_nonempty": true,
+  "transition_inside_polygon_length_m": {
+    "ROUTE-BASE-TO-BACKYARD": 0.0,
+    "ROUTE-BACKYARD-TO-FRONT": 0.0,
+    "ROUTE-FRONT-TO-OVERROAD": 0.0,
+    "ROUTE-OVERROAD-TO-FRONT": 0.0,
+    "ROUTE-FRONT-TO-BASE": 0.0
+  },
+  "internal_transition_assets_removed": [
+    "TRANS-002",
+    "TRANS-003"
+  ],
+  "geometry_checks": {
+    "AREA-BACKYARD-GARDENS-BOUNDARY": {
+      "geometry_type": "Polygon",
+      "valid": true,
+      "empty": false
+    },
+    "AREA-FRONT-YARD-BOUNDARY": {
+      "geometry_type": "Polygon",
+      "valid": true,
+      "empty": false
+    },
+    "AREA-OVER-ROAD-BOUNDARY": {
+      "geometry_type": "Polygon",
+      "valid": true,
+      "empty": false
+    },
+    "OBS-TREE-001-RECORDED-CENTERLINE-EVIDENCE": {
+      "geometry_type": "LineString",
+      "valid": true,
+      "empty": false
+    },
+    "OBS-TREE-001-TESTED-TRACTOR-CENTERLINE-LIMIT": {
+      "geometry_type": "LineString",
+      "valid": true,
+      "empty": false
+    },
+    "OBS-TREE-001-MOWING-EXCLUSION": {
+      "geometry_type": "Polygon",
+      "valid": true,
+      "empty": false
+    },
+    "OBS-POLE-001-RECORDED-CENTERLINE-EVIDENCE": {
+      "geometry_type": "Polygon",
+      "valid": true,
+      "empty": false
+    },
+    "OBS-POLE-001-MOWING-EXCLUSION": {
+      "geometry_type": "Polygon",
+      "valid": true,
+      "empty": false
+    },
+    "ACCESS-BACKYARD-EAST-POINT": {
+      "geometry_type": "Point",
+      "valid": true,
+      "empty": false
+    },
+    "ACCESS-BACKYARD-NORTHEAST-POINT": {
+      "geometry_type": "Point",
+      "valid": true,
+      "empty": false
+    },
+    "ACCESS-FRONT-SOUTHWEST-POINT": {
+      "geometry_type": "Point",
+      "valid": true,
+      "empty": false
+    },
+    "ACCESS-FRONT-NORTH-OUTBOUND-POINT": {
+      "geometry_type": "Point",
+      "valid": true,
+      "empty": false
+    },
+    "ACCESS-OVERROAD-NORTH-OUTBOUND-POINT": {
+      "geometry_type": "Point",
+      "valid": true,
+      "empty": false
+    },
+    "ACCESS-OVERROAD-NORTH-INBOUND-POINT": {
+      "geometry_type": "Point",
+      "valid": true,
+      "empty": false
+    },
+    "ACCESS-FRONT-NORTH-INBOUND-POINT": {
+      "geometry_type": "Point",
+      "valid": true,
+      "empty": false
+    },
+    "ACCESS-FRONT-WEST-RETURN-POINT": {
+      "geometry_type": "Point",
+      "valid": true,
+      "empty": false
+    },
+    "POINT-ORIGINAL-COVERAGE-START": {
+      "geometry_type": "Point",
+      "valid": true,
+      "empty": false
+    },
+    "ROUTE-BASE-TO-BACKYARD-CENTERLINE": {
+      "geometry_type": "LineString",
+      "valid": true,
+      "empty": false
+    },
+    "ROUTE-BACKYARD-TO-FRONT-CENTERLINE": {
+      "geometry_type": "LineString",
+      "valid": true,
+      "empty": false
+    },
+    "ROUTE-FRONT-TO-OVERROAD-CENTERLINE": {
+      "geometry_type": "LineString",
+      "valid": true,
+      "empty": false
+    },
+    "ROUTE-OVERROAD-TO-FRONT-CENTERLINE": {
+      "geometry_type": "LineString",
+      "valid": true,
+      "empty": false
+    },
+    "ROUTE-FRONT-TO-BASE-CENTERLINE": {
+      "geometry_type": "LineString",
+      "valid": true,
+      "empty": false
+    }
+  },
+  "expected_counts": {
+    "mowable_areas": 3,
+    "obstacles": 2,
+    "access_points": 8,
+    "site_reference_points": 1,
+    "transition_routes": 5,
+    "geojson_features": 22
+  },
+  "mission_or_launcher_included": false
+}

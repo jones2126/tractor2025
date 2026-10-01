@@ -1,0 +1,322 @@
+{
+  "status": "REVIEW_ONLY_NOT_DRIVEABLE",
+  "source_file": "C:\\Users\\al532\\Downloads\\62_Collins_mission_edits (1).json",
+  "source_sha256": "2c2cda78ab4aa2908d3ba02605bb2d25f46e220d8ab87992a81410cf9ea778fe",
+  "summary": {
+    "acceptedSegments": 15,
+    "proposedSegments": 21,
+    "omittedMarks": 3,
+    "routeLengthM": 790.7,
+    "reviewJoins": 0,
+    "approvedSplices": 35,
+    "tightTurnMarkers": 13
+  },
+  "omitted_marks": [
+    {
+      "id": "P4",
+      "points": 1,
+      "length_m": 0.0
+    },
+    {
+      "id": "P22",
+      "points": 1,
+      "length_m": 0.0
+    },
+    {
+      "id": "P23",
+      "points": 4,
+      "length_m": 0.46
+    }
+  ],
+  "owner_approved_splices": [
+    {
+      "id": "C1",
+      "label": "Owner-approved direct path: source 159.8\u2013161.8 m",
+      "sourceStartM": 159.8,
+      "sourceEndM": 161.8,
+      "lengthM": 0.59
+    },
+    {
+      "id": "C2",
+      "label": "Owner-approved direct path: source 211.1\u2013212.3 m",
+      "sourceStartM": 211.1,
+      "sourceEndM": 212.3,
+      "lengthM": 0.65
+    },
+    {
+      "id": "C3",
+      "label": "Owner-approved direct path: source 433.3\u2013434.5 m",
+      "sourceStartM": 433.3,
+      "sourceEndM": 434.5,
+      "lengthM": 0.96
+    },
+    {
+      "id": "C4",
+      "label": "Owner-approved direct path: source 444.7\u2013446.2 m",
+      "sourceStartM": 444.7,
+      "sourceEndM": 446.2,
+      "lengthM": 0.78
+    },
+    {
+      "id": "C5",
+      "label": "Owner-approved direct path: source 465.3\u2013466.5 m",
+      "sourceStartM": 465.3,
+      "sourceEndM": 466.5,
+      "lengthM": 0.51
+    },
+    {
+      "id": "C6",
+      "label": "Owner-approved direct path: source 470.4\u2013471.1 m",
+      "sourceStartM": 470.4,
+      "sourceEndM": 471.1,
+      "lengthM": 0.39
+    },
+    {
+      "id": "C7",
+      "label": "Owner-approved direct path: source 477.0\u2013483.1 m",
+      "sourceStartM": 477.0,
+      "sourceEndM": 483.1,
+      "lengthM": 0.99
+    },
+    {
+      "id": "C8",
+      "label": "Owner-approved direct path: source 527.3\u2013532.2 m",
+      "sourceStartM": 527.3,
+      "sourceEndM": 532.2,
+      "lengthM": 0.49
+    },
+    {
+      "id": "C9",
+      "label": "Owner-approved direct path: source 547.8\u2013648.8 m",
+      "sourceStartM": 547.625,
+      "sourceEndM": 648.866,
+      "lengthM": 0.59
+    },
+    {
+      "id": "C10",
+      "label": "Owner-approved sequence change: source 751.0\u2192591.3 m",
+      "sourceStartM": 750.893,
+      "sourceEndM": 591.125,
+      "lengthM": 0.95
+    },
+    {
+      "id": "C11",
+      "label": "Owner-approved direct path: source 548.9\u2192592.2 m",
+      "sourceStartM": 548.996,
+      "sourceEndM": 592.32,
+      "lengthM": 0.89
+    },
+    {
+      "id": "C12",
+      "label": "Owner-approved direct path: source 604.8\u2013605.8 m",
+      "sourceStartM": 604.614,
+      "sourceEndM": 605.807,
+      "lengthM": 0.65
+    },
+    {
+      "id": "C13",
+      "label": "Owner-approved direct path: source 647.9\u2192751.7 m",
+      "sourceStartM": 647.868,
+      "sourceEndM": 751.876,
+      "lengthM": 0.71
+    },
+    {
+      "id": "C14",
+      "label": "Owner-approved clip: prior review 19.9\u201321.2 m",
+      "sourceStartM": 19.88,
+      "sourceEndM": 20.871,
+      "lengthM": 0.65,
+      "priorReviewStartM": 19.9,
+      "priorReviewEndM": 21.2
+    },
+    {
+      "id": "C15",
+      "label": "Owner-approved clip: prior review 24.6\u201326.1 m",
+      "sourceStartM": 24.218,
+      "sourceEndM": 25.405,
+      "lengthM": 0.8,
+      "priorReviewStartM": 24.6,
+      "priorReviewEndM": 26.1
+    },
+    {
+      "id": "C16",
+      "label": "Owner-approved clip: prior review 36.3\u201336.9 m",
+      "sourceStartM": 35.597,
+      "sourceEndM": 35.998,
+      "lengthM": 0.26,
+      "priorReviewStartM": 36.3,
+      "priorReviewEndM": 36.9
+    },
+    {
+      "id": "C17",
+      "label": "Owner-approved clip: prior review 47.1\u201348.2 m",
+      "sourceStartM": 46.154,
+      "sourceEndM": 47.153,
+      "lengthM": 0.75,
+      "priorReviewStartM": 47.1,
+      "priorReviewEndM": 48.2
+    },
+    {
+      "id": "C18",
+      "label": "Owner-approved clip: prior review 59.6\u201360.3 m",
+      "sourceStartM": 58.516,
+      "sourceEndM": 58.916,
+      "lengthM": 0.18,
+      "priorReviewStartM": 59.6,
+      "priorReviewEndM": 60.3
+    },
+    {
+      "id": "C19",
+      "label": "Owner-approved clip: prior review 68.2\u201369.1 m",
+      "sourceStartM": 66.909,
+      "sourceEndM": 67.443,
+      "lengthM": 0.77,
+      "priorReviewStartM": 68.2,
+      "priorReviewEndM": 69.1
+    },
+    {
+      "id": "C20",
+      "label": "Owner-approved clip: prior review 166.9\u2013168.7 m",
+      "sourceStartM": 166.735,
+      "sourceEndM": 167.932,
+      "lengthM": 0.59,
+      "priorReviewStartM": 166.9,
+      "priorReviewEndM": 168.7
+    },
+    {
+      "id": "C21",
+      "label": "Repeat prior-review path 464.7\u2013490.0 m",
+      "sourceStartM": 678.421,
+      "sourceEndM": 465.7,
+      "lengthM": 0.57,
+      "secondReviewSequence": true
+    },
+    {
+      "id": "C22",
+      "label": "Follow submitted green access path P17",
+      "sourceStartM": 496.49,
+      "sourceEndM": 527.3,
+      "lengthM": 0.33,
+      "secondReviewSequence": true
+    },
+    {
+      "id": "C23",
+      "label": "Reverse prior-review path 598.7\u2013603.8 m",
+      "sourceStartM": 532.2,
+      "sourceEndM": 702.731,
+      "lengthM": 0.26,
+      "secondReviewSequence": true
+    },
+    {
+      "id": "C24",
+      "label": "Continue around the over-road polygon",
+      "sourceStartM": 697.984,
+      "sourceEndM": 705.698,
+      "lengthM": 0.83,
+      "secondReviewSequence": true
+    },
+    {
+      "id": "C25",
+      "label": "Reverse prior-review ending path 603.8\u2013606.3 m",
+      "sourceStartM": 764.911,
+      "sourceEndM": 705.303,
+      "lengthM": 0.24,
+      "secondReviewSequence": true
+    },
+    {
+      "id": "C26",
+      "label": "Repeat submitted green access path P17 in reverse",
+      "sourceStartM": 702.928,
+      "sourceEndM": 532.2,
+      "lengthM": 0.09,
+      "secondReviewSequence": true
+    },
+    {
+      "id": "C27",
+      "label": "Owner-approved clip: third review 587.0\u2013587.6 m",
+      "sourceStartM": 494.753,
+      "sourceEndM": 495.293,
+      "lengthM": 0.46,
+      "thirdReviewStartM": 587.0,
+      "thirdReviewEndM": 587.6
+    },
+    {
+      "id": "C28",
+      "label": "Owner-approved clip: third review 603.3\u2013605.3 m",
+      "sourceStartM": 709.954,
+      "sourceEndM": 711.517,
+      "lengthM": 1.13,
+      "thirdReviewStartM": 603.3,
+      "thirdReviewEndM": 605.3
+    },
+    {
+      "id": "C29",
+      "label": "Owner-approved clip: third review 618.5\u2013618.8 m",
+      "sourceStartM": 724.783,
+      "sourceEndM": 724.981,
+      "lengthM": 0.19,
+      "thirdReviewStartM": 618.5,
+      "thirdReviewEndM": 618.8
+    },
+    {
+      "id": "C30",
+      "label": "Owner-approved clip: third review 622.7\u2013623.9 m",
+      "sourceStartM": 728.831,
+      "sourceEndM": 729.999,
+      "lengthM": 1.07,
+      "thirdReviewStartM": 622.7,
+      "thirdReviewEndM": 623.9
+    },
+    {
+      "id": "C31",
+      "label": "Reverse cleaned third-review path 569.7\u2013588.8 m",
+      "sourceStartM": 527.533,
+      "sourceEndM": 496.49,
+      "lengthM": 0.49,
+      "thirdReviewSequence": true
+    },
+    {
+      "id": "C32",
+      "label": "Follow previously defined parking connector P21",
+      "sourceStartM": 472.611,
+      "sourceEndM": 764.9,
+      "lengthM": 0.12,
+      "thirdReviewSequence": true
+    },
+    {
+      "id": "C33",
+      "label": "Join P21 to the retained final parking path A15",
+      "sourceStartM": 769.5,
+      "sourceEndM": 769.701,
+      "lengthM": 0.59,
+      "thirdReviewSequence": true
+    },
+    {
+      "id": "C34",
+      "label": "Owner-approved clip: final review 782.0\u2013782.5 m",
+      "sourceStartM": 472.81,
+      "sourceEndM": 765.064,
+      "lengthM": 0.48,
+      "finalReviewStartM": 782.0,
+      "finalReviewEndM": 782.5
+    },
+    {
+      "id": "C35",
+      "label": "Owner-approved clip: final review 787.3\u2013789.0 m",
+      "sourceStartM": 769.171,
+      "sourceEndM": 770.297,
+      "lengthM": 0.4,
+      "finalReviewStartM": 787.3,
+      "finalReviewEndM": 789.0
+    }
+  ],
+  "notes": [
+    "Accepted original segments and cleaned submitted paths are ordered by their nearest original mission anchor.",
+    "The September 29 owner-directed shortcuts and front/over-road sequence change are applied as solid green path geometry.",
+    "The third review clips four more diversions, reverses the cleaned access path for the return, and finishes via P21 plus A15 to parking.",
+    "The final review clips the 782.0\u2013782.5 m and 787.3\u2013789.0 m parking-return diversions.",
+    "Source-distance references remain embedded so the first review's distance values can still be identified after route length changes.",
+    "Red dashed joins are not approved connectors.",
+    "Turn markers are review flags, not a certified vehicle-envelope analysis."
+  ]
+}

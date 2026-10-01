@@ -1,0 +1,153 @@
+{
+  "status": "REVIEW_ONLY_NOT_RUNNABLE",
+  "source": "field_testing/sites/62_Collins_multi_boundary_20260915/site_inventory/revisions/rev_003_20260926_REVIEW_ONLY/62_Collins_site_inventory_rev003_REVIEW_ONLY.geojson",
+  "deck_radius_m": 0.5334,
+  "additional_review_margin_m": 0.3048,
+  "tractor_center_clearance_m": 0.8382000000000001,
+  "nominal_speed_mps_for_future_field_build": 0.35,
+  "nominal_lookahead_m_for_future_field_build": 1.0,
+  "path_count": 19,
+  "clear_path_count": 7,
+  "conflict_path_count": 12,
+  "conflicts": [
+    {
+      "path_id": "AREA-BACKYARD-GARDENS-OUTER-01",
+      "kind": "outer_boundary_validation",
+      "asset_id": "AREA-BACKYARD-GARDENS",
+      "related_area": "AREA-BACKYARD-GARDENS",
+      "length_m": 413.015,
+      "minimum_outer_edge_clearance_m": 0.836,
+      "conflict_length_m": 6.374,
+      "outside_safe_area_length_m": 0.0,
+      "review_status": "review_conflict_with_obstacle_clearance"
+    },
+    {
+      "path_id": "AREA-FRONT-YARD-OUTER-01",
+      "kind": "outer_boundary_validation",
+      "asset_id": "AREA-FRONT-YARD",
+      "related_area": "AREA-FRONT-YARD",
+      "length_m": 102.745,
+      "minimum_outer_edge_clearance_m": 0.836,
+      "conflict_length_m": 16.95,
+      "outside_safe_area_length_m": 0.0,
+      "review_status": "review_conflict_with_obstacle_clearance"
+    },
+    {
+      "path_id": "AREA-OVER-ROAD-OUTER-01",
+      "kind": "outer_boundary_validation",
+      "asset_id": "AREA-OVER-ROAD",
+      "related_area": "AREA-OVER-ROAD",
+      "length_m": 159.745,
+      "minimum_outer_edge_clearance_m": 0.836,
+      "conflict_length_m": 6.181,
+      "outside_safe_area_length_m": 0.0,
+      "review_status": "review_conflict_with_obstacle_clearance"
+    },
+    {
+      "path_id": "OBS-NEW-001-LOOP-01",
+      "kind": "obstacle_validation_loop",
+      "asset_id": "OBS-NEW-001",
+      "related_area": "AREA-BACKYARD-GARDENS",
+      "length_m": 11.957,
+      "minimum_outer_edge_clearance_m": 0.0,
+      "conflict_length_m": 0.0,
+      "outside_safe_area_length_m": 11.957,
+      "review_status": "review_conflict_outside_mowable_edge"
+    },
+    {
+      "path_id": "OBS-NEW-002-LOOP-01",
+      "kind": "obstacle_validation_loop",
+      "asset_id": "OBS-NEW-002",
+      "related_area": "AREA-BACKYARD-GARDENS",
+      "length_m": 11.429,
+      "minimum_outer_edge_clearance_m": 4.559,
+      "conflict_length_m": 0.0,
+      "outside_safe_area_length_m": 11.429,
+      "review_status": "review_conflict_outside_mowable_edge"
+    },
+    {
+      "path_id": "OBS-NEW-003-LOOP-01",
+      "kind": "obstacle_validation_loop",
+      "asset_id": "OBS-NEW-003",
+      "related_area": "AREA-BACKYARD-GARDENS",
+      "length_m": 26.586,
+      "minimum_outer_edge_clearance_m": 0.0,
+      "conflict_length_m": 0.0,
+      "outside_safe_area_length_m": 4.797,
+      "review_status": "review_conflict_outside_mowable_edge"
+    },
+    {
+      "path_id": "OBS-NEW-007-LOOP-01",
+      "kind": "obstacle_validation_loop",
+      "asset_id": "OBS-NEW-007",
+      "related_area": "AREA-FRONT-YARD",
+      "length_m": 10.132,
+      "minimum_outer_edge_clearance_m": 0.0,
+      "conflict_length_m": 0.0,
+      "outside_safe_area_length_m": 3.807,
+      "review_status": "review_conflict_outside_mowable_edge"
+    },
+    {
+      "path_id": "OBS-NEW-011-LOOP-01",
+      "kind": "obstacle_validation_loop",
+      "asset_id": "OBS-NEW-011",
+      "related_area": "AREA-FRONT-YARD",
+      "length_m": 24.968,
+      "minimum_outer_edge_clearance_m": 0.0,
+      "conflict_length_m": 0.0,
+      "outside_safe_area_length_m": 11.207,
+      "review_status": "review_conflict_outside_mowable_edge"
+    },
+    {
+      "path_id": "OBS-NEW-012-LOOP-01",
+      "kind": "obstacle_validation_loop",
+      "asset_id": "OBS-NEW-012",
+      "related_area": "AREA-OVER-ROAD",
+      "length_m": 14.438,
+      "minimum_outer_edge_clearance_m": 0.0,
+      "conflict_length_m": 0.0,
+      "outside_safe_area_length_m": 3.383,
+      "review_status": "review_conflict_outside_mowable_edge"
+    },
+    {
+      "path_id": "OBS-NEW-013-LOOP-01",
+      "kind": "obstacle_validation_loop",
+      "asset_id": "OBS-NEW-013",
+      "related_area": "AREA-BACKYARD-GARDENS",
+      "length_m": 8.27,
+      "minimum_outer_edge_clearance_m": 0.359,
+      "conflict_length_m": 0.0,
+      "outside_safe_area_length_m": 8.27,
+      "review_status": "review_conflict_outside_mowable_edge"
+    },
+    {
+      "path_id": "OBS-NEW-014-LOOP-01",
+      "kind": "obstacle_validation_loop",
+      "asset_id": "OBS-NEW-014",
+      "related_area": "AREA-FRONT-YARD",
+      "length_m": 9.495,
+      "minimum_outer_edge_clearance_m": 0.527,
+      "conflict_length_m": 0.0,
+      "outside_safe_area_length_m": 9.495,
+      "review_status": "review_conflict_outside_mowable_edge"
+    },
+    {
+      "path_id": "OBS-POLE-001-LOOP-01",
+      "kind": "obstacle_validation_loop",
+      "asset_id": "OBS-POLE-001",
+      "related_area": "AREA-OVER-ROAD",
+      "length_m": 8.855,
+      "minimum_outer_edge_clearance_m": 0.035,
+      "conflict_length_m": 0.0,
+      "outside_safe_area_length_m": 2.424,
+      "review_status": "review_conflict_outside_mowable_edge"
+    }
+  ],
+  "limitations": [
+    "No controller-format mission file or launcher was generated.",
+    "Paths are independent loops; ordering, start poses, and between-path connectors are intentionally unresolved.",
+    "Obstacle identity and active geometry must be owner-reviewed before field authorization.",
+    "The 12-inch margin is a conservative first-pass review value, not a final mowing clearance.",
+    "Any path marked as a conflict requires geometry or route changes before it can be field-tested."
+  ]
+}

@@ -50,3 +50,12 @@ outputs/
 
 # PlatformIO build files
 .pio/
+
+# Raw field-run captures are local by default. Existing tracked files remain
+# tracked; deliberately promote a reviewed exception with `git add -f`.
+field_testing/sites/*/runs/
+
+# Explicit site-local scratch areas. Confirmed outputs belong in analysis,
+# site_inventory, or mission_plans instead.
+field_testing/sites/*/scratch/
+field_testing/sites/*/tmp/

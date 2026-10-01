@@ -1,0 +1,719 @@
+{
+  "status": "INCONCLUSIVE_FOR_CONTINUITY",
+  "review_date": "2026-09-25",
+  "telemetry_date_range": [
+    "2026-09-15",
+    "2026-09-23"
+  ],
+  "conclusion": "Recorded tractor-router RSSI stayed at or above -72 dBm in active auto/manual rows, but the logger has no router-reading timestamp or age and carries the last received value forward. The CSVs therefore cannot prove uninterrupted Wi-Fi connectivity.",
+  "notable_finding": "The Pi wlan0 reading was unavailable in 7 active-mode intervals across the included sessions (60.62 seconds total). This is not the preferred tractor-router path, but it disproves a blanket claim that every logged Wi-Fi interface stayed associated.",
+  "scope": "Rows in transmission mode 1 (manual) or 2 (auto).",
+  "session_selection": {
+    "included_20260915_133923": "Adds the missing geographic evidence: its active rows cover the backyard/gardens, front yard, and over-the-road areas.",
+    "excluded_20260918_121342": "The partial-rings log adds backyard/manual and transition evidence but no front-yard or over-the-road active rows, so it would mostly duplicate mapped ground.",
+    "excluded_20260918_134506": "The continuation run entered AUTO only briefly before the recorded NRF24 loss; its active AUTO rows do not fall inside any of the three inventory areas."
+  },
+  "sampling": "Map samples are reduced to at most one point per 0.5 seconds per run.",
+  "combined_by_mode": {
+    "auto": {
+      "rows": 23965,
+      "pi_wifi": {
+        "rows": 23965,
+        "valid_rows": 23965,
+        "missing_rows": 0,
+        "minimum_dbm": -80.0,
+        "p05_dbm": -69.0,
+        "median_dbm": -56.0,
+        "maximum_dbm": -43.0,
+        "below_minus_80_dbm_rows": 0
+      },
+      "tractor_router_wifi": {
+        "rows": 23965,
+        "valid_rows": 23822,
+        "missing_rows": 143,
+        "minimum_dbm": -68.0,
+        "p05_dbm": -54.0,
+        "median_dbm": -47.0,
+        "maximum_dbm": -33.0,
+        "below_minus_80_dbm_rows": 0
+      }
+    },
+    "manual": {
+      "rows": 74766,
+      "pi_wifi": {
+        "rows": 74766,
+        "valid_rows": 73553,
+        "missing_rows": 1213,
+        "minimum_dbm": -87.0,
+        "p05_dbm": -76.0,
+        "median_dbm": -61.0,
+        "maximum_dbm": -26.0,
+        "below_minus_80_dbm_rows": 864
+      },
+      "tractor_router_wifi": {
+        "rows": 74766,
+        "valid_rows": 74766,
+        "missing_rows": 0,
+        "minimum_dbm": -72.0,
+        "p05_dbm": -65.0,
+        "median_dbm": -49.0,
+        "maximum_dbm": -20.0,
+        "below_minus_80_dbm_rows": 0
+      }
+    }
+  },
+  "runs": [
+    {
+      "run": "20260915_133923",
+      "source": "field_testing/sites/62_Collins_multi_boundary_20260915/runs/20260915_133923/field_test_20260915_133923.csv",
+      "sha256": "255133edc19ffd52e0647db465f63bb9d0a9f287527f499980b1724191048806",
+      "rows": 33780,
+      "active_mode_rows": 33780,
+      "active_rows_inside_inventory_areas": {
+        "manual": {
+          "AREA-BACKYARD-GARDENS": 13832,
+          "AREA-FRONT-YARD": 2221,
+          "AREA-OVER-ROAD": 2909
+        },
+        "auto": {
+          "AREA-BACKYARD-GARDENS": 1387,
+          "AREA-FRONT-YARD": 43,
+          "AREA-OVER-ROAD": 704
+        }
+      },
+      "active_area_signal_summary": {
+        "manual": {
+          "AREA-BACKYARD-GARDENS": {
+            "pi_wifi": {
+              "valid_rows": 13832,
+              "minimum_dbm": -78.0,
+              "p05_dbm": -75.0,
+              "median_dbm": -63.0,
+              "maximum_dbm": -28.0
+            },
+            "tractor_router_wifi": {
+              "valid_rows": 13832,
+              "minimum_dbm": -60.0,
+              "p05_dbm": -55.0,
+              "median_dbm": -44.0,
+              "maximum_dbm": -24.0
+            }
+          },
+          "AREA-FRONT-YARD": {
+            "pi_wifi": {
+              "valid_rows": 2221,
+              "minimum_dbm": -82.0,
+              "p05_dbm": -79.0,
+              "median_dbm": -69.0,
+              "maximum_dbm": -51.0
+            },
+            "tractor_router_wifi": {
+              "valid_rows": 2221,
+              "minimum_dbm": -64.0,
+              "p05_dbm": -63.0,
+              "median_dbm": -51.0,
+              "maximum_dbm": -42.0
+            }
+          },
+          "AREA-OVER-ROAD": {
+            "pi_wifi": {
+              "valid_rows": 2691,
+              "minimum_dbm": -87.0,
+              "p05_dbm": -84.0,
+              "median_dbm": -76.0,
+              "maximum_dbm": -56.0
+            },
+            "tractor_router_wifi": {
+              "valid_rows": 2909,
+              "minimum_dbm": -72.0,
+              "p05_dbm": -71.0,
+              "median_dbm": -61.0,
+              "maximum_dbm": -50.0
+            }
+          }
+        },
+        "auto": {
+          "AREA-BACKYARD-GARDENS": {
+            "pi_wifi": {
+              "valid_rows": 1387,
+              "minimum_dbm": -76.0,
+              "p05_dbm": -74.0,
+              "median_dbm": -61.0,
+              "maximum_dbm": -52.0
+            },
+            "tractor_router_wifi": {
+              "valid_rows": 1387,
+              "minimum_dbm": -51.0,
+              "p05_dbm": -50.0,
+              "median_dbm": -42.0,
+              "maximum_dbm": -36.0
+            }
+          },
+          "AREA-FRONT-YARD": {
+            "pi_wifi": {
+              "valid_rows": 43,
+              "minimum_dbm": -64.0,
+              "p05_dbm": -63.9,
+              "median_dbm": -62.0,
+              "maximum_dbm": -59.0
+            },
+            "tractor_router_wifi": {
+              "valid_rows": 43,
+              "minimum_dbm": -50.0,
+              "p05_dbm": -50.0,
+              "median_dbm": -50.0,
+              "maximum_dbm": -50.0
+            }
+          },
+          "AREA-OVER-ROAD": {
+            "pi_wifi": {
+              "valid_rows": 704,
+              "minimum_dbm": -80.0,
+              "p05_dbm": -79.0,
+              "median_dbm": -72.0,
+              "maximum_dbm": -57.0
+            },
+            "tractor_router_wifi": {
+              "valid_rows": 704,
+              "minimum_dbm": -68.0,
+              "p05_dbm": -66.0,
+              "median_dbm": -62.0,
+              "maximum_dbm": -54.0
+            }
+          }
+        }
+      },
+      "active_rows_outside_inventory_areas": {
+        "manual": 9199,
+        "auto": 3485
+      },
+      "modes": {
+        "manual": {
+          "rows": 28161,
+          "pi_wifi": {
+            "rows": 28161,
+            "valid_rows": 27862,
+            "missing_rows": 299,
+            "minimum_dbm": -87.0,
+            "p05_dbm": -79.0,
+            "median_dbm": -65.0,
+            "maximum_dbm": -28.0,
+            "below_minus_80_dbm_rows": 821
+          },
+          "tractor_router_wifi": {
+            "rows": 28161,
+            "valid_rows": 28161,
+            "missing_rows": 0,
+            "minimum_dbm": -72.0,
+            "p05_dbm": -64.0,
+            "median_dbm": -49.0,
+            "maximum_dbm": -24.0,
+            "below_minus_80_dbm_rows": 0
+          }
+        },
+        "auto": {
+          "rows": 5619,
+          "pi_wifi": {
+            "rows": 5619,
+            "valid_rows": 5619,
+            "missing_rows": 0,
+            "minimum_dbm": -80.0,
+            "p05_dbm": -77.0,
+            "median_dbm": -63.0,
+            "maximum_dbm": -43.0,
+            "below_minus_80_dbm_rows": 0
+          },
+          "tractor_router_wifi": {
+            "rows": 5619,
+            "valid_rows": 5611,
+            "missing_rows": 8,
+            "minimum_dbm": -68.0,
+            "p05_dbm": -64.0,
+            "median_dbm": -47.0,
+            "maximum_dbm": -33.0,
+            "below_minus_80_dbm_rows": 0
+          }
+        }
+      },
+      "pi_wifi_missing_intervals": [
+        {
+          "mode": "manual",
+          "start_elapsed_s": 1427.62,
+          "end_elapsed_s": 1428.12,
+          "duration_s": 0.55,
+          "rows": 11
+        },
+        {
+          "mode": "manual",
+          "start_elapsed_s": 1454.92,
+          "end_elapsed_s": 1469.22,
+          "duration_s": 14.35,
+          "rows": 288
+        }
+      ],
+      "tractor_router_wifi_missing_intervals": [
+        {
+          "mode": "auto",
+          "start_elapsed_s": 0.02,
+          "end_elapsed_s": 0.33,
+          "duration_s": 0.36,
+          "rows": 8
+        }
+      ]
+    },
+    {
+      "run": "20260923_105953_master_manual_initial",
+      "source": "field_testing/sites/62_Collins_multi_boundary_20260915/runs/20260923_105953_master_manual_initial/master_manual_field_20260923_105953.csv",
+      "sha256": "83ab41d24635121b1a631e7df5b8363d3f507c4c52adbc112d1feb1792cfcd64",
+      "rows": 25638,
+      "active_mode_rows": 19166,
+      "active_rows_inside_inventory_areas": {
+        "manual": {
+          "AREA-BACKYARD-GARDENS": 563,
+          "AREA-FRONT-YARD": 0,
+          "AREA-OVER-ROAD": 0
+        },
+        "auto": {
+          "AREA-BACKYARD-GARDENS": 6700,
+          "AREA-FRONT-YARD": 0,
+          "AREA-OVER-ROAD": 0
+        }
+      },
+      "active_area_signal_summary": {
+        "manual": {
+          "AREA-BACKYARD-GARDENS": {
+            "pi_wifi": {
+              "valid_rows": 563,
+              "minimum_dbm": -70.0,
+              "p05_dbm": -67.0,
+              "median_dbm": -55.0,
+              "maximum_dbm": -46.0
+            },
+            "tractor_router_wifi": {
+              "valid_rows": 563,
+              "minimum_dbm": -58.0,
+              "p05_dbm": -58.0,
+              "median_dbm": -43.0,
+              "maximum_dbm": -42.0
+            }
+          }
+        },
+        "auto": {
+          "AREA-BACKYARD-GARDENS": {
+            "pi_wifi": {
+              "valid_rows": 6700,
+              "minimum_dbm": -73.0,
+              "p05_dbm": -58.0,
+              "median_dbm": -56.0,
+              "maximum_dbm": -53.0
+            },
+            "tractor_router_wifi": {
+              "valid_rows": 6700,
+              "minimum_dbm": -57.0,
+              "p05_dbm": -44.0,
+              "median_dbm": -43.0,
+              "maximum_dbm": -42.0
+            }
+          }
+        }
+      },
+      "active_rows_outside_inventory_areas": {
+        "manual": 921,
+        "auto": 10982
+      },
+      "modes": {
+        "manual": {
+          "rows": 1484,
+          "pi_wifi": {
+            "rows": 1484,
+            "valid_rows": 1484,
+            "missing_rows": 0,
+            "minimum_dbm": -70.0,
+            "p05_dbm": -65.0,
+            "median_dbm": -55.0,
+            "maximum_dbm": -44.0,
+            "below_minus_80_dbm_rows": 0
+          },
+          "tractor_router_wifi": {
+            "rows": 1484,
+            "valid_rows": 1484,
+            "missing_rows": 0,
+            "minimum_dbm": -65.0,
+            "p05_dbm": -65.0,
+            "median_dbm": -48.0,
+            "maximum_dbm": -39.0,
+            "below_minus_80_dbm_rows": 0
+          }
+        },
+        "auto": {
+          "rows": 17682,
+          "pi_wifi": {
+            "rows": 17682,
+            "valid_rows": 17682,
+            "missing_rows": 0,
+            "minimum_dbm": -73.0,
+            "p05_dbm": -59.0,
+            "median_dbm": -56.0,
+            "maximum_dbm": -51.0,
+            "below_minus_80_dbm_rows": 0
+          },
+          "tractor_router_wifi": {
+            "rows": 17682,
+            "valid_rows": 17601,
+            "missing_rows": 81,
+            "minimum_dbm": -57.0,
+            "p05_dbm": -51.0,
+            "median_dbm": -47.0,
+            "maximum_dbm": -39.0,
+            "below_minus_80_dbm_rows": 0
+          }
+        }
+      },
+      "pi_wifi_missing_intervals": [],
+      "tractor_router_wifi_missing_intervals": [
+        {
+          "mode": "auto",
+          "start_elapsed_s": 0.01,
+          "end_elapsed_s": 4.0,
+          "duration_s": 4.04,
+          "rows": 81
+        }
+      ]
+    },
+    {
+      "run": "20260923_124933_master_manual_5hz",
+      "source": "field_testing/sites/62_Collins_multi_boundary_20260915/runs/20260923_124933_master_manual_5hz/master_manual_field_20260923_124933.csv",
+      "sha256": "ea6c20f38bd2dbe987162cf93b948cbe62e7b45ed06fbc5c99e02ad2c4a18e13",
+      "rows": 73107,
+      "active_mode_rows": 1621,
+      "active_rows_inside_inventory_areas": {
+        "manual": {
+          "AREA-BACKYARD-GARDENS": 0,
+          "AREA-FRONT-YARD": 0,
+          "AREA-OVER-ROAD": 0
+        },
+        "auto": {
+          "AREA-BACKYARD-GARDENS": 0,
+          "AREA-FRONT-YARD": 0,
+          "AREA-OVER-ROAD": 0
+        }
+      },
+      "active_area_signal_summary": {
+        "manual": {},
+        "auto": {}
+      },
+      "active_rows_outside_inventory_areas": {
+        "manual": 1428,
+        "auto": 193
+      },
+      "modes": {
+        "manual": {
+          "rows": 1428,
+          "pi_wifi": {
+            "rows": 1428,
+            "valid_rows": 1428,
+            "missing_rows": 0,
+            "minimum_dbm": -82.0,
+            "p05_dbm": -75.0,
+            "median_dbm": -55.0,
+            "maximum_dbm": -51.0,
+            "below_minus_80_dbm_rows": 43
+          },
+          "tractor_router_wifi": {
+            "rows": 1428,
+            "valid_rows": 1428,
+            "missing_rows": 0,
+            "minimum_dbm": -69.0,
+            "p05_dbm": -64.0,
+            "median_dbm": -47.0,
+            "maximum_dbm": -38.0,
+            "below_minus_80_dbm_rows": 0
+          }
+        },
+        "auto": {
+          "rows": 193,
+          "pi_wifi": {
+            "rows": 193,
+            "valid_rows": 193,
+            "missing_rows": 0,
+            "minimum_dbm": -62.0,
+            "p05_dbm": -62.0,
+            "median_dbm": -56.0,
+            "maximum_dbm": -52.0,
+            "below_minus_80_dbm_rows": 0
+          },
+          "tractor_router_wifi": {
+            "rows": 193,
+            "valid_rows": 193,
+            "missing_rows": 0,
+            "minimum_dbm": -54.0,
+            "p05_dbm": -54.0,
+            "median_dbm": -53.0,
+            "maximum_dbm": -38.0,
+            "below_minus_80_dbm_rows": 0
+          }
+        }
+      },
+      "pi_wifi_missing_intervals": [],
+      "tractor_router_wifi_missing_intervals": []
+    },
+    {
+      "run": "20260923_135328_manual_stripes",
+      "source": "field_testing/sites/62_Collins_multi_boundary_20260915/runs/20260923_135328_manual_stripes/manual_stripes_20260923_135328.csv",
+      "sha256": "137fd0f7849fd91584c39ab74847c41cd620e8745ab0d094e9d8accb9150df86",
+      "rows": 39492,
+      "active_mode_rows": 36906,
+      "active_rows_inside_inventory_areas": {
+        "manual": {
+          "AREA-BACKYARD-GARDENS": 31863,
+          "AREA-FRONT-YARD": 0,
+          "AREA-OVER-ROAD": 0
+        },
+        "auto": {
+          "AREA-BACKYARD-GARDENS": 0,
+          "AREA-FRONT-YARD": 0,
+          "AREA-OVER-ROAD": 0
+        }
+      },
+      "active_area_signal_summary": {
+        "manual": {
+          "AREA-BACKYARD-GARDENS": {
+            "pi_wifi": {
+              "valid_rows": 30949,
+              "minimum_dbm": -77.0,
+              "p05_dbm": -68.0,
+              "median_dbm": -59.0,
+              "maximum_dbm": -26.0
+            },
+            "tractor_router_wifi": {
+              "valid_rows": 31863,
+              "minimum_dbm": -70.0,
+              "p05_dbm": -65.0,
+              "median_dbm": -49.0,
+              "maximum_dbm": -20.0
+            }
+          }
+        },
+        "auto": {}
+      },
+      "active_rows_outside_inventory_areas": {
+        "manual": 5043,
+        "auto": 0
+      },
+      "modes": {
+        "manual": {
+          "rows": 36906,
+          "pi_wifi": {
+            "rows": 36906,
+            "valid_rows": 35992,
+            "missing_rows": 914,
+            "minimum_dbm": -77.0,
+            "p05_dbm": -67.0,
+            "median_dbm": -59.0,
+            "maximum_dbm": -26.0,
+            "below_minus_80_dbm_rows": 0
+          },
+          "tractor_router_wifi": {
+            "rows": 36906,
+            "valid_rows": 36906,
+            "missing_rows": 0,
+            "minimum_dbm": -70.0,
+            "p05_dbm": -65.0,
+            "median_dbm": -49.0,
+            "maximum_dbm": -20.0,
+            "below_minus_80_dbm_rows": 0
+          }
+        }
+      },
+      "pi_wifi_missing_intervals": [
+        {
+          "mode": "manual",
+          "start_elapsed_s": 1037.85,
+          "end_elapsed_s": 1045.45,
+          "duration_s": 7.65,
+          "rows": 153
+        },
+        {
+          "mode": "manual",
+          "start_elapsed_s": 1201.76,
+          "end_elapsed_s": 1206.55,
+          "duration_s": 4.84,
+          "rows": 97
+        },
+        {
+          "mode": "manual",
+          "start_elapsed_s": 1386.25,
+          "end_elapsed_s": 1390.85,
+          "duration_s": 4.65,
+          "rows": 93
+        },
+        {
+          "mode": "manual",
+          "start_elapsed_s": 1436.05,
+          "end_elapsed_s": 1450.25,
+          "duration_s": 14.25,
+          "rows": 285
+        },
+        {
+          "mode": "manual",
+          "start_elapsed_s": 1495.06,
+          "end_elapsed_s": 1509.34,
+          "duration_s": 14.33,
+          "rows": 286
+        }
+      ],
+      "tractor_router_wifi_missing_intervals": []
+    },
+    {
+      "run": "20260923_dual_f9p_5hz_manual",
+      "source": "field_testing/sites/62_Collins_multi_boundary_20260915/runs/20260923_dual_f9p_5hz_manual/dual_f9p_5hz_manual_20260923.csv",
+      "sha256": "3dc79c2640624baa01133a3da3c1b73635c10beca2fdc1022f34bfebe9790724",
+      "rows": 7258,
+      "active_mode_rows": 7258,
+      "active_rows_inside_inventory_areas": {
+        "manual": {
+          "AREA-BACKYARD-GARDENS": 5162,
+          "AREA-FRONT-YARD": 1252,
+          "AREA-OVER-ROAD": 0
+        },
+        "auto": {
+          "AREA-BACKYARD-GARDENS": 471,
+          "AREA-FRONT-YARD": 0,
+          "AREA-OVER-ROAD": 0
+        }
+      },
+      "active_area_signal_summary": {
+        "manual": {
+          "AREA-BACKYARD-GARDENS": {
+            "pi_wifi": {
+              "valid_rows": 5162,
+              "minimum_dbm": -73.0,
+              "p05_dbm": -71.0,
+              "median_dbm": -64.0,
+              "maximum_dbm": -44.0
+            },
+            "tractor_router_wifi": {
+              "valid_rows": 5162,
+              "minimum_dbm": -64.0,
+              "p05_dbm": -63.0,
+              "median_dbm": -55.0,
+              "maximum_dbm": -39.0
+            }
+          },
+          "AREA-FRONT-YARD": {
+            "pi_wifi": {
+              "valid_rows": 1252,
+              "minimum_dbm": -79.0,
+              "p05_dbm": -76.0,
+              "median_dbm": -71.0,
+              "maximum_dbm": -61.0
+            },
+            "tractor_router_wifi": {
+              "valid_rows": 1252,
+              "minimum_dbm": -69.0,
+              "p05_dbm": -69.0,
+              "median_dbm": -64.0,
+              "maximum_dbm": -49.0
+            }
+          }
+        },
+        "auto": {
+          "AREA-BACKYARD-GARDENS": {
+            "pi_wifi": {
+              "valid_rows": 471,
+              "minimum_dbm": -57.0,
+              "p05_dbm": -57.0,
+              "median_dbm": -56.0,
+              "maximum_dbm": -54.0
+            },
+            "tractor_router_wifi": {
+              "valid_rows": 417,
+              "minimum_dbm": -40.0,
+              "p05_dbm": -40.0,
+              "median_dbm": -40.0,
+              "maximum_dbm": -40.0
+            }
+          }
+        }
+      },
+      "active_rows_outside_inventory_areas": {
+        "manual": 373,
+        "auto": 0
+      },
+      "modes": {
+        "manual": {
+          "rows": 6787,
+          "pi_wifi": {
+            "rows": 6787,
+            "valid_rows": 6787,
+            "missing_rows": 0,
+            "minimum_dbm": -79.0,
+            "p05_dbm": -73.0,
+            "median_dbm": -64.0,
+            "maximum_dbm": -44.0,
+            "below_minus_80_dbm_rows": 0
+          },
+          "tractor_router_wifi": {
+            "rows": 6787,
+            "valid_rows": 6787,
+            "missing_rows": 0,
+            "minimum_dbm": -69.0,
+            "p05_dbm": -65.0,
+            "median_dbm": -56.0,
+            "maximum_dbm": -39.0,
+            "below_minus_80_dbm_rows": 0
+          }
+        },
+        "auto": {
+          "rows": 471,
+          "pi_wifi": {
+            "rows": 471,
+            "valid_rows": 471,
+            "missing_rows": 0,
+            "minimum_dbm": -57.0,
+            "p05_dbm": -57.0,
+            "median_dbm": -56.0,
+            "maximum_dbm": -54.0,
+            "below_minus_80_dbm_rows": 0
+          },
+          "tractor_router_wifi": {
+            "rows": 471,
+            "valid_rows": 417,
+            "missing_rows": 54,
+            "minimum_dbm": -40.0,
+            "p05_dbm": -40.0,
+            "median_dbm": -40.0,
+            "maximum_dbm": -40.0,
+            "below_minus_80_dbm_rows": 0
+          }
+        }
+      },
+      "pi_wifi_missing_intervals": [],
+      "tractor_router_wifi_missing_intervals": [
+        {
+          "mode": "auto",
+          "start_elapsed_s": 0.01,
+          "end_elapsed_s": 2.66,
+          "duration_s": 2.7,
+          "rows": 54
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "router_wifi_* has no measurement timestamp, receive timestamp, or age field",
+    "the field logger retains the last router value until another TCP message arrives",
+    "RSSI presence does not measure command round-trip latency, packet loss, or phone-to-robot reachability",
+    "the map is path evidence from these runs, not a prediction for unvisited ground"
+  ],
+  "recommended_instrumentation": [
+    "add router_wifi_received_timestamp and router_wifi_age_s to every log row",
+    "mark router data unavailable when age exceeds 10 seconds",
+    "log an authenticated control-path heartbeat with sequence, round-trip latency, and loss count",
+    "make the phone-control dead-man stop locally on the tractor when heartbeat age exceeds the tested bound"
+  ],
+  "source_sha256": {
+    "field_testing/sites/62_Collins_multi_boundary_20260915/site_inventory/62_Collins_site_inventory.geojson": "adfc9a3816a1852b2dedff570f724bf28173de95869927d24e32f953a59d5e78",
+    "tractor_rpi/field_test_logger_20260828.py": "689928fb8049be6a831ea9980acf31d529a3907719daf3db562452ab69bf6e97"
+  }
+}

@@ -1,0 +1,629 @@
+{
+  "status": "REVIEW_ONLY_NOT_DRIVEABLE_PENDING_OWNER_REPLAY_APPROVAL",
+  "safety_language": "BLADES OFF; DIRECTLY SUPERVISED; PHYSICAL E-STOP AND NRF HANDHELD REQUIRED",
+  "authorization": "Verification success does not authorize driving.",
+  "source_route": "field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20260928_outer_perimeter_field_test/submitted_edits_review_REVIEW_ONLY/62_Collins_consolidated_route_REVIEW_ONLY.json",
+  "source_route_sha256": "e101cdd0ce2707a9c2af908a7d86ff8493ca7c1885bd1aac5dab9f65c6f9e8a5",
+  "source_review_report": "field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20260928_outer_perimeter_field_test/submitted_edits_review_REVIEW_ONLY/62_Collins_submitted_mission_review_report.json",
+  "site_inventory": "field_testing/sites/62_Collins_multi_boundary_20260915/site_inventory/revisions/rev_003_20260926_REVIEW_ONLY/62_Collins_site_inventory_rev003_REVIEW_ONLY.geojson",
+  "source_roundtrip_validation": {
+    "parse_serialize_parse_equal": true,
+    "points": 3989,
+    "calculated_length_m": 790.689313,
+    "stored_final_distance_m": 790.689,
+    "maximum_gap_m": 0.20101,
+    "duplicate_consecutive_points": 0
+  },
+  "candidate_route": {
+    "waypoints": 3989,
+    "length_m": 790.077117,
+    "nominal_motion_time_minutes_at_1mps": 13.168,
+    "spacing_target_m": 0.2,
+    "start_east_m": 0.0,
+    "start_north_m": 0.0,
+    "end_east_m": -7.31,
+    "end_north_m": 0.811,
+    "speed_mps": 1.0,
+    "lookahead_policy_m": {
+      "normal": 2.0,
+      "reviewed_turn": 1.5,
+      "tight_reviewed_turn": 1.0
+    }
+  },
+  "geometry_validation": {
+    "duplicate_consecutive_points": 0,
+    "maximum_waypoint_gap_m": 0.20101,
+    "minimum_nonzero_waypoint_gap_m": 0.112571,
+    "heading_change_events_over_45_deg": [],
+    "reversal_events_over_150_deg": [],
+    "self_intersections": {
+      "is_simple": false,
+      "nonadjacent_crossings_or_touches": 618,
+      "nonadjacent_overlaps": 298,
+      "examples": [
+        {
+          "segment_a": 85,
+          "segment_b": 2231,
+          "kind": "crossing_or_touch"
+        },
+        {
+          "segment_a": 2317,
+          "segment_b": 2840,
+          "kind": "crossing_or_touch"
+        },
+        {
+          "segment_a": 2317,
+          "segment_b": 2841,
+          "kind": "crossing_or_touch"
+        },
+        {
+          "segment_a": 2318,
+          "segment_b": 2840,
+          "kind": "crossing_or_touch"
+        },
+        {
+          "segment_a": 2318,
+          "segment_b": 2841,
+          "kind": "overlap"
+        },
+        {
+          "segment_a": 2318,
+          "segment_b": 2842,
+          "kind": "crossing_or_touch"
+        },
+        {
+          "segment_a": 2319,
+          "segment_b": 2841,
+          "kind": "crossing_or_touch"
+        },
+        {
+          "segment_a": 2319,
+          "segment_b": 2842,
+          "kind": "overlap"
+        },
+        {
+          "segment_a": 2319,
+          "segment_b": 2843,
+          "kind": "crossing_or_touch"
+        },
+        {
+          "segment_a": 2320,
+          "segment_b": 2842,
+          "kind": "crossing_or_touch"
+        },
+        {
+          "segment_a": 2320,
+          "segment_b": 2843,
+          "kind": "overlap"
+        },
+        {
+          "segment_a": 2320,
+          "segment_b": 2844,
+          "kind": "crossing_or_touch"
+        },
+        {
+          "segment_a": 2321,
+          "segment_b": 2843,
+          "kind": "crossing_or_touch"
+        },
+        {
+          "segment_a": 2321,
+          "segment_b": 2844,
+          "kind": "overlap"
+        },
+        {
+          "segment_a": 2321,
+          "segment_b": 2845,
+          "kind": "crossing_or_touch"
+        },
+        {
+          "segment_a": 2322,
+          "segment_b": 2844,
+          "kind": "crossing_or_touch"
+        },
+        {
+          "segment_a": 2322,
+          "segment_b": 2845,
+          "kind": "overlap"
+        },
+        {
+          "segment_a": 2322,
+          "segment_b": 2846,
+          "kind": "crossing_or_touch"
+        },
+        {
+          "segment_a": 2323,
+          "segment_b": 2845,
+          "kind": "crossing_or_touch"
+        },
+        {
+          "segment_a": 2323,
+          "segment_b": 2846,
+          "kind": "overlap"
+        }
+      ],
+      "classification": "expected route reuse and out/back access-path retracing; review replay shows the sequence"
+    },
+    "interpretation": "Non-simple geometry is expected where the approved sequence deliberately reuses access paths; unexpected discontinuities and instantaneous reversals are validation failures."
+  },
+  "deck_envelope_validation": {
+    "deck_width_m": 1.0668,
+    "half_width_m": 0.5334,
+    "inventory_results": [
+      {
+        "asset_id": "OBS-NEW-001",
+        "centerline_clearance_m": 0.759,
+        "nominal_deck_edge_clearance_m": 0.225,
+        "deck_intersection_area_m2": 0.0,
+        "intersects": false
+      },
+      {
+        "asset_id": "OBS-NEW-002",
+        "centerline_clearance_m": 4.976,
+        "nominal_deck_edge_clearance_m": 4.443,
+        "deck_intersection_area_m2": 0.0,
+        "intersects": false
+      },
+      {
+        "asset_id": "OBS-NEW-003",
+        "centerline_clearance_m": 0.582,
+        "nominal_deck_edge_clearance_m": 0.048,
+        "deck_intersection_area_m2": 0.0,
+        "intersects": false
+      },
+      {
+        "asset_id": "OBS-NEW-004",
+        "centerline_clearance_m": 2.877,
+        "nominal_deck_edge_clearance_m": 2.344,
+        "deck_intersection_area_m2": 0.0,
+        "intersects": false
+      },
+      {
+        "asset_id": "OBS-NEW-005",
+        "centerline_clearance_m": 2.109,
+        "nominal_deck_edge_clearance_m": 1.576,
+        "deck_intersection_area_m2": 0.0,
+        "intersects": false
+      },
+      {
+        "asset_id": "OBS-NEW-006",
+        "centerline_clearance_m": 2.175,
+        "nominal_deck_edge_clearance_m": 1.642,
+        "deck_intersection_area_m2": 0.0,
+        "intersects": false
+      },
+      {
+        "asset_id": "OBS-NEW-007",
+        "centerline_clearance_m": 0.845,
+        "nominal_deck_edge_clearance_m": 0.311,
+        "deck_intersection_area_m2": 0.0,
+        "intersects": false
+      },
+      {
+        "asset_id": "OBS-NEW-008",
+        "centerline_clearance_m": 2.882,
+        "nominal_deck_edge_clearance_m": 2.349,
+        "deck_intersection_area_m2": 0.0,
+        "intersects": false
+      },
+      {
+        "asset_id": "OBS-NEW-009",
+        "centerline_clearance_m": 1.568,
+        "nominal_deck_edge_clearance_m": 1.035,
+        "deck_intersection_area_m2": 0.0,
+        "intersects": false
+      },
+      {
+        "asset_id": "OBS-NEW-010",
+        "centerline_clearance_m": 2.931,
+        "nominal_deck_edge_clearance_m": 2.397,
+        "deck_intersection_area_m2": 0.0,
+        "intersects": false
+      },
+      {
+        "asset_id": "OBS-NEW-011",
+        "centerline_clearance_m": 0.895,
+        "nominal_deck_edge_clearance_m": 0.362,
+        "deck_intersection_area_m2": 0.0,
+        "intersects": false
+      },
+      {
+        "asset_id": "OBS-NEW-012",
+        "centerline_clearance_m": 0.567,
+        "nominal_deck_edge_clearance_m": 0.033,
+        "deck_intersection_area_m2": 0.0,
+        "intersects": false
+      },
+      {
+        "asset_id": "OBS-NEW-013",
+        "centerline_clearance_m": 1.253,
+        "nominal_deck_edge_clearance_m": 0.719,
+        "deck_intersection_area_m2": 0.0,
+        "intersects": false
+      },
+      {
+        "asset_id": "OBS-NEW-014",
+        "centerline_clearance_m": 1.545,
+        "nominal_deck_edge_clearance_m": 1.011,
+        "deck_intersection_area_m2": 0.0,
+        "intersects": false
+      },
+      {
+        "asset_id": "OBS-POLE-001",
+        "centerline_clearance_m": 0.979,
+        "nominal_deck_edge_clearance_m": 0.445,
+        "deck_intersection_area_m2": 0.0,
+        "intersects": false
+      },
+      {
+        "asset_id": "OBS-TREE-001",
+        "centerline_clearance_m": 3.685,
+        "nominal_deck_edge_clearance_m": 3.151,
+        "deck_intersection_area_m2": 0.0,
+        "intersects": false
+      }
+    ],
+    "intersecting_obstacles": []
+  },
+  "material_geometry_changes": [
+    {
+      "change_id": "G1",
+      "reason": "42-inch deck envelope overlapped OBS-NEW-011 candidate mowing exclusion",
+      "source_segment": "P6",
+      "source_distance_start_m": 519.134,
+      "source_distance_end_m": 526.665,
+      "candidate_distance_start_m": 518.68,
+      "candidate_distance_end_m": 527.19,
+      "target_centerline_clearance_m": 0.9,
+      "result_centerline_clearance_m": 0.895,
+      "result_deck_edge_clearance_m": 0.362,
+      "owner_review_required": true,
+      "maximum_centerline_shift_m": 0.835,
+      "mean_route_shift_m": 0.0064
+    },
+    {
+      "change_id": "G2",
+      "reason": "remove centimeter-scale near-180-degree join backtrack",
+      "source_sequence": 188,
+      "source_distance_m": 36.895,
+      "source_segment": "P24",
+      "removed_leg_m": 0.027,
+      "heading_change_before_deg": 153.21,
+      "owner_review_required": true
+    },
+    {
+      "change_id": "G3",
+      "reason": "remove centimeter-scale near-180-degree join backtrack",
+      "source_sequence": 2437,
+      "source_distance_m": 484.666,
+      "source_segment": "P7",
+      "removed_leg_m": 0.084,
+      "heading_change_before_deg": 155.34,
+      "owner_review_required": true
+    },
+    {
+      "change_id": "G4",
+      "reason": "remove sub-0.10 m duplicate points at segment joins",
+      "occurrences": [
+        {
+          "source_sequence": 2428,
+          "source_distance_m": 483.048,
+          "source_segment": "P7",
+          "join_gap_m": 0.026
+        },
+        {
+          "source_sequence": 2947,
+          "source_distance_m": 585.843,
+          "source_segment": "P7",
+          "join_gap_m": 0.026
+        },
+        {
+          "source_sequence": 3825,
+          "source_distance_m": 758.874,
+          "source_segment": "P14",
+          "join_gap_m": 0.09
+        },
+        {
+          "source_sequence": 3864,
+          "source_distance_m": 766.131,
+          "source_segment": "P7",
+          "join_gap_m": 0.026
+        }
+      ],
+      "owner_review_required": true
+    },
+    {
+      "change_id": "G5",
+      "reason": "locally soften instantaneous heading changes over 40 degrees",
+      "events": [
+        {
+          "route_distance_m": 57.558,
+          "east_m": -8.398,
+          "north_m": -40.768,
+          "heading_change_before_deg": 40.12
+        },
+        {
+          "route_distance_m": 460.533,
+          "east_m": 1.156,
+          "north_m": -5.345,
+          "heading_change_before_deg": 85.52
+        },
+        {
+          "route_distance_m": 484.537,
+          "east_m": 14.784,
+          "north_m": 10.873,
+          "heading_change_before_deg": 47.01
+        },
+        {
+          "route_distance_m": 527.679,
+          "east_m": 23.97,
+          "north_m": -24.944,
+          "heading_change_before_deg": 41.28
+        },
+        {
+          "route_distance_m": 589.705,
+          "east_m": 16.194,
+          "north_m": 10.316,
+          "heading_change_before_deg": 41.08
+        },
+        {
+          "route_distance_m": 593.837,
+          "east_m": 20.194,
+          "north_m": 11.35,
+          "heading_change_before_deg": 80.3
+        },
+        {
+          "route_distance_m": 593.837,
+          "east_m": 20.194,
+          "north_m": 11.35,
+          "heading_change_before_deg": 59.2
+        }
+      ],
+      "maximum_centerline_shift_m": 0.23,
+      "owner_review_required": true
+    }
+  ],
+  "turn_capability_field_evidence": [
+    {
+      "asset_id": "OBS-NEW-004",
+      "minimum_observed_radius_m": 0.925,
+      "p10_observed_radius_m": 0.97,
+      "evidence": "revision-3 recorded centerline evidence from successful field driving"
+    },
+    {
+      "asset_id": "OBS-NEW-006",
+      "minimum_observed_radius_m": 0.787,
+      "p10_observed_radius_m": 0.945,
+      "evidence": "revision-3 recorded centerline evidence from successful field driving"
+    },
+    {
+      "asset_id": "OBS-NEW-013",
+      "minimum_observed_radius_m": 0.937,
+      "p10_observed_radius_m": 0.956,
+      "evidence": "revision-3 recorded centerline evidence from successful field driving"
+    }
+  ],
+  "turn_marker_reviews": [
+    {
+      "segment_id": "P1",
+      "segment_label": "Submitted path P1",
+      "east_m": -4.588,
+      "north_m": -38.734,
+      "source_review_radius_m": 1.45,
+      "candidate_distance_m": 53.187,
+      "candidate_east_m": -4.588,
+      "candidate_north_m": -38.734,
+      "nearest_obstacle": "OBS-NEW-003",
+      "source_marker_deck_clearance_m": 0.652,
+      "decision": "RETAINED_AS_SUBMITTED",
+      "rationale": "No deck-envelope conflict at marker; 0.787 m or tighter radii appear in successful obstacle 004/006/013 field evidence."
+    },
+    {
+      "segment_id": "P2",
+      "segment_label": "Submitted path P2",
+      "east_m": 32.173,
+      "north_m": -33.667,
+      "source_review_radius_m": 0.75,
+      "candidate_distance_m": 107.519,
+      "candidate_east_m": 32.173,
+      "candidate_north_m": -33.667,
+      "nearest_obstacle": "OBS-NEW-011",
+      "source_marker_deck_clearance_m": 10.356,
+      "decision": "RETAINED_AS_SUBMITTED",
+      "rationale": "No deck-envelope conflict at marker; 0.787 m or tighter radii appear in successful obstacle 004/006/013 field evidence."
+    },
+    {
+      "segment_id": "P2",
+      "segment_label": "Submitted path P2",
+      "east_m": 33.451,
+      "north_m": -39.648,
+      "source_review_radius_m": 1.43,
+      "candidate_distance_m": 113.703,
+      "candidate_east_m": 33.451,
+      "candidate_north_m": -39.648,
+      "nearest_obstacle": "OBS-NEW-011",
+      "source_marker_deck_clearance_m": 16.226,
+      "decision": "RETAINED_AS_SUBMITTED",
+      "rationale": "No deck-envelope conflict at marker; 0.787 m or tighter radii appear in successful obstacle 004/006/013 field evidence."
+    },
+    {
+      "segment_id": "P2",
+      "segment_label": "Submitted path P2",
+      "east_m": 28.303,
+      "north_m": -42.618,
+      "source_review_radius_m": 1.42,
+      "candidate_distance_m": 119.884,
+      "candidate_east_m": 28.303,
+      "candidate_north_m": -42.618,
+      "nearest_obstacle": "OBS-NEW-011",
+      "source_marker_deck_clearance_m": 17.663,
+      "decision": "RETAINED_AS_SUBMITTED",
+      "rationale": "No deck-envelope conflict at marker; 0.787 m or tighter radii appear in successful obstacle 004/006/013 field evidence."
+    },
+    {
+      "segment_id": "P2",
+      "segment_label": "Submitted path P2",
+      "east_m": 22.447,
+      "north_m": -37.892,
+      "source_review_radius_m": 1.24,
+      "candidate_distance_m": 127.628,
+      "candidate_east_m": 22.447,
+      "candidate_north_m": -37.892,
+      "nearest_obstacle": "OBS-NEW-011",
+      "source_marker_deck_clearance_m": 13.103,
+      "decision": "RETAINED_AS_SUBMITTED",
+      "rationale": "No deck-envelope conflict at marker; 0.787 m or tighter radii appear in successful obstacle 004/006/013 field evidence."
+    },
+    {
+      "segment_id": "P3",
+      "segment_label": "Submitted path P3",
+      "east_m": -5.602,
+      "north_m": -62.133,
+      "source_review_radius_m": 0.94,
+      "candidate_distance_m": 170.113,
+      "candidate_east_m": -5.602,
+      "candidate_north_m": -62.133,
+      "nearest_obstacle": "OBS-NEW-006",
+      "source_marker_deck_clearance_m": 2.401,
+      "decision": "RETAINED_AS_SUBMITTED",
+      "rationale": "No deck-envelope conflict at marker; 0.787 m or tighter radii appear in successful obstacle 004/006/013 field evidence."
+    },
+    {
+      "segment_id": "P3",
+      "segment_label": "Submitted path P3",
+      "east_m": -40.033,
+      "north_m": -74.022,
+      "source_review_radius_m": 1.22,
+      "candidate_distance_m": 206.797,
+      "candidate_east_m": -40.033,
+      "candidate_north_m": -74.022,
+      "nearest_obstacle": "OBS-NEW-005",
+      "source_marker_deck_clearance_m": 17.187,
+      "decision": "RETAINED_AS_SUBMITTED",
+      "rationale": "No deck-envelope conflict at marker; 0.787 m or tighter radii appear in successful obstacle 004/006/013 field evidence."
+    },
+    {
+      "segment_id": "P19",
+      "segment_label": "Submitted path P19",
+      "east_m": -18.368,
+      "north_m": -7.891,
+      "source_review_radius_m": 1.12,
+      "candidate_distance_m": 440.523,
+      "candidate_east_m": -18.368,
+      "candidate_north_m": -7.891,
+      "nearest_obstacle": "OBS-NEW-001",
+      "source_marker_deck_clearance_m": 1.947,
+      "decision": "RETAINED_AS_SUBMITTED",
+      "rationale": "No deck-envelope conflict at marker; 0.787 m or tighter radii appear in successful obstacle 004/006/013 field evidence."
+    },
+    {
+      "segment_id": "P6",
+      "segment_label": "Submitted path P6",
+      "east_m": 27.762,
+      "north_m": -24.01,
+      "source_review_radius_m": 0.71,
+      "candidate_distance_m": 522.593,
+      "candidate_east_m": 28.011,
+      "candidate_north_m": -24.155,
+      "nearest_obstacle": "OBS-NEW-011",
+      "source_marker_deck_clearance_m": 0.076,
+      "decision": "MODIFIED_G1_FOR_OBS11_DECK_CLEARANCE",
+      "rationale": "Local route arc moved away from OBS-NEW-011; owner replay approval required."
+    },
+    {
+      "segment_id": "P11",
+      "segment_label": "Submitted path P11",
+      "east_m": 46.172,
+      "north_m": -46.765,
+      "source_review_radius_m": 1.05,
+      "candidate_distance_m": 690.723,
+      "candidate_east_m": 46.172,
+      "candidate_north_m": -46.765,
+      "nearest_obstacle": "OBS-NEW-011",
+      "source_marker_deck_clearance_m": 29.21,
+      "decision": "RETAINED_AS_SUBMITTED",
+      "rationale": "No deck-envelope conflict at marker; 0.787 m or tighter radii appear in successful obstacle 004/006/013 field evidence."
+    },
+    {
+      "segment_id": "P11",
+      "segment_label": "Submitted path P11",
+      "east_m": 41.902,
+      "north_m": -47.696,
+      "source_review_radius_m": 1.51,
+      "candidate_distance_m": 695.285,
+      "candidate_east_m": 41.902,
+      "candidate_north_m": -47.696,
+      "nearest_obstacle": "OBS-NEW-011",
+      "source_marker_deck_clearance_m": 27.404,
+      "decision": "RETAINED_AS_SUBMITTED",
+      "rationale": "No deck-envelope conflict at marker; 0.787 m or tighter radii appear in successful obstacle 004/006/013 field evidence."
+    },
+    {
+      "segment_id": "P18",
+      "segment_label": "Submitted path P18",
+      "east_m": 15.809,
+      "north_m": 25.564,
+      "source_review_radius_m": 0.98,
+      "candidate_distance_m": 607.87,
+      "candidate_east_m": 15.809,
+      "candidate_north_m": 25.564,
+      "nearest_obstacle": "OBS-NEW-008",
+      "source_marker_deck_clearance_m": 21.442,
+      "decision": "RETAINED_AS_SUBMITTED",
+      "rationale": "No deck-envelope conflict at marker; 0.787 m or tighter radii appear in successful obstacle 004/006/013 field evidence."
+    },
+    {
+      "segment_id": "P18",
+      "segment_label": "Submitted path P18",
+      "east_m": 19.457,
+      "north_m": 26.733,
+      "source_review_radius_m": 1.53,
+      "candidate_distance_m": 611.83,
+      "candidate_east_m": 19.457,
+      "candidate_north_m": 26.733,
+      "nearest_obstacle": "OBS-NEW-008",
+      "source_marker_deck_clearance_m": 22.936,
+      "decision": "RETAINED_AS_SUBMITTED",
+      "rationale": "No deck-envelope conflict at marker; 0.787 m or tighter radii appear in successful obstacle 004/006/013 field evidence."
+    }
+  ],
+  "september_28_field_run_context": {
+    "source": "field_testing/sites/62_Collins_multi_boundary_20260915/runs/20260928_outer_perimeter_field_test/outer_perimeter_20260928_120838.csv",
+    "active_path_error_m": {
+      "median": 0.092,
+      "p95": 0.26,
+      "maximum": 1.905
+    },
+    "within_0_5m_percent": 99.04,
+    "steering_pwm_saturated_percent_active": 0.09,
+    "firmware": "teensy_main_20260926",
+    "interpretation": "The completed run supports sub-1.63 m turn capability but also justifies explicit deck-envelope review and direct supervision."
+  },
+  "field_launch_requirements": {
+    "expected_firmware": "teensy_main_20260926",
+    "heading_f9p_reconfiguration_expected": true,
+    "startup_wait_required_for": [
+      "NRF radio",
+      "Teensy bridge",
+      "RTK corrections",
+      "heading solution"
+    ],
+    "preflight": [
+      "RTK correction stream",
+      "RTK Fixed",
+      "valid fixed-carrier heading",
+      "0.80-1.30 m heading baseline",
+      "heading accuracy <= 1.0 degree",
+      "Teensy bridge and expected firmware identity",
+      "JRK health",
+      "stationary Pause safe starting mode"
+    ],
+    "voice_guidance_to_start": true,
+    "logging_required": true,
+    "safe_neutral_shutdown_required": true,
+    "physical_estop_and_nrf_supervision_may_not_be_weakened": true
+  },
+  "unresolved_owner_action": "Review the PNG and interactive replay, especially purple G1 near OBS-NEW-011.",
+  "mission_sha256": "35ea19776283ef415518fd57997e418b966ea823741bcc6a6ca135cee7b504d9",
+  "audit_sha256": "fe2d65daaecd80b4dce1582a4e74ab4744c0fe7cb1cf9e72d6944f846353e50e"
+}

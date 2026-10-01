@@ -1,0 +1,89 @@
+{
+  "status": "REVIEW_ONLY_NOT_FIELD_READY",
+  "source_review": "field_testing\\sites\\62_Collins_multi_boundary_20260915\\analysis\\20260923_combined_coverage_review\\combined_coverage_boundaries_REVIEW_ONLY.geojson",
+  "source_notes": "C:\\Users\\al532\\Downloads\\20260928\\review of map.pptx",
+  "deck_width_m": 1.0668,
+  "operations": {
+    "joined": [
+      "main_backyard",
+      "garden_left",
+      "garden_right"
+    ],
+    "garden_right_crown": {
+      "start_xy_m": [
+        -30.3044279690858,
+        14.116327940190558
+      ],
+      "end_xy_m": [
+        -24.282121034666904,
+        14.496576027059973
+      ],
+      "source_max_y_m": 15.528736381328656,
+      "smoothed_apex_y_m": 15.428736381328656,
+      "replacement_points": 25
+    },
+    "tree": {
+      "source_rows": [
+        3107,
+        3584
+      ],
+      "start_time": "2026-09-23T17:56:04.522+00:00",
+      "end_time": "2026-09-23T17:56:28.393+00:00",
+      "points": 104,
+      "path_length_m": 11.83812952423634,
+      "closure_gap_m": 0.7098903471130967,
+      "fitted_center_xy_m": [
+        -22.712113824273935,
+        -10.542923753564631
+      ],
+      "fitted_centerline_radius_m": 1.9034953583621343,
+      "fit_radial_rms_m": 0.14210898647988757,
+      "fit_radial_max_abs_m": 0.3832757121722554,
+      "centerline_enclosed_area_m2": 11.380884041089134,
+      "deck_edge_hole_area_m2": 5.895608966515109,
+      "deck_edge_inset_m": 0.5334
+    },
+    "telephone_pole": {
+      "source_segment": 14,
+      "loop_indices_zero_based": [
+        13,
+        63
+      ],
+      "recorded_loop_area_m2": 4.302495980592263,
+      "extra_clearance_m": 0.6096,
+      "numerical_margin_m": 0.02,
+      "exclusion_area_m2": 10.211593414651743
+    }
+  },
+  "areas": {
+    "backyard_and_gardens": {
+      "area_m2": 2643.793967758703,
+      "perimeter_m": 317.1374042332651,
+      "interior_holes": 1,
+      "valid": true
+    },
+    "front_yard": {
+      "area_m2": 379.73493396162274,
+      "perimeter_m": 89.2871923272749,
+      "interior_holes": 0,
+      "valid": true
+    },
+    "over_the_road": {
+      "area_m2": 366.3479814888917,
+      "perimeter_m": 163.64883508489785,
+      "interior_holes": 0,
+      "valid": true
+    }
+  },
+  "source_sha256": {
+    "field_testing\\sites\\62_Collins_multi_boundary_20260915\\analysis\\20260923_combined_coverage_review\\combined_coverage_boundaries_REVIEW_ONLY.geojson": "d83f058830c462002f494af80e27d204ce9803ddac514a7ae370c539125fb129",
+    "field_testing\\sites\\62_Collins_multi_boundary_20260915\\analysis\\20260923_combined_coverage_review\\combined_coverage_report.json": "5d175a0ab6105d52d42823d003ddd9a4ab2c310f9aea66acde7748a1a306940d",
+    "field_testing\\sites\\62_Collins_multi_boundary_20260915\\runs\\20260923_135328_manual_stripes\\manual_stripes_20260923_135328.csv": "137fd0f7849fd91584c39ab74847c41cd620e8745ab0d094e9d8accb9150df86",
+    "field_testing\\sites\\62_Collins_multi_boundary_20260915\\runs\\20260915_133923\\boundary_review\\segment_14_candidate_path.csv": "8e741192b3ceb0ec180936b14c62f9d14ddca07ac6cc21f41d62cdfef43904a9"
+  },
+  "limitations": [
+    "Review-only perimeter geometry; no mission or launcher is generated.",
+    "The tree deck-edge hole assumes a symmetric 42-inch deck centered laterally on the GNSS path.",
+    "The garden-right crown replacement is bounded below the highest demonstrated manual coverage point."
+  ]
+}

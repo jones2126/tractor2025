@@ -1,0 +1,34 @@
+{
+  "site_id": "62_COLLINS",
+  "inventory_revision": 1,
+  "inventory_revision_label": "rev_001_20260925",
+  "status": "reviewed_not_field_validated",
+  "created_date": "2026-09-25",
+  "counts": {
+    "mowable_areas": 3,
+    "obstacles": 2,
+    "transitions": 8,
+    "geojson_features": 16
+  },
+  "mowable_area_total_m2": 3389.877,
+  "transition_total_length_m": 193.209,
+  "source_sha256": {
+    "field_testing/sites/62_Collins_multi_boundary_20260915/analysis/20260928_perimeter_candidate_v2_REVIEW_ONLY/62_Collins_perimeter_candidate_v2_REVIEW_ONLY.geojson": "2470acf290b15c0a1bbe77a2421ffd7d775d8486748df9163fcc4cfe6e34de14",
+    "field_testing/sites/62_Collins_multi_boundary_20260915/analysis/20260928_perimeter_candidate_v2_REVIEW_ONLY/62_Collins_perimeter_candidate_v2_report.json": "704d47800bd0e94f9ab67af7d6f4fd0dc870fbc8cc7880b0e771b9ad2e4a28ba",
+    "field_testing/sites/62_Collins_multi_boundary_20260915/runs/20260915_133923/boundary_review/segment_02_candidate_path.csv": "2cf1aaba24ca4b06be17c9a48046222df0d5cdd24390e651c21601dfe4dd4e5e",
+    "field_testing/sites/62_Collins_multi_boundary_20260915/runs/20260915_133923/boundary_review/segment_05_candidate_path.csv": "007e0084f7d4eca9862e4b8f44436d87c90e80aff26403f122a115ecbee228fa",
+    "field_testing/sites/62_Collins_multi_boundary_20260915/runs/20260915_133923/boundary_review/segment_07_candidate_path.csv": "aa1073c55a0c5502600b0907c2a93e112232755563f038f13c88e003fa2546dd",
+    "field_testing/sites/62_Collins_multi_boundary_20260915/runs/20260915_133923/boundary_review/segment_09_candidate_path.csv": "ef3c32904e9dd2bc2a1bb6769974be6bb40322f91761efeca092b03b1e362e4d",
+    "field_testing/sites/62_Collins_multi_boundary_20260915/runs/20260915_133923/boundary_review/segment_11_candidate_path.csv": "1854f84939a4d4d8f806c70cd5ad307a8642ed44ba67f9b637685f44e4c33b7d",
+    "field_testing/sites/62_Collins_multi_boundary_20260915/runs/20260915_133923/boundary_review/segment_12_candidate_path.csv": "62cdfa2774bbd49172939929f2ff8b1a253b5a7d1db0f62cd3f049dc1bf13f5b",
+    "field_testing/sites/62_Collins_multi_boundary_20260915/runs/20260915_133923/boundary_review/segment_16_candidate_path.csv": "fa24ebe9d98601478ca459d491d55493f53ba91f569857928bf988329d5ad858",
+    "field_testing/sites/62_Collins_multi_boundary_20260915/runs/20260915_133923/boundary_review/segment_17_candidate_path.csv": "35a28fe3fadf9acc157c146263013c2aadf9ca00ca26c14323c3a795c887a5e3"
+  },
+  "rules": [
+    "Mission builders must select features by stable asset_id and geometry_role.",
+    "Obstacle mowing exclusions already contain the documented deck or clearance adjustment; do not apply it twice.",
+    "Transition direction is validated only as recorded. Reverse use requires review.",
+    "TRANS-002 and TRANS-003 are retained internal connectors and may be omitted by a merged-area coverage plan.",
+    "Revision 1 does not include a launchable mission."
+  ]
+}

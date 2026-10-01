@@ -1,0 +1,192 @@
+{
+  "source_files": {
+    "field_test_20260926_121311.csv": {
+      "bytes": 44585574,
+      "sha256": "4b4d73df31db91590bde88d6f8bda5e5dd37a5547b5933be482e81383c12a8e9"
+    },
+    "wifi_manual_control_20260926_121332.jsonl": {
+      "bytes": 1873409,
+      "sha256": "db79c9b12fd6030e5c22c1199a90bd86c8dd4c85e41f6fbf9787165ed0cb8db2"
+    }
+  },
+  "rows": 71042,
+  "start": "2026-09-26T16:13:11.720+00:00",
+  "end": "2026-09-26T17:12:23.801+00:00",
+  "duration_s": 3552.081,
+  "sources": {
+    "phone": {
+      "rows": 27012,
+      "moving_rows": 14334,
+      "moving_seconds": 716.6,
+      "estimated_distance_m": 285.7,
+      "maximum_speed_mps": 1.143,
+      "moving_wifi_median_dbm": -56.0,
+      "moving_wifi_minimum_dbm": -79.0,
+      "fix_quality": {
+        "RTK Fixed": 25960,
+        "RTK Float": 960,
+        "DGPS": 92
+      },
+      "heading_carrier": {
+        "float": 4719,
+        "fixed": 19388,
+        "none": 2905
+      }
+    },
+    "legacy_handheld": {
+      "rows": 42049,
+      "moving_rows": 39783,
+      "moving_seconds": 1989.0,
+      "estimated_distance_m": 1073.6,
+      "maximum_speed_mps": 1.566,
+      "moving_wifi_median_dbm": -67.0,
+      "moving_wifi_minimum_dbm": -86.0,
+      "fix_quality": {
+        "RTK Fixed": 39926,
+        "DGPS": 795,
+        "RTK Float": 1328
+      },
+      "heading_carrier": {
+        "float": 3126,
+        "fixed": 1112,
+        "none": 37811
+      }
+    }
+  },
+  "phone": {
+    "records": 6997,
+    "commands": 6098,
+    "drive_commands": 5212,
+    "freshness_expirations": 4,
+    "expiration_times": [
+      "2026-09-26T16:33:33.776+00:00",
+      "2026-09-26T16:34:06.080+00:00",
+      "2026-09-26T16:34:34.177+00:00",
+      "2026-09-26T16:34:58.718+00:00"
+    ],
+    "drive_percent": {
+      "minimum": -100.0,
+      "median": 74.0,
+      "p95": 87.0,
+      "maximum": 100.0,
+      "reverse_rows": 405,
+      "neutral_rows": 1014,
+      "forward_rows": 3793
+    },
+    "steering_percent": {
+      "minimum": -100.0,
+      "median": 0.0,
+      "p95": 56.4,
+      "maximum": 100.0
+    }
+  },
+  "nrf": {
+    "episodes": 12,
+    "total_duration_s": 27.236,
+    "first": "2026-09-26T16:23:19.177+00:00",
+    "last": "2026-09-26T16:25:01.103+00:00",
+    "intervals": [
+      {
+        "start": "2026-09-26T16:23:19.177+00:00",
+        "end": "2026-09-26T16:23:20.501+00:00",
+        "duration_s": 1.324,
+        "rows": 28,
+        "lat": 40.48576683333333,
+        "lon": -80.33256483333334
+      },
+      {
+        "start": "2026-09-26T16:23:27.978+00:00",
+        "end": "2026-09-26T16:23:34.497+00:00",
+        "duration_s": 6.519,
+        "rows": 132,
+        "lat": 40.4857525,
+        "lon": -80.33255983333333
+      },
+      {
+        "start": "2026-09-26T16:23:37.573+00:00",
+        "end": "2026-09-26T16:23:37.901+00:00",
+        "duration_s": 0.328,
+        "rows": 8,
+        "lat": 40.4857525,
+        "lon": -80.33255983333333
+      },
+      {
+        "start": "2026-09-26T16:23:42.982+00:00",
+        "end": "2026-09-26T16:23:43.095+00:00",
+        "duration_s": 0.113,
+        "rows": 4,
+        "lat": 40.48575233333334,
+        "lon": -80.33255983333333
+      },
+      {
+        "start": "2026-09-26T16:24:04.378+00:00",
+        "end": "2026-09-26T16:24:08.098+00:00",
+        "duration_s": 3.72,
+        "rows": 76,
+        "lat": 40.48575433333333,
+        "lon": -80.33256083333335
+      },
+      {
+        "start": "2026-09-26T16:24:10.179+00:00",
+        "end": "2026-09-26T16:24:10.696+00:00",
+        "duration_s": 0.517,
+        "rows": 12,
+        "lat": 40.48575183333333,
+        "lon": -80.33255983333333
+      },
+      {
+        "start": "2026-09-26T16:24:14.781+00:00",
+        "end": "2026-09-26T16:24:14.895+00:00",
+        "duration_s": 0.114,
+        "rows": 4,
+        "lat": 40.48575183333333,
+        "lon": -80.33255983333333
+      },
+      {
+        "start": "2026-09-26T16:24:17.580+00:00",
+        "end": "2026-09-26T16:24:17.896+00:00",
+        "duration_s": 0.316,
+        "rows": 8,
+        "lat": 40.48575183333333,
+        "lon": -80.33255966666667
+      },
+      {
+        "start": "2026-09-26T16:24:19.976+00:00",
+        "end": "2026-09-26T16:24:22.296+00:00",
+        "duration_s": 2.32,
+        "rows": 48,
+        "lat": 40.48575183333333,
+        "lon": -80.33255983333333
+      },
+      {
+        "start": "2026-09-26T16:24:37.387+00:00",
+        "end": "2026-09-26T16:24:37.904+00:00",
+        "duration_s": 0.517,
+        "rows": 12,
+        "lat": 40.48575583333333,
+        "lon": -80.33256116666666
+      },
+      {
+        "start": "2026-09-26T16:24:47.575+00:00",
+        "end": "2026-09-26T16:24:51.899+00:00",
+        "duration_s": 4.324,
+        "rows": 88,
+        "lat": 40.48575183333333,
+        "lon": -80.33255983333333
+      },
+      {
+        "start": "2026-09-26T16:24:53.979+00:00",
+        "end": "2026-09-26T16:25:01.103+00:00",
+        "duration_s": 7.124,
+        "rows": 144,
+        "lat": 40.48575183333333,
+        "lon": -80.33255983333333
+      }
+    ]
+  },
+  "interpretation": [
+    "NRF safety events are confined to the early 16:23:19-16:25:01 interval.",
+    "Four later phone freshness expirations occurred with healthy NRF supervision.",
+    "The phone and NRF interruptions are distinct failure mechanisms."
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "site_id": "62_COLLINS",
+  "inventory_revision": 2,
+  "inventory_revision_label": "rev_002_20260925",
+  "status": "reviewed_not_field_validated",
+  "created_date": "2026-09-25",
+  "supersedes": "rev_001_20260925",
+  "counts": {
+    "mowable_areas": 3,
+    "obstacles": 2,
+    "access_points": 8,
+    "site_reference_points": 1,
+    "transition_routes": 5,
+    "geojson_features": 22
+  },
+  "mowable_area_total_m2": 3389.877,
+  "transition_route_total_length_m": 81.972,
+  "changes_from_revision_1": [
+    "Removed internal transition assets TRANS-002 and TRANS-003.",
+    "Removed all inventoried transition-line portions inside mowable polygons.",
+    "Added eight named polygon entry/exit access points.",
+    "Added the original backyard coverage starting position as a reference point.",
+    "Reorganized the remaining recorded travel into five between-area routes."
+  ],
+  "source_sha256": {
+    "field_testing/sites/62_Collins_multi_boundary_20260915/site_inventory/revisions/rev_001_20260925/62_Collins_site_inventory.geojson": "20d775b26b9d02a7a155f104fad717fd878396a088fadd7f3522c1f617b421a5",
+    "field_testing/sites/62_Collins_multi_boundary_20260915/runs/20260915_133923/boundary_review/segment_02_candidate_path.csv": "2cf1aaba24ca4b06be17c9a48046222df0d5cdd24390e651c21601dfe4dd4e5e",
+    "field_testing/sites/62_Collins_multi_boundary_20260915/runs/20260915_133923/boundary_review/segment_09_candidate_path.csv": "ef3c32904e9dd2bc2a1bb6769974be6bb40322f91761efeca092b03b1e362e4d",
+    "field_testing/sites/62_Collins_multi_boundary_20260915/runs/20260915_133923/boundary_review/segment_11_candidate_path.csv": "1854f84939a4d4d8f806c70cd5ad307a8642ed44ba67f9b637685f44e4c33b7d",
+    "field_testing/sites/62_Collins_multi_boundary_20260915/runs/20260915_133923/boundary_review/segment_12_candidate_path.csv": "62cdfa2774bbd49172939929f2ff8b1a253b5a7d1db0f62cd3f049dc1bf13f5b",
+    "field_testing/sites/62_Collins_multi_boundary_20260915/runs/20260915_133923/boundary_review/segment_16_candidate_path.csv": "fa24ebe9d98601478ca459d491d55493f53ba91f569857928bf988329d5ad858",
+    "field_testing/sites/62_Collins_multi_boundary_20260915/runs/20260915_133923/boundary_review/segment_17_candidate_path.csv": "35a28fe3fadf9acc157c146263013c2aadf9ca00ca26c14323c3a795c887a5e3"
+  },
+  "rules": [
+    "Transition routes contain no meaningful travel inside shaded mowing polygons.",
+    "Coverage planners connect to transition routes through named access points.",
+    "Backyard east and northeast points are retained as entry/exit options.",
+    "The original coverage starting position is a reference point, not a transition route.",
+    "Routes are approved only in their recorded direction.",
+    "Obstacle mowing exclusions already include their documented adjustment; do not apply it twice.",
+    "Revision 2 does not include a launchable mission."
+  ]
+}
