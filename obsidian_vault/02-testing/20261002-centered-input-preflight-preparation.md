@@ -2,8 +2,18 @@
 
 ## Status
 
-Prepared and locally verified, but **not deployed** to Tractor01. No Teensy was
-flashed and no systemd service was changed.
+Prepared and locally verified. A field deployment attempt on 2026-10-02 was
+rolled back and the feature is **not deployed**.
+
+The telemetry firmware compiled and PlatformIO reported a successful upload,
+but the tractor Teensy remained in HalfKay bootloader mode instead of returning
+as USB serial `16c0:0483`. The first rollback write also failed. After a short
+press of the Teensy Program button, the known-good firmware upload succeeded,
+`/dev/teensy` returned, firmware identity `teensy_main_20260926` was observed on
+UDP 6003, and the original `teensy_serial_bridge_20260728.py` service override
+was restored. Do not retry the telemetry firmware on Tractor01 until its boot
+behavior and the contemporaneous Raspberry Pi undervoltage/USB events have
+been investigated away from a field mission.
 
 ## Added telemetry path
 
@@ -29,11 +39,11 @@ flashed and no systemd service was changed.
 - Python compilation succeeded.
 - 29 Python tests passed.
 - The Teensy 4.1 firmware compiled successfully with PlatformIO.
-- No firmware upload was performed.
+- The attempted field upload was fully rolled back as described above.
 
 ## Deployment boundary
 
-Deployment requires a separate field review: confirm the tractor Teensy USB
+Deployment requires a new bench review: confirm the tractor Teensy USB
 identity, preserve a rollback build, flash the telemetry-only firmware, point
 `teensy-bridge.service` at the dated bridge successor, restart the bridge, and
 inspect a live UDP 6003 packet before using the new preflight. Until then, keep
