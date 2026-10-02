@@ -478,9 +478,13 @@ void parseSerialCommand() {
 // Repeat identity because the Linux bridge may start after the Teensy has
 // completed setup (especially immediately after a firmware upload). The
 // startup-only message was easy for the bridge and preflight to miss.
+#ifndef TRACTOR_FIRMWARE_ID
+#define TRACTOR_FIRMWARE_ID "teensy_main_20260926"
+#endif
+
 void publishSystemIdentity() {
     Serial.println(
-        "1,0,SYS,start,fw=teensy_main_20260926,steer_hz=20"
+        "1,0,SYS,start,fw=" TRACTOR_FIRMWARE_ID ",steer_hz=20"
     );
 }
 
@@ -639,7 +643,11 @@ extern "C" void setup() {
 // -------------------------------------------------------------------
 // Main loop: identical priority/order to 0804, except it resolves to the
 // 0908 controlTransmission() above.
-extern "C" void loop() {
+#ifndef TRACTOR_TOP_LEVEL_LOOP
+#define TRACTOR_TOP_LEVEL_LOOP loop
+#endif
+
+extern "C" void TRACTOR_TOP_LEVEL_LOOP() {
     currentMillis = millis();
 
     // 1. Safety
