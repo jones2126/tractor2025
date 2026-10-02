@@ -1,0 +1,27 @@
+[Unit]
+Description=Recover RTK Base ZeroTier after Internet outages
+Wants=network-online.target zerotier-one.service
+After=network-online.target zerotier-one.service
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/bin/python3 -u /home/al/tractor2025/RTKBase/Bridgeville/zerotier_recovery_watchdog.py
+Restart=always
+RestartSec=30
+TimeoutStopSec=10
+
+Environment=NAS_ZEROTIER_IP=192.168.193.217
+Environment=NTFY_TOPIC=rpi-rtkbase-jones2126
+Environment=HEALTHY_CHECK_INTERVAL=60
+Environment=INTERNET_RETRY_INTERVAL=30
+Environment=ZEROTIER_SETTLE_INTERVAL=15
+Environment=ZEROTIER_SETTLE_ATTEMPTS=20
+Environment=RESTART_RETRY_INTERVAL=300
+Environment=NOTIFY_RETRY_INTERVAL=30
+
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
