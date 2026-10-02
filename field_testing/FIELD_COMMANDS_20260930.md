@@ -59,10 +59,12 @@ RTK Fixed and fixed-carrier heading may need time to settle. Rerun this same
 command as needed while the tractor remains stationary in Pause:
 
 ```bash
-cd /home/al/tractor2025 && sudo python3 tractor_rpi/testing/mission_preflight_20260804.py --expected-firmware teensy_main_20260926
+cd /home/al/tractor2025 && sudo python3 tractor_rpi/testing/mission_preflight_20261002.py --expected-firmware teensy_main_20260926
 ```
 
-Do not continue until the final result is `MISSION PREFLIGHT PASS`.
+This dated preflight also requires more than 30 Heading-F9P satellites used
+for a normal PASS. Counts of 29-30 produce a non-blocking warning; 28 or fewer
+fail closed. Do not continue until the final result is `MISSION PREFLIGHT PASS`.
 
 ## 6. Start the approved dashboard
 
