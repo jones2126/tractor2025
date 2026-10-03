@@ -314,7 +314,7 @@ class TeensySerialBridge:
             logger.error(f"Failed to send cmd_vel: {e}")
         return False
 
-    def send_wifi_drive_to_teensy(self, drive_percent, angular_z):
+    def send_wifi_drive_to_teensy(self, drive_percent, angular_z, phone_mode=None):
         """Send the phone experiment's signed drive demand without changing CMD semantics."""
         try:
             drive_percent = float(drive_percent)
@@ -324,7 +324,13 @@ class TeensySerialBridge:
             if not -1.0 <= angular_z <= 1.0:
                 raise ValueError("angular_z is outside -1..1")
             if self.ser.out_waiting < 256:
-                command = f"WIFI,{drive_percent:.1f},{angular_z:.4f}\n"
+                if phone_mode is None:
+                    command = f"WIFI,{drive_percent:.1f},{angular_z:.4f}\n"
+                else:
+                    if phone_mode not in ("manual", "pause"):
+                        raise ValueError("phone_mode must be manual or pause")
+                    manual = 1 if phone_mode == "manual" else 0
+                    command = f"WIFI,{drive_percent:.1f},{angular_z:.4f},{manual}\n"
                 self.ser.write(command.encode('utf-8'))
                 self.ser.flush()
                 self.cmd_vel_sent_count += 1
@@ -358,7 +364,11 @@ class TeensySerialBridge:
                             self.cmd_vel_received_count += 1
                             self.stats['commands_received'] += 1
                             if 'drive_percent' in command:
-                                self.send_wifi_drive_to_teensy(command['drive_percent'], angular_z)
+                                self.send_wifi_drive_to_teensy(
+                                    command['drive_percent'],
+                                    angular_z,
+                                    command.get('phone_mode'),
+                                )
                             else:
                                 linear_x = command.get('linear_x', 0.0)
                                 self.send_cmd_vel_to_teensy(linear_x, angular_z)

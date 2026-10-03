@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>Tractor01 Wi-Fi Control</title>
+  <style>
+    :root{color-scheme:dark;--bg:#091118;--panel:#14222d;--line:#324655;--green:#48d27b;--red:#ff5c5c;--blue:#34b9ed;--amber:#ffc05a;--muted:#98a9b5}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#eef5f8;font-family:system-ui,sans-serif;overscroll-behavior:none}.app{min-height:100dvh;display:grid;grid-template-rows:auto auto 1fr auto;gap:8px;padding:8px}.top{display:flex;align-items:center;justify-content:space-between;gap:10px}.title{font-weight:900}.status{color:var(--red);font-weight:900}.status.live{color:var(--green)}.notice{padding:7px;border-radius:8px;background:#51320e;color:#ffe1a0;text-align:center;font-size:12px;font-weight:750}.modes,.bottom{display:flex;gap:8px}.modes button,.bottom button{min-height:52px;flex:1;border:2px solid var(--line);border-radius:12px;background:#243744;color:white;font-size:17px;font-weight:900}.modes button.selected{border-color:var(--blue);background:#075f86}.modes button.pause.selected{border-color:#ff9a75;background:#84351f}.controls{display:grid;grid-template-columns:1fr 1fr;gap:10px}.card{display:grid;align-content:center;padding:12px;border:1px solid var(--line);border-radius:16px;background:var(--panel)}h2{margin:0 0 8px;text-align:center;font-size:18px}h2 span{color:var(--blue)}input[type=range]{width:100%;height:54px;accent-color:var(--blue);touch-action:none}.quick{display:flex;justify-content:center}.quick button{min-height:44px;border:0;border-radius:10px;background:#23607a;color:#fff;font-weight:850}.mode-select{background:#a74721!important}.mode-select.held{outline:4px solid #ff9a554d}.stop{background:var(--red)!important;color:#270000!important}.voice.on{background:#176d45!important}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.metric{padding:7px;border-radius:8px;background:#1a2b37;text-align:center}.metric small{display:block;color:var(--muted)}.metric strong{font-variant-numeric:tabular-nums}.voice-text{min-height:20px;color:var(--amber);font-size:12px;text-align:center}@media(max-width:700px) and (orientation:portrait){.controls{grid-template-columns:1fr}.bottom{flex-wrap:wrap}.bottom button{min-width:45%}.metrics{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body><div class="app">
+  <div class="top"><div class="title">Tractor01 Wi-Fi Handheld</div><div class="status" id="status">CONNECTING</div></div>
+  <div class="notice">Physical E-stop remains authoritative. A link gap over 500 ms pauses; the same Manual demand resumes when the heartbeat returns.</div>
+  <div>
+    <div class="modes"><button data-mode="manual">MANUAL</button><button class="pause selected" data-mode="pause">PAUSE</button></div>
+    <div class="controls">
+      <section class="card"><h2>Drive <span id="driveValue">0%</span></h2><input id="drive" type="range" min="-100" max="100" value="0"><div class="quick"><button id="neutral">NEUTRAL</button></div></section>
+      <section class="card"><h2>Steering <span id="steerValue">0%</span></h2><input id="steer" type="range" min="-100" max="100" value="0"><div class="quick"><button id="straight">STRAIGHT</button></div></section>
+    </div>
+    <div class="metrics"><div class="metric"><small>Phone</small><strong id="phoneMode">PAUSE</strong></div><div class="metric"><small>Teensy</small><strong id="firmware">--</strong></div><div class="metric"><small>RTT 5 sec</small><strong id="rtt">-- ms</strong></div><div class="metric"><small>Command age</small><strong id="age">-- ms</strong></div></div>
+    <div class="voice-text" id="voiceText">Voice is off. Arm Manual on screen before voice motion commands.</div>
+  </div>
+  <div class="bottom"><button class="mode-select" id="select">HOLD MODE SELECT</button><button class="voice" id="voice">🎙 VOICE OFF</button><button class="stop" id="stop">🛑 STOP</button></div>
+</div>
+<script>
+(()=>{'use strict';
+  const $=id=>document.getElementById(id),key=new URLSearchParams(location.search).get('key')||'',headers={'Content-Type':'application/json','X-Operator-Key':key};
+  const drive=$('drive'),steer=$('steer'),status=$('status'),voiceText=$('voiceText'),modeButtons=[...document.querySelectorAll('[data-mode]')];
+  let clientId=localStorage.getItem('tractorWifiPrimaryClient');if(!clientId){clientId=crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random();localStorage.setItem('tractorWifiPrimaryClient',clientId)}
+  let session=null,sequence=0,mode='pause',reason='heartbeat',selectHeld=false,pending=null,stopHeld=false,sending=false,rtts=[],lastRtt=null,recognition=null,voiceEnabled=false;
+  const signed=v=>(Number(v)>0?'+':'')+Number(v)+'%';
+  function render(){ $('driveValue').textContent=signed(drive.value);$('steerValue').textContent=signed(steer.value);$('phoneMode').textContent=mode.toUpperCase();modeButtons.forEach(b=>b.classList.toggle('selected',b.dataset.mode===mode)) }
+  function link(ok,text){status.textContent=text;status.classList.toggle('live',ok)}
+  async function api(path,method='GET',body=null){const start=performance.now(),res=await fetch(path,{method,headers,body:body?JSON.stringify(body):null,cache:'no-store'}),data=await res.json();data._rtt=performance.now()-start;if(!res.ok){const e=new Error(data.error||'HTTP '+res.status);e.data=data;throw e}return data}
+  function addRtt(v){lastRtt=v;const now=performance.now();rtts.push([now,v]);rtts=rtts.filter(x=>now-x[0]<=5000);$('rtt').textContent=Math.round(rtts.reduce((s,x)=>s+x[1],0)/rtts.length)+' ms'}
+  async function claim(){try{const d=await api('/api/claim','POST',{client_id:clientId});session=d.session;sequence=0;mode='pause';drive.value=0;steer.value=0;render();link(true,'CONNECTED · PAUSE')}catch(e){session=null;link(false,e.message)}}
+  async function send(){if(!session||sending)return;sending=true;const sentReason=reason;reason='heartbeat';const payload={client_id:clientId,session,sequence:++sequence,mode,drive_percent:Number(drive.value),steering_percent:Number(steer.value),reason:sentReason,client_time_ms:Date.now(),client_rtt_ms:lastRtt};try{const d=await api('/api/command','POST',payload);addRtt(d._rtt);link(true,mode==='manual'?'CONTROL LIVE':'CONNECTED · PAUSE')}catch(e){link(false,'LINK LOST · TEENSY PAUSED');if(e.data?.reclaim)session=null}finally{sending=false}}
+  async function poll(){try{const d=await api('/api/state');$('firmware').textContent=(d.system?.firmware||'--').replace('teensy_main_','');$('age').textContent=Math.round(Number(d.steering?.cmd_age_ms||0))+' ms';if(!session&&d.wifi_primary_ready)await claim()}catch(e){link(false,'SERVER LOST')}setTimeout(poll,500)}
+  function guarded(){if(!selectHeld)return;if(stopHeld){mode='pause';drive.value=0;steer.value=0;reason='guarded_stop';render();send()}else if(pending){mode=pending;if(mode==='pause'){drive.value=0;steer.value=0}reason=mode==='manual'?'guarded_manual':'guarded_pause';render();send()}}
+  $('select').addEventListener('pointerdown',e=>{e.preventDefault();selectHeld=true;$('select').classList.add('held');guarded()});
+  function release(){selectHeld=false;stopHeld=false;pending=null;$('select').classList.remove('held')}
+  $('select').addEventListener('pointerup',release);$('select').addEventListener('pointercancel',release);
+  modeButtons.forEach(b=>{b.addEventListener('pointerdown',e=>{e.preventDefault();pending=b.dataset.mode;guarded()});b.addEventListener('pointerup',()=>pending=null);b.addEventListener('pointercancel',()=>pending=null)});
+  $('stop').addEventListener('pointerdown',e=>{e.preventDefault();stopHeld=true;guarded()});$('stop').addEventListener('pointerup',()=>stopHeld=false);$('stop').addEventListener('pointercancel',()=>stopHeld=false);
+  drive.addEventListener('input',()=>{reason='drive';render()});steer.addEventListener('input',()=>{reason='steering';render()});$('neutral').onclick=()=>{drive.value=0;reason='neutral';render();send()};$('straight').onclick=()=>{steer.value=0;reason='straight';render();send()};
+  function speak(text){voiceText.textContent=text;if('speechSynthesis'in window){speechSynthesis.cancel();speechSynthesis.speak(new SpeechSynthesisUtterance(text))}}
+  function voiceCommand(raw){const text=raw.toLowerCase().trim();voiceText.textContent='Heard: '+text;if(/(emergency stop|tractor stop|tractor pause)/.test(text)){mode='pause';drive.value=0;steer.value=0;reason='voice_stop';render();send();speak('Tractor paused');return}if(mode!=='manual'){speak('Voice motion ignored. Arm Manual on screen.');return}let m;if(/tractor neutral/.test(text)){drive.value=0;reason='voice_neutral'}else if(/tractor straight/.test(text)){steer.value=0;reason='voice_straight'}else if((m=text.match(/tractor (forward|reverse) (\d{1,3})/))){drive.value=Math.min(100,Number(m[2]))*(m[1]==='reverse'?-1:1);reason='voice_drive'}else if((m=text.match(/tractor (left|right) (\d{1,3})/))){steer.value=Math.min(100,Number(m[2]))*(m[1]==='left'?-1:1);reason='voice_steering'}else{speak('Command not recognized');return}render();send();speak('Command accepted')}
+  function startVoice(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){speak('Voice recognition is not supported in this browser');return}recognition=new SR();recognition.continuous=true;recognition.interimResults=false;recognition.lang='en-US';recognition.onresult=e=>voiceCommand(e.results[e.results.length-1][0].transcript);recognition.onerror=e=>{voiceText.textContent='Voice error: '+e.error;if(e.error==='not-allowed'||e.error==='service-not-allowed'){voiceEnabled=false;$('voice').textContent='🎙 VOICE OFF';$('voice').classList.remove('on')}};recognition.onend=()=>{if(voiceEnabled)setTimeout(()=>{try{recognition.start()}catch{}},500)};recognition.start();voiceEnabled=true;$('voice').textContent='🎙 VOICE ON';$('voice').classList.add('on');speak('Voice commands enabled')}
+  $('voice').onclick=()=>{if(!voiceEnabled)startVoice();else{voiceEnabled=false;if(recognition)recognition.stop();$('voice').textContent='🎙 VOICE OFF';$('voice').classList.remove('on');voiceText.textContent='Voice is off.'}};
+  document.addEventListener('visibilitychange',()=>{if(document.hidden){mode='pause';drive.value=0;steer.value=0;reason='page_hidden';render();send()}});
+  render();poll();setInterval(send,200);
+})();
+</script></body></html>

@@ -1,0 +1,180 @@
+# 2026-10-03 Wi-Fi-primary control for Tractor01
+
+## Outcome
+
+This dated control path replaces the failed NRF24 link with the phone's Wi-Fi
+data feed for low-level Manual drive and steering. It preserves the existing
+physical E-stop circuit and keeps a prominent guarded software STOP on the
+phone. The older NRF-supervised experiment remains available unchanged.
+
+This is a production candidate, not a declaration that an untested machine is
+safe to drive. Complete the engine-off and wheels-raised checks below before
+ground movement.
+
+## Control behavior
+
+- Phone commands run at 5 Hz through the existing UDP 6004 and serial bridge.
+- The Teensy independently expires the feed after 500 ms. It commands exact
+  transmission neutral and stops steering output at its current position.
+- The field server also sends a Pause burst after 800 ms without a phone
+  heartbeat.
+- A temporary Wi-Fi interruption does **not** clear the selected phone Manual
+  state or slider demands. When the same heartbeat resumes, the Teensy resumes
+  that demand automatically.
+- A deliberate phone Pause, guarded STOP, hidden browser page, or server
+  shutdown remains Pause and does not automatically re-arm Manual.
+- The phone uses the full calibrated steering operating range (`191..885`),
+  identical to the previous Wi-Fi test. It does not add a reduced field-test
+  steering bound. The existing 20-count mechanical-stop margins remain.
+- The physical E-stop logic in the proven firmware is not changed.
+- NRF telemetry continues to be reported for diagnosis but is not a control
+  prerequisite after the Wi-Fi feed is selected.
+- The first valid phone command latches Wi-Fi-primary authority until the
+  Teensy reboots. A competing autonomous `CMD` packet can cause a temporary
+  Pause but cannot take steering or transmission authority; the next complete
+  phone heartbeat restores phone control.
+
+## New files
+
+- `tractor_teensy/src/teensy_main_20261003_wifi.cpp`
+- `tractor_teensy/platformio.wifi-primary.ini`
+- `tractor_rpi/testing/webrtc/wifi_primary_control_20261003.py`
+- `tractor_rpi/testing/webrtc/wifi_primary_control_20261003.html`
+- `tractor_rpi/testing/webrtc/setup_wifi_control_https_20261003.sh`
+- `tractor_rpi/testing/test_wifi_primary_control_20261003.py`
+
+The backward-compatible optional phone-mode field was added to:
+
+- `tractor_teensy/src/teensy_main_20260914.cpp`
+- `tractor_rpi/teensy_serial_bridge_20260728.py`
+
+The installed `teensy_serial_bridge_20261002.py` inherits that bridge change,
+so its systemd service path does not need to change.
+
+## Voice commands
+
+First arm Manual on screen with **MODE SELECT + MANUAL**. Voice recognition can
+then accept these exact patterns:
+
+- `tractor forward 10` through `tractor forward 100`
+- `tractor reverse 10` through `tractor reverse 100`
+- `tractor left 10` through `tractor left 100`
+- `tractor right 10` through `tractor right 100`
+- `tractor neutral`
+- `tractor straight`
+- `tractor stop`, `tractor pause`, or `emergency stop`
+
+Voice can never arm Manual. Stop/Pause voice phrases are accepted regardless
+of the current mode. The screen speaks confirmation after a recognized command.
+
+Phone microphone recognition may require a trusted HTTPS page. The server
+supports `--tls-cert` and `--tls-key`; both files must be supplied together.
+Do not treat voice as verified until the actual field phone shows **VOICE ON**,
+recognizes the wake word, and passes the stationary tests. Sliders and the
+guarded STOP remain available if that browser does not support recognition.
+
+One-time trusted HTTPS setup on Tractor01:
+
+```bash
+cd /home/al/tractor2025
+bash tractor_rpi/testing/webrtc/setup_wifi_control_https_20261003.sh
+```
+
+Copy only
+`/home/al/.config/tractor-wifi-control/tls/tractor-wifi-control-root-ca.crt`
+to the phone and install it as a trusted user CA. Never copy either `.key`
+file. After that setup, start the server with:
+
+```bash
+python3 tractor_rpi/testing/webrtc/wifi_primary_control_20261003.py \
+  --tls-cert /home/al/.config/tractor-wifi-control/tls/server.crt \
+  --tls-key /home/al/.config/tractor-wifi-control/tls/server.key
+```
+
+## Deploy to Tractor01
+
+Tractor01 currently has the NRF reverse-test firmware loaded and the bridge is
+inactive. Keep the engine off and make the tractor unable to move.
+
+```bash
+cd /home/al/tractor2025
+git pull --ff-only origin main
+sudo systemctl stop teensy-bridge.service
+
+cd /home/al/tractor2025/tractor_teensy
+pio run -c platformio.wifi-primary.ini
+pio run -c platformio.wifi-primary.ini -t upload
+```
+
+Wait for `/dev/teensy` to return after the firmware's startup delay, then:
+
+```bash
+sleep 60
+ls -l /dev/teensy
+sudo systemctl start teensy-bridge.service
+sleep 3
+systemctl is-active teensy-bridge.service
+sudo journalctl -u teensy-bridge.service --since "2 minutes ago" --no-pager -n 60
+```
+
+Confirm the exact firmware identity before starting phone control:
+
+```bash
+python3 - <<'PY'
+import json, socket
+s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+s.bind(("", 6003))
+s.settimeout(5)
+d = json.loads(s.recvfrom(65535)[0])
+print("firmware:", d.get("system", {}).get("firmware"))
+print("steering:", d.get("steering", {}))
+print("transmission:", d.get("transmission", {}))
+PY
+```
+
+The firmware must be `teensy_main_20261003_wifi`. Before a phone claims
+control, radio-loss mode 9 / `NO_SIG`, steering PWM 0, and neutral JRK target
+are expected and safe.
+
+## Engine-off test sequence
+
+Start the server:
+
+```bash
+cd /home/al/tractor2025
+python3 tractor_rpi/testing/webrtc/wifi_primary_control_20261003.py
+```
+
+1. Open the printed keyed URL on the phone. It claims control in Pause.
+2. Confirm the page shows the expected firmware and Pause.
+3. Run the dated GPS/preflight while the page remains in Pause:
+
+   ```bash
+   cd /home/al/tractor2025
+   sudo python3 tractor_rpi/testing/mission_preflight_20261002.py \
+     --expected-firmware teensy_main_20261003_wifi
+   ```
+
+4. With the engine off and wheels raised, arm **MODE SELECT + MANUAL**.
+5. Test Straight, small left/right demands, then full calibrated left/right.
+6. Test drive demands while observing JRK target movement.
+7. Test guarded STOP and the unchanged physical E-stop separately.
+8. With a nonzero steering demand and zero drive, disable phone Wi-Fi for more
+   than one second. Confirm transmission neutral and steering output stops.
+9. Restore Wi-Fi. Confirm the same Manual demand resumes automatically.
+10. Say each voice command at zero drive and verify the displayed value before
+    considering engine-on use.
+
+Do not proceed to ground movement after any unexpected direction, failure to
+pause within 500 ms, wrong firmware identity, active JRK error, steering fault,
+or physical E-stop problem.
+
+## Logs
+
+The server creates
+`/home/al/field_logs/wifi_primary_control_YYYYMMDD_HHMMSS.jsonl`. Each accepted
+command records phone sequence, client timestamp, the phone's rolling RTT from
+the preceding request, estimated phone-to-server time, and server processing
+time. UDP 6003 also retains Teensy command age, steering response, and JRK
+diagnostics for correlation with the normal field logger.

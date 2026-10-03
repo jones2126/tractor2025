@@ -102,6 +102,10 @@ uint16_t jrkPeakCurrentMaSincePrint = 0;
 bool jrkMotorCurrentValid = false;
 bool wifiDriveCommand = false;
 float wifiDrivePercent = 0.0f;
+bool lastMotionCommandWasWifi = false;
+// Optional third WIFI field used by the Wi-Fi-primary controller. Legacy
+// two-field WIFI messages retain their original meaning (active/manual).
+bool wifiPhoneManual = true;
 
 uint16_t mpsToJrkTarget(float mps) {
     if (mps <= SPEED_CAL_20260908_1P8_TEST[0].mps)
@@ -389,6 +393,7 @@ void parseSerialCommand() {
                     az >= -1.0f && az <= 1.0f) {
                     wifiDriveCommand = false;
                     wifiDrivePercent = 0.0f;
+                    lastMotionCommandWasWifi = false;
                     cmdVel.linear_x = lx;
                     cmdVel.angular_z = az;
                     cmdVel.timestamp = millis();
@@ -407,12 +412,19 @@ void parseSerialCommand() {
                 }
             } else if (idx >= 5 && memcmp(buffer, "WIFI,", 5) == 0) {
                 float drivePercent, az;
-                if (sscanf(buffer + 5, "%f,%f", &drivePercent, &az) == 2 &&
+                int phoneManual = 1;
+                const int fields = sscanf(
+                    buffer + 5, "%f,%f,%d", &drivePercent, &az, &phoneManual
+                );
+                if (fields >= 2 &&
                     isfinite(drivePercent) && isfinite(az) &&
                     drivePercent >= -100.0f && drivePercent <= 100.0f &&
-                    az >= -1.0f && az <= 1.0f) {
+                    az >= -1.0f && az <= 1.0f &&
+                    (fields == 2 || phoneManual == 0 || phoneManual == 1)) {
                     wifiDriveCommand = true;
                     wifiDrivePercent = drivePercent;
+                    wifiPhoneManual = fields == 2 || phoneManual == 1;
+                    lastMotionCommandWasWifi = true;
                     cmdVel.linear_x = 0.0f;
                     cmdVel.angular_z = az;
                     cmdVel.timestamp = millis();
