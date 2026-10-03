@@ -152,6 +152,23 @@ class WifiPrimaryTests(unittest.TestCase):
             state.close()
             temporary.cleanup()
 
+    def test_state_endpoint_includes_teensy_wifi_control_feedback(self):
+        temporary, state = self.make_state()
+        try:
+            state.bridge["wifi_control"] = {
+                "mode": 3,
+                "heartbeat_fresh": 1,
+                "estop_latched": 1,
+                "command_age_ms": 80,
+            }
+            snapshot = state.snapshot()
+            self.assertEqual(1, snapshot["wifi_control"]["estop_latched"])
+            self.assertEqual(80, snapshot["wifi_control"]["command_age_ms"])
+        finally:
+            state.running = False
+            state.close()
+            temporary.cleanup()
+
     def test_expiry_sends_pause_but_retains_manual_for_recovery(self):
         temporary, state = self.make_state()
         try:

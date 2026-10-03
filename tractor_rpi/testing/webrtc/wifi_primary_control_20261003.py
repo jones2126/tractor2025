@@ -314,6 +314,8 @@ class WifiPrimaryState(base.FieldState):
 
     def snapshot(self) -> dict[str, Any]:
         result = super().snapshot()
+        bridge, _ = self.bridge_snapshot()
+        result["wifi_control"] = bridge.get("wifi_control", {})
         result["wifi_primary_ready"] = self.bridge_ready()
         result["expected_firmware"] = EXPECTED_FIRMWARE
         return result
