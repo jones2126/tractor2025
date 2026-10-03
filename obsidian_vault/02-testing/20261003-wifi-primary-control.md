@@ -3,9 +3,10 @@
 ## Outcome
 
 This dated control path replaces the failed NRF24 link with the phone's Wi-Fi
-data feed for low-level Manual drive and steering. It preserves the existing
-physical E-stop circuit and keeps a prominent guarded software STOP on the
-phone. The older NRF-supervised experiment remains available unchanged.
+data feed for low-level Manual drive and steering plus guarded Auto mission
+authority. It preserves the existing physical E-stop circuit and keeps a
+prominent guarded software STOP on the phone. The older NRF-supervised
+experiment remains available unchanged.
 
 This is a production candidate, not a declaration that an untested machine is
 safe to drive. Complete the engine-off and wheels-raised checks below before
@@ -19,8 +20,9 @@ ground movement.
 - The field server also sends a Pause burst after 800 ms without a phone
   heartbeat.
 - A temporary Wi-Fi interruption does **not** clear the selected phone Manual
-  state or slider demands. When the same heartbeat resumes, the Teensy resumes
-  that demand automatically.
+  or Auto state. When the same heartbeat resumes, the Teensy resumes that
+  authority automatically. Manual restores the current sliders; Auto resumes
+  only with an independently fresh navigation `CMD` feed.
 - A deliberate phone Pause, guarded STOP, hidden browser page, or server
   shutdown remains Pause and does not automatically re-arm Manual.
 - The phone uses the full calibrated steering operating range (`191..885`),
@@ -30,9 +32,9 @@ ground movement.
 - NRF telemetry continues to be reported for diagnosis but is not a control
   prerequisite after the Wi-Fi feed is selected.
 - The first valid phone command latches Wi-Fi-primary authority until the
-  Teensy reboots. A competing autonomous `CMD` packet can cause a temporary
-  Pause but cannot take steering or transmission authority; the next complete
-  phone heartbeat restores phone control.
+  Teensy reboots. Navigation `CMD` packets control motion only while the phone
+  is in guarded Auto; Manual restores its complete slider state after parsing
+  and Pause ignores navigation motion commands.
 
 ## New files
 
@@ -133,7 +135,7 @@ print("transmission:", d.get("transmission", {}))
 PY
 ```
 
-The firmware must be `teensy_main_20261003_wifi`. Before a phone claims
+The firmware must be `teensy_main_20261003_wifi_v2`. Before a phone claims
 control, radio-loss mode 9 / `NO_SIG`, steering PWM 0, and neutral JRK target
 are expected and safe.
 
@@ -153,7 +155,7 @@ python3 tractor_rpi/testing/webrtc/wifi_primary_control_20261003.py
    ```bash
    cd /home/al/tractor2025
    sudo python3 tractor_rpi/testing/mission_preflight_20261002.py \
-     --expected-firmware teensy_main_20261003_wifi
+     --expected-firmware teensy_main_20261003_wifi_v2
    ```
 
 4. With the engine off and wheels raised, arm **MODE SELECT + MANUAL**.

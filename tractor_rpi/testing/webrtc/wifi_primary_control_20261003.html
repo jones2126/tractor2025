@@ -10,9 +10,9 @@
 </head>
 <body><div class="app">
   <div class="top"><div class="title">Tractor01 Wi-Fi Handheld</div><div class="status" id="status">CONNECTING</div></div>
-  <div class="notice">Physical E-stop remains authoritative. A link gap over 500 ms pauses; the same Manual demand resumes when the heartbeat returns.</div>
+  <div class="notice">Physical E-stop remains authoritative. A link gap over 500 ms pauses; the selected Manual or Auto mode resumes when heartbeat returns.</div>
   <div>
-    <div class="modes"><button data-mode="manual">MANUAL</button><button class="pause selected" data-mode="pause">PAUSE</button></div>
+    <div class="modes"><button data-mode="manual">MANUAL</button><button data-mode="auto">AUTO</button><button class="pause selected" data-mode="pause">PAUSE</button></div>
     <div class="controls">
       <section class="card"><h2>Drive <span id="driveValue">0%</span></h2><input id="drive" type="range" min="-100" max="100" value="0"><div class="quick"><button id="neutral">NEUTRAL</button></div></section>
       <section class="card"><h2>Steering <span id="steerValue">0%</span></h2><input id="steer" type="range" min="-100" max="100" value="0"><div class="quick"><button id="straight">STRAIGHT</button></div></section>
@@ -34,9 +34,9 @@
   async function api(path,method='GET',body=null){const start=performance.now(),res=await fetch(path,{method,headers,body:body?JSON.stringify(body):null,cache:'no-store'}),data=await res.json();data._rtt=performance.now()-start;if(!res.ok){const e=new Error(data.error||'HTTP '+res.status);e.data=data;throw e}return data}
   function addRtt(v){lastRtt=v;const now=performance.now();rtts.push([now,v]);rtts=rtts.filter(x=>now-x[0]<=5000);$('rtt').textContent=Math.round(rtts.reduce((s,x)=>s+x[1],0)/rtts.length)+' ms'}
   async function claim(){try{const d=await api('/api/claim','POST',{client_id:clientId});session=d.session;sequence=0;mode='pause';drive.value=0;steer.value=0;render();link(true,'CONNECTED · PAUSE')}catch(e){session=null;link(false,e.message)}}
-  async function send(){if(!session||sending)return;sending=true;const sentReason=reason;reason='heartbeat';const payload={client_id:clientId,session,sequence:++sequence,mode,drive_percent:Number(drive.value),steering_percent:Number(steer.value),reason:sentReason,client_time_ms:Date.now(),client_rtt_ms:lastRtt};try{const d=await api('/api/command','POST',payload);addRtt(d._rtt);link(true,mode==='manual'?'CONTROL LIVE':'CONNECTED · PAUSE')}catch(e){link(false,'LINK LOST · TEENSY PAUSED');if(e.data?.reclaim)session=null}finally{sending=false}}
+  async function send(){if(!session||sending)return;sending=true;const sentReason=reason;reason='heartbeat';const payload={client_id:clientId,session,sequence:++sequence,mode,drive_percent:Number(drive.value),steering_percent:Number(steer.value),reason:sentReason,client_time_ms:Date.now(),client_rtt_ms:lastRtt};try{const d=await api('/api/command','POST',payload);addRtt(d._rtt);link(true,mode==='manual'?'MANUAL LIVE':mode==='auto'?'AUTO ARMED':'CONNECTED · PAUSE')}catch(e){link(false,'LINK LOST · TEENSY PAUSED');if(e.data?.reclaim)session=null}finally{sending=false}}
   async function poll(){try{const d=await api('/api/state');$('firmware').textContent=(d.system?.firmware||'--').replace('teensy_main_','');$('age').textContent=Math.round(Number(d.steering?.cmd_age_ms||0))+' ms';if(!session&&d.wifi_primary_ready)await claim()}catch(e){link(false,'SERVER LOST')}setTimeout(poll,500)}
-  function guarded(){if(!selectHeld)return;if(stopHeld){mode='pause';drive.value=0;steer.value=0;reason='guarded_stop';render();send()}else if(pending){mode=pending;if(mode==='pause'){drive.value=0;steer.value=0}reason=mode==='manual'?'guarded_manual':'guarded_pause';render();send()}}
+  function guarded(){if(!selectHeld)return;if(stopHeld){mode='pause';drive.value=0;steer.value=0;reason='guarded_stop';render();send()}else if(pending){mode=pending;if(mode!=='manual'){drive.value=0;steer.value=0}reason='guarded_'+mode;render();send()}}
   $('select').addEventListener('pointerdown',e=>{e.preventDefault();selectHeld=true;$('select').classList.add('held');guarded()});
   function release(){selectHeld=false;stopHeld=false;pending=null;$('select').classList.remove('held')}
   $('select').addEventListener('pointerup',release);$('select').addEventListener('pointercancel',release);

@@ -62,13 +62,40 @@ class WifiPrimaryTests(unittest.TestCase):
                     "steering_percent": -100,
                     "reason": "guarded_manual",
                     "client_time_ms": time.time() * 1000,
-                    "client_rtt_ms": 24,
+                    "client_rtt_ms": None,
                 }
             )
             self.assertEqual(200, int(status))
             self.assertTrue(result["accepted"])
             self.assertEqual("manual", state.phone_mode)
             self.assertEqual(-100, state.last_command["steering_percent"])
+        finally:
+            state.running = False
+            state.close()
+            temporary.cleanup()
+
+    def test_guarded_auto_is_accepted_and_zeroes_slider_demands(self):
+        temporary, state = self.make_state()
+        try:
+            claim = state.claim("phone-a")
+            status, result = state.accept_command(
+                {
+                    "client_id": "phone-a",
+                    "session": claim["session"],
+                    "sequence": 1,
+                    "mode": "auto",
+                    "drive_percent": 75,
+                    "steering_percent": -80,
+                    "reason": "guarded_auto",
+                    "client_time_ms": time.time() * 1000,
+                    "client_rtt_ms": None,
+                }
+            )
+            self.assertEqual(200, int(status))
+            self.assertTrue(result["accepted"])
+            self.assertEqual("auto", state.phone_mode)
+            self.assertEqual(0.0, state.last_command["drive_percent"])
+            self.assertEqual(0.0, state.last_command["steering_percent"])
         finally:
             state.running = False
             state.close()
@@ -100,6 +127,10 @@ class WifiPrimaryTests(unittest.TestCase):
         obj.last_cmd_vel = {}
         self.assertTrue(obj.send_wifi_drive_to_teensy(25, -1, "manual"))
         self.assertEqual(b"WIFI,25.0,-1.0000,1\n", obj.ser.data)
+
+        obj.ser.data = b""
+        self.assertTrue(obj.send_wifi_drive_to_teensy(0, 0, "auto"))
+        self.assertEqual(b"WIFI,0.0,0.0000,2\n", obj.ser.data)
 
 
 if __name__ == "__main__":

@@ -327,10 +327,13 @@ class TeensySerialBridge:
                 if phone_mode is None:
                     command = f"WIFI,{drive_percent:.1f},{angular_z:.4f}\n"
                 else:
-                    if phone_mode not in ("manual", "pause"):
-                        raise ValueError("phone_mode must be manual or pause")
-                    manual = 1 if phone_mode == "manual" else 0
-                    command = f"WIFI,{drive_percent:.1f},{angular_z:.4f},{manual}\n"
+                    modes = {"pause": 0, "manual": 1, "auto": 2}
+                    if phone_mode not in modes:
+                        raise ValueError("phone_mode must be pause, manual, or auto")
+                    command = (
+                        f"WIFI,{drive_percent:.1f},{angular_z:.4f},"
+                        f"{modes[phone_mode]}\n"
+                    )
                 self.ser.write(command.encode('utf-8'))
                 self.ser.flush()
                 self.cmd_vel_sent_count += 1

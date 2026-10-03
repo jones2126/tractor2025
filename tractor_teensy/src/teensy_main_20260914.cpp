@@ -102,10 +102,15 @@ uint16_t jrkPeakCurrentMaSincePrint = 0;
 bool jrkMotorCurrentValid = false;
 bool wifiDriveCommand = false;
 float wifiDrivePercent = 0.0f;
+float wifiManualDrivePercent = 0.0f;
 bool lastMotionCommandWasWifi = false;
 // Optional third WIFI field used by the Wi-Fi-primary controller. Legacy
 // two-field WIFI messages retain their original meaning (active/manual).
 bool wifiPhoneManual = true;
+byte wifiPhoneMode = 1;  // 0 Pause, 1 Manual, 2 Auto
+float wifiSteeringCommand = 0.0f;
+unsigned long wifiPhoneTimestamp = 0;
+unsigned long wifiPhoneMessageCount = 0;
 
 uint16_t mpsToJrkTarget(float mps) {
     if (mps <= SPEED_CAL_20260908_1P8_TEST[0].mps)
@@ -412,33 +417,43 @@ void parseSerialCommand() {
                 }
             } else if (idx >= 5 && memcmp(buffer, "WIFI,", 5) == 0) {
                 float drivePercent, az;
-                int phoneManual = 1;
+                int phoneMode = 1;
                 const int fields = sscanf(
-                    buffer + 5, "%f,%f,%d", &drivePercent, &az, &phoneManual
+                    buffer + 5, "%f,%f,%d", &drivePercent, &az, &phoneMode
                 );
                 if (fields >= 2 &&
                     isfinite(drivePercent) && isfinite(az) &&
                     drivePercent >= -100.0f && drivePercent <= 100.0f &&
                     az >= -1.0f && az <= 1.0f &&
-                    (fields == 2 || phoneManual == 0 || phoneManual == 1)) {
+                    (fields == 2 || (phoneMode >= 0 && phoneMode <= 2))) {
+                    if (fields == 2) phoneMode = 1;
                     wifiDriveCommand = true;
                     wifiDrivePercent = drivePercent;
-                    wifiPhoneManual = fields == 2 || phoneManual == 1;
+                    wifiManualDrivePercent = drivePercent;
+                    wifiPhoneManual = phoneMode == 1;
+                    wifiPhoneMode = (byte)phoneMode;
+                    wifiSteeringCommand = az;
+                    wifiPhoneTimestamp = millis();
+                    wifiPhoneMessageCount++;
                     lastMotionCommandWasWifi = true;
-                    cmdVel.linear_x = 0.0f;
-                    cmdVel.angular_z = az;
-                    cmdVel.timestamp = millis();
-                    cmdVel.received = true;
-                    cmdVel.message_count++;
-                    msgSinceCalc++;
-                    last_cmd_vel_time = millis();
+                    // Auto is an authority heartbeat only. Preserve the
+                    // independent navigation CMD payload and watchdog.
+                    if (phoneMode != 2) {
+                        cmdVel.linear_x = 0.0f;
+                        cmdVel.angular_z = az;
+                        cmdVel.timestamp = millis();
+                        cmdVel.received = true;
+                        cmdVel.message_count++;
+                        msgSinceCalc++;
+                        last_cmd_vel_time = millis();
 
-                    if (cmdVel.message_count % 50 == 0) {
-                        char echo[64];
-                        snprintf(echo, sizeof(echo),
-                                 "3,%lu,CE,x=0.00,z=%.2f,hz=%.1f",
-                                 millis(), az, cmdVel.current_hz);
-                        Serial.println(echo);
+                        if (cmdVel.message_count % 50 == 0) {
+                            char echo[64];
+                            snprintf(echo, sizeof(echo),
+                                     "3,%lu,CE,x=0.00,z=%.2f,hz=%.1f",
+                                     millis(), az, cmdVel.current_hz);
+                            Serial.println(echo);
+                        }
                     }
                 }
             } else if (idx >= 4 && memcmp(buffer, "GPS,", 4) == 0) {

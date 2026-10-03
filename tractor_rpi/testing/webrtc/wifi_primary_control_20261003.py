@@ -3,9 +3,9 @@
 
 The phone is the operator control source; NRF is not required. The Teensy
 retains the final 500 ms command watchdog and automatically pauses during a
-feed interruption. When the same phone heartbeat resumes, Manual resumes with
-the phone's current full-state demand. A deliberate phone STOP/Pause remains
-latched until the operator deliberately selects Manual again.
+feed interruption. When the same phone heartbeat resumes, the selected Manual
+or Auto authority resumes. A deliberate phone STOP/Pause remains latched until
+the operator deliberately selects Manual or Auto again.
 """
 
 from __future__ import annotations
@@ -36,7 +36,7 @@ import wifi_manual_control_field_server as base
 
 
 PAGE_PATH = HERE / "wifi_primary_control_20261003.html"
-EXPECTED_FIRMWARE = "teensy_main_20261003_wifi"
+EXPECTED_FIRMWARE = "teensy_main_20261003_wifi_v2"
 
 
 def notify_control_urls(topic: str, zerotier_url: str, local_url: str) -> None:
@@ -168,7 +168,12 @@ class WifiPrimaryState(base.FieldState):
             steering = float(data["steering_percent"])
             reason = str(data.get("reason", "heartbeat"))[:40]
             client_time_ms = float(data.get("client_time_ms", math.nan))
-            client_rtt_ms = float(data.get("client_rtt_ms", math.nan))
+            raw_client_rtt = data.get("client_rtt_ms")
+            client_rtt_ms = (
+                float(raw_client_rtt)
+                if raw_client_rtt is not None
+                else math.nan
+            )
         except (KeyError, TypeError, ValueError):
             return HTTPStatus.BAD_REQUEST, {
                 "accepted": False,
@@ -189,11 +194,11 @@ class WifiPrimaryState(base.FieldState):
                     "accepted": False,
                     "error": "stale or duplicate sequence",
                 }
-            if requested_mode not in ("manual", "pause"):
+            if requested_mode not in ("manual", "auto", "pause"):
                 self.rejected += 1
                 return HTTPStatus.BAD_REQUEST, {
                     "accepted": False,
-                    "error": "mode must be Manual or Pause",
+                    "error": "mode must be Manual, Auto, or Pause",
                 }
             if not base.finite_number(drive) or not -100 <= drive <= 100:
                 self.rejected += 1
@@ -208,14 +213,14 @@ class WifiPrimaryState(base.FieldState):
                     "error": "steering must be -100 to +100 percent",
                 }
             if (
-                self.phone_mode == "pause"
-                and requested_mode == "manual"
-                and reason != "guarded_manual"
+                requested_mode != self.phone_mode
+                and requested_mode in ("manual", "auto")
+                and reason != f"guarded_{requested_mode}"
             ):
                 self.rejected += 1
                 return HTTPStatus.CONFLICT, {
                     "accepted": False,
-                    "error": "Manual requires MODE SELECT + Manual",
+                    "error": f"{requested_mode.title()} requires MODE SELECT + {requested_mode.title()}",
                 }
             if not self.bridge_ready():
                 self.rejected += 1
@@ -281,14 +286,14 @@ class WifiPrimaryState(base.FieldState):
     def safety_loop(self) -> None:
         # Keep the operator's requested mode across a temporary link outage.
         # A Pause packet is sent once on expiry, and the next valid phone
-        # heartbeat automatically restores the retained Manual state.
+        # heartbeat automatically restores the retained Manual or Auto state.
         while self.running:
             should_stop = False
             sequence = -1
             with self.lock:
                 age = time.monotonic() - self.owner_at if self.owner_at else math.inf
                 if (
-                    self.phone_mode == "manual"
+                    self.phone_mode in ("manual", "auto")
                     and age > base.PHONE_FRESH_S
                     and not self.stop_sent_for_expiry
                 ):
