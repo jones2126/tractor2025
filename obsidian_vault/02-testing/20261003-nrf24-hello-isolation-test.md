@@ -41,6 +41,12 @@ RX counter=12 message=HELLO status=OK
 Continuous `NO_ACK` on the handheld and no tractor receive lines means the
 basic RF exchange is failing. Intermittent counter jumps identify packet loss.
 
+If the forward test fails, reverse the roles with the separately named reverse
+test files. The tractor then transmits and the handheld receives. A successful
+reverse test proves both modules can transmit, receive, and acknowledge. If
+both directions fail, these two radios alone cannot identify which module is
+faulty; a known-good third NRF24 or electrical/RF test equipment is required.
+
 ## Files
 
 - Handheld Arduino sketch:
@@ -51,5 +57,9 @@ basic RF exchange is failing. Intermittent counter jumps identify packet loss.
   `tractor_teensy/testing/NRF24_Hello_Tractor_20261003/NRF24_Hello_Tractor_20261003.ino`
 - Tractor PlatformIO configuration:
   `tractor_teensy/platformio.nrf24-hello.ini`
+- Reverse tractor transmitter:
+  `tractor_teensy/testing/NRF24_Hello_Tractor_TX_20261003/NRF24_Hello_Tractor_TX_20261003.ino`
+- Reverse handheld receiver:
+  `radiocontrol_nrf24radio/testing/NRF24_Hello_Handheld_RX_20261003/NRF24_Hello_Handheld_RX_20261003.ino`
 
 The normal `platformio.ini` files are unchanged.
