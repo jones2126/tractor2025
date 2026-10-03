@@ -36,7 +36,7 @@ import wifi_manual_control_field_server as base
 
 
 PAGE_PATH = HERE / "wifi_primary_control_20261003.html"
-EXPECTED_FIRMWARE = "teensy_main_20261003_wifi_v2"
+EXPECTED_FIRMWARE = "teensy_main_20261003_wifi_v3"
 
 
 def notify_control_urls(topic: str, zerotier_url: str, local_url: str) -> None:
@@ -135,15 +135,30 @@ class WifiPrimaryState(base.FieldState):
             self.owner_session = secrets.token_urlsafe(16)
             self.owner_at = now
             self.highest_sequence = -1
-            self.phone_mode = "pause"
-            self.last_decision = "phone claimed in Pause"
+            bridge, _ = self.bridge_snapshot()
+            estop_latched = (
+                bridge.get("wifi_control", {}).get("estop_latched") == 1
+            )
+            self.phone_mode = "estop" if estop_latched else "pause"
+            self.last_decision = (
+                "phone claimed with E-stop latched"
+                if estop_latched
+                else "phone claimed in Pause"
+            )
             self.stop_sent_for_expiry = False
             session = self.owner_session
             self.log("owner_claimed", client_id=client_id, session=session)
-        self.send_stop_burst("owner_claim")
+        if estop_latched:
+            for _ in range(5):
+                self.send_drive_command(
+                    0.0, 0.0, -1, "owner_claim_estop", phone_mode="estop"
+                )
+                time.sleep(0.02)
+        else:
+            self.send_stop_burst("owner_claim")
         return {
             "session": session,
-            "phone_mode": "pause",
+            "phone_mode": self.phone_mode,
             "rate_hz": 5,
             "heartbeat_timeout_ms": 500,
             "automatic_link_recovery": True,
@@ -194,11 +209,11 @@ class WifiPrimaryState(base.FieldState):
                     "accepted": False,
                     "error": "stale or duplicate sequence",
                 }
-            if requested_mode not in ("manual", "auto", "pause"):
+            if requested_mode not in ("manual", "auto", "pause", "estop"):
                 self.rejected += 1
                 return HTTPStatus.BAD_REQUEST, {
                     "accepted": False,
-                    "error": "mode must be Manual, Auto, or Pause",
+                    "error": "mode must be Manual, Auto, Pause, or E-stop",
                 }
             if not base.finite_number(drive) or not -100 <= drive <= 100:
                 self.rejected += 1
@@ -222,7 +237,19 @@ class WifiPrimaryState(base.FieldState):
                     "accepted": False,
                     "error": f"{requested_mode.title()} requires MODE SELECT + {requested_mode.title()}",
                 }
-            if not self.bridge_ready():
+            if (
+                self.phone_mode == "estop"
+                and requested_mode in ("manual", "auto")
+            ):
+                self.rejected += 1
+                return HTTPStatus.CONFLICT, {
+                    "accepted": False,
+                    "error": "E-stop is latched; use MODE SELECT + E-STOP to reset to Pause",
+                }
+            if (
+                requested_mode in ("manual", "auto")
+                and not self.bridge_ready()
+            ):
                 self.rejected += 1
                 return HTTPStatus.SERVICE_UNAVAILABLE, {
                     "accepted": False,
@@ -232,14 +259,22 @@ class WifiPrimaryState(base.FieldState):
             self.highest_sequence = sequence
             self.owner_at = received_monotonic
             self.stop_sent_for_expiry = False
-            self.phone_mode = requested_mode
-            self.last_decision = requested_mode
-            effective_drive = drive if requested_mode == "manual" else 0.0
-            effective_steering = steering if requested_mode == "manual" else 0.0
+            reset_estop = (
+                self.phone_mode == "estop"
+                and requested_mode == "pause"
+                and reason == "guarded_estop_reset"
+            )
+            if self.phone_mode == "estop" and requested_mode == "pause" and not reset_estop:
+                requested_mode = "estop"
+            wire_mode = "reset_pause" if reset_estop else requested_mode
+            self.phone_mode = "pause" if reset_estop else requested_mode
+            self.last_decision = wire_mode
+            effective_drive = drive if self.phone_mode == "manual" else 0.0
+            effective_steering = steering if self.phone_mode == "manual" else 0.0
             self.last_command = {
                 "client_id": client_id,
                 "sequence": sequence,
-                "mode": requested_mode,
+                "mode": self.phone_mode,
                 "drive_percent": round(effective_drive, 1),
                 "steering_percent": round(effective_steering, 1),
                 "reason": reason,
@@ -251,7 +286,7 @@ class WifiPrimaryState(base.FieldState):
             effective_steering,
             sequence,
             reason,
-            phone_mode=requested_mode,
+            phone_mode=wire_mode,
         )
         processing_ms = round((time.monotonic() - received_monotonic) * 1000, 2)
         phone_to_server_ms = (
@@ -271,7 +306,7 @@ class WifiPrimaryState(base.FieldState):
         )
         return HTTPStatus.OK, {
             "accepted": True,
-            "decision": requested_mode,
+            "decision": wire_mode,
             "sequence": sequence,
             "server_time_ms": round(time.time() * 1000),
             "phone_mode": self.phone_mode,

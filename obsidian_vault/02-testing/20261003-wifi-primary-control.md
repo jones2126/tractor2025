@@ -29,6 +29,13 @@ ground movement.
   identical to the previous Wi-Fi test. It does not add a reduced field-test
   steering bound. The existing 20-count mechanical-stop margins remain.
 - The physical E-stop logic in the proven firmware is not changed.
+- Guarded phone **E-STOP** latches the same engine-kill relay while also
+  forcing transmission neutral and steering Pause. Pressing guarded E-STOP a
+  second time unlatches the relay and leaves the phone in Pause. Manual and
+  Auto are rejected while the software E-stop latch is active.
+- The software E-stop latch survives phone-link loss and a server restart. An
+  ordinary Pause never clears it. The phone displays the latch state reported
+  by the Teensy.
 - NRF telemetry continues to be reported for diagnosis but is not a control
   prerequisite after the Wi-Fi feed is selected.
 - The first valid phone command latches Wi-Fi-primary authority until the
@@ -135,7 +142,7 @@ print("transmission:", d.get("transmission", {}))
 PY
 ```
 
-The firmware must be `teensy_main_20261003_wifi_v2`. Before a phone claims
+The firmware must be `teensy_main_20261003_wifi_v3`. Before a phone claims
 control, radio-loss mode 9 / `NO_SIG`, steering PWM 0, and neutral JRK target
 are expected and safe.
 
@@ -155,7 +162,7 @@ python3 tractor_rpi/testing/webrtc/wifi_primary_control_20261003.py
    ```bash
    cd /home/al/tractor2025
    sudo python3 tractor_rpi/testing/mission_preflight_20261002.py \
-     --expected-firmware teensy_main_20261003_wifi_v2
+     --expected-firmware teensy_main_20261003_wifi_v3
    ```
 
 4. With the engine off and wheels raised, arm **MODE SELECT + MANUAL**.

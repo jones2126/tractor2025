@@ -107,7 +107,7 @@ bool lastMotionCommandWasWifi = false;
 // Optional third WIFI field used by the Wi-Fi-primary controller. Legacy
 // two-field WIFI messages retain their original meaning (active/manual).
 bool wifiPhoneManual = true;
-byte wifiPhoneMode = 1;  // 0 Pause, 1 Manual, 2 Auto
+byte wifiPhoneMode = 1;  // 0 Pause, 1 Manual, 2 Auto, 3 E-stop, 4 reset to Pause
 float wifiSteeringCommand = 0.0f;
 unsigned long wifiPhoneTimestamp = 0;
 unsigned long wifiPhoneMessageCount = 0;
@@ -425,7 +425,7 @@ void parseSerialCommand() {
                     isfinite(drivePercent) && isfinite(az) &&
                     drivePercent >= -100.0f && drivePercent <= 100.0f &&
                     az >= -1.0f && az <= 1.0f &&
-                    (fields == 2 || (phoneMode >= 0 && phoneMode <= 2))) {
+                    (fields == 2 || (phoneMode >= 0 && phoneMode <= 4))) {
                     if (fields == 2) phoneMode = 1;
                     wifiDriveCommand = true;
                     wifiDrivePercent = drivePercent;

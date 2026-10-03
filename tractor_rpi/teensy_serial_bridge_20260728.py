@@ -327,9 +327,17 @@ class TeensySerialBridge:
                 if phone_mode is None:
                     command = f"WIFI,{drive_percent:.1f},{angular_z:.4f}\n"
                 else:
-                    modes = {"pause": 0, "manual": 1, "auto": 2}
+                    modes = {
+                        "pause": 0,
+                        "manual": 1,
+                        "auto": 2,
+                        "estop": 3,
+                        "reset_pause": 4,
+                    }
                     if phone_mode not in modes:
-                        raise ValueError("phone_mode must be pause, manual, or auto")
+                        raise ValueError(
+                            "phone_mode must be pause, manual, auto, estop, or reset_pause"
+                        )
                     command = (
                         f"WIFI,{drive_percent:.1f},{angular_z:.4f},"
                         f"{modes[phone_mode]}\n"
@@ -473,6 +481,16 @@ class TeensySerialBridge:
                 'firmware': d.get('fw'),
                 'steer_hz': d.get('steer_hz'),
                 'heartbeat_age': current_time - d.get('last_update', current_time)
+            }
+
+        if 'WIFI_CTL' in self.latest_data:
+            d = self.latest_data['WIFI_CTL']
+            message['wifi_control'] = {
+                'mode': int(d.get('m', 0)),
+                'heartbeat_fresh': int(d.get('f', 0)),
+                'estop_latched': int(d.get('es', 0)),
+                'command_age_ms': int(d.get('a', 999999)),
+                'age': current_time - d.get('last_update', current_time),
             }
 
         message['cmd_vel'] = {

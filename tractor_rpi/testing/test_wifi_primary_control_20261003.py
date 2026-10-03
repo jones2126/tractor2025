@@ -101,6 +101,57 @@ class WifiPrimaryTests(unittest.TestCase):
             state.close()
             temporary.cleanup()
 
+    def test_estop_latches_then_guarded_second_press_resets_to_pause(self):
+        temporary, state = self.make_state()
+        try:
+            claim = state.claim("phone-a")
+            common = {
+                "client_id": "phone-a",
+                "session": claim["session"],
+                "drive_percent": 0,
+                "steering_percent": 0,
+                "client_time_ms": time.time() * 1000,
+                "client_rtt_ms": 20,
+            }
+            status, result = state.accept_command(
+                {
+                    **common,
+                    "sequence": 1,
+                    "mode": "estop",
+                    "reason": "guarded_estop",
+                }
+            )
+            self.assertEqual(200, int(status))
+            self.assertEqual("estop", result["phone_mode"])
+
+            status, result = state.accept_command(
+                {
+                    **common,
+                    "sequence": 2,
+                    "mode": "pause",
+                    "reason": "guarded_estop_reset",
+                }
+            )
+            self.assertEqual(200, int(status))
+            self.assertEqual("reset_pause", result["decision"])
+            self.assertEqual("pause", result["phone_mode"])
+        finally:
+            state.running = False
+            state.close()
+            temporary.cleanup()
+
+    def test_new_session_preserves_reported_teensy_estop_latch(self):
+        temporary, state = self.make_state()
+        try:
+            state.bridge["wifi_control"] = {"estop_latched": 1}
+            claim = state.claim("phone-a")
+            self.assertEqual("estop", claim["phone_mode"])
+            self.assertEqual("estop", state.phone_mode)
+        finally:
+            state.running = False
+            state.close()
+            temporary.cleanup()
+
     def test_expiry_sends_pause_but_retains_manual_for_recovery(self):
         temporary, state = self.make_state()
         try:
@@ -131,6 +182,14 @@ class WifiPrimaryTests(unittest.TestCase):
         obj.ser.data = b""
         self.assertTrue(obj.send_wifi_drive_to_teensy(0, 0, "auto"))
         self.assertEqual(b"WIFI,0.0,0.0000,2\n", obj.ser.data)
+
+        obj.ser.data = b""
+        self.assertTrue(obj.send_wifi_drive_to_teensy(0, 0, "estop"))
+        self.assertEqual(b"WIFI,0.0,0.0000,3\n", obj.ser.data)
+
+        obj.ser.data = b""
+        self.assertTrue(obj.send_wifi_drive_to_teensy(0, 0, "reset_pause"))
+        self.assertEqual(b"WIFI,0.0,0.0000,4\n", obj.ser.data)
 
 
 if __name__ == "__main__":

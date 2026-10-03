@@ -15,9 +15,10 @@
 
   WIFI,<drive_percent>,<normalized_steering>,<mode>
       mode 0 = Pause, 1 = Manual, 2 = Auto
+      mode 3 = latch E-stop relay, 4 = unlatch relay and remain in Pause
 *********************************************************************/
 
-#define TRACTOR_FIRMWARE_ID "teensy_main_20261003_wifi_v2"
+#define TRACTOR_FIRMWARE_ID "teensy_main_20261003_wifi_v3"
 #define TRACTOR_TOP_LEVEL_LOOP loop_20260914_core
 #include "teensy_main_20260914.cpp"
 
@@ -39,11 +40,9 @@ int normalizedSteerToRadio(float normalized) {
 
 extern "C" void loop() {
     static bool wifiPrimarySelected = false;
+    static bool wifiSoftwareEstopLatched = false;
+    static unsigned long processedWifiMessageCount = 0;
     currentMillis = millis();
-
-    // Preserve the existing physical E-stop relay path exactly. This runs
-    // before any temporary Wi-Fi authority values are applied.
-    estopCheck();
 
     parseSerialCommand();
     // parseSerialCommand() timestamps accepted input with a fresh millis().
@@ -52,6 +51,22 @@ extern "C" void loop() {
     currentMillis = millis();
     if (wifiPhoneMessageCount > 0) {
         wifiPrimarySelected = true;
+    }
+    if (wifiPhoneMessageCount != processedWifiMessageCount) {
+        if (wifiPhoneMode == 3) wifiSoftwareEstopLatched = true;
+        if (wifiPhoneMode == 4) wifiSoftwareEstopLatched = false;
+        processedWifiMessageCount = wifiPhoneMessageCount;
+    }
+
+    // Combine both E-stop sources in one relay write. This preserves the
+    // physical/legacy request and prevents a brief HIGH pulse while the Wi-Fi
+    // latch is active.
+    if (currentMillis - lastEstopCheckRun >= estopCheckInterval) {
+        digitalWrite(
+            ESTOP_RELAY_PIN,
+            (radioData.estop || wifiSoftwareEstopLatched) ? LOW : HIGH
+        );
+        lastEstopCheckRun = currentMillis;
     }
     checkCmdVelTimeout();
     monitorSerialBuffer();
@@ -68,7 +83,8 @@ extern "C" void loop() {
         const bool phoneFresh =
             currentMillis - wifiPhoneTimestamp <= CMD_VEL_TIMEOUT;
 
-        if (!phoneFresh || wifiPhoneMode == 0) {
+        if (wifiSoftwareEstopLatched || !phoneFresh ||
+            wifiPhoneMode == 0 || wifiPhoneMode == 4) {
             // Explicit Pause and phone-heartbeat expiry share the proven
             // Pause behavior: exact transmission neutral, steering hold.
             radioData.control_mode = 2;
@@ -103,6 +119,27 @@ extern "C" void loop() {
 
     controlTransmission();
     controlSteering();
+
+    static unsigned long lastWifiStatusPrint = 0;
+    if (currentMillis - lastWifiStatusPrint >= 200) {
+        const bool phoneFresh = wifiPhoneMessageCount > 0 &&
+            currentMillis - wifiPhoneTimestamp <= CMD_VEL_TIMEOUT;
+        const unsigned long phoneAge = wifiPhoneMessageCount > 0
+            ? currentMillis - wifiPhoneTimestamp
+            : 999999UL;
+        char wifiBuf[96];
+        snprintf(
+            wifiBuf, sizeof(wifiBuf),
+            "1,%lu,WIFI_CTL,m=%u,f=%d,es=%d,a=%lu",
+            currentMillis,
+            (unsigned int)wifiPhoneMode,
+            phoneFresh ? 1 : 0,
+            wifiSoftwareEstopLatched ? 1 : 0,
+            phoneAge
+        );
+        Serial.println(wifiBuf);
+        lastWifiStatusPrint = currentMillis;
+    }
 
     // Keep separately published NRF diagnostics truthful.
     radioStats.signalGood = savedSignalGood;

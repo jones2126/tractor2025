@@ -46,6 +46,9 @@ MIN_GROUND_SPEED_RATE_HZ = 4.0
 FIRMWARES_WITH_JRK_CURRENT_TELEMETRY = {
     "teensy_main_20260908_1p8_test",
     "teensy_main_20260914",
+    "teensy_main_20261003_wifi",
+    "teensy_main_20261003_wifi_v2",
+    "teensy_main_20261003_wifi_v3",
 }
 
 
@@ -677,6 +680,22 @@ def steering_checks(
                 "Teensy firmware identity",
                 observed_firmware == expected_firmware,
                 f"expected={expected_firmware}; observed={observed_firmware}",
+            )
+        )
+    if expected_firmware == "teensy_main_20261003_wifi_v3":
+        wifi_control = latest_message.get("wifi_control", {})
+        wifi_age = wifi_control.get("age")
+        estop_latched = wifi_control.get("estop_latched")
+        wifi_status_fresh = finite_number(wifi_age) and float(wifi_age) <= 1.0
+        checks.append(
+            Check(
+                "Wi-Fi E-stop relay",
+                wifi_status_fresh and estop_latched == 0,
+                (
+                    f"latched={estop_latched}; telemetry age={wifi_age}s"
+                    if wifi_status_fresh
+                    else f"Wi-Fi control telemetry is stale or missing; age={wifi_age}s"
+                ),
             )
         )
     if expected_firmware in FIRMWARES_WITH_JRK_CURRENT_TELEMETRY:
