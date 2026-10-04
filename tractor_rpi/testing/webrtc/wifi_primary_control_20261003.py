@@ -375,11 +375,10 @@ def main() -> None:
         args=(state, base.STATUS_PORT, "bridge"),
         daemon=True,
     ).start()
-    threading.Thread(
-        target=base.udp_listener,
-        args=(state, base.GPS_PORT, "gps"),
-        daemon=True,
-    ).start()
+    # Do not bind the dedicated mission-dashboard GPS feed (UDP 6013).
+    # Wi-Fi-primary control needs only fresh Teensy bridge telemetry; consuming
+    # 6013 here can prevent the separately running mission dashboard from
+    # receiving the position needed for distance-to-start guidance.
     threading.Thread(target=state.safety_loop, daemon=True).start()
     server = base.QuietThreadingHTTPServer(
         (args.host, args.port), base.handler_factory(state, operator_key)
