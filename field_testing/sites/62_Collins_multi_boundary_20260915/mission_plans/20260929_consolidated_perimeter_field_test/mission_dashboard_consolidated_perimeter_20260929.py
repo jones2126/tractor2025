@@ -9,6 +9,8 @@ import threading
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib import error as urllib_error
+from urllib import request as urllib_request
 from urllib.parse import urlparse
 
 HERE=Path(__file__).resolve().parent
@@ -21,6 +23,44 @@ dashboard.MISSION=HERE/"generated/62_Collins_consolidated_perimeter_1mps_2026092
 dashboard.AUDIT=HERE/"generated/62_Collins_consolidated_perimeter_1mps_20260929_audit.csv"
 dashboard.LAUNCHER=HERE/"run_62_Collins_consolidated_perimeter_20260929.sh"
 dashboard.EXPECTED_CONFIRMATION="RUN CONSOLIDATED PERIMETER BLADES OFF"
+
+base_safe_to_start=dashboard.safe_to_start
+def wifi_safe_to_start(state):
+    ok,reason=base_safe_to_start(state)
+    if not ok:
+        return False,reason.replace("handheld","phone").replace("Handheld","Phone")
+    snap=state.snapshot();wifi=snap.get("bridge",{}).get("wifi_control",{})
+    if wifi.get("mode")!=0:
+        return False,"Put the phone in Pause before starting"
+    if wifi.get("heartbeat_fresh")!=1:
+        return False,"Phone heartbeat is not fresh; keep the Wi-Fi control page open"
+    if wifi.get("estop_latched")!=0:
+        return False,"Wi-Fi E-stop is latched; reset it and remain in Pause"
+    try: command_age_ms=int(wifi.get("command_age_ms"))
+    except (TypeError,ValueError): return False,"Wi-Fi command age is missing"
+    if command_age_ms>500:
+        return False,f"Phone command is stale ({command_age_ms} ms)"
+    return True,""
+dashboard.safe_to_start=wifi_safe_to_start
+
+def notify_wifi_dashboard_url(dashboard_url):
+    message=(
+        "Open this Tractor01 mission dashboard on the laptop. Keep the Wi-Fi "
+        "phone control page in the phone's foreground and in Pause; keep the physical e-stop available. This "
+        "temporary link includes the operator key.\n\n"+dashboard_url
+    )
+    request=urllib_request.Request(
+        dashboard.NTFY_TOPIC_URL,data=message.encode("utf-8"),
+        headers={"Title":"Tractor01 dashboard ready","Click":dashboard_url,"Tags":"tractor"},
+        method="POST",
+    )
+    try:
+        with urllib_request.urlopen(request,timeout=5) as response:
+            if not 200<=response.status<300: raise RuntimeError(f"ntfy returned HTTP {response.status}")
+        print(f"ntfy: ZeroTier dashboard link sent to {dashboard.NTFY_TOPIC_URL}")
+    except (urllib_error.URLError,OSError,RuntimeError) as exc:
+        print(f"WARNING: could not send dashboard link to ntfy: {exc}")
+dashboard.notify_dashboard_url=notify_wifi_dashboard_url
 
 NOTE_DIR=Path(os.environ.get(
     "TRACTOR_VOICE_NOTE_DIR",
@@ -118,10 +158,20 @@ replacements={
 "Resumes at source waypoint 91. Recovery stays in the current phase and may advance at most 30 m.":"Approved blades-off field test. Voice notes listen for ‘Tractor note…’ while guidance is active.",
 "Start the reviewed clear-sky resume mission at source waypoint 91 with blades off?":"Start the approved consolidated perimeter mission with blades off and direct supervision?",
 "RUN PARTIAL RINGS BLADES OFF":dashboard.EXPECTED_CONFIRMATION,
+"Keep the handheld with you.</b> After a browser Pause: select handheld Pause, press CLEAR PAUSE, confirm HANDHELD PAUSE, then select Auto.":"Keep the phone control page in the phone's foreground.</b> Use this dashboard on the laptop. After a dashboard Pause: select phone Pause, press CLEAR PAUSE, then use guarded Auto only when the route is clear.",
+"Keep the handheld in Pause until the controller is ready.":"Keep the phone in Pause until the controller is ready.",
+"HANDHELD PAUSE":"PHONE PAUSE",
+"Handheld Pause":"Phone Pause",
+"Handheld modes":"Control modes",
 }
 for original,updated in replacements.items():
     if dashboard.HTML.count(original)!=1: raise RuntimeError(f"Dashboard text changed; expected one occurrence of: {original}")
     dashboard.HTML=dashboard.HTML.replace(original,updated)
+
+radio_fact="fact('Radio / steering state',(b.radio?.signal||'—')+' / '+(st.state||'—'))"
+wifi_fact="fact('Wi-Fi heartbeat / steering state',(b.wifi_control?.heartbeat_fresh===1?'fresh':'stale')+' / '+(st.state||'—'))"
+if dashboard.HTML.count(radio_fact)!=1: raise RuntimeError("Dashboard radio status fact changed")
+dashboard.HTML=dashboard.HTML.replace(radio_fact,wifi_fact)
 
 toolbar_old='<button id="guide" class="button guide">START VOICE GUIDANCE</button>'
 toolbar_new=toolbar_old+'<span id="noteStatus" class="badge">VOICE NOTES READY</span>'

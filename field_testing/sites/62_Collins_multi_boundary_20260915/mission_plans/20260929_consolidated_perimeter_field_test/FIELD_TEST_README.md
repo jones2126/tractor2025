@@ -58,10 +58,10 @@ bash field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/202609
 
 The approved launcher retains all of these safeguards:
 
-1. Blades disengaged; direct supervision; handheld and physical e-stop ready.
+1. Blades disengaged; direct supervision; Wi-Fi phone control page open in Pause and physical e-stop ready.
 2. Reconfigure and verify the Heading F9P with the non-interactive RAM-only 5 Hz startup profile before starting rtcm-server; this enables USB UBX NAV-RELPOSNED and disables targeted USB NMEA output.
-3. Allow startup time for NRF, Teensy bridge, RTK corrections, and fixed heading.
-4. Run preflight expecting `teensy_main_20260926` and require RTK corrections, RTK Fixed, valid fixed-carrier heading, 0.80–1.30 m baseline, heading accuracy ≤1.0°, healthy JRK, and stationary Pause.
-5. Use dashboard voice guidance to reach and align with the initial waypoint.
+3. Allow startup time for the Wi-Fi phone heartbeat, Teensy bridge, RTK corrections, and fixed heading.
+4. Run preflight expecting `teensy_main_20261003_wifi_v3` and require a released Wi-Fi E-stop, RTK corrections, RTK Fixed, valid fixed-carrier heading, 0.80–1.30 m baseline, heading accuracy ≤1.0°, healthy JRK, and stationary phone Pause.
+5. Keep the Wi-Fi control page in the phone's foreground, and open the mission dashboard on the laptop. Use guarded phone Manual to reach and align with the initial waypoint. Dashboard voice guidance is optional and may remain off.
 6. Start field logging before Pure Pursuit and preserve neutral shutdown traps.
 7. Run the first validation supervised and blades off; Pause immediately for unexpected clearance or tracking behavior.

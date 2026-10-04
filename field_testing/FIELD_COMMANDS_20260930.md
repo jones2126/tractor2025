@@ -1,8 +1,8 @@
 # Tractor01 field commands — 2026-09-30
 
 These commands are for the approved 2026-09-29 consolidated-perimeter mission.
-The initial test remains directly supervised and blades-off. Keep the handheld
-and physical e-stop immediately available. Do not select Auto unless preflight
+The initial test remains directly supervised and blades-off. Keep the Wi-Fi
+phone control page open and the physical e-stop immediately available. Do not select Auto unless preflight
 ends with `MISSION PREFLIGHT PASS`.
 
 ## 1. Establish the field network
@@ -38,7 +38,7 @@ Expected result: `PASS: exact approved supervised blades-off field package verif
 
 ## 4. Push and verify the non-interactive Heading-F9P profile
 
-Before running: tractor stationary, handheld in Pause, blades disengaged.
+Before running: tractor stationary, phone control in Pause, blades disengaged.
 
 This command stops `rtcm-server`, writes the known 5 Hz Heading-F9P profile to
 volatile RAM, independently reads back every targeted value, and restarts
@@ -59,7 +59,7 @@ RTK Fixed and fixed-carrier heading may need time to settle. Rerun this same
 command as needed while the tractor remains stationary in Pause:
 
 ```bash
-cd /home/al/tractor2025 && sudo python3 tractor_rpi/testing/mission_preflight_20261002.py --expected-firmware teensy_main_20260926
+cd /home/al/tractor2025 && sudo python3 tractor_rpi/testing/mission_preflight_20261002.py --expected-firmware teensy_main_20261003_wifi_v3
 ```
 
 This dated preflight also requires more than 30 Heading-F9P satellites used
@@ -74,17 +74,19 @@ Open a second PuTTY window and keep it open for the entire dashboard session:
 cd /home/al/tractor2025 && sudo -v && python3 field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20260929_consolidated_perimeter_field_test/mission_dashboard_consolidated_perimeter_20260929.py
 ```
 
-Open the printed URL beginning with:
+Open the printed URL on the Windows laptop, not in another phone tab. Keep the
+Wi-Fi control page in the phone's foreground so its 5 Hz safety heartbeat is
+not throttled. The dashboard URL begins with:
 
 ```text
 http://192.168.193.76:8088/?key=
 ```
 
-For drive-to-start: keep blades off, use handheld Manual, start voice guidance,
-and drive toward the announced direction. Stop and select handheld Pause when
-the dashboard reports ready. Press `START MISSION` only while stationary in
-Pause; the launcher runs its safety gates again. Select Auto only after the
-controller is live and the route is clear.
+For drive-to-start: keep blades off and use guarded Manual on the Wi-Fi phone
+control page. Voice guidance is optional and may remain off. Stop and select
+phone Pause when the dashboard reports ready. Press `START MISSION` only while
+stationary in Pause; the launcher runs its safety gates again. Select guarded
+Auto on the phone only after the controller is live and the route is clear.
 
 ## Optional Tractor01 status/log command
 

@@ -10,6 +10,8 @@ PREFLIGHT="${TRACTOR_REPO}/tractor_rpi/testing/mission_preflight_20261002.py"
 HEADING_CONFIG="${TRACTOR_REPO}/tractor_rpi/testing/configure_dual_f9p_5hz_profile_20260923.py"
 CONTROLLER="${TRACTOR_REPO}/tractor_rpi/pure-pursuit/pure_pursuit_controller_20260915.py"
 LOGGER="${TRACTOR_REPO}/tractor_rpi/field_test_logger_20260828.py"
+WIFI_SERVER="${TRACTOR_REPO}/tractor_rpi/testing/webrtc/wifi_primary_control_20261003.py"
+EXPECTED_FIRMWARE="teensy_main_20261003_wifi_v3"
 APPROVED_FOR_FIELD=true
 
 verify_only=false
@@ -43,24 +45,58 @@ if [[ "${configure_heading}" == true ]]; then
     exit 0
 fi
 
-for required in "${MISSION}" "${AUDIT}" "${PREFLIGHT}" "${CONTROLLER}" "${LOGGER}"; do
+for required in "${MISSION}" "${AUDIT}" "${PREFLIGHT}" "${CONTROLLER}" "${LOGGER}" "${WIFI_SERVER}"; do
     [[ -f "${required}" ]] || { echo "ERROR: required file not found: ${required}" >&2; exit 1; }
 done
+pgrep -f '[p]ython3.*wifi_primary_control_20261003.py' >/dev/null || { echo "ERROR: Wi-Fi phone control server is not running" >&2; exit 1; }
 pgrep -f '[p]ython3.*field_test_logger_20260828.py' >/dev/null && { echo "ERROR: field logger already running" >&2; exit 1; }
 pgrep -f '[p]ython3.*pure_pursuit_controller_20260915.py' >/dev/null && { echo "ERROR: Pure Pursuit controller already running" >&2; exit 1; }
 
 echo "============================================================"
 echo " 62 COLLINS CONSOLIDATED PERIMETER — BLADES OFF / SUPERVISED"
 echo " Speed 1.00 m/s; left deck edge follows the outer perimeter"
-echo " Keep the physical e-stop and NRF handheld immediately available"
+echo " Keep the phone control page open and physical e-stop immediately available"
 echo "============================================================"
-echo "Allowing 15 seconds for NRF, Teensy bridge, RTK corrections, and heading startup..."
+echo "Keep the phone in Pause. Checking Wi-Fi heartbeat, Teensy bridge, RTK corrections, and heading..."
 sleep 15
 if [[ "${dashboard_mode}" == true ]]; then
-    python3 "${PREFLIGHT}" --expected-firmware teensy_main_20260926
+    python3 "${PREFLIGHT}" --expected-firmware "${EXPECTED_FIRMWARE}"
 else
-    sudo python3 "${PREFLIGHT}" --expected-firmware teensy_main_20260926
+    sudo python3 "${PREFLIGHT}" --expected-firmware "${EXPECTED_FIRMWARE}"
 fi
+
+python3 - <<'PY'
+import json, socket, time
+
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+sock.bind(("", 6003))
+sock.settimeout(1.0)
+latest = None
+deadline = time.monotonic() + 5.0
+while time.monotonic() < deadline:
+    try:
+        latest = json.loads(sock.recvfrom(65535)[0])
+    except socket.timeout:
+        continue
+sock.close()
+if latest is None:
+    raise SystemExit("ERROR: no Teensy status on UDP 6003")
+wifi = latest.get("wifi_control", {})
+if wifi.get("mode") != 0:
+    raise SystemExit(f"ERROR: phone must be in Pause; Wi-Fi mode={wifi.get('mode')!r}")
+if wifi.get("heartbeat_fresh") != 1:
+    raise SystemExit("ERROR: phone heartbeat is not fresh; keep the control page open")
+if wifi.get("estop_latched") != 0:
+    raise SystemExit("ERROR: Wi-Fi E-stop relay is latched")
+try:
+    command_age_ms = int(wifi.get("command_age_ms"))
+except (TypeError, ValueError):
+    raise SystemExit("ERROR: Wi-Fi command age is missing")
+if command_age_ms > 500:
+    raise SystemExit(f"ERROR: Wi-Fi command is stale ({command_age_ms} ms)")
+print(f"PASS: phone control is live in Pause; command age={command_age_ms} ms; E-stop released")
+PY
 
 python3 - "${MISSION}" <<'PY'
 import json, math, socket, sys, time
