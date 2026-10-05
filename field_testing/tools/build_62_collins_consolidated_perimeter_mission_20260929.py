@@ -504,6 +504,7 @@ LAUNCHER=HERE/"run_62_Collins_consolidated_perimeter_20260929.sh"
 EXPECTED_MISSION_SHA256="{mission_hash}"
 EXPECTED_AUDIT_SHA256="{audit_hash}"
 EXPECTED_ROWS={waypoint_count}
+EXPECTED_PHASES=77
 EXPECTED_LENGTH_M={path_length:.6f}
 EXPECTED_STATUS="{STATUS}"
 def digest(path): return hashlib.sha256(path.read_bytes().replace(b"\\r\\n",b"\\n")).hexdigest()
@@ -521,6 +522,16 @@ def main():
     if any(row[4]!="1.00" for row in rows): raise ValueError("speed must remain 1.00 m/s")
     with AUDIT.open(newline="",encoding="utf-8-sig") as handle: audit=list(csv.DictReader(handle))
     if len(audit)!=EXPECTED_ROWS: raise ValueError("audit row count changed")
+    phases=[str(row.get("phase","")).strip() for row in audit]
+    if any(not phase for phase in phases): raise ValueError("audit contains an empty mission phase")
+    phase_blocks=[phase for index,phase in enumerate(phases) if index==0 or phase!=phases[index-1]]
+    if len(phase_blocks)!=len(set(phase_blocks)): raise ValueError("audit mission phase reappears non-contiguously")
+    if len(phase_blocks)!=EXPECTED_PHASES: raise ValueError("audit mission phase count changed")
+    command_fields=("lat","lon","yaw_rad","lookahead_m","speed_mps")
+    for index,(mission_row,audit_row) in enumerate(zip(rows,audit),1):
+        if audit_row.get("waypoint")!=str(index): raise ValueError(f"audit waypoint sequence mismatch at row {{index}}")
+        if any(audit_row.get(field)!=mission_row[offset] for offset,field in enumerate(command_fields)):
+            raise ValueError(f"audit command fields disagree with mission at waypoint {{index}}")
     if report["geometry_validation"]["duplicate_consecutive_points"]!=0: raise ValueError("duplicate points reported")
     if report["geometry_validation"]["maximum_waypoint_gap_m"]>0.202: raise ValueError("waypoint gap exceeds 0.202 m")
     if report["geometry_validation"]["reversal_events_over_150_deg"]: raise ValueError("instantaneous reversal reported")
@@ -549,9 +560,11 @@ MISSION="${{SCRIPT_DIR}}/generated/{STEM}.txt"
 AUDIT="${{SCRIPT_DIR}}/generated/{STEM}_audit.csv"
 VERIFY="${{SCRIPT_DIR}}/verify_consolidated_perimeter_20260929.py"
 PREFLIGHT="${{TRACTOR_REPO}}/tractor_rpi/testing/mission_preflight_20261002.py"
-HEADING_CONFIG="${{TRACTOR_REPO}}/tractor_rpi/testing/configure_heading_f9p_20260727.py"
+HEADING_CONFIG="${{TRACTOR_REPO}}/tractor_rpi/testing/configure_dual_f9p_5hz_profile_20260923.py"
 CONTROLLER="${{TRACTOR_REPO}}/tractor_rpi/pure-pursuit/pure_pursuit_controller_20260915.py"
 LOGGER="${{TRACTOR_REPO}}/tractor_rpi/field_test_logger_20260828.py"
+WIFI_SERVER="${{TRACTOR_REPO}}/tractor_rpi/testing/webrtc/wifi_primary_control_20261003.py"
+EXPECTED_FIRMWARE="teensy_main_20261003_wifi_v3"
 APPROVED_FOR_FIELD=true
 
 verify_only=false
@@ -578,30 +591,65 @@ if [[ "${{APPROVED_FOR_FIELD}}" != true ]]; then
 fi
 
 if [[ "${{configure_heading}}" == true ]]; then
-    echo "Stop rtcm-server before continuing. This guarded tool requires CONFIGURE HEADING."
-    sudo python3 "${{HEADING_CONFIG}}" --apply
+    echo "Stop rtcm-server before continuing. Applying the verified RAM-only Heading-F9P startup profile."
+    sudo python3 -u "${{HEADING_CONFIG}}" --heading-startup --device-wait-seconds 30
+    echo "Heading profile verified without an interactive confirmation."
     echo "Restart rtcm-server, then allow correction and heading solutions to settle before launch."
     exit 0
 fi
 
-for required in "${{MISSION}}" "${{AUDIT}}" "${{PREFLIGHT}}" "${{CONTROLLER}}" "${{LOGGER}}"; do
+for required in "${{MISSION}}" "${{AUDIT}}" "${{PREFLIGHT}}" "${{CONTROLLER}}" "${{LOGGER}}" "${{WIFI_SERVER}}"; do
     [[ -f "${{required}}" ]] || {{ echo "ERROR: required file not found: ${{required}}" >&2; exit 1; }}
 done
+pgrep -f '[p]ython3.*wifi_primary_control_20261003.py' >/dev/null || {{ echo "ERROR: Wi-Fi phone control server is not running" >&2; exit 1; }}
 pgrep -f '[p]ython3.*field_test_logger_20260828.py' >/dev/null && {{ echo "ERROR: field logger already running" >&2; exit 1; }}
 pgrep -f '[p]ython3.*pure_pursuit_controller_20260915.py' >/dev/null && {{ echo "ERROR: Pure Pursuit controller already running" >&2; exit 1; }}
 
 echo "============================================================"
 echo " 62 COLLINS CONSOLIDATED PERIMETER — BLADES OFF / SUPERVISED"
 echo " Speed 1.00 m/s; left deck edge follows the outer perimeter"
-echo " Keep the physical e-stop and NRF handheld immediately available"
+echo " Keep the phone control page open and physical e-stop immediately available"
 echo "============================================================"
-echo "Allowing 15 seconds for NRF, Teensy bridge, RTK corrections, and heading startup..."
+echo "Keep the phone in Pause. Checking Wi-Fi heartbeat, Teensy bridge, RTK corrections, and heading..."
 sleep 15
 if [[ "${{dashboard_mode}}" == true ]]; then
-    python3 "${{PREFLIGHT}}" --expected-firmware teensy_main_20260926
+    python3 "${{PREFLIGHT}}" --expected-firmware "${{EXPECTED_FIRMWARE}}"
 else
-    sudo python3 "${{PREFLIGHT}}" --expected-firmware teensy_main_20260926
+    sudo python3 "${{PREFLIGHT}}" --expected-firmware "${{EXPECTED_FIRMWARE}}"
 fi
+
+python3 - <<'PY'
+import json, socket, time
+
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+sock.bind(("", 6003))
+sock.settimeout(1.0)
+latest = None
+deadline = time.monotonic() + 5.0
+while time.monotonic() < deadline:
+    try:
+        latest = json.loads(sock.recvfrom(65535)[0])
+    except socket.timeout:
+        continue
+sock.close()
+if latest is None:
+    raise SystemExit("ERROR: no Teensy status on UDP 6003")
+wifi = latest.get("wifi_control", {{}})
+if wifi.get("mode") != 0:
+    raise SystemExit(f"ERROR: phone must be in Pause; Wi-Fi mode={{wifi.get('mode')!r}}")
+if wifi.get("heartbeat_fresh") != 1:
+    raise SystemExit("ERROR: phone heartbeat is not fresh; keep the control page open")
+if wifi.get("estop_latched") != 0:
+    raise SystemExit("ERROR: Wi-Fi E-stop relay is latched")
+try:
+    command_age_ms = int(wifi.get("command_age_ms"))
+except (TypeError, ValueError):
+    raise SystemExit("ERROR: Wi-Fi command age is missing")
+if command_age_ms > 500:
+    raise SystemExit(f"ERROR: Wi-Fi command is stale ({{command_age_ms}} ms)")
+print(f"PASS: phone control is live in Pause; command age={{command_age_ms}} ms; E-stop released")
+PY
 
 python3 - "${{MISSION}}" <<'PY'
 import json, math, socket, sys, time
@@ -665,6 +713,8 @@ import threading
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib import error as urllib_error
+from urllib import request as urllib_request
 from urllib.parse import urlparse
 
 HERE=Path(__file__).resolve().parent
@@ -677,6 +727,44 @@ dashboard.MISSION=HERE/"generated/__STEM__.txt"
 dashboard.AUDIT=HERE/"generated/__STEM___audit.csv"
 dashboard.LAUNCHER=HERE/"run_62_Collins_consolidated_perimeter_20260929.sh"
 dashboard.EXPECTED_CONFIRMATION="RUN CONSOLIDATED PERIMETER BLADES OFF"
+
+base_safe_to_start=dashboard.safe_to_start
+def wifi_safe_to_start(state):
+    ok,reason=base_safe_to_start(state)
+    if not ok:
+        return False,reason.replace("handheld","phone").replace("Handheld","Phone")
+    snap=state.snapshot();wifi=snap.get("bridge",{}).get("wifi_control",{})
+    if wifi.get("mode")!=0:
+        return False,"Put the phone in Pause before starting"
+    if wifi.get("heartbeat_fresh")!=1:
+        return False,"Phone heartbeat is not fresh; keep the Wi-Fi control page open"
+    if wifi.get("estop_latched")!=0:
+        return False,"Wi-Fi E-stop is latched; reset it and remain in Pause"
+    try: command_age_ms=int(wifi.get("command_age_ms"))
+    except (TypeError,ValueError): return False,"Wi-Fi command age is missing"
+    if command_age_ms>500:
+        return False,f"Phone command is stale ({command_age_ms} ms)"
+    return True,""
+dashboard.safe_to_start=wifi_safe_to_start
+
+def notify_wifi_dashboard_url(dashboard_url):
+    message=(
+        "Open this Tractor01 mission dashboard on the laptop. Keep the Wi-Fi "
+        "phone control page in the phone's foreground and in Pause; keep the physical e-stop available. This "
+        "temporary link includes the operator key.\n\n"+dashboard_url
+    )
+    request=urllib_request.Request(
+        dashboard.NTFY_TOPIC_URL,data=message.encode("utf-8"),
+        headers={"Title":"Tractor01 dashboard ready","Click":dashboard_url,"Tags":"tractor"},
+        method="POST",
+    )
+    try:
+        with urllib_request.urlopen(request,timeout=5) as response:
+            if not 200<=response.status<300: raise RuntimeError(f"ntfy returned HTTP {response.status}")
+        print(f"ntfy: ZeroTier dashboard link sent to {dashboard.NTFY_TOPIC_URL}")
+    except (urllib_error.URLError,OSError,RuntimeError) as exc:
+        print(f"WARNING: could not send dashboard link to ntfy: {exc}")
+dashboard.notify_dashboard_url=notify_wifi_dashboard_url
 
 NOTE_DIR=Path(os.environ.get(
     "TRACTOR_VOICE_NOTE_DIR",
@@ -774,10 +862,20 @@ replacements={
 "Resumes at source waypoint 91. Recovery stays in the current phase and may advance at most 30 m.":"Approved blades-off field test. Voice notes listen for ‘Tractor note…’ while guidance is active.",
 "Start the reviewed clear-sky resume mission at source waypoint 91 with blades off?":"Start the approved consolidated perimeter mission with blades off and direct supervision?",
 "RUN PARTIAL RINGS BLADES OFF":dashboard.EXPECTED_CONFIRMATION,
+"Keep the handheld with you.</b> After a browser Pause: select handheld Pause, press CLEAR PAUSE, confirm HANDHELD PAUSE, then select Auto.":"Keep the phone control page in the phone's foreground.</b> Use this dashboard on the laptop. After a dashboard Pause: select phone Pause, press CLEAR PAUSE, then use guarded Auto only when the route is clear.",
+"Keep the handheld in Pause until the controller is ready.":"Keep the phone in Pause until the controller is ready.",
+"HANDHELD PAUSE":"PHONE PAUSE",
+"Handheld Pause":"Phone Pause",
+"Handheld modes":"Control modes",
 }
 for original,updated in replacements.items():
     if dashboard.HTML.count(original)!=1: raise RuntimeError(f"Dashboard text changed; expected one occurrence of: {original}")
     dashboard.HTML=dashboard.HTML.replace(original,updated)
+
+radio_fact="fact('Radio / steering state',(b.radio?.signal||'—')+' / '+(st.state||'—'))"
+wifi_fact="fact('Wi-Fi heartbeat / steering state',(b.wifi_control?.heartbeat_fresh===1?'fresh':'stale')+' / '+(st.state||'—'))"
+if dashboard.HTML.count(radio_fact)!=1: raise RuntimeError("Dashboard radio status fact changed")
+dashboard.HTML=dashboard.HTML.replace(radio_fact,wifi_fact)
 
 toolbar_old='<button id="guide" class="button guide">START VOICE GUIDANCE</button>'
 toolbar_new=toolbar_old+'<span id="noteStatus" class="badge">VOICE NOTES READY</span>'
@@ -875,7 +973,7 @@ The other 12 turn-review markers retain the submitted geometry. Their radii are 
 - `{PREVIEW.name}` — full-route static preview
 - `{REPLAY.name}` — interactive Play/Pause replay with timeline, heading, obstacles, turn warnings, and deck reference
 - `{REPORT.name}` — validation and every turn decision
-- `{AUDIT.name}` — waypoint lineage and commands
+- `{AUDIT.name}` — waypoint lineage, commands, and 77 unique contiguous phases used for phase-locked recovery
 - `{MISSION.name}` — five-column mission file
 - `{DASHBOARD.name}` — matching phone dashboard and voice guidance adapter
 
@@ -909,11 +1007,11 @@ bash {LAUNCHER.relative_to(REPO).as_posix()} --verify-only
 
 The approved launcher retains all of these safeguards:
 
-1. Blades disengaged; direct supervision; handheld and physical e-stop ready.
-2. Reconfigure the heading F9P with the guarded repository tool before starting rtcm-server.
-3. Allow startup time for NRF, Teensy bridge, RTK corrections, and fixed heading.
-4. Run preflight expecting `teensy_main_20260926` and require RTK corrections, RTK Fixed, valid fixed-carrier heading, 0.80–1.30 m baseline, heading accuracy ≤1.0°, healthy JRK, and stationary Pause.
-5. Use dashboard voice guidance to reach and align with the initial waypoint.
+1. Blades disengaged; direct supervision; Wi-Fi phone control page open in Pause and physical e-stop ready.
+2. Reconfigure and verify the Heading F9P with the non-interactive RAM-only 5 Hz startup profile before starting rtcm-server; this enables USB UBX NAV-RELPOSNED and disables targeted USB NMEA output.
+3. Allow startup time for the Wi-Fi phone heartbeat, Teensy bridge, RTK corrections, and fixed heading.
+4. Run preflight expecting `teensy_main_20261003_wifi_v3` and require a released Wi-Fi E-stop, RTK corrections, RTK Fixed, valid fixed-carrier heading, 0.80–1.30 m baseline, heading accuracy ≤1.0°, healthy JRK, and stationary phone Pause.
+5. Keep the Wi-Fi control page in the phone's foreground, and open the mission dashboard on the laptop. Use guarded phone Manual to reach and align with the initial waypoint. Dashboard voice guidance is optional and may remain off.
 6. Start field logging before Pure Pursuit and preserve neutral shutdown traps.
 7. Run the first validation supervised and blades off; Pause immediately for unexpected clearance or tracking behavior.
 '''
@@ -1007,6 +1105,9 @@ def main():
     east_scale = 111_320.0 * math.cos(math.radians(origin_lat))
     north_scale = 110_540.0
     source_cursor = 0
+    previous_segment_id = None
+    route_phase_index = 0
+    route_phase = ""
     for index, ((east, north), along) in enumerate(zip(candidate_points, cumulative)):
         before = candidate_points[max(0, index - 1)]
         after = candidate_points[min(len(candidate_points) - 1, index + 1)]
@@ -1023,6 +1124,11 @@ def main():
         )
         source_cursor = source_index
         source_entry = entries[source_index]
+        source_segment_id = source_entry["segment_id"]
+        if source_segment_id != previous_segment_id:
+            route_phase_index += 1
+            route_phase = f"route_phase_{route_phase_index:03d}_{source_segment_id}"
+            previous_segment_id = source_segment_id
         nearest_source_distance = float(source_entry["distance_m"])
         changed = (
             geometry_change["candidate_distance_start_m"] - 0.01
@@ -1033,6 +1139,7 @@ def main():
         audit_rows.append(
             {
                 "waypoint": index + 1,
+                "phase": route_phase,
                 "lat": f"{lat:.9f}",
                 "lon": f"{lon:.9f}",
                 "yaw_rad": f"{yaw:.9f}",
@@ -1043,7 +1150,7 @@ def main():
                 "distance_m": f"{along:.3f}",
                 "source_sequence": source_entry["sequence"],
                 "source_distance_m": f"{nearest_source_distance:.3f}",
-                "source_segment_id": source_entry["segment_id"],
+                "source_segment_id": source_segment_id,
                 "source_kind": source_entry["kind"],
                 "geometry_status": "G1_OBS11_CLEARANCE_CORRECTION" if changed else "AUTHORITATIVE_ROUTE",
             }
@@ -1115,6 +1222,7 @@ def main():
         },
         "candidate_route": {
             "waypoints": len(candidate_points),
+            "recovery_phases": route_phase_index,
             "length_m": round(candidate_length, 6),
             "nominal_motion_time_minutes_at_1mps": round(candidate_length / 60.0, 3),
             "spacing_target_m": SPACING_M,

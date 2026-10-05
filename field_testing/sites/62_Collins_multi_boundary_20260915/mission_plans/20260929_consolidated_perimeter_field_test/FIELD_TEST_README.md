@@ -24,7 +24,7 @@ The other 12 turn-review markers retain the submitted geometry. Their radii are 
 - `62_Collins_consolidated_perimeter_1mps_20260929_full_route_APPROVED.png` — full-route static preview
 - `62_Collins_consolidated_perimeter_1mps_20260929_INTERACTIVE_APPROVED.html` — interactive Play/Pause replay with timeline, heading, obstacles, turn warnings, and deck reference
 - `62_Collins_consolidated_perimeter_1mps_20260929_validation.json` — validation and every turn decision
-- `62_Collins_consolidated_perimeter_1mps_20260929_audit.csv` — waypoint lineage and commands
+- `62_Collins_consolidated_perimeter_1mps_20260929_audit.csv` — waypoint lineage, commands, and 77 unique contiguous phases used for phase-locked recovery
 - `62_Collins_consolidated_perimeter_1mps_20260929.txt` — five-column mission file
 - `mission_dashboard_consolidated_perimeter_20260929.py` — matching phone dashboard and voice guidance adapter
 

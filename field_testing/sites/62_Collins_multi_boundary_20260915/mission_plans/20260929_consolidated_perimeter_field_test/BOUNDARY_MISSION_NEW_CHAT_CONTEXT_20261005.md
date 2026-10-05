@@ -61,7 +61,11 @@ Do not:
 - Mission SHA-256:
   `35ea19776283ef415518fd57997e418b966ea823741bcc6a6ca135cee7b504d9`.
 - Audit SHA-256:
-  `fe2d65daaecd80b4dce1582a4e74ab4744c0fe7cb1cf9e72d6944f846353e50e`.
+  `1f44364e9dc8443e98631e11fbf23e6cae76a88d7383bca1a107f7c03d6d4eee`.
+
+The audit includes 77 unique, contiguous route phases for phase-locked
+controller recovery. Adding those phase labels did not change any mission
+coordinate, heading, lookahead, or speed command.
 
 The generated validation report retains historical NRF-handheld and old
 firmware language from its approval provenance. The current launcher,

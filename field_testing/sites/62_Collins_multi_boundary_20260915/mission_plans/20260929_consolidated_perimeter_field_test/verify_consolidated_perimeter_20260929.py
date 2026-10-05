@@ -9,8 +9,9 @@ MISSION=G/f"{STEM}.txt"; AUDIT=G/f"{STEM}_audit.csv"; REPORT=G/f"{STEM}_validati
 DASHBOARD=HERE/"mission_dashboard_consolidated_perimeter_20260929.py"
 LAUNCHER=HERE/"run_62_Collins_consolidated_perimeter_20260929.sh"
 EXPECTED_MISSION_SHA256="35ea19776283ef415518fd57997e418b966ea823741bcc6a6ca135cee7b504d9"
-EXPECTED_AUDIT_SHA256="fe2d65daaecd80b4dce1582a4e74ab4744c0fe7cb1cf9e72d6944f846353e50e"
+EXPECTED_AUDIT_SHA256="1f44364e9dc8443e98631e11fbf23e6cae76a88d7383bca1a107f7c03d6d4eee"
 EXPECTED_ROWS=3989
+EXPECTED_PHASES=77
 EXPECTED_LENGTH_M=790.077117
 EXPECTED_STATUS="SUPERVISED_BLADES_OFF_FIELD_TEST_APPROVED_20260929"
 def digest(path): return hashlib.sha256(path.read_bytes().replace(b"\r\n",b"\n")).hexdigest()
@@ -28,6 +29,16 @@ def main():
     if any(row[4]!="1.00" for row in rows): raise ValueError("speed must remain 1.00 m/s")
     with AUDIT.open(newline="",encoding="utf-8-sig") as handle: audit=list(csv.DictReader(handle))
     if len(audit)!=EXPECTED_ROWS: raise ValueError("audit row count changed")
+    phases=[str(row.get("phase","")).strip() for row in audit]
+    if any(not phase for phase in phases): raise ValueError("audit contains an empty mission phase")
+    phase_blocks=[phase for index,phase in enumerate(phases) if index==0 or phase!=phases[index-1]]
+    if len(phase_blocks)!=len(set(phase_blocks)): raise ValueError("audit mission phase reappears non-contiguously")
+    if len(phase_blocks)!=EXPECTED_PHASES: raise ValueError("audit mission phase count changed")
+    command_fields=("lat","lon","yaw_rad","lookahead_m","speed_mps")
+    for index,(mission_row,audit_row) in enumerate(zip(rows,audit),1):
+        if audit_row.get("waypoint")!=str(index): raise ValueError(f"audit waypoint sequence mismatch at row {index}")
+        if any(audit_row.get(field)!=mission_row[offset] for offset,field in enumerate(command_fields)):
+            raise ValueError(f"audit command fields disagree with mission at waypoint {index}")
     if report["geometry_validation"]["duplicate_consecutive_points"]!=0: raise ValueError("duplicate points reported")
     if report["geometry_validation"]["maximum_waypoint_gap_m"]>0.202: raise ValueError("waypoint gap exceeds 0.202 m")
     if report["geometry_validation"]["reversal_events_over_150_deg"]: raise ValueError("instantaneous reversal reported")

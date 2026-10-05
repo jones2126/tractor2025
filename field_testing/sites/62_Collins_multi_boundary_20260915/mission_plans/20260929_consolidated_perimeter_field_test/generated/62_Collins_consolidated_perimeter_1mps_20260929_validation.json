@@ -21,6 +21,7 @@
   },
   "candidate_route": {
     "waypoints": 3989,
+    "recovery_phases": 77,
     "length_m": 790.077117,
     "nominal_motion_time_minutes_at_1mps": 13.168,
     "spacing_target_m": 0.2,
@@ -643,5 +644,5 @@
   },
   "unresolved_owner_action": null,
   "mission_sha256": "35ea19776283ef415518fd57997e418b966ea823741bcc6a6ca135cee7b504d9",
-  "audit_sha256": "fe2d65daaecd80b4dce1582a4e74ab4744c0fe7cb1cf9e72d6944f846353e50e"
+  "audit_sha256": "1f44364e9dc8443e98631e11fbf23e6cae76a88d7383bca1a107f7c03d6d4eee"
 }

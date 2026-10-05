@@ -105,6 +105,11 @@ Verified route:
   supervised field activity.
 - Mission SHA-256:
   `35ea19776283ef415518fd57997e418b966ea823741bcc6a6ca135cee7b504d9`.
+- Audit SHA-256 after the phase-compatibility correction:
+  `1f44364e9dc8443e98631e11fbf23e6cae76a88d7383bca1a107f7c03d6d4eee`.
+- The audit now contains 77 unique contiguous route phases required by the
+  controller's phase-locked recovery. The correction changed no mission
+  coordinate, heading, lookahead, or speed command.
 - Approved only for the initial directly supervised, blades-off field test.
 - Keep the physical E-stop immediately available.
 
