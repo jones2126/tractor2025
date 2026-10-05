@@ -5,9 +5,11 @@ from __future__ import annotations
 
 import argparse
 import csv
+import ipaddress
 import json
 import math
 import os
+import re
 import secrets
 import signal
 import socket
@@ -41,8 +43,10 @@ TELEMETRY_PORT = 6012
 STATUS_PORT = 6003
 CMD_VEL_PORT = 6004
 GPS_DASHBOARD_PORT = 6013
-TRACTOR_LOCAL_IP = "192.168.1.151"
 TRACTOR_ZEROTIER_IP = "192.168.193.76"
+PREFERRED_LAN_CLIENT_IP = os.environ.get(
+    "TRACTOR_DASHBOARD_CLIENT_IP", "192.168.10.48"
+)
 NTFY_TOPIC_URL = "https://ntfy.sh/rpi-tractor01-jones2126"
 EXPECTED_CONFIRMATION = "RUN PARTIAL RINGS BLADES OFF"
 
@@ -445,8 +449,65 @@ def handler_factory(state, token, mission_payload):
     return Handler
 
 
+def discover_lan_addresses(preferred_client_ip=PREFERRED_LAN_CLIENT_IP):
+    """Return usable tractor LAN addresses, preferring the route to the laptop."""
+    candidates = []
+    preferred_source = None
+    try:
+        route = subprocess.run(
+            ["ip", "-4", "route", "get", preferred_client_ip],
+            capture_output=True,
+            text=True,
+            timeout=2,
+            check=False,
+        )
+        match = re.search(r"\bsrc\s+(\d+(?:\.\d+){3})\b", route.stdout)
+        if match:
+            preferred_source = match.group(1)
+    except (OSError, subprocess.SubprocessError):
+        pass
+
+    try:
+        addresses = subprocess.run(
+            ["ip", "-4", "-o", "addr", "show", "scope", "global"],
+            capture_output=True,
+            text=True,
+            timeout=2,
+            check=False,
+        )
+        for line in addresses.stdout.splitlines():
+            match = re.search(r"^\d+:\s+([^\s:]+).*\binet\s+(\d+(?:\.\d+){3})/", line)
+            if not match:
+                continue
+            interface, address = match.groups()
+            if interface.startswith(("docker", "br-", "veth", "zt")):
+                continue
+            parsed = ipaddress.ip_address(address)
+            if (
+                parsed.is_private
+                and not parsed.is_loopback
+                and not parsed.is_link_local
+                and address != TRACTOR_ZEROTIER_IP
+            ):
+                candidates.append(address)
+    except (OSError, subprocess.SubprocessError):
+        pass
+
+    if preferred_source and preferred_source not in candidates:
+        try:
+            parsed_source = ipaddress.ip_address(preferred_source)
+            if parsed_source.is_private and preferred_source != TRACTOR_ZEROTIER_IP:
+                candidates.append(preferred_source)
+        except ValueError:
+            pass
+    return sorted(
+        set(candidates),
+        key=lambda address: (address != preferred_source, ipaddress.ip_address(address)),
+    )
+
+
 def notify_dashboard_url(dashboard_url):
-    """Send the temporary ZeroTier operator URL to the configured ntfy topic."""
+    """Send the preferred temporary operator URL to the configured ntfy topic."""
     message = (
         "Open the Tractor01 mission dashboard. Keep the handheld available; "
         "this temporary link includes the operator key.\n\n"
@@ -466,7 +527,7 @@ def notify_dashboard_url(dashboard_url):
         with urllib_request.urlopen(request, timeout=5) as response:
             if not 200 <= response.status < 300:
                 raise RuntimeError(f"ntfy returned HTTP {response.status}")
-        print(f"ntfy: ZeroTier dashboard link sent to {NTFY_TOPIC_URL}")
+        print(f"ntfy: preferred dashboard link sent to {NTFY_TOPIC_URL}")
     except (urllib_error.URLError, OSError, RuntimeError) as exc:
         print(f"WARNING: could not send dashboard link to ntfy: {exc}")
 
@@ -485,11 +546,20 @@ def main():
     threading.Thread(target=udp_listener, args=(state, GPS_DASHBOARD_PORT, "gps"), daemon=True).start()
     server = ThreadingHTTPServer((args.host, args.port), handler_factory(state, token, load_mission_payload()))
     zerotier_url = f"http://{TRACTOR_ZEROTIER_IP}:{args.port}/?key={token}"
+    lan_urls = [
+        f"http://{address}:{args.port}/?key={token}"
+        for address in discover_lan_addresses()
+    ]
     print("Tractor01 mission dashboard")
     print(f"ZeroTier: {zerotier_url}")
-    print(f"Local:    http://{TRACTOR_LOCAL_IP}:{args.port}/?key={token}")
+    if lan_urls:
+        print(f"Local (preferred): {lan_urls[0]}")
+        for local_url in lan_urls[1:]:
+            print(f"Local (other):     {local_url}")
+    else:
+        print("WARNING: no tractor LAN address was discovered")
     print(f"Hostname: http://raspberrypi:{args.port}/?key={token}")
-    notify_dashboard_url(zerotier_url)
+    notify_dashboard_url(lan_urls[0] if lan_urls else zerotier_url)
     print("Keep this terminal open. Press Ctrl+C to close the dashboard safely.")
     try:
         server.serve_forever()

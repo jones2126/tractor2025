@@ -171,19 +171,51 @@ class WifiPrimaryTests(unittest.TestCase):
             state.close()
             temporary.cleanup()
 
-    def test_expiry_sends_pause_but_retains_manual_for_recovery(self):
+    def test_expiry_latches_pause_and_requires_a_new_session(self):
         temporary, state = self.make_state()
         try:
+            claim = state.claim("phone-a")
+            old_session = claim["session"]
             state.phone_mode = "manual"
+            state.last_command = {
+                "client_id": "phone-a",
+                "sequence": 4,
+                "mode": "manual",
+            }
             state.owner_at = time.monotonic() - 2
             worker = threading.Thread(target=state.safety_loop)
             worker.start()
             time.sleep(0.12)
             state.running = False
             worker.join(1)
-            self.assertEqual("manual", state.phone_mode)
+            self.assertEqual("pause", state.phone_mode)
+            self.assertIsNone(state.owner_session)
             self.assertEqual("phone_freshness_expired", state.last_stop_reason)
+            status, result = state.accept_command(
+                {
+                    "client_id": "phone-a",
+                    "session": old_session,
+                    "sequence": 5,
+                    "mode": "manual",
+                    "drive_percent": 20,
+                    "steering_percent": 0,
+                }
+            )
+            self.assertEqual(409, int(status))
+            self.assertTrue(result["reclaim"])
+            self.assertEqual("pause", result["phone_mode"])
         finally:
+            state.close()
+            temporary.cleanup()
+
+    def test_claim_reports_that_link_recovery_is_not_automatic(self):
+        temporary, state = self.make_state()
+        try:
+            claim = state.claim("phone-a")
+            self.assertFalse(claim["automatic_link_recovery"])
+            self.assertEqual("pause", claim["phone_mode"])
+        finally:
+            state.running = False
             state.close()
             temporary.cleanup()
 

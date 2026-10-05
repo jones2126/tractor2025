@@ -40,8 +40,9 @@ Do not:
 - `tractor-wifi-control.service`, `teensy-bridge.service`, and
   `rtcm-server.service` were active during the latest checks.
 - The phone-control URL is persistent across restarts.
-- The visible ZeroTier page automatically reconnected in Pause in about 0.5
-  seconds during the acceptance test.
+- A Wi-Fi heartbeat interruption now latches Pause and invalidates the old
+  session. The page reconnects in Pause and requires a new guarded Manual or
+  Auto selection; control does not automatically resume.
 - Phone Manual steering and transmission, phone E-stop latch/reset, and
   stationary Auto selection were already tested. Repeat only the checks needed
   by the current preflight and field conditions.
@@ -134,8 +135,11 @@ sudo -v
 python3 field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20260929_consolidated_perimeter_field_test/mission_dashboard_consolidated_perimeter_20260929.py
 ```
 
-Open its printed `http://192.168.193.76:8088/?key=...` URL on the Windows
-laptop. Voice guidance is optional and can stay off.
+Open the printed preferred local `http://192.168.10.x:8088/?key=...` URL on
+the Windows laptop. The dashboard discovers the tractor address used to reach
+the laptop at `192.168.10.48`; `.48` is the laptop, not the tractor. Use the
+printed ZeroTier URL only as a fallback. Voice guidance is optional and can
+stay off.
 
 ### 6. Reach and align with the start
 

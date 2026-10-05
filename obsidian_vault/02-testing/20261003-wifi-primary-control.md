@@ -19,10 +19,11 @@ ground movement.
   transmission neutral and stops steering output at its current position.
 - The field server also sends a Pause burst after 800 ms without a phone
   heartbeat.
-- A temporary Wi-Fi interruption does **not** clear the selected phone Manual
-  or Auto state. When the same heartbeat resumes, the Teensy resumes that
-  authority automatically. Manual restores the current sliders; Auto resumes
-  only with an independently fresh navigation `CMD` feed.
+- A temporary Wi-Fi interruption clears Manual or Auto authority. The Teensy
+  pauses within its 500 ms watchdog, the field server latches Pause after its
+  800 ms freshness limit, and the expired phone session is invalidated.
+  Reconnection claims a fresh session in Pause. Motion cannot resume until the
+  operator deliberately makes a new guarded Manual or Auto selection.
 - A deliberate phone Pause, guarded STOP, hidden browser page, or server
   shutdown remains Pause and does not automatically re-arm Manual.
 - The phone uses the full calibrated steering operating range (`191..885`),
@@ -219,7 +220,8 @@ systemctl is-active tractor-wifi-control.service
 7. Test guarded STOP and the unchanged physical E-stop separately.
 8. With a nonzero steering demand and zero drive, disable phone Wi-Fi for more
    than one second. Confirm transmission neutral and steering output stops.
-9. Restore Wi-Fi. Confirm the same Manual demand resumes automatically.
+9. Restore Wi-Fi. Confirm the phone reconnects in Pause and the prior Manual
+   demand does not resume. Confirm a new guarded Manual selection is required.
 10. Say each voice command at zero drive and verify the displayed value before
     considering engine-on use.
 

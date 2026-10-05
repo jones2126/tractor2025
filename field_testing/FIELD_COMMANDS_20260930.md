@@ -15,7 +15,9 @@ separate ZeroTier-ready notice after RPi5NAS reachability is verified.
 The installed access URL remains the same across boots and service restarts;
 an already-open visible page reconnects automatically in Pause. Avoid keeping
 multiple control tabs open. Hidden tabs stop commanding and do not take control
-from the visible page.
+from the visible page. Any heartbeat interruption latches Pause; after the
+page reconnects, use a new guarded Manual or Auto selection. Control never
+resumes automatically after a link gap.
 
 ## 2. Open PuTTY
 
@@ -84,11 +86,16 @@ cd /home/al/tractor2025 && sudo -v && python3 field_testing/sites/62_Collins_mul
 
 Open the printed URL on the Windows laptop, not in another phone tab. Keep the
 Wi-Fi control page in the phone's foreground so its 5 Hz safety heartbeat is
-not throttled. The dashboard URL begins with:
+not throttled. The dashboard and ntfy notice prefer the tractor's address on
+the same AXE5400 network as the laptop at `192.168.10.48`. The preferred URL
+normally begins with:
 
 ```text
-http://192.168.193.76:8088/?key=
+http://192.168.10.x:8088/?key=
 ```
+
+The `x` is the tractor's DHCP address, not the laptop's `.48` address. The
+terminal also prints the ZeroTier URL as a fallback.
 
 For drive-to-start: keep blades off and use guarded Manual on the Wi-Fi phone
 control page. Voice guidance is optional and may remain off. Stop and select

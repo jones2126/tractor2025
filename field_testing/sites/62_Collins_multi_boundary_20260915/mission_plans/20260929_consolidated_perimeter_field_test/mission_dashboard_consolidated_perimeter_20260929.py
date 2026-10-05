@@ -57,7 +57,7 @@ def notify_wifi_dashboard_url(dashboard_url):
     try:
         with urllib_request.urlopen(request,timeout=5) as response:
             if not 200<=response.status<300: raise RuntimeError(f"ntfy returned HTTP {response.status}")
-        print(f"ntfy: ZeroTier dashboard link sent to {dashboard.NTFY_TOPIC_URL}")
+        print(f"ntfy: preferred dashboard link sent to {dashboard.NTFY_TOPIC_URL}")
     except (urllib_error.URLError,OSError,RuntimeError) as exc:
         print(f"WARNING: could not send dashboard link to ntfy: {exc}")
 dashboard.notify_dashboard_url=notify_wifi_dashboard_url

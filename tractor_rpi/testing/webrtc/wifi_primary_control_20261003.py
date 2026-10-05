@@ -3,9 +3,9 @@
 
 The phone is the operator control source; NRF is not required. The Teensy
 retains the final 500 ms command watchdog and automatically pauses during a
-feed interruption. When the same phone heartbeat resumes, the selected Manual
-or Auto authority resumes. A deliberate phone STOP/Pause remains latched until
-the operator deliberately selects Manual or Auto again.
+feed interruption. A heartbeat interruption also latches the server in Pause
+and invalidates the phone session. Manual or Auto cannot resume until the phone
+reconnects in Pause and the operator deliberately makes a new guarded choice.
 """
 
 from __future__ import annotations
@@ -456,7 +456,7 @@ class WifiPrimaryState(base.FieldState):
             "phone_mode": self.phone_mode,
             "rate_hz": 5,
             "heartbeat_timeout_ms": 500,
-            "automatic_link_recovery": True,
+            "automatic_link_recovery": False,
             "min_drive_percent": -100,
             "max_drive_percent": 100,
         }
@@ -497,6 +497,7 @@ class WifiPrimaryState(base.FieldState):
                     "accepted": False,
                     "error": "control session is not current",
                     "reclaim": True,
+                    "phone_mode": self.phone_mode,
                 }
             if sequence <= self.highest_sequence:
                 self.rejected += 1
@@ -531,6 +532,7 @@ class WifiPrimaryState(base.FieldState):
                 return HTTPStatus.CONFLICT, {
                     "accepted": False,
                     "error": f"{requested_mode.title()} requires MODE SELECT + {requested_mode.title()}",
+                    "phone_mode": self.phone_mode,
                 }
             if (
                 self.phone_mode == "estop"
@@ -540,6 +542,7 @@ class WifiPrimaryState(base.FieldState):
                 return HTTPStatus.CONFLICT, {
                     "accepted": False,
                     "error": "E-stop is latched; use MODE SELECT + E-STOP to reset to Pause",
+                    "phone_mode": self.phone_mode,
                 }
             if (
                 requested_mode in ("manual", "auto")
@@ -616,9 +619,9 @@ class WifiPrimaryState(base.FieldState):
         return result
 
     def safety_loop(self) -> None:
-        # Keep the operator's requested mode across a temporary link outage.
-        # A Pause packet is sent once on expiry, and the next valid phone
-        # heartbeat automatically restores the retained Manual or Auto state.
+        # A heartbeat outage latches Pause and invalidates the session. The
+        # reconnecting phone claims a fresh session in Pause, so motion cannot
+        # resume without a new guarded Manual or Auto selection.
         while self.running:
             should_stop = False
             sequence = -1
@@ -631,9 +634,20 @@ class WifiPrimaryState(base.FieldState):
                 ):
                     should_stop = True
                     self.stop_sent_for_expiry = True
-                    self.last_decision = "heartbeat expired; Teensy paused"
                     if self.last_command:
                         sequence = int(self.last_command.get("sequence", -1))
+                    self.phone_mode = "pause"
+                    self.owner_session = None
+                    self.highest_sequence = -1
+                    self.last_command = {
+                        "client_id": self.owner_client,
+                        "sequence": sequence,
+                        "mode": "pause",
+                        "drive_percent": 0.0,
+                        "steering_percent": 0.0,
+                        "reason": "phone_freshness_expired",
+                    }
+                    self.last_decision = "heartbeat expired; Pause latched"
             if should_stop:
                 self.send_stop_burst("phone_freshness_expired", sequence)
             time.sleep(0.05)

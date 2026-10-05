@@ -22,8 +22,9 @@ No boundary mission was launched while preparing this handover.
 - The phone Wi-Fi E-stop latches the engine-stop relay. Guarded
   **MODE SELECT + E-STOP** resets it and leaves control in Pause.
 - Wi-Fi command loss exceeding the Teensy's 500 ms watchdog pauses steering
-  and transmission. A temporary link recovery resumes the selected control
-  mode; a server restart establishes a fresh session in Pause.
+  and transmission. The field server then latches Pause and invalidates the
+  session. Reconnection establishes a fresh session in Pause; a new guarded
+  Manual or Auto selection is required and motion never resumes automatically.
 - Manual steering and transmission were tested in both directions with the
   engine off. Auto was armed while stationary and did not create motion without
   a navigation command.
@@ -57,6 +58,10 @@ Network behavior:
 - The key and URL now remain stable across service restarts and reboots.
 - Hidden or old browser tabs stop heartbeats and cannot fight the visible tab
   for ownership. Keep only one visible phone-control tab anyway.
+- The mission dashboard discovers the tractor address used to reach the field
+  laptop at `192.168.10.48`. Its ntfy notice prefers that local
+  `http://192.168.10.x:8088/` URL and falls back to ZeroTier only if no usable
+  tractor LAN address is found.
 
 Deployment acceptance on 2026-10-05:
 
