@@ -208,6 +208,161 @@ class WifiPrimaryTests(unittest.TestCase):
         self.assertTrue(obj.send_wifi_drive_to_teensy(0, 0, "reset_pause"))
         self.assertEqual(b"WIFI,0.0,0.0000,4\n", obj.ser.data)
 
+    def make_monitor(self, local_results, zerotier_results, notices):
+        temporary, state = self.make_state()
+        local_iter = iter(local_results)
+        zero_iter = iter(zerotier_results)
+
+        def notify(topic, title, message, click_url, tags):
+            notices.append((title, click_url))
+            return True
+
+        monitor = primary.ConnectivityMonitor(
+            state,
+            "test-topic",
+            "https://192.168.1.151:8765/?key=test",
+            "https://192.168.193.76:8765/?key=test",
+            False,
+            initial_window_s=90,
+            stable_checks=3,
+            local_check=lambda: next(local_iter),
+            zerotier_check=lambda: next(zero_iter),
+            notifier=notify,
+            clock=lambda: 0.0,
+        )
+        return temporary, state, monitor
+
+    def test_connectivity_monitor_sends_local_notice_once(self):
+        notices = []
+        temporary, state, monitor = self.make_monitor(
+            [True, True],
+            [(False, "not ready"), (False, "not ready")],
+            notices,
+        )
+        try:
+            monitor.step(0)
+            monitor.step(3)
+            self.assertEqual(
+                ["Tractor01 local control ready"], [notice[0] for notice in notices]
+            )
+        finally:
+            state.running = False
+            state.close()
+            temporary.cleanup()
+
+    def test_zerotier_notice_requires_three_successful_peer_checks(self):
+        notices = []
+        temporary, state, monitor = self.make_monitor(
+            [False, False, False],
+            [(True, "reachable"), (True, "reachable"), (True, "reachable")],
+            notices,
+        )
+        try:
+            monitor.step(0)
+            monitor.step(3)
+            self.assertEqual([], notices)
+            monitor.step(6)
+            self.assertEqual("Tractor01 ZeroTier control ready", notices[0][0])
+        finally:
+            state.running = False
+            state.close()
+            temporary.cleanup()
+
+    def test_delayed_notice_does_not_stop_retries(self):
+        notices = []
+        temporary, state, monitor = self.make_monitor(
+            [True] * 6,
+            [
+                (False, "unreachable"),
+                (False, "unreachable"),
+                (False, "unreachable"),
+                (True, "reachable"),
+                (True, "reachable"),
+                (True, "reachable"),
+            ],
+            notices,
+        )
+        try:
+            monitor.step(0)
+            monitor.step(45)
+            monitor.step(90)
+            self.assertIn("Tractor01 ZeroTier delayed", [notice[0] for notice in notices])
+            monitor.step(93)
+            monitor.step(96)
+            monitor.step(99)
+            self.assertIn(
+                "Tractor01 ZeroTier control ready",
+                [notice[0] for notice in notices],
+            )
+        finally:
+            state.running = False
+            state.close()
+            temporary.cleanup()
+
+    def test_zerotier_recovery_after_loss_uses_recovered_notice(self):
+        notices = []
+        temporary, state, monitor = self.make_monitor(
+            [False] * 9,
+            [
+                (True, "reachable"),
+                (True, "reachable"),
+                (True, "reachable"),
+                (False, "lost"),
+                (False, "lost"),
+                (False, "lost"),
+                (True, "reachable"),
+                (True, "reachable"),
+                (True, "reachable"),
+            ],
+            notices,
+        )
+        try:
+            for index in range(9):
+                monitor.step(index * 3)
+            self.assertEqual(
+                [
+                    "Tractor01 ZeroTier control ready",
+                    "Tractor01 ZeroTier recovered",
+                ],
+                [notice[0] for notice in notices],
+            )
+        finally:
+            state.running = False
+            state.close()
+            temporary.cleanup()
+
+    def test_failed_local_notice_retries_after_backoff(self):
+        temporary, state = self.make_state()
+        attempts = []
+
+        def notify(topic, title, message, click_url, tags):
+            attempts.append(title)
+            return len(attempts) > 1
+
+        monitor = primary.ConnectivityMonitor(
+            state,
+            "test-topic",
+            "https://local/?key=test",
+            "https://zerotier/?key=test",
+            False,
+            notify_retry_s=15,
+            local_check=lambda: True,
+            zerotier_check=lambda: (False, "not ready"),
+            notifier=notify,
+            clock=lambda: 0.0,
+        )
+        try:
+            monitor.step(0)
+            monitor.step(10)
+            self.assertEqual(1, len(attempts))
+            monitor.step(15)
+            self.assertEqual(2, len(attempts))
+            self.assertTrue(monitor.local_notice_sent)
+        finally:
+            state.running = False
+            state.close()
+            temporary.cleanup()
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -17,6 +17,7 @@ import os
 import secrets
 import socket
 import ssl
+import subprocess
 import sys
 import threading
 import time
@@ -37,21 +38,28 @@ import wifi_manual_control_field_server as base
 
 PAGE_PATH = HERE / "wifi_primary_control_20261003.html"
 EXPECTED_FIRMWARE = "teensy_main_20261003_wifi_v3"
+ZEROTIER_PEER_IP = "192.168.193.217"
+ZEROTIER_PEER_PORT = 22
+ZEROTIER_INITIAL_WINDOW_S = 90.0
+NETWORK_POLL_S = 3.0
+NETWORK_STABLE_CHECKS = 3
+NOTIFY_RETRY_S = 15.0
 
 
-def notify_control_urls(topic: str, zerotier_url: str, local_url: str) -> None:
-    message = (
-        "Open the Wi-Fi-primary Tractor01 control page. The temporary link "
-        "contains the operator key.\n\n"
-        f"ZeroTier: {zerotier_url}\nLocal Wi-Fi: {local_url}"
-    )
+def post_ntfy(
+    topic: str,
+    title: str,
+    message: str,
+    click_url: str,
+    tags: str,
+) -> bool:
     request = urllib_request.Request(
         f"https://ntfy.sh/{topic}",
         data=message.encode("utf-8"),
         headers={
-            "Title": "Tractor01 Wi-Fi control ready",
-            "Click": zerotier_url,
-            "Tags": "tractor",
+            "Title": title,
+            "Click": click_url,
+            "Tags": tags,
         },
         method="POST",
     )
@@ -59,9 +67,230 @@ def notify_control_urls(topic: str, zerotier_url: str, local_url: str) -> None:
         with urllib_request.urlopen(request, timeout=5) as response:
             if not 200 <= response.status < 300:
                 raise RuntimeError(f"ntfy returned HTTP {response.status}")
-        print(f"ntfy: control links sent to https://ntfy.sh/{topic}")
+        print(f"ntfy: {title} sent to https://ntfy.sh/{topic}", flush=True)
+        return True
     except (urllib_error.URLError, OSError, RuntimeError) as exc:
-        print(f"WARNING: could not send control links to ntfy: {exc}")
+        print(f"WARNING: could not send '{title}' to ntfy: {exc}", flush=True)
+        return False
+
+
+def address_is_assigned(address: str, interface_prefix: str | None = None) -> bool:
+    try:
+        result = subprocess.run(
+            ["ip", "-4", "-o", "addr", "show"],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=3,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return False
+    if result.returncode != 0:
+        return False
+    for line in result.stdout.splitlines():
+        fields = line.split()
+        if len(fields) < 4 or fields[2] != "inet":
+            continue
+        interface = fields[1].split("@", 1)[0]
+        assigned = fields[3].split("/", 1)[0]
+        if assigned == address and (
+            interface_prefix is None or interface.startswith(interface_prefix)
+        ):
+            return True
+    return False
+
+
+def zerotier_service_active() -> bool:
+    try:
+        result = subprocess.run(
+            ["systemctl", "is-active", "--quiet", "zerotier-one.service"],
+            check=False,
+            timeout=3,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return result.returncode == 0
+
+
+def tcp_peer_reachable(address: str, port: int) -> bool:
+    try:
+        with socket.create_connection((address, port), timeout=2):
+            return True
+    except OSError:
+        return False
+
+
+class ConnectivityMonitor:
+    """Publish local and verified-ZeroTier URLs without gating local control."""
+
+    def __init__(
+        self,
+        state: "WifiPrimaryState",
+        topic: str,
+        local_url: str,
+        zerotier_url: str,
+        no_ntfy: bool,
+        peer_ip: str = ZEROTIER_PEER_IP,
+        peer_port: int = ZEROTIER_PEER_PORT,
+        initial_window_s: float = ZEROTIER_INITIAL_WINDOW_S,
+        poll_s: float = NETWORK_POLL_S,
+        stable_checks: int = NETWORK_STABLE_CHECKS,
+        notify_retry_s: float = NOTIFY_RETRY_S,
+        local_check: Any = None,
+        zerotier_check: Any = None,
+        notifier: Any = None,
+        clock: Any = None,
+    ) -> None:
+        self.state = state
+        self.topic = topic
+        self.local_url = local_url
+        self.zerotier_url = zerotier_url
+        self.no_ntfy = no_ntfy
+        self.peer_ip = peer_ip
+        self.peer_port = peer_port
+        self.initial_window_s = initial_window_s
+        self.poll_s = poll_s
+        self.stable_checks = stable_checks
+        self.notify_retry_s = notify_retry_s
+        self.local_check = local_check or (
+            lambda: address_is_assigned(base.TRACTOR_LOCAL_IP)
+        )
+        self.zerotier_check = zerotier_check or self.probe_zerotier
+        self.notifier = notifier or post_ntfy
+        self.clock = clock or time.monotonic
+        self.started_at = self.clock()
+        self.local_notice_sent = False
+        self.delayed_notice_sent = False
+        self.ever_zerotier_ready = False
+        self.zerotier_ready = False
+        self.successes = 0
+        self.failures = 0
+        self.pending_zerotier_notice: str | None = None
+        self.next_attempt = {"local": 0.0, "delayed": 0.0, "zerotier": 0.0}
+        self.last_probe_reason: str | None = None
+
+    def log(self, event: str, **fields: Any) -> None:
+        detail = " ".join(f"{key}={value}" for key, value in fields.items())
+        print(
+            f"Network readiness: {event}{' ' + detail if detail else ''}",
+            flush=True,
+        )
+        self.state.log(f"network_{event}", **fields)
+
+    def probe_zerotier(self) -> tuple[bool, str]:
+        if not zerotier_service_active():
+            return False, "zerotier-one inactive"
+        if not address_is_assigned(base.TRACTOR_ZEROTIER_IP, "zt"):
+            return False, f"{base.TRACTOR_ZEROTIER_IP} not assigned to zt interface"
+        if not tcp_peer_reachable(self.peer_ip, self.peer_port):
+            return False, f"NAS {self.peer_ip}:{self.peer_port} unreachable"
+        return True, f"NAS {self.peer_ip}:{self.peer_port} reachable"
+
+    def send_notice(
+        self,
+        kind: str,
+        now: float,
+        title: str,
+        message: str,
+        click_url: str,
+        tags: str,
+    ) -> bool:
+        if now < self.next_attempt[kind]:
+            return False
+        if self.no_ntfy:
+            return True
+        sent = self.notifier(self.topic, title, message, click_url, tags)
+        if not sent:
+            self.next_attempt[kind] = now + self.notify_retry_s
+        return sent
+
+    def step(self, now: float | None = None) -> None:
+        now = self.clock() if now is None else now
+        local_ready = bool(self.local_check())
+        if local_ready and not self.local_notice_sent:
+            self.local_notice_sent = self.send_notice(
+                "local",
+                now,
+                "Tractor01 local control ready",
+                "Connect the phone to the tractor's local router, then open "
+                "this temporary Wi-Fi control link. Tractor control starts in Pause.\n\n"
+                f"{self.local_url}",
+                self.local_url,
+                "tractor,wifi",
+            )
+            if self.local_notice_sent:
+                self.log("local_ready", address=base.TRACTOR_LOCAL_IP)
+
+        probe_ready, reason = self.zerotier_check()
+        if reason != self.last_probe_reason:
+            self.log("zerotier_probe", ready=probe_ready, detail=reason)
+            self.last_probe_reason = reason
+        if probe_ready:
+            self.successes += 1
+            self.failures = 0
+        else:
+            self.failures += 1
+            self.successes = 0
+
+        if not self.zerotier_ready and self.successes >= self.stable_checks:
+            recovered = self.ever_zerotier_ready
+            self.zerotier_ready = True
+            self.ever_zerotier_ready = True
+            self.pending_zerotier_notice = "recovered" if recovered else "ready"
+            self.next_attempt["zerotier"] = 0.0
+            self.log("zerotier_ready", recovered=recovered, checks=self.successes)
+        elif self.zerotier_ready and self.failures >= self.stable_checks:
+            self.zerotier_ready = False
+            self.pending_zerotier_notice = None
+            self.log("zerotier_lost", checks=self.failures, detail=reason)
+
+        if self.zerotier_ready and self.pending_zerotier_notice:
+            recovered = self.pending_zerotier_notice == "recovered"
+            title = (
+                "Tractor01 ZeroTier recovered"
+                if recovered
+                else "Tractor01 ZeroTier control ready"
+            )
+            sent = self.send_notice(
+                "zerotier",
+                now,
+                title,
+                "Verified through the always-on RPi5NAS peer. Open this temporary "
+                "Wi-Fi control link. Tractor control starts in Pause.\n\n"
+                f"{self.zerotier_url}",
+                self.zerotier_url,
+                "tractor,satellite",
+            )
+            if sent:
+                self.pending_zerotier_notice = None
+                self.log("zerotier_notice_sent", recovered=recovered)
+
+        if (
+            not self.ever_zerotier_ready
+            and now - self.started_at >= self.initial_window_s
+            and not self.delayed_notice_sent
+        ):
+            click_url = self.local_url if local_ready else self.zerotier_url
+            self.delayed_notice_sent = self.send_notice(
+                "delayed",
+                now,
+                "Tractor01 ZeroTier delayed",
+                "ZeroTier has not passed the RPi5NAS reachability check after "
+                f"{self.initial_window_s:.0f} seconds. The service will keep retrying. "
+                "Local control is available only while connected to the tractor router.\n\n"
+                f"{self.local_url}",
+                click_url,
+                "tractor,warning",
+            )
+            if self.delayed_notice_sent:
+                self.log("zerotier_delayed", seconds=self.initial_window_s)
+
+    def run(self) -> None:
+        while self.state.running:
+            self.step()
+            deadline = self.clock() + self.poll_s
+            while self.state.running and self.clock() < deadline:
+                time.sleep(min(0.2, max(0.0, deadline - self.clock())))
 
 
 class WifiPrimaryState(base.FieldState):
@@ -358,6 +587,14 @@ def main() -> None:
         "--ntfy-topic",
         default=os.environ.get("TRACTOR_NTFY_TOPIC", base.DEFAULT_NTFY_TOPIC),
     )
+    parser.add_argument("--zerotier-peer", default=ZEROTIER_PEER_IP)
+    parser.add_argument("--zerotier-peer-port", type=int, default=ZEROTIER_PEER_PORT)
+    parser.add_argument(
+        "--zerotier-initial-window",
+        type=float,
+        default=ZEROTIER_INITIAL_WINDOW_S,
+    )
+    parser.add_argument("--network-poll-seconds", type=float, default=NETWORK_POLL_S)
     args = parser.parse_args()
 
     if bool(args.tls_cert) != bool(args.tls_key):
@@ -370,6 +607,9 @@ def main() -> None:
     log_path = args.log_dir / f"wifi_primary_control_{stamp}.jsonl"
     operator_key = secrets.token_urlsafe(18)
     state = WifiPrimaryState(args.command_ip, args.dry_run, log_path)
+    # Every process start is a fresh, unarmed control session. Send an explicit
+    # Pause burst as well as relying on the Teensy's independent 500 ms timeout.
+    state.send_stop_burst("server_startup")
     threading.Thread(
         target=base.udp_listener,
         args=(state, base.STATUS_PORT, "bridge"),
@@ -391,6 +631,18 @@ def main() -> None:
         scheme = "https"
     zero = f"{scheme}://{base.TRACTOR_ZEROTIER_IP}:{args.port}/?key={operator_key}"
     local = f"{scheme}://{base.TRACTOR_LOCAL_IP}:{args.port}/?key={operator_key}"
+    connectivity = ConnectivityMonitor(
+        state,
+        args.ntfy_topic,
+        local,
+        zero,
+        args.no_ntfy,
+        peer_ip=args.zerotier_peer,
+        peer_port=args.zerotier_peer_port,
+        initial_window_s=args.zerotier_initial_window,
+        poll_s=args.network_poll_seconds,
+    )
+    threading.Thread(target=connectivity.run, daemon=True).start()
     print("Wi-Fi-primary tractor01 control")
     print(f"Expected:  {EXPECTED_FIRMWARE}")
     print(f"ZeroTier: {zero}")
@@ -399,8 +651,13 @@ def main() -> None:
     print(f"UDP 6004: {'DISABLED (--dry-run)' if args.dry_run else args.command_ip}")
     if scheme == "http":
         print("Voice warning: phone microphone recognition may require trusted HTTPS.")
-    if not args.no_ntfy:
-        notify_control_urls(args.ntfy_topic, zero, local)
+    print(
+        "ZeroTier verification: "
+        f"{args.zerotier_peer}:{args.zerotier_peer_port}, "
+        f"{NETWORK_STABLE_CHECKS} successful checks, "
+        f"{args.zerotier_initial_window:.0f}s initial window",
+        flush=True,
+    )
     print("Ctrl+C sends Pause/neutral before shutdown.")
     try:
         server.serve_forever(poll_interval=0.2)

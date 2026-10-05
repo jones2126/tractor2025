@@ -8,7 +8,10 @@ ends with `MISSION PREFLIGHT PASS`.
 ## 1. Establish the field network
 
 Turn on Starlink or the field router and wait for a working network. Power up
-Tractor01 and allow the Raspberry Pi and GPS receivers to boot.
+Tractor01 and allow the Raspberry Pi and GPS receivers to boot. The installed
+`tractor-wifi-control.service` starts the HTTPS phone control server in Pause.
+Use the local ntfy URL while connected to the tractor router, or wait for the
+separate ZeroTier-ready notice after RPi5NAS reachability is verified.
 
 ## 2. Open PuTTY
 
@@ -91,7 +94,7 @@ Auto on the phone only after the controller is live and the route is clear.
 ## Optional Tractor01 status/log command
 
 ```bash
-systemctl is-active rtcm-server.service teensy-bridge.service led-controller.service; journalctl -u rtcm-server.service -u teensy-bridge.service --since "10 minutes ago" --no-pager -n 120
+systemctl is-active rtcm-server.service teensy-bridge.service led-controller.service tractor-wifi-control.service; journalctl -u rtcm-server.service -u teensy-bridge.service -u tractor-wifi-control.service --since "10 minutes ago" --no-pager -n 160
 ```
 
 ## NoMachine diagnostics on either Windows computer

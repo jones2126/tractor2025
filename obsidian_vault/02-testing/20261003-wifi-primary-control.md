@@ -100,6 +100,39 @@ python3 tractor_rpi/testing/webrtc/wifi_primary_control_20261003.py \
   --tls-key /home/al/.config/tractor-wifi-control/tls/server.key
 ```
 
+## Automatic boot service
+
+The tracked `tractor-wifi-control.service` starts the HTTPS phone control
+server after the network, ZeroTier daemon, and Teensy bridge have been ordered
+at boot. The server immediately enters Pause and sends an explicit Pause burst.
+Systemd uses SIGINT for a normal stop so the server's shutdown path also sends
+Pause/neutral; an unexpected failure is still covered by the Teensy's
+independent 500 ms heartbeat timeout.
+
+The server sends separate ntfy notices for local and ZeroTier access. Local
+readiness requires `192.168.1.151` to be assigned. ZeroTier readiness requires
+the service to be active, `192.168.193.76` on a `zt*` interface, and three
+successful TCP connections to the always-on RPi5NAS at
+`192.168.193.217:22`. After an initial 90-second observation window it sends
+one delayed notice and continues retrying; a later recovery gets its own
+notice. Loss of ZeroTier does not interrupt working local control.
+
+Install and enable the service on Tractor01 with:
+
+```bash
+cd /home/al/tractor2025
+sudo bash tractor_rpi/setup/install_tractor_wifi_control_service.sh
+```
+
+If a manually started server is running, stop it with Ctrl+C before starting
+the service. Then:
+
+```bash
+sudo systemctl start tractor-wifi-control.service
+systemctl status tractor-wifi-control.service --no-pager
+sudo journalctl -u tractor-wifi-control.service --since "5 minutes ago" --no-pager
+```
+
 ## Deploy to Tractor01
 
 Tractor01 currently has the NRF reverse-test firmware loaded and the bridge is
@@ -148,14 +181,16 @@ are expected and safe.
 
 ## Engine-off test sequence
 
-Start the server:
+With the boot service installed, start or confirm the server:
 
 ```bash
 cd /home/al/tractor2025
-python3 tractor_rpi/testing/webrtc/wifi_primary_control_20261003.py
+sudo systemctl start tractor-wifi-control.service
+systemctl is-active tractor-wifi-control.service
 ```
 
-1. Open the printed keyed URL on the phone. It claims control in Pause.
+1. Open the keyed URL from the local or verified-ZeroTier ntfy notice. It
+   claims control in Pause.
 2. Confirm the page shows the expected firmware and Pause.
 3. Run the dated GPS/preflight while the page remains in Pause:
 
