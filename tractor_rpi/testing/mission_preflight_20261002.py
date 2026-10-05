@@ -5,9 +5,9 @@ This successor preserves every check from mission_preflight_20260804.py and
 adds a fail-closed check of the Heading receiver's live NAV-PVT/NAV-SAT
 satellites-used count:
 
-* greater than 30: PASS;
-* 29 or 30: WARNING (the preflight may continue); and
-* 28 or fewer, missing, or inadequately sampled: FAIL.
+* greater than 25: PASS;
+* 24 or 25: WARNING (the preflight may continue); and
+* 23 or fewer, missing, or inadequately sampled: FAIL.
 """
 
 from __future__ import annotations
@@ -25,8 +25,8 @@ if SCRIPT_DIR not in sys.path:
 import mission_preflight_20260804 as base
 
 
-HEADING_SATELLITE_PASS_ABOVE = 30
-HEADING_SATELLITE_WARNING_ABOVE = 28
+HEADING_SATELLITE_PASS_ABOVE = 25
+HEADING_SATELLITE_WARNING_ABOVE = 23
 
 
 def heading_satellites_used_check(

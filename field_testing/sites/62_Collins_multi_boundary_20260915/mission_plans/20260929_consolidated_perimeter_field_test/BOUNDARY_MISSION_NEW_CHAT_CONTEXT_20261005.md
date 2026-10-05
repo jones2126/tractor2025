@@ -117,8 +117,8 @@ Require the final line:
 
 `MISSION PREFLIGHT PASS`
 
-Heading satellites used must be above 30 for a normal PASS. A warning at
-29-30 deserves review; 28 or fewer fails closed.
+Heading satellites used must be above 25 for a normal PASS. A warning at
+24-25 deserves review; 23 or fewer fails closed.
 
 ### 5. Start the laptop dashboard
 

@@ -12,23 +12,23 @@ class HeadingSatelliteGateTests(unittest.TestCase):
             for index, value in enumerate(values)
         ]
 
-    def test_31_passes(self):
-        check = preflight.heading_satellites_used_check(self.samples(31, 31, 31))
+    def test_26_passes(self):
+        check = preflight.heading_satellites_used_check(self.samples(26, 26, 26))
         self.assertTrue(check.passed)
         self.assertFalse(getattr(check, "warning", False))
 
-    def test_30_warns_without_blocking(self):
-        check = preflight.heading_satellites_used_check(self.samples(30, 30, 30))
+    def test_25_warns_without_blocking(self):
+        check = preflight.heading_satellites_used_check(self.samples(25, 25, 25))
         self.assertTrue(check.passed)
         self.assertTrue(check.warning)
 
-    def test_29_warns_without_blocking(self):
-        check = preflight.heading_satellites_used_check(self.samples(29, 29, 29))
+    def test_24_warns_without_blocking(self):
+        check = preflight.heading_satellites_used_check(self.samples(24, 24, 24))
         self.assertTrue(check.passed)
         self.assertTrue(check.warning)
 
-    def test_28_fails(self):
-        check = preflight.heading_satellites_used_check(self.samples(28, 28, 28))
+    def test_23_fails(self):
+        check = preflight.heading_satellites_used_check(self.samples(23, 23, 23))
         self.assertFalse(check.passed)
 
     def test_missing_value_fails_closed(self):

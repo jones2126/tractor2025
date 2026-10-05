@@ -70,8 +70,8 @@ command as needed while the tractor remains stationary in Pause:
 cd /home/al/tractor2025 && sudo python3 tractor_rpi/testing/mission_preflight_20261002.py --expected-firmware teensy_main_20261003_wifi_v3
 ```
 
-This dated preflight also requires more than 30 Heading-F9P satellites used
-for a normal PASS. Counts of 29-30 produce a non-blocking warning; 28 or fewer
+This dated preflight also requires more than 25 Heading-F9P satellites used
+for a normal PASS. Counts of 24-25 produce a non-blocking warning; 23 or fewer
 fail closed. Do not continue until the final result is `MISSION PREFLIGHT PASS`.
 
 ## 6. Start the approved dashboard

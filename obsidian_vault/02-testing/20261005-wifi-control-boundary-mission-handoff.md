@@ -83,7 +83,7 @@ be identical. A new page does not need to be opened after each notice.
   --heading-startup`.
 - The current preflight is
   `tractor_rpi/testing/mission_preflight_20261002.py`.
-- Heading satellites used: PASS above 30, WARNING at 29-30, FAIL at 28 or
+- Heading satellites used: PASS above 25, WARNING at 24-25, FAIL at 23 or
   fewer.
 - The last complete reported preflight passed every check with RTK Fixed,
   fixed carrier heading, 31 heading satellites used, healthy JRK telemetry,
