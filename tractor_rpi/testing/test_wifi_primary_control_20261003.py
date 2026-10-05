@@ -8,6 +8,7 @@ import threading
 import time
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -362,6 +363,29 @@ class WifiPrimaryTests(unittest.TestCase):
             state.running = False
             state.close()
             temporary.cleanup()
+
+    def test_private_local_addresses_excludes_zerotier_and_public_interfaces(self):
+        completed = type(
+            "Completed",
+            (),
+            {
+                "returncode": 0,
+                "stdout": (
+                    "2: eth0    inet 192.168.8.20/24 brd 192.168.8.255 scope global eth0\n"
+                    "3: wlan0   inet 192.168.10.120/24 brd 192.168.10.255 scope global wlan0\n"
+                    "4: ztabc   inet 192.168.193.76/24 brd 192.168.193.255 scope global ztabc\n"
+                    "5: usb0    inet 8.8.8.8/24 brd 8.8.8.255 scope global usb0\n"
+                ),
+            },
+        )()
+        with mock.patch.object(primary.subprocess, "run", return_value=completed):
+            self.assertEqual(
+                ["192.168.8.20", "192.168.10.120"],
+                primary.private_local_addresses(),
+            )
+
+    def test_local_control_hostname_is_covered_by_deployed_certificate_name(self):
+        self.assertEqual("raspberrypi.local", primary.LOCAL_CONTROL_HOSTNAME)
 
 
 if __name__ == "__main__":

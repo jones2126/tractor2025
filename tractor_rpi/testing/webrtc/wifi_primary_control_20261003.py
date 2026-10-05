@@ -11,6 +11,7 @@ the operator deliberately selects Manual or Auto again.
 from __future__ import annotations
 
 import argparse
+import ipaddress
 import json
 import math
 import os
@@ -38,6 +39,7 @@ import wifi_manual_control_field_server as base
 
 PAGE_PATH = HERE / "wifi_primary_control_20261003.html"
 EXPECTED_FIRMWARE = "teensy_main_20261003_wifi_v3"
+LOCAL_CONTROL_HOSTNAME = "raspberrypi.local"
 ZEROTIER_PEER_IP = "192.168.193.217"
 ZEROTIER_PEER_PORT = 22
 ZEROTIER_INITIAL_WINDOW_S = 90.0
@@ -100,6 +102,38 @@ def address_is_assigned(address: str, interface_prefix: str | None = None) -> bo
     return False
 
 
+def private_local_addresses() -> list[str]:
+    """Return private IPv4 addresses on non-loopback, non-ZeroTier interfaces."""
+    try:
+        result = subprocess.run(
+            ["ip", "-4", "-o", "addr", "show", "scope", "global"],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=3,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return []
+    if result.returncode != 0:
+        return []
+    addresses: list[str] = []
+    for line in result.stdout.splitlines():
+        fields = line.split()
+        if len(fields) < 4 or fields[2] != "inet":
+            continue
+        interface = fields[1].split("@", 1)[0]
+        assigned = fields[3].split("/", 1)[0]
+        try:
+            parsed = ipaddress.ip_address(assigned)
+        except ValueError:
+            continue
+        if interface.startswith("zt") or interface == "lo" or not parsed.is_private:
+            continue
+        if assigned not in addresses:
+            addresses.append(assigned)
+    return addresses
+
+
 def zerotier_service_active() -> bool:
     try:
         result = subprocess.run(
@@ -152,9 +186,7 @@ class ConnectivityMonitor:
         self.poll_s = poll_s
         self.stable_checks = stable_checks
         self.notify_retry_s = notify_retry_s
-        self.local_check = local_check or (
-            lambda: address_is_assigned(base.TRACTOR_LOCAL_IP)
-        )
+        self.local_check = local_check or (lambda: bool(private_local_addresses()))
         self.zerotier_check = zerotier_check or self.probe_zerotier
         self.notifier = notifier or post_ntfy
         self.clock = clock or time.monotonic
@@ -219,7 +251,11 @@ class ConnectivityMonitor:
                 "tractor,wifi",
             )
             if self.local_notice_sent:
-                self.log("local_ready", address=base.TRACTOR_LOCAL_IP)
+                self.log(
+                    "local_ready",
+                    hostname=LOCAL_CONTROL_HOSTNAME,
+                    addresses=",".join(private_local_addresses()),
+                )
 
         probe_ready, reason = self.zerotier_check()
         if reason != self.last_probe_reason:
@@ -630,7 +666,7 @@ def main() -> None:
         server.socket = context.wrap_socket(server.socket, server_side=True)
         scheme = "https"
     zero = f"{scheme}://{base.TRACTOR_ZEROTIER_IP}:{args.port}/?key={operator_key}"
-    local = f"{scheme}://{base.TRACTOR_LOCAL_IP}:{args.port}/?key={operator_key}"
+    local = f"{scheme}://{LOCAL_CONTROL_HOSTNAME}:{args.port}/?key={operator_key}"
     connectivity = ConnectivityMonitor(
         state,
         args.ntfy_topic,

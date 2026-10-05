@@ -22,7 +22,8 @@ Connect PuTTY to Tractor01 as user `al`:
 ```
 
 If ZeroTier is unavailable but the laptop is connected directly to the
-tractor's local network, use `192.168.1.151`.
+tractor's local network, use `raspberrypi.local`; Tractor01's numeric local
+addresses are assigned by DHCP and can change between routers.
 
 All commands below are single Linux shell lines pasted directly into PuTTY.
 

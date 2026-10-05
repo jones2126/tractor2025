@@ -110,12 +110,14 @@ Pause/neutral; an unexpected failure is still covered by the Teensy's
 independent 500 ms heartbeat timeout.
 
 The server sends separate ntfy notices for local and ZeroTier access. Local
-readiness requires `192.168.1.151` to be assigned. ZeroTier readiness requires
-the service to be active, `192.168.193.76` on a `zt*` interface, and three
-successful TCP connections to the always-on RPi5NAS at
-`192.168.193.217:22`. After an initial 90-second observation window it sends
-one delayed notice and continues retrying; a later recovery gets its own
-notice. Loss of ZeroTier does not interrupt working local control.
+readiness accepts any private IPv4 address on a non-loopback, non-ZeroTier
+interface and uses the certificate-safe, DHCP-independent URL
+`https://raspberrypi.local:8765/`. ZeroTier readiness requires the service to
+be active, `192.168.193.76` on a `zt*` interface, and three successful TCP
+connections to the always-on RPi5NAS at `192.168.193.217:22`. After an initial
+90-second observation window it sends one delayed notice and continues
+retrying; a later recovery gets its own notice. Loss of ZeroTier does not
+interrupt working local control.
 
 Install and enable the service on Tractor01 with:
 
