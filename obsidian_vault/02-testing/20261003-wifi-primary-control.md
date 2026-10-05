@@ -235,3 +235,22 @@ command records phone sequence, client timestamp, the phone's rolling RTT from
 the preceding request, estimated phone-to-server time, and server processing
 time. UDP 6003 also retains Teensy command age, steering response, and JRK
 diagnostics for correlation with the normal field logger.
+
+## 2026-10-05 boot-service and reconnect acceptance
+
+Tractor01 pulled commit `c8b24e7` and re-ran the service installer. The
+installer preserved the URL key already issued to the phone and stored it in
+the private persistent key file. The service then stopped through its normal
+Pause/neutral path and restarted active. Both local-ready and verified
+ZeroTier-ready ntfy notices were sent.
+
+With the newly served ZeroTier page open, a second service restart was tested
+without opening a new ntfy link. The existing page displayed reconnecting for
+approximately 0.5 seconds and automatically returned connected in Pause. This
+verifies the intended stable-URL, fresh-session, and safe-reconnect behavior.
+Repeated ntfy notices after future boots are readiness notices and should carry
+the same URL. Keep one visible control tab; hidden tabs no longer contend for
+control ownership.
+
+See [[20261005-wifi-control-boundary-mission-handoff]] for the consolidated
+field handover and pointers to the two new-chat context documents.
