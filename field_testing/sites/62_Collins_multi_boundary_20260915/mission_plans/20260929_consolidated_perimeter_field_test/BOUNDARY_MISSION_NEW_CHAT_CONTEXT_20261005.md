@@ -153,8 +153,9 @@ stay off.
 - Press `START MISSION` on the laptop dashboard only while stationary in
   phone Pause.
 - Let the launcher's repeated gates complete.
-- Select guarded phone Auto only after the controller is live, the dashboard
-  is healthy, and the route is visibly clear.
+- Select guarded phone Auto only when the large dashboard gate is green and
+  explicitly says `READY FOR GUARDED AUTO`, and the route is visibly clear.
+  Remain in Pause for every `WAIT` or `DO NOT SELECT AUTO` message.
 - Supervise continuously with blades off and physical E-stop ready.
 - Pause immediately for unexpected clearance, tracking, heading, control,
   network, or mechanical behavior.

@@ -666,7 +666,7 @@ if latest is None: raise SystemExit("ERROR: no navigation GPS packet on UDP 6010
 lat=float(latest["lat"]);lon=float(latest["lon"]);heading=float(latest["heading_deg"])
 east=(lon-start_lon)*111320.0*math.cos(math.radians(start_lat));north=(lat-start_lat)*110540.0
 position_error=math.hypot(east,north);heading_error=abs((heading-target_heading+180)%360-180)
-print(f"Start error: distance={{position_error:.2f}} m, heading={{heading_error:.1f}} deg")
+print(f"PASS: start alignment distance={{position_error:.2f}} m; heading error={{heading_error:.1f}} deg")
 if latest.get("fix_quality")!="RTK Fixed": raise SystemExit("ERROR: RTK Fixed required")
 if not latest.get("headValid") or str(latest.get("carrier","")).lower()!="fixed": raise SystemExit("ERROR: valid fixed-carrier heading required")
 baseline=latest.get("relpos_length_m");accuracy=latest.get("relpos_heading_accuracy_deg")

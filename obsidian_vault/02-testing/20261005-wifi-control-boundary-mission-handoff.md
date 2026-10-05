@@ -143,7 +143,9 @@ optional; Al currently prefers to leave voice off.
 5. Use guarded phone Manual to reach and align at the start, then return to
    Pause.
 6. Start the mission from the laptop dashboard and select guarded phone Auto
-   only when the controller is live and the route is clear.
+   only when the large dashboard gate is green and explicitly says
+   `READY FOR GUARDED AUTO`, and the route is clear. `WAIT` or
+   `DO NOT SELECT AUTO` always means remain in Pause.
 7. Preserve the field log and dashboard/controller outcome after completion or
    any early stop.
 8. Do not modify or rebuild the approved route during the run.

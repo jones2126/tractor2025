@@ -101,7 +101,9 @@ For drive-to-start: keep blades off and use guarded Manual on the Wi-Fi phone
 control page. Voice guidance is optional and may remain off. Stop and select
 phone Pause when the dashboard reports ready. Press `START MISSION` only while
 stationary in Pause; the launcher runs its safety gates again. Select guarded
-Auto on the phone only after the controller is live and the route is clear.
+Auto on the phone only when the large dashboard gate is green and explicitly
+says `READY FOR GUARDED AUTO`, and the route is clear. Any `WAIT` or
+`DO NOT SELECT AUTO` message means remain in Pause.
 
 ## Optional Tractor01 status/log command
 
