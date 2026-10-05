@@ -119,6 +119,17 @@ connections to the always-on RPi5NAS at `192.168.193.217:22`. After an initial
 retrying; a later recovery gets its own notice. Loss of ZeroTier does not
 interrupt working local control.
 
+The installed service stores one private URL access key at
+`/home/al/.config/tractor-wifi-control/operator.key` (mode 0600). The URL is
+therefore stable across service restarts and reboots. The visible phone page
+automatically establishes a new control session in Pause after the server
+returns; it does not need a newly opened ntfy link. Hidden or older tabs stop
+sending heartbeats and cannot compete with the visible control page. During
+upgrade, the installer preserves the most recent valid key from the service
+journal so the already-issued URL remains valid. A fresh installation creates
+the key once. Delete the key and restart the service only when deliberate
+access-key rotation is required.
+
 Install and enable the service on Tractor01 with:
 
 ```bash

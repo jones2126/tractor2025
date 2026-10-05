@@ -12,7 +12,7 @@ WorkingDirectory=/home/al/tractor2025
 Environment=PYTHONUNBUFFERED=1
 ExecStartPre=/usr/bin/test -r /home/al/.config/tractor-wifi-control/tls/server.crt
 ExecStartPre=/usr/bin/test -r /home/al/.config/tractor-wifi-control/tls/server.key
-ExecStart=/usr/bin/python3 -u /home/al/tractor2025/tractor_rpi/testing/webrtc/wifi_primary_control_20261003.py --tls-cert /home/al/.config/tractor-wifi-control/tls/server.crt --tls-key /home/al/.config/tractor-wifi-control/tls/server.key
+ExecStart=/usr/bin/python3 -u /home/al/tractor2025/tractor_rpi/testing/webrtc/wifi_primary_control_20261003.py --tls-cert /home/al/.config/tractor-wifi-control/tls/server.crt --tls-key /home/al/.config/tractor-wifi-control/tls/server.key --operator-key-file /home/al/.config/tractor-wifi-control/operator.key
 Restart=on-failure
 RestartSec=10
 KillSignal=SIGINT

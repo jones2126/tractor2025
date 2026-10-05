@@ -48,6 +48,36 @@ NETWORK_STABLE_CHECKS = 3
 NOTIFY_RETRY_S = 15.0
 
 
+def load_or_create_operator_key(path: Path | None) -> str:
+    """Return a persistent bearer key, or an ephemeral key for manual tests."""
+    if path is None:
+        return secrets.token_urlsafe(18)
+
+    def read_key() -> str:
+        key = path.read_text(encoding="ascii").strip()
+        if not 24 <= len(key) <= 128 or any(
+            not (character.isalnum() or character in "-_") for character in key
+        ):
+            raise RuntimeError(f"invalid operator key file: {path}")
+        path.chmod(0o600)
+        return key
+
+    try:
+        return read_key()
+    except FileNotFoundError:
+        pass
+
+    path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    generated = secrets.token_urlsafe(24)
+    try:
+        descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    except FileExistsError:
+        return read_key()
+    with os.fdopen(descriptor, "w", encoding="ascii") as key_file:
+        key_file.write(generated + "\n")
+    return generated
+
+
 def post_ntfy(
     topic: str,
     title: str,
@@ -618,6 +648,14 @@ def main() -> None:
     parser.add_argument("--log-dir", type=Path, default=Path("/home/al/field_logs"))
     parser.add_argument("--tls-cert", type=Path)
     parser.add_argument("--tls-key", type=Path)
+    parser.add_argument(
+        "--operator-key-file",
+        type=Path,
+        help=(
+            "persist the URL access key across restarts; omit only for an "
+            "ephemeral manual test"
+        ),
+    )
     parser.add_argument("--no-ntfy", action="store_true")
     parser.add_argument(
         "--ntfy-topic",
@@ -641,7 +679,7 @@ def main() -> None:
     base.PAGE_PATH = PAGE_PATH
     stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     log_path = args.log_dir / f"wifi_primary_control_{stamp}.jsonl"
-    operator_key = secrets.token_urlsafe(18)
+    operator_key = load_or_create_operator_key(args.operator_key_file)
     state = WifiPrimaryState(args.command_ip, args.dry_run, log_path)
     # Every process start is a fresh, unarmed control session. Send an explicit
     # Pause burst as well as relying on the Teensy's independent 500 ms timeout.
@@ -683,6 +721,11 @@ def main() -> None:
     print(f"Expected:  {EXPECTED_FIRMWARE}")
     print(f"ZeroTier: {zero}")
     print(f"Local:    {local}")
+    print(
+        "Access:   persistent URL key"
+        if args.operator_key_file
+        else "Access:   temporary URL key (changes at restart)"
+    )
     print(f"Log:      {log_path}")
     print(f"UDP 6004: {'DISABLED (--dry-run)' if args.dry_run else args.command_ip}")
     if scheme == "http":

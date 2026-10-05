@@ -2,6 +2,7 @@
 
 import importlib.util
 import json
+import os
 import sys
 import tempfile
 import threading
@@ -386,6 +387,23 @@ class WifiPrimaryTests(unittest.TestCase):
 
     def test_local_control_hostname_is_covered_by_deployed_certificate_name(self):
         self.assertEqual("raspberrypi.local", primary.LOCAL_CONTROL_HOSTNAME)
+
+    def test_operator_key_file_is_created_once_and_reused(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            key_path = Path(temporary) / "control" / "operator.key"
+            first = primary.load_or_create_operator_key(key_path)
+            second = primary.load_or_create_operator_key(key_path)
+            self.assertEqual(first, second)
+            self.assertGreaterEqual(len(first), 24)
+            if os.name != "nt":
+                self.assertEqual(0o600, key_path.stat().st_mode & 0o777)
+
+    def test_invalid_operator_key_file_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            key_path = Path(temporary) / "operator.key"
+            key_path.write_text("too short\n", encoding="ascii")
+            with self.assertRaises(RuntimeError):
+                primary.load_or_create_operator_key(key_path)
 
 
 if __name__ == "__main__":

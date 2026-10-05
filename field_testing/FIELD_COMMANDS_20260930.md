@@ -12,6 +12,10 @@ Tractor01 and allow the Raspberry Pi and GPS receivers to boot. The installed
 `tractor-wifi-control.service` starts the HTTPS phone control server in Pause.
 Use the local ntfy URL while connected to the tractor router, or wait for the
 separate ZeroTier-ready notice after RPi5NAS reachability is verified.
+The installed access URL remains the same across boots and service restarts;
+an already-open visible page reconnects automatically in Pause. Avoid keeping
+multiple control tabs open. Hidden tabs stop commanding and do not take control
+from the visible page.
 
 ## 2. Open PuTTY
 
