@@ -95,7 +95,14 @@ http://192.168.10.x:8088/?key=
 ```
 
 The `x` is the tractor's DHCP address, not the laptop's `.48` address. The
-terminal also prints the ZeroTier URL as a fallback.
+mission dashboard may still print a ZeroTier URL for remote status. The phone
+control page must use the tractor-router LAN. Motion claims from outside
+`192.168.10.0/24`, including ZeroTier, are rejected and latch Pause.
+
+Before pressing `START MISSION`, verify the router/Starlink supply is regulated,
+the battery is above the documented field minimum under load, and the
+low-voltage alarm is active. The 11.7 V observed during the 2026-10-05 stop is
+an unacceptable failed-power condition, not an approved threshold.
 
 For drive-to-start: keep blades off and use guarded Manual on the Wi-Fi phone
 control page. Voice guidance is optional and may remain off. Stop and select
@@ -103,7 +110,9 @@ phone Pause when the dashboard reports ready. Press `START MISSION` only while
 stationary in Pause; the launcher runs its safety gates again. Select guarded
 Auto on the phone only when the large dashboard gate is green and explicitly
 says `READY FOR GUARDED AUTO`, and the route is clear. Any `WAIT` or
-`DO NOT SELECT AUTO` message means remain in Pause.
+`DO NOT SELECT AUTO` message means remain in Pause. After any link fault the
+dashboard displays `NETWORK UNSTABLE — REMAIN IN PAUSE`; it will not turn green
+until both the controller and browser have observed a continuously fresh link.
 
 ## Optional Tractor01 status/log command
 

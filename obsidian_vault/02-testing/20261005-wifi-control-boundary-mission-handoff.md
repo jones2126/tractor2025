@@ -117,6 +117,14 @@ Verified route:
   coordinate, heading, lookahead, or speed command.
 - Approved only for the initial directly supervised, blades-off field test.
 - Keep the physical E-stop immediately available.
+- Phone motion control is restricted to the tractor router LAN
+  (`192.168.10.0/24`). ZeroTier is status/maintenance only.
+- After any stale heartbeat, remain in Pause through the visible network
+  recovery lockout. Auto is allowed only after the dashboard again says
+  `READY FOR GUARDED AUTO`.
+- Do not run another moving test until the router/Starlink power source is
+  regulated and a loaded low-voltage alarm/abort threshold has been installed
+  and documented. See [[20261005-field-stop-recovery-analysis]].
 
 The launcher and dashboard were updated for the Wi-Fi phone controller. The
 generated validation report still contains historical references to the NRF

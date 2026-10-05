@@ -43,6 +43,13 @@ Do not:
 - A Wi-Fi heartbeat interruption now latches Pause and invalidates the old
   session. The page reconnects in Pause and requires a new guarded Manual or
   Auto selection; control does not automatically resume.
+- The controller uses authoritative `wifi_control.mode`; phone Manual freezes
+  mission progress and cannot be displayed as Auto.
+- Auto navigation requires five continuous seconds of fresh phone heartbeat.
+  After a detected gap, the dashboard displays
+  `NETWORK UNSTABLE — REMAIN IN PAUSE` through its recovery lockout.
+- Phone motion control is accepted only from the tractor-router LAN
+  (`192.168.10.0/24`). ZeroTier is remote status/maintenance only.
 - Phone Manual steering and transmission, phone E-stop latch/reset, and
   stationary Auto selection were already tested. Repeat only the checks needed
   by the current preflight and field conditions.
@@ -83,6 +90,9 @@ advancing.
 - Tractor stationary and clear of people.
 - Blades disengaged.
 - Physical E-stop immediately available.
+- Router/Starlink power supply regulated and sized for its peak load.
+- Loaded battery voltage above the documented field minimum, with the
+  low-voltage alarm active. The prior 11.7 V condition is a failed-power state.
 - Open exactly one current Wi-Fi phone control page and confirm Pause.
 - Keep that page in the phone foreground.
 - Use the mission dashboard on the Windows laptop, not in another phone tab.
@@ -156,6 +166,8 @@ stay off.
 - Select guarded phone Auto only when the large dashboard gate is green and
   explicitly says `READY FOR GUARDED AUTO`, and the route is visibly clear.
   Remain in Pause for every `WAIT` or `DO NOT SELECT AUTO` message.
+- If `NETWORK UNSTABLE — REMAIN IN PAUSE` appears, do not attempt to recover
+  in Auto. Wait for a stable local-router connection and a new green gate.
 - Supervise continuously with blades off and physical E-stop ready.
 - Pause immediately for unexpected clearance, tracking, heading, control,
   network, or mechanical behavior.

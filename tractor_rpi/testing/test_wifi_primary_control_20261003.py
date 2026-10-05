@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import importlib.util
+import ipaddress
 import json
 import os
 import sys
@@ -284,7 +285,7 @@ class WifiPrimaryTests(unittest.TestCase):
             state.close()
             temporary.cleanup()
 
-    def test_zerotier_notice_requires_three_successful_peer_checks(self):
+    def test_zerotier_status_notice_requires_three_successful_peer_checks(self):
         notices = []
         temporary, state, monitor = self.make_monitor(
             [False, False, False],
@@ -296,7 +297,7 @@ class WifiPrimaryTests(unittest.TestCase):
             monitor.step(3)
             self.assertEqual([], notices)
             monitor.step(6)
-            self.assertEqual("Tractor01 ZeroTier control ready", notices[0][0])
+            self.assertEqual("Tractor01 ZeroTier status available", notices[0][0])
         finally:
             state.running = False
             state.close()
@@ -325,7 +326,7 @@ class WifiPrimaryTests(unittest.TestCase):
             monitor.step(96)
             monitor.step(99)
             self.assertIn(
-                "Tractor01 ZeroTier control ready",
+                "Tractor01 ZeroTier status available",
                 [notice[0] for notice in notices],
             )
         finally:
@@ -355,8 +356,8 @@ class WifiPrimaryTests(unittest.TestCase):
                 monitor.step(index * 3)
             self.assertEqual(
                 [
-                    "Tractor01 ZeroTier control ready",
-                    "Tractor01 ZeroTier recovered",
+                    "Tractor01 ZeroTier status available",
+                    "Tractor01 ZeroTier status recovered",
                 ],
                 [notice[0] for notice in notices],
             )
@@ -364,6 +365,15 @@ class WifiPrimaryTests(unittest.TestCase):
             state.running = False
             state.close()
             temporary.cleanup()
+
+    def test_control_network_accepts_lan_and_rejects_zerotier(self):
+        network = ipaddress.ip_network(primary.DEFAULT_CONTROL_SUBNET)
+        self.assertTrue(
+            primary.base.client_in_control_network("192.168.10.232", network)
+        )
+        self.assertFalse(
+            primary.base.client_in_control_network("192.168.193.36", network)
+        )
 
     def test_failed_local_notice_retries_after_backoff(self):
         temporary, state = self.make_state()

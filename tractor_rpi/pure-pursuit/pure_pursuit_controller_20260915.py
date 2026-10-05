@@ -67,6 +67,8 @@ TEENSY_STATUS_UDP_PORT = 6003
 CMD_VEL_UDP_PORT = 6004
 GPS_STALE_TIMEOUT_S = 0.5
 STATUS_STALE_TIMEOUT_S = 0.75
+WIFI_HEARTBEAT_MAX_AGE_MS = 500
+WIFI_AUTO_STABLE_SECONDS = 5.0
 DEFAULT_MAX_SPEED_MPS = 1.5
 LOG_DIR = os.path.expanduser("~/repos/field-testing-data")
 
@@ -122,7 +124,9 @@ CSV_COLUMNS = [
     ("driving",             "True if cmd_vel sent this cycle False = WAIT state"),
     ("wait_reason",         "Reason not driving this cycle empty string if driving"),
     ("software_paused",     "True while the local mission dashboard requests Pause"),
-    ("handheld_mode",       "Teensy steering mode: 0 Auto, 1 Manual, 2 Pause, 9 radio loss"),
+    ("handheld_mode",       "Normalized operator mode: 0 Auto, 1 Manual, 2 Pause, 3 E-stop, 9 loss"),
+    ("operator_source",     "Authoritative operator source: wifi or legacy_steering"),
+    ("operator_link_stable_s", "Continuous fresh Wi-Fi heartbeat time seconds"),
     ("handheld_state",      "Teensy steering state string"),
     ("path_progress_m",     "Monotonic distance along mission path"),
     ("reacquire_state",     "TRACKING, REQUIRED, or BLOCKED"),
@@ -326,15 +330,23 @@ class GPSReceiver:
 
 
 class HandheldStatusReceiver:
-    """Latest Teensy steering mode from the bridge broadcast on UDP 6003."""
+    """Authoritative operator mode from the bridge broadcast on UDP 6003.
 
-    MODE_NAMES = {0: "AUTO", 1: "MANUAL", 2: "PAUSE", 9: "RADIO_LOSS"}
+    Wi-Fi-primary firmware deliberately reports low-level steering mode 0 in
+    both phone Manual and phone Auto.  The WIFI_CTL record is therefore the
+    authoritative source whenever present.  Values are normalized to the
+    controller's historic 0 Auto / 1 Manual / 2 Pause convention.
+    """
+
+    MODE_NAMES = {0: "AUTO", 1: "MANUAL", 2: "PAUSE", 3: "E_STOP", 9: "RADIO_LOSS"}
+    WIFI_MODE_TO_NORMALIZED = {0: 2, 1: 1, 2: 0, 3: 3, 4: 2}
 
     def __init__(self, port=TEENSY_STATUS_UDP_PORT):
         self.port = port
         self._lock = threading.Lock()
         self._latest = None
         self._last_update = 0.0
+        self._wifi_fresh_since = None
         self._running = True
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -355,17 +367,66 @@ class HandheldStatusReceiver:
                 break
             try:
                 message = json.loads(data.decode("utf-8"))
-                steering = message.get("steering", {})
-                mode = int(steering.get("mode"))
+                status = self._decode_message(message, time.time())
             except (TypeError, ValueError, UnicodeDecodeError, json.JSONDecodeError):
                 continue
             with self._lock:
-                self._latest = {
-                    "mode": mode,
-                    "mode_name": self.MODE_NAMES.get(mode, f"UNKNOWN_{mode}"),
-                    "state": str(steering.get("state", "UNKNOWN")),
-                }
+                self._latest = status
                 self._last_update = time.time()
+
+    def _decode_message(self, message, now):
+        steering = message.get("steering", {})
+        wifi = message.get("wifi_control")
+        if isinstance(wifi, dict) and wifi:
+            if (
+                getattr(self, "_last_update", 0.0)
+                and now - self._last_update > STATUS_STALE_TIMEOUT_S
+            ):
+                self._wifi_fresh_since = None
+            source_mode = int(wifi.get("mode"))
+            if source_mode not in self.WIFI_MODE_TO_NORMALIZED:
+                raise ValueError("unknown Wi-Fi control mode")
+            mode = self.WIFI_MODE_TO_NORMALIZED[source_mode]
+            heartbeat_fresh = int(wifi.get("heartbeat_fresh", 0)) == 1
+            estop_latched = int(wifi.get("estop_latched", 0)) == 1
+            command_age_ms = float(wifi.get("command_age_ms", math.inf))
+            link_fresh = (
+                heartbeat_fresh
+                and not estop_latched
+                and math.isfinite(command_age_ms)
+                and command_age_ms <= WIFI_HEARTBEAT_MAX_AGE_MS
+            )
+            if link_fresh:
+                if self._wifi_fresh_since is None:
+                    self._wifi_fresh_since = now
+            else:
+                self._wifi_fresh_since = None
+            stable_s = (
+                0.0 if self._wifi_fresh_since is None
+                else max(0.0, now - self._wifi_fresh_since)
+            )
+            return {
+                "mode": mode,
+                "mode_name": self.MODE_NAMES.get(mode, f"UNKNOWN_{mode}"),
+                "state": str(steering.get("state", "UNKNOWN")),
+                "source": "wifi",
+                "source_mode": source_mode,
+                "heartbeat_fresh": heartbeat_fresh,
+                "estop_latched": estop_latched,
+                "command_age_ms": command_age_ms,
+                "link_stable_s": stable_s,
+            }
+
+        self._wifi_fresh_since = None
+        mode = int(steering.get("mode"))
+        return {
+            "mode": mode,
+            "mode_name": self.MODE_NAMES.get(mode, f"UNKNOWN_{mode}"),
+            "state": str(steering.get("state", "UNKNOWN")),
+            "source": "legacy_steering",
+            "source_mode": mode,
+            "link_stable_s": 0.0,
+        }
 
     def get_status(self):
         with self._lock:
@@ -379,8 +440,22 @@ class HandheldStatusReceiver:
         status = self.get_status()
         if status is None or status["age"] > STATUS_STALE_TIMEOUT_S:
             return False, "stale or no Teensy status", status
+        if status.get("source") == "wifi":
+            if status.get("estop_latched"):
+                return False, "Wi-Fi E-stop is latched", status
+            if not status.get("heartbeat_fresh"):
+                return False, "Wi-Fi heartbeat is stale", status
+            if status.get("command_age_ms", math.inf) > WIFI_HEARTBEAT_MAX_AGE_MS:
+                return False, "Wi-Fi command age exceeds 500 ms", status
+            stable_s = status.get("link_stable_s", 0.0)
+            if stable_s < WIFI_AUTO_STABLE_SECONDS:
+                return False, (
+                    f"Wi-Fi heartbeat stable for {stable_s:.1f}/"
+                    f"{WIFI_AUTO_STABLE_SECONDS:.1f} s"
+                ), status
         if status["mode"] != 0:
-            return False, f"handheld mode={status['mode_name']}", status
+            source = "Wi-Fi control" if status.get("source") == "wifi" else "handheld"
+            return False, f"{source} mode={status['mode_name']}", status
         return True, "", status
 
     def stop(self):
@@ -927,6 +1002,11 @@ class PurePursuit:
                     'software_paused': software_paused,
                     'handheld_mode': '' if handheld is None else handheld['mode'],
                     'handheld_state': '' if handheld is None else handheld['state'],
+                    'operator_source': '' if handheld is None else handheld.get('source', ''),
+                    'operator_link_stable_s': (
+                        '' if handheld is None
+                        else f"{handheld.get('link_stable_s', 0.0):.3f}"
+                    ),
                     'path_progress_m': f"{self.progress_s:.3f}",
                     'reacquire_state': self.reacquire_state,
                     'reacquire_detail': self.reacquire_detail,

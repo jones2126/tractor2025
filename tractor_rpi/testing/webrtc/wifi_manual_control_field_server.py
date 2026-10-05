@@ -11,6 +11,7 @@ session stops motion. This program does not provide NRF-independent control.
 from __future__ import annotations
 
 import argparse
+import ipaddress
 import json
 import math
 import os
@@ -367,7 +368,20 @@ def udp_listener(state: FieldState, port: int, kind: str) -> None:
     sock.close()
 
 
-def handler_factory(state: FieldState, operator_key: str):
+def client_in_control_network(client_ip: str, control_network: Any) -> bool:
+    if control_network is None:
+        return True
+    try:
+        return ipaddress.ip_address(client_ip) in control_network
+    except ValueError:
+        return False
+
+
+def handler_factory(
+    state: FieldState,
+    operator_key: str,
+    control_network: Any = None,
+):
     page = PAGE_PATH.read_bytes()
 
     class Handler(BaseHTTPRequestHandler):
@@ -381,6 +395,9 @@ def handler_factory(state: FieldState, operator_key: str):
             query_key = parse_qs(urlparse(self.path).query).get("key", [""])[0]
             supplied = self.headers.get("X-Operator-Key", "") or query_key
             return secrets.compare_digest(supplied, operator_key)
+
+        def local_control_allowed(self) -> bool:
+            return client_in_control_network(self.client_address[0], control_network)
 
         def send_bytes(self, status: HTTPStatus, content_type: str, body: bytes) -> None:
             self.send_response(status)
@@ -401,7 +418,12 @@ def handler_factory(state: FieldState, operator_key: str):
             if path == "/":
                 self.send_bytes(HTTPStatus.OK, "text/html; charset=utf-8", page)
             elif path == "/api/state":
-                self.send_json(HTTPStatus.OK, state.snapshot())
+                payload = state.snapshot()
+                payload["local_control_allowed"] = self.local_control_allowed()
+                payload["control_network"] = (
+                    None if control_network is None else str(control_network)
+                )
+                self.send_json(HTTPStatus.OK, payload)
             else:
                 self.send_json(HTTPStatus.NOT_FOUND, {"error": "not found"})
 
@@ -418,6 +440,22 @@ def handler_factory(state: FieldState, operator_key: str):
                 self.send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
                 return
             path = urlparse(self.path).path
+            if path in ("/api/claim", "/api/command") and not self.local_control_allowed():
+                reject = getattr(state, "reject_nonlocal_control", None)
+                if callable(reject):
+                    reject(self.client_address[0])
+                self.send_json(
+                    HTTPStatus.FORBIDDEN,
+                    {
+                        "error": (
+                            "motion control requires the local tractor-router "
+                            f"network {control_network}"
+                        ),
+                        "local_control_required": True,
+                        "phone_mode": "pause",
+                    },
+                )
+                return
             try:
                 if path == "/api/claim":
                     result = state.claim(str(data.get("client_id", "")))

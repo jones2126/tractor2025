@@ -203,8 +203,9 @@ sudo systemctl start tractor-wifi-control.service
 systemctl is-active tractor-wifi-control.service
 ```
 
-1. Open the keyed URL from the local or verified-ZeroTier ntfy notice. It
-   claims control in Pause.
+1. Connect the phone to the tractor router and open the keyed local URL. It
+   claims control in Pause. ZeroTier is status/maintenance only and cannot
+   claim or command motion.
 2. Confirm the page shows the expected firmware and Pause.
 3. Run the dated GPS/preflight while the page remains in Pause:
 

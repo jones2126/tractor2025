@@ -46,6 +46,7 @@ ZEROTIER_INITIAL_WINDOW_S = 90.0
 NETWORK_POLL_S = 3.0
 NETWORK_STABLE_CHECKS = 3
 NOTIFY_RETRY_S = 15.0
+DEFAULT_CONTROL_SUBNET = "192.168.10.0/24"
 
 
 def load_or_create_operator_key(path: Path | None) -> str:
@@ -313,16 +314,17 @@ class ConnectivityMonitor:
         if self.zerotier_ready and self.pending_zerotier_notice:
             recovered = self.pending_zerotier_notice == "recovered"
             title = (
-                "Tractor01 ZeroTier recovered"
+                "Tractor01 ZeroTier status recovered"
                 if recovered
-                else "Tractor01 ZeroTier control ready"
+                else "Tractor01 ZeroTier status available"
             )
             sent = self.send_notice(
                 "zerotier",
                 now,
                 title,
-                "Verified through the always-on RPi5NAS peer. Open this temporary "
-                "Wi-Fi control link. Tractor control starts in Pause.\n\n"
+                "Remote status is reachable through the RPi5NAS peer. Motion "
+                "commands are disabled on ZeroTier; connect the phone to the "
+                "tractor's local router to control it.\n\n"
                 f"{self.zerotier_url}",
                 self.zerotier_url,
                 "tractor,satellite",
@@ -366,6 +368,23 @@ class WifiPrimaryState(base.FieldState):
             age <= base.BRIDGE_FRESH_S
             and bridge.get("system", {}).get("firmware") == EXPECTED_FIRMWARE
         )
+
+    def reject_nonlocal_control(self, client_ip: str) -> None:
+        """Latch Pause immediately if a motion request arrives off the LAN."""
+        with self.lock:
+            sequence = (
+                int(self.last_command.get("sequence", -1))
+                if self.last_command else -1
+            )
+            self.phone_mode = "pause"
+            self.owner_session = None
+            self.highest_sequence = -1
+            self.owner_at = 0.0
+            self.stop_sent_for_expiry = True
+            self.last_decision = "nonlocal control rejected; Pause latched"
+            self.rejected += 1
+        self.send_stop_burst("nonlocal_control_rejected", sequence)
+        self.log("nonlocal_control_rejected", client_ip=client_ip)
 
     def send_drive_command(
         self,
@@ -683,10 +702,21 @@ def main() -> None:
         default=ZEROTIER_INITIAL_WINDOW_S,
     )
     parser.add_argument("--network-poll-seconds", type=float, default=NETWORK_POLL_S)
+    parser.add_argument(
+        "--control-subnet",
+        default=DEFAULT_CONTROL_SUBNET,
+        help="only clients in this IPv4 subnet may claim or command motion",
+    )
     args = parser.parse_args()
 
     if bool(args.tls_cert) != bool(args.tls_key):
         raise SystemExit("--tls-cert and --tls-key must be supplied together")
+    try:
+        control_network = ipaddress.ip_network(args.control_subnet, strict=False)
+    except ValueError as exc:
+        raise SystemExit(f"invalid --control-subnet: {exc}") from exc
+    if control_network.version != 4:
+        raise SystemExit("--control-subnet must be an IPv4 network")
 
     if not PAGE_PATH.is_file():
         raise SystemExit(f"Missing phone interface: {PAGE_PATH}")
@@ -709,7 +739,8 @@ def main() -> None:
     # receiving the position needed for distance-to-start guidance.
     threading.Thread(target=state.safety_loop, daemon=True).start()
     server = base.QuietThreadingHTTPServer(
-        (args.host, args.port), base.handler_factory(state, operator_key)
+        (args.host, args.port),
+        base.handler_factory(state, operator_key, control_network),
     )
     scheme = "http"
     if args.tls_cert:
@@ -733,8 +764,9 @@ def main() -> None:
     threading.Thread(target=connectivity.run, daemon=True).start()
     print("Wi-Fi-primary tractor01 control")
     print(f"Expected:  {EXPECTED_FIRMWARE}")
-    print(f"ZeroTier: {zero}")
-    print(f"Local:    {local}")
+    print(f"ZeroTier status only (motion disabled): {zero}")
+    print(f"Local control: {local}")
+    print(f"Control clients allowed: {control_network}")
     print(
         "Access:   persistent URL key"
         if args.operator_key_file

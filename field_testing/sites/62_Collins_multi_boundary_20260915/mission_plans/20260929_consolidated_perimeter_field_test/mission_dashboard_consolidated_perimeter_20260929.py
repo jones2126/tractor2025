@@ -159,19 +159,11 @@ replacements={
 "Start the reviewed clear-sky resume mission at source waypoint 91 with blades off?":"Start the approved consolidated perimeter mission with blades off and direct supervision?",
 "RUN PARTIAL RINGS BLADES OFF":dashboard.EXPECTED_CONFIRMATION,
 "Keep the handheld with you.</b> After a browser Pause: select handheld Pause, press CLEAR PAUSE, confirm HANDHELD PAUSE, then select Auto.":"Keep the phone control page in the phone's foreground.</b> Use this dashboard on the laptop. After a dashboard Pause: select phone Pause, press CLEAR PAUSE, then use guarded Auto only when the route is clear.",
-"Keep the handheld in Pause until the controller is ready.":"Keep the phone in Pause until the controller is ready.",
-"HANDHELD PAUSE":"PHONE PAUSE",
-"Handheld Pause":"Phone Pause",
-"Handheld modes":"Control modes",
+"Phone / low-level modes":"Control modes",
 }
 for original,updated in replacements.items():
     if dashboard.HTML.count(original)!=1: raise RuntimeError(f"Dashboard text changed; expected one occurrence of: {original}")
     dashboard.HTML=dashboard.HTML.replace(original,updated)
-
-radio_fact="fact('Radio / steering state',(b.radio?.signal||'—')+' / '+(st.state||'—'))"
-wifi_fact="fact('Wi-Fi heartbeat / steering state',(b.wifi_control?.heartbeat_fresh===1?'fresh':'stale')+' / '+(st.state||'—'))"
-if dashboard.HTML.count(radio_fact)!=1: raise RuntimeError("Dashboard radio status fact changed")
-dashboard.HTML=dashboard.HTML.replace(radio_fact,wifi_fact)
 
 toolbar_old='<button id="guide" class="button guide">START VOICE GUIDANCE</button>'
 toolbar_new=toolbar_old+'<span id="noteStatus" class="badge">VOICE NOTES READY</span>'

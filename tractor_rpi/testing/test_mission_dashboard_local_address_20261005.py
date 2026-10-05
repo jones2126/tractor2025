@@ -20,8 +20,10 @@ class MissionDashboardLocalAddressTests(unittest.TestCase):
     def test_dashboard_has_an_explicit_guarded_auto_gate(self):
         self.assertIn('id="autoGate"', dashboard.HTML)
         self.assertIn("READY FOR GUARDED AUTO", dashboard.HTML)
-        self.assertIn("waitReason.includes('handheld mode=PAUSE')", dashboard.HTML)
-        self.assertIn("wifi.heartbeat_fresh===1&&wifi.estop_latched===0", dashboard.HTML)
+        self.assertIn("waitReason.includes('mode=PAUSE')", dashboard.HTML)
+        self.assertIn("phoneAuto=wifiPresent?wifiMode===2", dashboard.HTML)
+        self.assertIn("CONTROL_STABLE_MS=5000", dashboard.HTML)
+        self.assertIn("NETWORK UNSTABLE — REMAIN IN PAUSE", dashboard.HTML)
 
     @mock.patch.object(subprocess, "run")
     def test_route_to_laptop_is_first_and_zerotier_is_excluded(self, run):
