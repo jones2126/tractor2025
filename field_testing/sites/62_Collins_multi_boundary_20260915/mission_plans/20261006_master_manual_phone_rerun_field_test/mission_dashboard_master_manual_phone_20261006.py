@@ -5,6 +5,8 @@ from __future__ import annotations
 
 import csv
 import importlib.util
+import os
+import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -58,6 +60,13 @@ with dashboard.AUDIT.open(newline="", encoding="utf-8-sig") as handle:
 
 
 if __name__ == "__main__":
+    print("Preparing Heading F9P before opening the mission dashboard...")
+    subprocess.run(
+        ["bash", str(dashboard.LAUNCHER), "--configure-heading"],
+        cwd=HERE,
+        check=True,
+    )
+    os.environ["TRACTOR_HEADING_PROFILE_READY"] = "1"
     print(f"Hands-free voice-note CSV:   {phone_dashboard.NOTE_CSV}")
     print(f"Hands-free voice-note JSONL: {phone_dashboard.NOTE_JSONL}")
     dashboard.main()

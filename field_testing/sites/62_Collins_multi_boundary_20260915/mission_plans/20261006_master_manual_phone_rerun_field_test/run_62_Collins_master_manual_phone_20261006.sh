@@ -36,10 +36,34 @@ if [[ "${verify_only}" == true ]]; then
     exit 0
 fi
 
-if [[ "${configure_heading}" == true ]]; then
-    echo "Stop rtcm-server before continuing. Applying the verified RAM-only Heading-F9P startup profile."
+configure_heading_profile() {
+    local config_rc start_rc active_state
+    [[ -f "${HEADING_CONFIG}" ]] || {
+        echo "ERROR: Heading-F9P configuration tool not found: ${HEADING_CONFIG}" >&2
+        return 1
+    }
+    echo "Applying the verified RAM-only Heading-F9P 5 Hz startup profile..."
+    sudo systemctl stop rtcm-server.service || {
+        echo "FAIL: could not stop rtcm-server — DO NOT SELECT AUTO" >&2
+        return 1
+    }
+    set +e
     sudo python3 -u "${HEADING_CONFIG}" --heading-startup --device-wait-seconds 30
-    echo "Heading profile verified. Restart rtcm-server and allow RTK/heading to settle."
+    config_rc=$?
+    sudo systemctl start rtcm-server.service
+    start_rc=$?
+    set -e
+    active_state="$(systemctl is-active rtcm-server.service 2>/dev/null || true)"
+    echo "rtcm-server state: ${active_state}"
+    if [[ "${config_rc}" -ne 0 || "${start_rc}" -ne 0 || "${active_state}" != active ]]; then
+        echo "FAIL: Heading configuration or rtcm-server restart failed — DO NOT SELECT AUTO" >&2
+        return 1
+    fi
+    echo "PASS: Heading profile verified and rtcm-server is active"
+}
+
+if [[ "${configure_heading}" == true ]]; then
+    configure_heading_profile
     exit 0
 fi
 
@@ -69,6 +93,15 @@ echo " Speed       : 1.00 m/s; lookahead 2.00 m"
 echo " Safety      : blades off, direct supervision, physical e-stop ready"
 echo " Phone       : local tractor Wi-Fi only; keep the page open in Pause"
 echo "============================================================"
+if [[ "${TRACTOR_HEADING_PROFILE_READY:-0}" == 1 ]]; then
+    [[ "$(systemctl is-active rtcm-server.service 2>/dev/null || true)" == active ]] || {
+        echo "ERROR: dashboard configured heading, but rtcm-server is no longer active" >&2
+        exit 1
+    }
+    echo "PASS: dashboard startup already configured Heading F9P; rtcm-server is active"
+else
+    configure_heading_profile
+fi
 echo "Checking phone heartbeat, Teensy bridge, RTK corrections, and heading..."
 sleep 15
 if [[ "${dashboard_mode}" == true ]]; then

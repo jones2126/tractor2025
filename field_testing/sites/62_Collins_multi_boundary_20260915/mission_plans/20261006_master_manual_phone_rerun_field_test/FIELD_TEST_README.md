@@ -50,9 +50,11 @@ bash field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/202610
 Verification must end with both PASS messages and must report 19,825 waypoints.
 It does not start the controller or logger.
 
-If the Heading F9P lost its RAM-only 5 Hz profile after power-off, stop
-`rtcm-server`, run the launcher's `--configure-heading` mode, then restart
-`rtcm-server` and allow RTK/heading to settle.
+The normal dashboard startup now performs the complete Heading-F9P preparation
+automatically: stop `rtcm-server`, apply and verify the RAM-only 5 Hz startup
+profile, restart `rtcm-server`, and require the service to be active. A failure
+stops dashboard startup with `DO NOT SELECT AUTO`. The launcher performs the
+same preparation when it is run directly rather than through the dashboard.
 
 ## Field sequence
 
@@ -69,6 +71,12 @@ If the Heading F9P lost its RAM-only 5 Hz profile after power-off, stop
    ```powershell
    ssh -t -i "$env:USERPROFILE\.ssh\id_ed25519_tractor01" al@192.168.193.76 "cd /home/al/tractor2025 && sudo -v && python3 field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20261006_master_manual_phone_rerun_field_test/mission_dashboard_master_manual_phone_20261006.py"
    ```
+
+   Before printing the dashboard URLs, this command automatically stops
+   `rtcm-server`, applies and verifies the Heading-F9P 5 Hz RAM profile, restarts
+   `rtcm-server`, and confirms it is active. Wait for
+   `PASS: Heading profile verified and rtcm-server is active`. If this step
+   fails, do not select Auto; copy the terminal output into the Codex chat.
 
 4. Open the dashboard's preferred local URL on the laptop and select
    `START VOICE GUIDANCE`. The mission dashboard—not the phone-control page—
