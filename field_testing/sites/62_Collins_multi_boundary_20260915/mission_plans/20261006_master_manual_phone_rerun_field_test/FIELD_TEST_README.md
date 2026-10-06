@@ -58,29 +58,71 @@ If the Heading F9P lost its RAM-only 5 Hz profile after power-off, stop
 
 1. Keep the mower deck disengaged. Confirm regulated router power, the loaded
    low-voltage alarm, and physical E-stop operation.
-2. Connect the phone to the tractor router's local Wi-Fi. Open the local phone
-   control link and leave it in Pause.
-3. Use phone Manual to move to the historical mission start and align with the
-   initial heading. Return the phone to Pause.
-4. On the field laptop, start the mission dashboard:
+2. After Tractor01 boots, wait for the ntfy notification titled
+   `Tractor01 local control ready`. The enabled `tractor-wifi-control` service
+   sends this when the local control hostname is ready. Connect the phone to the
+   tractor router's local Wi-Fi, open that ntfy link, and leave the phone in
+   Pause. A separate ZeroTier status notification may also arrive, but it cannot
+   authorize motion and is not the phone-control link.
+3. On the field laptop, start the mission dashboard:
 
    ```powershell
    ssh -t -i "$env:USERPROFILE\.ssh\id_ed25519_tractor01" al@192.168.193.76 "cd /home/al/tractor2025 && sudo -v && python3 field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20261006_master_manual_phone_rerun_field_test/mission_dashboard_master_manual_phone_20261006.py"
    ```
 
-5. Open the dashboard's preferred local URL on the laptop. Start the mission
-   while the phone remains in Pause. The launcher requires fresh phone control,
+4. Open the dashboard's preferred local URL on the laptop and select
+   `START VOICE GUIDANCE`. The mission dashboard—not the phone-control page—
+   provides spoken distance, direction, and heading guidance to the start. This
+   action also enables hands-free voice notes. Keep the dashboard browser open.
+5. Use phone Manual to move to the historical mission start and align with the
+   initial heading while listening to the dashboard guidance. Return the phone
+   to Pause before starting the mission.
+6. Start the mission from the dashboard while the phone remains in Pause. The
+   launcher requires fresh phone control,
    RTK Fixed, fixed-carrier heading, a 0.80-1.30 m baseline, heading accuracy no
    worse than 1 degree, start distance no more than 1.50 m, and heading error no
    more than 20 degrees.
-6. When the dashboard says `READY FOR GUARDED AUTO` and the route is clear, use
+7. If preflight fails or another message needs analysis, select `OPEN MESSAGES`
+   on the dashboard. Copy the relevant message text and paste it into the Codex
+   chat. Future field checklists should retain this troubleshooting step.
+8. When the dashboard says `READY FOR GUARDED AUTO` and the route is clear, use
    the phone's guarded Auto action. Maintain direct supervision.
-7. For any unexpected tracking, clearance, power, network, GPS, or heading
+9. For any unexpected tracking, clearance, power, network, GPS, or heading
    behavior, select phone Pause immediately. After a link dropout, remain in
    Pause through the visible recovery lockout and deliberately re-arm Auto only
    after inspecting the tractor and route.
-8. At completion, select phone Pause, then press Ctrl+C in the dashboard
-   terminal. Preserve the field log, pursuit log, and relevant service journals.
+10. At completion, select phone Pause, then press Ctrl+C in the dashboard
+    terminal. Confirm the tractor is stopped. Package the run from Tractor01:
+
+    ```bash
+    cd /home/al/tractor2025 && sudo -v && bash field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20261006_master_manual_phone_rerun_field_test/collect_master_manual_phone_run_20261006.sh
+    ```
+
+    The collector makes timestamped snapshots of the mission logs, pursuit logs,
+    Wi-Fi-control logs, service journal, service status, repository revision, and
+    network state. It does not stop services or delete source logs. It prints the
+    archive's SHA-256 and refreshes this stable copy path:
+
+    `/home/al/tractor01_master_manual_phone_rerun_latest.tgz`
 
 Logs and voice notes are written under
 `/home/al/field_logs/20261006_master_manual_phone_rerun_1mps/`.
+
+## Copy the completed archive off Tractor01
+
+From a terminal on the RPi5NAS development machine, use this one line:
+
+```bash
+scp al@192.168.193.76:/home/al/tractor01_master_manual_phone_rerun_latest.tgz /home/al/repos/tractor2025/field_testing/
+```
+
+Or, from PowerShell in this Windows development workspace, use:
+
+```powershell
+scp al@192.168.193.76:/home/al/tractor01_master_manual_phone_rerun_latest.tgz C:\Repos\tractor2025\field_testing\
+```
+
+The collector also writes the timestamped archive path and expected SHA-256 to
+`/home/al/tractor01_master_manual_phone_rerun_latest.txt`. Verify the copied file
+with `sha256sum` on Linux or `Get-FileHash -Algorithm SHA256` in PowerShell before
+shutting Tractor01 down.
