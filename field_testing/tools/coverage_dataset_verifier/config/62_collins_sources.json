@@ -1,0 +1,157 @@
+{
+  "schemaVersion": 1,
+  "status": "REVIEW ONLY — NOT APPROVED FOR FIELD USE",
+  "siteId": "62_COLLINS",
+  "siteName": "62 Collins",
+  "surveyNotes": "September 2026 tractor surveys. Verify the exact source files and assumptions before reviewing any derived geometry.",
+  "priorApprovedPerimeter": {
+    "title": "Consolidated perimeter mission",
+    "approvalScope": "Approved only for an initial directly supervised, blades-off field test",
+    "executionStatus": "Not fully executed; this is approved geometry, not completed field validation",
+    "waypointCount": 3989,
+    "routeLengthM": 790.077,
+    "speedMps": 1.0,
+    "missionSha256": "35ea19776283ef415518fd57997e418b966ea823741bcc6a6ca135cee7b504d9",
+    "replayPath": "field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20260929_consolidated_perimeter_field_test/generated/62_Collins_consolidated_perimeter_1mps_20260929_INTERACTIVE_APPROVED.html",
+    "validationPath": "field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20260929_consolidated_perimeter_field_test/generated/62_Collins_consolidated_perimeter_1mps_20260929_validation.json",
+    "readmePath": "field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20260929_consolidated_perimeter_field_test/FIELD_TEST_README.md",
+    "notes": "Preserve this exact package as prior owner-approved route evidence. It does not approve the current source register or a coverage mission."
+  },
+  "outputDirectory": "field_testing/sites/62_Collins_multi_boundary_20260915/planning/source_dataset_verification/62_COLLINS",
+  "equipment": {
+    "deckWidthM": 1.0668
+  },
+  "laterStageAssumptions": {
+    "laneSpacingM": 0.9652,
+    "nominalOverlapM": 0.1016,
+    "weakerRightTurnRadiusM": 1.63,
+    "softTurnReviewRadiusM": 1.9,
+    "appliedToSourceGeometry": false
+  },
+  "coordinateFrame": {
+    "sourceId": "TRANSITION-SEGMENT-02",
+    "method": "Origin is the latitude/longitude in the first data row of the selected source file.",
+    "rowSelection": "first data row"
+  },
+  "sources": [
+    {
+      "id": "BOUNDARY-CANDIDATE-V2",
+      "name": "Consolidated perimeter candidate",
+      "sourceType": "derived_review_artifact",
+      "purposes": ["boundary_evidence"],
+      "required": true,
+      "path": "field_testing/sites/62_Collins_multi_boundary_20260915/analysis/20260928_perimeter_candidate_v2_REVIEW_ONLY/62_Collins_perimeter_candidate_v2_REVIEW_ONLY.geojson",
+      "expectedSha256": "2470acf290b15c0a1bbe77a2421ffd7d775d8486748df9163fcc4cfe6e34de14",
+      "notes": "Derived review-only boundary candidate; not a raw survey and not field approval.",
+      "legacyViewerPath": "field_testing/sites/62_Collins_multi_boundary_20260915/analysis/20260928_perimeter_candidate_v2_REVIEW_ONLY/62_Collins_perimeter_candidate_v2_INTERACTIVE_REVIEW.html",
+      "provenance": {
+        "summary": "Generated on September 28 by applying four comments from 'review of map.pptx' to an earlier combined-coverage boundary candidate.",
+        "generatedBy": "field_testing/tools/build_20260928_perimeter_candidate_v2.py",
+        "ownerCreated": false,
+        "sourceInputs": [
+          "field_testing/sites/62_Collins_multi_boundary_20260915/analysis/20260923_combined_coverage_review/combined_coverage_boundaries_REVIEW_ONLY.geojson",
+          "field_testing/sites/62_Collins_multi_boundary_20260915/runs/20260915_133923/boundary_review/segment_02_candidate_path.csv",
+          "field_testing/sites/62_Collins_multi_boundary_20260915/runs/20260915_133923/boundary_review/segment_14_candidate_path.csv",
+          "review of map.pptx (historical external review notes)"
+        ]
+      }
+    },
+    {
+      "id": "RAW-GPS-20260926",
+      "name": "September 26 tractor and GPS log",
+      "sourceType": "raw_recording",
+      "purposes": ["boundary_evidence", "obstacle_evidence"],
+      "required": true,
+      "path": "field_testing/sites/62_Collins_multi_boundary_20260915/runs/20260926_phone_manual_perimeter_extension/field_test_20260926_121311.csv",
+      "expectedSha256": "4b4d73df31db91590bde88d6f8bda5e5dd37a5547b5933be482e81383c12a8e9",
+      "notes": "Raw evidence for perimeter extension and obstacle candidates."
+    },
+    {
+      "id": "OBSTACLE-INVENTORY-REV003",
+      "name": "Revision 3 obstacle and site inventory",
+      "sourceType": "derived_review_artifact",
+      "purposes": ["obstacle_evidence"],
+      "required": true,
+      "path": "field_testing/sites/62_Collins_multi_boundary_20260915/site_inventory/revisions/rev_003_20260926_REVIEW_ONLY/62_Collins_site_inventory_rev003_REVIEW_ONLY.geojson",
+      "expectedSha256": "9fdb52503db3383c74f491a129b84bbc1d8893b931caa6e7c484156db4760bfb",
+      "notes": "Derived review evidence. Physical identities and active keep-outs still require later review.",
+      "legacyViewerPath": "field_testing/sites/62_Collins_multi_boundary_20260915/site_inventory/revisions/rev_003_20260926_REVIEW_ONLY/62_Collins_site_inventory_rev003_INTERACTIVE_REVIEW.html",
+      "provenance": {
+        "summary": "Generated from selected September 26 GPS time windows plus earlier inventory geometry. The viewer predates later reconciliation decisions and cannot record approval.",
+        "generatedBy": "field_testing/tools/build_62_collins_site_inventory_rev003_20260926.py",
+        "ownerCreated": false,
+        "sourceInputs": [
+          "field_testing/sites/62_Collins_multi_boundary_20260915/runs/20260926_phone_manual_perimeter_extension/field_test_20260926_121311.csv",
+          "field_testing/sites/62_Collins_multi_boundary_20260915/site_inventory/revisions/rev_002_20260925/62_Collins_site_inventory.geojson"
+        ]
+      }
+    },
+    {
+      "id": "TRANSITION-SEGMENT-02",
+      "name": "Recorded route segment 02 and coordinate origin",
+      "sourceType": "recorded_path_extract",
+      "purposes": ["transition_evidence", "coordinate_frame"],
+      "required": true,
+      "path": "field_testing/sites/62_Collins_multi_boundary_20260915/runs/20260915_133923/boundary_review/segment_02_candidate_path.csv",
+      "expectedSha256": "2cf1aaba24ca4b06be17c9a48046222df0d5cdd24390e651c21601dfe4dd4e5e",
+      "notes": "Also supplies the local coordinate-frame origin."
+    },
+    {
+      "id": "TRANSITION-SEGMENT-09",
+      "name": "Recorded route segment 09",
+      "sourceType": "recorded_path_extract",
+      "purposes": ["transition_evidence"],
+      "required": true,
+      "path": "field_testing/sites/62_Collins_multi_boundary_20260915/runs/20260915_133923/boundary_review/segment_09_candidate_path.csv",
+      "expectedSha256": "ef3c32904e9dd2bc2a1bb6769974be6bb40322f91761efeca092b03b1e362e4d",
+      "notes": "Recorded direction only until reverse travel has separate evidence."
+    },
+    {
+      "id": "TRANSITION-SEGMENT-11",
+      "name": "Recorded route segment 11",
+      "sourceType": "recorded_path_extract",
+      "purposes": ["transition_evidence"],
+      "required": true,
+      "path": "field_testing/sites/62_Collins_multi_boundary_20260915/runs/20260915_133923/boundary_review/segment_11_candidate_path.csv",
+      "expectedSha256": "1854f84939a4d4d8f806c70cd5ad307a8642ed44ba67f9b637685f44e4c33b7d",
+      "notes": "Recorded direction only until reverse travel has separate evidence."
+    },
+    {
+      "id": "TRANSITION-SEGMENT-12",
+      "name": "Recorded route segment 12",
+      "sourceType": "recorded_path_extract",
+      "purposes": ["transition_evidence"],
+      "required": true,
+      "path": "field_testing/sites/62_Collins_multi_boundary_20260915/runs/20260915_133923/boundary_review/segment_12_candidate_path.csv",
+      "expectedSha256": "62cdfa2774bbd49172939929f2ff8b1a253b5a7d1db0f62cd3f049dc1bf13f5b",
+      "notes": "Recorded direction only until reverse travel has separate evidence."
+    },
+    {
+      "id": "TRANSITION-SEGMENT-16",
+      "name": "Recorded route segment 16",
+      "sourceType": "recorded_path_extract",
+      "purposes": ["transition_evidence"],
+      "required": true,
+      "path": "field_testing/sites/62_Collins_multi_boundary_20260915/runs/20260915_133923/boundary_review/segment_16_candidate_path.csv",
+      "expectedSha256": "fa24ebe9d98601478ca459d491d55493f53ba91f569857928bf988329d5ad858",
+      "notes": "Recorded direction only until reverse travel has separate evidence."
+    },
+    {
+      "id": "TRANSITION-SEGMENT-17",
+      "name": "Recorded route segment 17",
+      "sourceType": "recorded_path_extract",
+      "purposes": ["transition_evidence"],
+      "required": true,
+      "path": "field_testing/sites/62_Collins_multi_boundary_20260915/runs/20260915_133923/boundary_review/segment_17_candidate_path.csv",
+      "expectedSha256": "35a28fe3fadf9acc157c146263013c2aadf9ca00ca26c14323c3a795c887a5e3",
+      "notes": "Recorded direction only until reverse travel has separate evidence."
+    }
+  ],
+  "sourceApproval": {
+    "state": "needs_review",
+    "reviewer": "",
+    "reviewDate": "",
+    "comments": "",
+    "attestation": false
+  }
+}

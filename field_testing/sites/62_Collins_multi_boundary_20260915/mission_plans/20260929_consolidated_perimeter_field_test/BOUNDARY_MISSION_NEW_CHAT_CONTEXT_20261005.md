@@ -80,6 +80,21 @@ firmware language from its approval provenance. The current launcher,
 dashboard, preflight, and firmware use the Wi-Fi-primary phone controller. Do
 not change the generated report during field operations.
 
+## Later coverage-planning clarification (2026-10-05)
+
+The generated static and interactive approved previews are the latest visual
+inventory of surveyed obstacles for later coverage planning, with one
+owner-confirmed correction: preview label `O012` (inventory candidate
+`OBS-NEW-012`) is erroneous. There is no obstacle at that location. A future
+coverage inventory and coverage map must omit it and must not create a keep-out
+area for it.
+
+Keep the checked-in approved perimeter package unchanged because it records
+the geometry and validation basis of the already-approved blades-off boundary
+mission. The `O012` correction applies when reconciling the next site-inventory
+revision and generating future review-only coverage geometry; it does not
+authorize editing or regenerating this approved mission.
+
 ## Required operating sequence
 
 The next chat should guide this sequence and examine the actual output before

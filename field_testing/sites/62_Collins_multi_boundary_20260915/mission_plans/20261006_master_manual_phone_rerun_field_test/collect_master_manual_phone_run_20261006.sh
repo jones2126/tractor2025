@@ -54,7 +54,8 @@ cleanup() {
 }
 trap cleanup EXIT
 mkdir -p "${STAGING}/mission_logs" "${STAGING}/wifi_logs" \
-    "${STAGING}/pursuit_logs" "${STAGING}/diagnostics"
+    "${STAGING}/recovery_logs" "${STAGING}/pursuit_logs" \
+    "${STAGING}/diagnostics"
 
 copy_matches() {
     local destination="$1"
@@ -74,6 +75,14 @@ fi
 if [[ -d /home/al/field_logs ]]; then
     copy_matches "${STAGING}/wifi_logs" /home/al/field_logs -maxdepth 1 -type f \
         -name 'wifi_primary_control_*.jsonl' -newermt "${SINCE}"
+    copy_matches "${STAGING}/wifi_logs" /home/al/field_logs -maxdepth 1 -type f \
+        -name 'phone_flight_recorder_*.jsonl' -newermt "${SINCE}"
+fi
+
+if [[ -d /home/al/field_logs/manual_recovery ]]; then
+    copy_matches "${STAGING}/recovery_logs" \
+        /home/al/field_logs/manual_recovery -maxdepth 1 -type f \
+        -newermt "${SINCE}"
 fi
 
 if [[ -d "${FIELD_DATA_DIR}" ]]; then
@@ -94,19 +103,23 @@ DIAGNOSTICS="${STAGING}/diagnostics"
 
 {
     systemctl is-active rtcm-server.service teensy-bridge.service \
-        led-controller.service tractor-wifi-control.service || true
+        led-controller.service tractor-wifi-control.service \
+        tractor-wifi-recovery.service || true
     echo
     systemctl status rtcm-server.service teensy-bridge.service \
-        led-controller.service tractor-wifi-control.service --no-pager -l || true
+        led-controller.service tractor-wifi-control.service \
+        tractor-wifi-recovery.service --no-pager -l || true
 } > "${DIAGNOSTICS}/service_status.txt" 2>&1
 
 if sudo -n true 2>/dev/null; then
     sudo -n journalctl -u tractor-wifi-control.service \
+        -u tractor-wifi-recovery.service \
         -u teensy-bridge.service -u rtcm-server.service \
         -u led-controller.service --since "${SINCE}" --no-pager \
         > "${DIAGNOSTICS}/service_journal.log" 2>&1 || true
 else
     journalctl -u tractor-wifi-control.service -u teensy-bridge.service \
+        -u tractor-wifi-recovery.service \
         -u rtcm-server.service -u led-controller.service \
         --since "${SINCE}" --no-pager \
         > "${DIAGNOSTICS}/service_journal.log" 2>&1 || true
@@ -133,8 +146,9 @@ fi
 
 mission_count="$(find "${STAGING}/mission_logs" -type f | wc -l)"
 wifi_count="$(find "${STAGING}/wifi_logs" -type f | wc -l)"
+recovery_count="$(find "${STAGING}/recovery_logs" -type f | wc -l)"
 pursuit_count="$(find "${STAGING}/pursuit_logs" -type f | wc -l)"
-echo "Mission files: ${mission_count}; Wi-Fi logs: ${wifi_count}; pursuit logs: ${pursuit_count}"
+echo "Mission files: ${mission_count}; Wi-Fi logs: ${wifi_count}; recovery logs: ${recovery_count}; pursuit logs: ${pursuit_count}"
 
 tar -C "${STAGING}" -czf "${ARCHIVE}" .
 sync

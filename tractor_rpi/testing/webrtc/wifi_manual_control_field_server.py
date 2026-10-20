@@ -159,7 +159,7 @@ class FieldState:
         self.last_stop_reason = reason
         self.log("stop_burst", reason=reason, sequence=sequence, steering_percent=steering_percent)
 
-    def claim(self, client_id: str) -> dict[str, Any]:
+    def claim(self, client_id: str, client_ip: str | None = None) -> dict[str, Any]:
         now = time.monotonic()
         with self.lock:
             if not client_id or len(client_id) > 100:
@@ -177,7 +177,12 @@ class FieldState:
             self.last_decision = "phone claimed; handheld Pause confirmed"
             self.stop_sent_for_expiry = False
             session = self.owner_session
-            self.log("owner_claimed", client_id=client_id, session=session)
+            self.log(
+                "owner_claimed",
+                client_id=client_id,
+                client_ip=client_ip,
+                session=session,
+            )
         self.send_stop_burst("owner_claim", steering_percent=0.0)
         return {
             "session": session,
@@ -187,7 +192,9 @@ class FieldState:
             "max_drive_percent": MAX_DRIVE_PERCENT,
         }
 
-    def accept_command(self, data: Any) -> tuple[HTTPStatus, dict[str, Any]]:
+    def accept_command(
+        self, data: Any, client_ip: str | None = None
+    ) -> tuple[HTTPStatus, dict[str, Any]]:
         received = time.monotonic()
         if not isinstance(data, dict):
             return HTTPStatus.BAD_REQUEST, {"accepted": False, "error": "JSON object required"}
@@ -419,6 +426,7 @@ def handler_factory(
                 self.send_bytes(HTTPStatus.OK, "text/html; charset=utf-8", page)
             elif path == "/api/state":
                 payload = state.snapshot()
+                payload["client_ip"] = self.client_address[0]
                 payload["local_control_allowed"] = self.local_control_allowed()
                 payload["control_network"] = (
                     None if control_network is None else str(control_network)
@@ -431,15 +439,16 @@ def handler_factory(
             if not self.authorized():
                 self.send_json(HTTPStatus.FORBIDDEN, {"error": "invalid operator key"})
                 return
+            path = urlparse(self.path).path
             try:
                 length = int(self.headers.get("Content-Length", "0"))
-                if length <= 0 or length > 8192:
+                maximum = 65536 if path == "/api/client-log" else 8192
+                if length <= 0 or length > maximum:
                     raise ValueError("invalid request size")
                 data = json.loads(self.rfile.read(length).decode("utf-8"))
             except (ValueError, UnicodeDecodeError, json.JSONDecodeError) as exc:
                 self.send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
                 return
-            path = urlparse(self.path).path
             if path in ("/api/claim", "/api/command") and not self.local_control_allowed():
                 reject = getattr(state, "reject_nonlocal_control", None)
                 if callable(reject):
@@ -458,12 +467,25 @@ def handler_factory(
                 return
             try:
                 if path == "/api/claim":
-                    result = state.claim(str(data.get("client_id", "")))
+                    result = state.claim(
+                        str(data.get("client_id", "")), self.client_address[0]
+                    )
                     self.send_json(HTTPStatus.OK, result)
                     return
                 if path == "/api/command":
-                    status, result = state.accept_command(data)
+                    status, result = state.accept_command(data, self.client_address[0])
                     self.send_json(status, result)
+                    return
+                if path == "/api/client-log":
+                    ingest = getattr(state, "ingest_client_events", None)
+                    if not callable(ingest):
+                        self.send_json(
+                            HTTPStatus.NOT_FOUND,
+                            {"error": "client flight recorder is not enabled"},
+                        )
+                        return
+                    result = ingest(data, self.client_address[0])
+                    self.send_json(HTTPStatus.OK, result)
                     return
                 self.send_json(HTTPStatus.NOT_FOUND, {"error": "not found"})
             except (RuntimeError, ValueError) as exc:

@@ -24,8 +24,11 @@ unattended coverage mission.
 > planned row and all safely coverable area are ultimately covered. Avoid the
 > tight, roughly 1.2 m-radius hard U-turn style. Reconcile the revision-2 site
 > inventory with the larger review-only obstacle set used by the approved
-> perimeter package before generating geometry. Produce auditable static and
-> interactive review artifacts, coverage-gap and deck-clearance validation,
+> perimeter package before generating geometry. Treat the approved full-route
+> PNG and matching interactive preview as the latest visual obstacle inventory,
+> except omit erroneous `O012` / `OBS-NEW-012`; there is no obstacle at that
+> location and no keep-out area should be generated for it. Produce auditable
+> static and interactive review artifacts, coverage-gap and deck-clearance validation,
 > and clearly label everything REVIEW ONLY. Do not create or enable a field
 > launcher and do not call the result approved until I visually review it.
 
@@ -89,16 +92,30 @@ The approved perimeter package was validated against:
 
 `site_inventory/revisions/rev_003_20260926_REVIEW_ONLY/62_Collins_site_inventory_rev003_REVIEW_ONLY.geojson`
 
-Its validation report checks fourteen `OBS-NEW-*` exclusions plus the pole and
-tree exclusions—sixteen obstacle exclusions in total. Some have little nominal
+The generated approved full-route PNG and matching interactive preview are the
+latest visual obstacle inventory. They show fourteen `O001`-`O014` surveyed
+labels plus the pole and tree. Al subsequently confirmed that `O012`, which
+maps to candidate `OBS-NEW-012`, is an error and that no obstacle exists there.
+For future coverage planning, retain the other thirteen `OBS-NEW-*` exclusions
+plus the pole and tree—fifteen obstacle exclusions in total—subject to the
+explicit reconciliation and owner review below. Some have little nominal
 deck-edge clearance. The revision-2 inventory's two obstacles are therefore
 not sufficient by themselves for the requested coverage guarantee.
+
+Do not rewrite the approved perimeter package or its historical revision-3
+source artifacts to erase `O012`; they preserve the validation provenance of
+the boundary mission. Record the correction in the proposed next inventory
+revision, omit `OBS-NEW-012` from its active obstacle collection, and generate
+no clearance exclusion for that location.
 
 Before generating coverage, create an explicit reconciliation report that:
 
 - identifies which boundary and obstacle geometries are supported by the
   successful perimeter run;
-- retains every relevant exclusion used by the approved perimeter package;
+- retains every relevant exclusion used by the approved perimeter package,
+  except the owner-rejected `O012` / `OBS-NEW-012` false obstacle;
+- explicitly records `OBS-NEW-012` as retired/rejected provenance rather than
+  silently renumbering the remaining obstacle IDs;
 - prevents double-applying an exclusion adjustment already embedded in an
   obstacle polygon;
 - proposes a new reviewed inventory revision without overwriting revision 2;

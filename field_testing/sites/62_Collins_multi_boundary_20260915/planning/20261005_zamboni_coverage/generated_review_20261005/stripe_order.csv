@@ -1,0 +1,128 @@
+route_sequence,area,area_name,stripe_cell,zamboni_group,stripe_column,stripe_part,direction,length_m,new_gap_coverage_m2
+8,AREA-BACKYARD-GARDENS,Backyard and gardens,1,G1-mod4,4,1,northbound,4.414,3.425
+10,AREA-BACKYARD-GARDENS,Backyard and gardens,1,G1-mod4,8,1,southbound,7.287,6.59
+12,AREA-BACKYARD-GARDENS,Backyard and gardens,1,G1-mod4,12,1,northbound,8.52,7.944
+14,AREA-BACKYARD-GARDENS,Backyard and gardens,1,G1-mod4,16,2,southbound,9.545,5.666
+16,AREA-BACKYARD-GARDENS,Backyard and gardens,1,G1-mod4,20,2,northbound,15.793,14.258
+18,AREA-BACKYARD-GARDENS,Backyard and gardens,1,G1-mod4,24,1,southbound,63.42,61.272
+20,AREA-BACKYARD-GARDENS,Backyard and gardens,1,G1-mod4,28,1,northbound,56.413,58.803
+22,AREA-BACKYARD-GARDENS,Backyard and gardens,1,G1-mod4,32,1,southbound,56.549,59.137
+24,AREA-BACKYARD-GARDENS,Backyard and gardens,1,G1-mod4,36,1,northbound,56.392,58.977
+26,AREA-BACKYARD-GARDENS,Backyard and gardens,1,G1-mod4,40,1,southbound,55.932,58.491
+28,AREA-BACKYARD-GARDENS,Backyard and gardens,1,G1-mod4,44,1,northbound,57.049,54.206
+30,AREA-BACKYARD-GARDENS,Backyard and gardens,1,G2-mod4,5,1,southbound,5.29,4.397
+32,AREA-BACKYARD-GARDENS,Backyard and gardens,1,G2-mod4,9,1,northbound,7.709,7.063
+34,AREA-BACKYARD-GARDENS,Backyard and gardens,1,G2-mod4,13,2,southbound,9.135,8.524
+36,AREA-BACKYARD-GARDENS,Backyard and gardens,1,G2-mod4,17,2,northbound,8.694,2.593
+38,AREA-BACKYARD-GARDENS,Backyard and gardens,1,G2-mod4,21,2,southbound,16.677,16.296
+40,AREA-BACKYARD-GARDENS,Backyard and gardens,1,G2-mod4,25,1,northbound,62.179,63.115
+42,AREA-BACKYARD-GARDENS,Backyard and gardens,1,G2-mod4,29,1,southbound,56.257,58.82
+44,AREA-BACKYARD-GARDENS,Backyard and gardens,1,G2-mod4,33,1,northbound,56.528,59.114
+46,AREA-BACKYARD-GARDENS,Backyard and gardens,1,G2-mod4,37,1,southbound,56.31,58.873
+48,AREA-BACKYARD-GARDENS,Backyard and gardens,1,G2-mod4,41,1,northbound,56.047,58.574
+50,AREA-BACKYARD-GARDENS,Backyard and gardens,1,G2-mod4,45,1,southbound,1.875,0.251
+52,AREA-BACKYARD-GARDENS,Backyard and gardens,1,G3-mod4,2,1,northbound,2.27,1.07
+54,AREA-BACKYARD-GARDENS,Backyard and gardens,1,G3-mod4,6,1,southbound,6.043,5.223
+56,AREA-BACKYARD-GARDENS,Backyard and gardens,1,G3-mod4,10,1,northbound,7.967,7.349
+58,AREA-BACKYARD-GARDENS,Backyard and gardens,1,G3-mod4,14,3,southbound,9.968,8.703
+60,AREA-BACKYARD-GARDENS,Backyard and gardens,1,G3-mod4,18,2,northbound,7.286,4.344
+62,AREA-BACKYARD-GARDENS,Backyard and gardens,1,G3-mod4,22,2,southbound,16.635,16.469
+64,AREA-BACKYARD-GARDENS,Backyard and gardens,1,G3-mod4,26,1,northbound,59.8,61.195
+66,AREA-BACKYARD-GARDENS,Backyard and gardens,1,G3-mod4,30,1,southbound,56.41,59.013
+68,AREA-BACKYARD-GARDENS,Backyard and gardens,1,G3-mod4,34,1,northbound,56.506,59.091
+70,AREA-BACKYARD-GARDENS,Backyard and gardens,1,G3-mod4,38,1,southbound,56.169,58.726
+72,AREA-BACKYARD-GARDENS,Backyard and gardens,1,G3-mod4,42,1,northbound,56.076,58.588
+74,AREA-BACKYARD-GARDENS,Backyard and gardens,1,G4-mod4,3,1,southbound,3.411,2.323
+76,AREA-BACKYARD-GARDENS,Backyard and gardens,1,G4-mod4,7,1,northbound,6.751,5.987
+78,AREA-BACKYARD-GARDENS,Backyard and gardens,1,G4-mod4,11,1,southbound,8.225,7.624
+80,AREA-BACKYARD-GARDENS,Backyard and gardens,1,G4-mod4,15,2,northbound,9.427,7.065
+82,AREA-BACKYARD-GARDENS,Backyard and gardens,1,G4-mod4,19,2,southbound,13.378,9.332
+84,AREA-BACKYARD-GARDENS,Backyard and gardens,1,G4-mod4,23,2,northbound,16.408,15.575
+86,AREA-BACKYARD-GARDENS,Backyard and gardens,1,G4-mod4,27,1,southbound,57.693,59.475
+88,AREA-BACKYARD-GARDENS,Backyard and gardens,1,G4-mod4,31,1,northbound,56.545,59.133
+90,AREA-BACKYARD-GARDENS,Backyard and gardens,1,G4-mod4,35,1,southbound,56.465,59.052
+92,AREA-BACKYARD-GARDENS,Backyard and gardens,1,G4-mod4,39,1,northbound,56.028,58.576
+94,AREA-BACKYARD-GARDENS,Backyard and gardens,1,G4-mod4,43,1,southbound,56.109,58.58
+96,AREA-BACKYARD-GARDENS,Backyard and gardens,2,G1-mod4,44,2,northbound,19.262,17.453
+98,AREA-BACKYARD-GARDENS,Backyard and gardens,2,G1-mod4,48,1,southbound,45.743,45.329
+100,AREA-BACKYARD-GARDENS,Backyard and gardens,2,G1-mod4,52,1,northbound,45.798,45.09
+102,AREA-BACKYARD-GARDENS,Backyard and gardens,2,G1-mod4,56,1,southbound,40.338,40.437
+104,AREA-BACKYARD-GARDENS,Backyard and gardens,2,G1-mod4,60,1,northbound,34.616,35.616
+106,AREA-BACKYARD-GARDENS,Backyard and gardens,2,G1-mod4,64,1,southbound,10.869,6.418
+108,AREA-BACKYARD-GARDENS,Backyard and gardens,2,G2-mod4,41,2,northbound,4.582,1.373
+110,AREA-BACKYARD-GARDENS,Backyard and gardens,2,G2-mod4,45,2,southbound,72.112,72.868
+112,AREA-BACKYARD-GARDENS,Backyard and gardens,2,G2-mod4,49,1,northbound,44.625,44.587
+114,AREA-BACKYARD-GARDENS,Backyard and gardens,2,G2-mod4,53,1,southbound,43.286,44.409
+116,AREA-BACKYARD-GARDENS,Backyard and gardens,2,G2-mod4,57,1,northbound,36.876,37.779
+118,AREA-BACKYARD-GARDENS,Backyard and gardens,2,G2-mod4,61,1,southbound,33.778,29.101
+120,AREA-BACKYARD-GARDENS,Backyard and gardens,2,G2-mod4,65,1,northbound,4.952,3.519
+122,AREA-BACKYARD-GARDENS,Backyard and gardens,2,G3-mod4,42,2,southbound,9.824,7.324
+124,AREA-BACKYARD-GARDENS,Backyard and gardens,2,G3-mod4,46,1,northbound,70.979,68.534
+126,AREA-BACKYARD-GARDENS,Backyard and gardens,2,G3-mod4,50,1,southbound,44.46,44.496
+128,AREA-BACKYARD-GARDENS,Backyard and gardens,2,G3-mod4,54,2,northbound,44.252,43.721
+130,AREA-BACKYARD-GARDENS,Backyard and gardens,2,G3-mod4,58,1,southbound,35.491,36.644
+132,AREA-BACKYARD-GARDENS,Backyard and gardens,2,G3-mod4,62,1,northbound,20.8,16.603
+134,AREA-BACKYARD-GARDENS,Backyard and gardens,2,G3-mod4,66,1,southbound,3.323,1.873
+136,AREA-BACKYARD-GARDENS,Backyard and gardens,2,G4-mod4,43,2,northbound,14.502,12.447
+138,AREA-BACKYARD-GARDENS,Backyard and gardens,2,G4-mod4,47,1,southbound,68.225,63.004
+140,AREA-BACKYARD-GARDENS,Backyard and gardens,2,G4-mod4,51,1,northbound,44.912,44.861
+142,AREA-BACKYARD-GARDENS,Backyard and gardens,2,G4-mod4,55,1,southbound,44.949,43.591
+144,AREA-BACKYARD-GARDENS,Backyard and gardens,2,G4-mod4,59,1,northbound,34.85,36.028
+146,AREA-BACKYARD-GARDENS,Backyard and gardens,2,G4-mod4,63,1,southbound,13.015,11.375
+148,AREA-BACKYARD-GARDENS,Backyard and gardens,2,G4-mod4,67,1,northbound,1.861,0.439
+150,AREA-BACKYARD-GARDENS,Backyard and gardens,3,G1-mod4,16,1,northbound,19.457,18.021
+152,AREA-BACKYARD-GARDENS,Backyard and gardens,3,G1-mod4,20,1,southbound,36.667,37.118
+154,AREA-BACKYARD-GARDENS,Backyard and gardens,3,G2-mod4,17,1,northbound,23.855,22.541
+156,AREA-BACKYARD-GARDENS,Backyard and gardens,3,G2-mod4,21,1,southbound,38.99,39.812
+158,AREA-BACKYARD-GARDENS,Backyard and gardens,3,G3-mod4,14,2,northbound,3.413,1.627
+160,AREA-BACKYARD-GARDENS,Backyard and gardens,3,G3-mod4,18,1,southbound,29.77,27.975
+162,AREA-BACKYARD-GARDENS,Backyard and gardens,3,G3-mod4,22,1,northbound,40.871,42.012
+164,AREA-BACKYARD-GARDENS,Backyard and gardens,3,G4-mod4,15,1,southbound,15.282,11.267
+166,AREA-BACKYARD-GARDENS,Backyard and gardens,3,G4-mod4,19,1,northbound,33.779,33.549
+168,AREA-BACKYARD-GARDENS,Backyard and gardens,3,G4-mod4,23,1,southbound,43.165,44.171
+170,AREA-BACKYARD-GARDENS,Backyard and gardens,4,G1-mod4,104,1,northbound,4.135,4.411
+172,AREA-BACKYARD-GARDENS,Backyard and gardens,4,G2-mod4,105,1,southbound,3.533,3.769
+174,AREA-BACKYARD-GARDENS,Backyard and gardens,4,G3-mod4,102,1,northbound,2.444,2.608
+176,AREA-BACKYARD-GARDENS,Backyard and gardens,4,G4-mod4,103,1,southbound,3.877,4.136
+178,AREA-BACKYARD-GARDENS,Backyard and gardens,5,G1-mod4,48,2,northbound,17.739,14.489
+180,AREA-BACKYARD-GARDENS,Backyard and gardens,5,G2-mod4,49,2,southbound,13.98,9.884
+182,AREA-BACKYARD-GARDENS,Backyard and gardens,5,G3-mod4,50,2,northbound,4.217,1.842
+184,AREA-BACKYARD-GARDENS,Backyard and gardens,6,G3-mod4,62,2,northbound,4.414,2.726
+186,AREA-BACKYARD-GARDENS,Backyard and gardens,6,G4-mod4,63,3,southbound,2.386,0.808
+188,AREA-BACKYARD-GARDENS,Backyard and gardens,7,G3-mod4,50,3,northbound,1.62,0.182
+196,AREA-FRONT-YARD,Front yard,1,G1-mod4,4,1,northbound,8.709,7.802
+198,AREA-FRONT-YARD,Front yard,1,G1-mod4,8,1,southbound,24.644,23.748
+200,AREA-FRONT-YARD,Front yard,1,G1-mod4,12,1,northbound,22.151,22.177
+202,AREA-FRONT-YARD,Front yard,1,G1-mod4,16,1,southbound,12.655,12.109
+204,AREA-FRONT-YARD,Front yard,1,G2-mod4,1,2,northbound,1.34,0.215
+206,AREA-FRONT-YARD,Front yard,1,G2-mod4,5,2,southbound,10.626,9.335
+208,AREA-FRONT-YARD,Front yard,1,G2-mod4,9,1,northbound,27.777,27.302
+210,AREA-FRONT-YARD,Front yard,1,G2-mod4,13,1,southbound,22.394,20.266
+212,AREA-FRONT-YARD,Front yard,1,G2-mod4,17,1,northbound,12.055,9.544
+214,AREA-FRONT-YARD,Front yard,1,G3-mod4,2,1,southbound,6.81,3.538
+216,AREA-FRONT-YARD,Front yard,1,G3-mod4,6,1,northbound,18.496,14.167
+218,AREA-FRONT-YARD,Front yard,1,G3-mod4,10,1,southbound,28.947,25.151
+220,AREA-FRONT-YARD,Front yard,1,G3-mod4,14,1,northbound,14.133,12.914
+222,AREA-FRONT-YARD,Front yard,1,G3-mod4,18,1,southbound,2.684,0.647
+224,AREA-FRONT-YARD,Front yard,1,G4-mod4,3,1,northbound,7.746,6.855
+226,AREA-FRONT-YARD,Front yard,1,G4-mod4,7,1,southbound,20.97,20.437
+228,AREA-FRONT-YARD,Front yard,1,G4-mod4,11,1,northbound,22.337,22.197
+230,AREA-FRONT-YARD,Front yard,1,G4-mod4,15,1,southbound,13.369,12.615
+232,AREA-FRONT-YARD,Front yard,2,G1-mod4,12,2,northbound,2.734,1.399
+234,AREA-FRONT-YARD,Front yard,2,G2-mod4,13,2,southbound,1.663,0.186
+236,AREA-FRONT-YARD,Front yard,2,G4-mod4,11,2,northbound,3.132,1.697
+238,AREA-FRONT-YARD,Front yard,3,G1-mod4,20,1,northbound,4.339,1.979
+240,AREA-FRONT-YARD,Front yard,3,G3-mod4,18,2,southbound,5.484,3.751
+242,AREA-FRONT-YARD,Front yard,3,G4-mod4,19,2,northbound,4.408,2.951
+244,AREA-FRONT-YARD,Front yard,4,G3-mod4,14,2,northbound,3.476,0.785
+252,AREA-OVER-ROAD,Over the road,1,G1-mod4,4,1,northbound,1.78,1.88
+254,AREA-OVER-ROAD,Over the road,1,G1-mod4,8,1,southbound,1.529,1.613
+256,AREA-OVER-ROAD,Over the road,1,G1-mod4,12,1,northbound,1.768,1.879
+258,AREA-OVER-ROAD,Over the road,1,G2-mod4,5,1,southbound,1.455,1.534
+260,AREA-OVER-ROAD,Over the road,1,G2-mod4,9,1,northbound,1.697,1.791
+262,AREA-OVER-ROAD,Over the road,1,G3-mod4,2,1,southbound,2.013,2.136
+264,AREA-OVER-ROAD,Over the road,1,G3-mod4,6,1,northbound,1.65,1.746
+266,AREA-OVER-ROAD,Over the road,1,G3-mod4,10,1,southbound,1.895,2.005
+268,AREA-OVER-ROAD,Over the road,1,G4-mod4,3,1,northbound,1.937,2.049
+270,AREA-OVER-ROAD,Over the road,1,G4-mod4,7,1,southbound,1.57,1.662
+272,AREA-OVER-ROAD,Over the road,1,G4-mod4,11,1,northbound,2.094,2.218

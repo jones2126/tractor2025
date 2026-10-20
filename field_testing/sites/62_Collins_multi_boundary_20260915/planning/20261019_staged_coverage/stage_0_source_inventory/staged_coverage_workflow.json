@@ -1,0 +1,45 @@
+{
+  "site_id": "62_COLLINS",
+  "status": "REVIEW ONLY \u2014 NOT APPROVED FOR FIELD USE",
+  "current_stage": 0,
+  "stop_reason": "owner approval required before section/cell planning",
+  "stages": [
+    {
+      "number": 0,
+      "name": "Source and inventory reconciliation",
+      "status": "awaiting_owner_review"
+    },
+    {
+      "number": 1,
+      "name": "Section/cell proposal",
+      "status": "blocked_by_stage_0"
+    },
+    {
+      "number": 2,
+      "name": "Entry/exit and travel-path review",
+      "status": "blocked_by_stage_1"
+    },
+    {
+      "number": 3,
+      "name": "Stripe-angle comparison",
+      "status": "blocked_by_stage_2"
+    },
+    {
+      "number": 4,
+      "name": "Ordering alternatives",
+      "status": "blocked_by_stage_3"
+    },
+    {
+      "number": 5,
+      "name": "Turn synthesis",
+      "status": "blocked_by_stage_4"
+    },
+    {
+      "number": 6,
+      "name": "Combined coverage validation",
+      "status": "blocked_by_stage_5"
+    }
+  ],
+  "field_use_approved": false,
+  "executable_mission_generated": false
+}

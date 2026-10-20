@@ -1,5 +1,12 @@
 # September 23 master mission rerun with Wi-Fi phone handheld
 
+> **Current operating sequence:** use
+> `../20261020_two_mission_field_day/FIELD_DAY_SEQUENCE.md`. The network and
+> recovery instructions below preserve the October 6 package history and still
+> describe the failed `192.168.10.x` arrangement. They must not override the
+> newer ZeroTier-primary qualification gates or the requirement to archive and
+> review this run before attempting the consolidated perimeter.
+
 This package reruns the completed mission shown in the historical replay
 `20260923_124933_master_manual_5hz`. It deliberately reuses the immutable route
 from the September 20 master/manual package and adds only the current Wi-Fi phone

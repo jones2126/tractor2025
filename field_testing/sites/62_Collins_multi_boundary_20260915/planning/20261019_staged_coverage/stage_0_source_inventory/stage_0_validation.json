@@ -1,0 +1,57 @@
+{
+  "site_id": "62_COLLINS",
+  "stage": 0,
+  "status": "REVIEW ONLY \u2014 NOT APPROVED FOR FIELD USE",
+  "result": "PASS",
+  "checks": {
+    "three_candidate_mowable_boundaries": true,
+    "fifteen_unique_active_obstacles": true,
+    "o012_has_no_active_keep_out": true,
+    "o012_has_one_retired_provenance_point": true,
+    "five_directional_transition_routes": true,
+    "eight_access_points": true,
+    "all_geometries_valid": true,
+    "reconciliation_table_not_empty": true,
+    "input_hashes_present": true,
+    "mission_generation_disabled": true
+  },
+  "counts": {
+    "access_point::area_entry_exit_point": 8,
+    "mowable_area::candidate_mowable_boundary": 3,
+    "obstacle::derived_center_point": 15,
+    "obstacle::minimum_recorded_gps_loop": 3,
+    "obstacle::proposed_active_mowing_exclusion": 15,
+    "obstacle::recorded_centerline_evidence": 15,
+    "obstacle::tested_tractor_centerline_limit": 15,
+    "perimeter_change::proposed_added_area": 3,
+    "perimeter_evidence::recorded_tractor_centerline": 4,
+    "retired_obstacle_record::rejected_location_reference_only": 1,
+    "site_reference_point::recorded_point": 1,
+    "transition_route::recorded_centerline_between_areas": 5
+  },
+  "active_obstacle_ids": [
+    "OBS-NEW-001",
+    "OBS-NEW-002",
+    "OBS-NEW-003",
+    "OBS-NEW-004",
+    "OBS-NEW-005",
+    "OBS-NEW-006",
+    "OBS-NEW-007",
+    "OBS-NEW-008",
+    "OBS-NEW-009",
+    "OBS-NEW-010",
+    "OBS-NEW-011",
+    "OBS-NEW-013",
+    "OBS-NEW-014",
+    "OBS-POLE-001",
+    "OBS-TREE-001"
+  ],
+  "explicitly_not_generated": [
+    "coverage cells",
+    "stripe candidates",
+    "turns",
+    "waypoints",
+    "mission file",
+    "launcher"
+  ]
+}

@@ -1,0 +1,618 @@
+{
+  "status": "REVIEW ONLY \u2014 NOT APPROVED FOR FIELD USE",
+  "design": {
+    "area_order": [
+      "AREA-BACKYARD-GARDENS",
+      "AREA-FRONT-YARD",
+      "AREA-OVER-ROAD"
+    ],
+    "headland_passes_per_area": 3,
+    "stripe_orientation": "north_south",
+    "zamboni_order": "four-column cycle within each connected cell; all four remainder groups completed",
+    "zamboni_column_step": 4,
+    "deck_width_m": 1.0668,
+    "lane_spacing_m": 0.9652,
+    "nominal_overlap_m": 0.1016,
+    "target_turn_radius_m": 1.9,
+    "evidence_fallback_radius_m": 1.63,
+    "obstacle_review_margin_m": 0.15,
+    "safe_geometry_guard_m": 0.02,
+    "speed_mps": 1.0
+  },
+  "inventory": {
+    "source": "field_testing/sites/62_Collins_multi_boundary_20260915/site_inventory/revisions/rev_003_20260926_REVIEW_ONLY/62_Collins_site_inventory_rev003_REVIEW_ONLY.geojson",
+    "active_obstacle_count": 15,
+    "rejected_obstacle": "OBS-NEW-012",
+    "rejected_reason": "Owner confirmed no obstacle exists at O012."
+  },
+  "areas": {
+    "AREA-BACKYARD-GARDENS": {
+      "name": "Backyard and gardens",
+      "target_area_m2": 3616.703,
+      "covered_area_m2": 3530.328,
+      "uncovered_area_m2": 86.375,
+      "coverage_percent": 97.612,
+      "headland_path_count": 3,
+      "stripe_count": 91
+    },
+    "AREA-FRONT-YARD": {
+      "name": "Front yard",
+      "target_area_m2": 605.377,
+      "covered_area_m2": 570.539,
+      "uncovered_area_m2": 34.838,
+      "coverage_percent": 94.245,
+      "headland_path_count": 3,
+      "stripe_count": 25
+    },
+    "AREA-OVER-ROAD": {
+      "name": "Over the road",
+      "target_area_m2": 439.948,
+      "covered_area_m2": 425.899,
+      "uncovered_area_m2": 14.05,
+      "coverage_percent": 96.807,
+      "headland_path_count": 3,
+      "stripe_count": 11
+    }
+  },
+  "whole_site": {
+    "target_area_m2": 4662.028,
+    "covered_area_m2": 4526.766,
+    "uncovered_area_m2": 135.262,
+    "coverage_percent": 97.099
+  },
+  "route": {
+    "piece_count": 274,
+    "review_point_count": 32362,
+    "length_m": 8095.071,
+    "estimated_runtime_minutes_at_1mps": 134.92,
+    "stripe_count": 127,
+    "turn_count": 133,
+    "unresolved_turn_count": 43
+  },
+  "turn_validation": {
+    "all_radius_validated": false,
+    "radius_validated_count": 90,
+    "contained_relocations_requiring_smoothing_count": 42,
+    "uncontained_or_unresolved_count": 1,
+    "unresolved": [
+      {
+        "sequence": 3,
+        "area": "AREA-BACKYARD-GARDENS",
+        "label": "AREA-BACKYARD-GARDENS headland pass 2 splice",
+        "mode": "CONTAINED_BOUNDARY_RELOCATION_REQUIRES_TURN_SMOOTHING",
+        "turn_radius_m": null,
+        "radius_validated": false,
+        "contained": true,
+        "length_m": 1.924
+      },
+      {
+        "sequence": 5,
+        "area": "AREA-BACKYARD-GARDENS",
+        "label": "AREA-BACKYARD-GARDENS headland pass 3 splice",
+        "mode": "CONTAINED_BOUNDARY_RELOCATION_REQUIRES_TURN_SMOOTHING",
+        "turn_radius_m": null,
+        "radius_validated": false,
+        "contained": true,
+        "length_m": 5.012
+      },
+      {
+        "sequence": 7,
+        "area": "AREA-BACKYARD-GARDENS",
+        "label": "AREA-BACKYARD-GARDENS to cell 1 stripe C004-1",
+        "mode": "CONTAINED_BOUNDARY_RELOCATION_REQUIRES_TURN_SMOOTHING",
+        "turn_radius_m": null,
+        "radius_validated": false,
+        "contained": true,
+        "length_m": 142.798
+      },
+      {
+        "sequence": 29,
+        "area": "AREA-BACKYARD-GARDENS",
+        "label": "AREA-BACKYARD-GARDENS to cell 1 stripe C005-1",
+        "mode": "CONTAINED_BOUNDARY_RELOCATION_REQUIRES_TURN_SMOOTHING",
+        "turn_radius_m": null,
+        "radius_validated": false,
+        "contained": true,
+        "length_m": 64.074
+      },
+      {
+        "sequence": 33,
+        "area": "AREA-BACKYARD-GARDENS",
+        "label": "AREA-BACKYARD-GARDENS to cell 1 stripe C013-2",
+        "mode": "CONTAINED_BOUNDARY_RELOCATION_REQUIRES_TURN_SMOOTHING",
+        "turn_radius_m": null,
+        "radius_validated": false,
+        "contained": true,
+        "length_m": 7.759
+      },
+      {
+        "sequence": 39,
+        "area": "AREA-BACKYARD-GARDENS",
+        "label": "AREA-BACKYARD-GARDENS to cell 1 stripe C025-1",
+        "mode": "CONTAINED_BOUNDARY_RELOCATION_REQUIRES_TURN_SMOOTHING",
+        "turn_radius_m": null,
+        "radius_validated": false,
+        "contained": true,
+        "length_m": 64.319
+      },
+      {
+        "sequence": 51,
+        "area": "AREA-BACKYARD-GARDENS",
+        "label": "AREA-BACKYARD-GARDENS to cell 1 stripe C002-1",
+        "mode": "CONTAINED_BOUNDARY_RELOCATION_REQUIRES_TURN_SMOOTHING",
+        "turn_radius_m": null,
+        "radius_validated": false,
+        "contained": true,
+        "length_m": 127.257
+      },
+      {
+        "sequence": 73,
+        "area": "AREA-BACKYARD-GARDENS",
+        "label": "AREA-BACKYARD-GARDENS to cell 1 stripe C003-1",
+        "mode": "CONTAINED_BOUNDARY_RELOCATION_REQUIRES_TURN_SMOOTHING",
+        "turn_radius_m": null,
+        "radius_validated": false,
+        "contained": true,
+        "length_m": 65.456
+      },
+      {
+        "sequence": 97,
+        "area": "AREA-BACKYARD-GARDENS",
+        "label": "AREA-BACKYARD-GARDENS to cell 2 stripe C048-1",
+        "mode": "CONTAINED_BOUNDARY_RELOCATION_REQUIRES_TURN_SMOOTHING",
+        "turn_radius_m": null,
+        "radius_validated": false,
+        "contained": true,
+        "length_m": 23.195
+      },
+      {
+        "sequence": 101,
+        "area": "AREA-BACKYARD-GARDENS",
+        "label": "AREA-BACKYARD-GARDENS to cell 2 stripe C056-1",
+        "mode": "CONTAINED_BOUNDARY_RELOCATION_REQUIRES_TURN_SMOOTHING",
+        "turn_radius_m": null,
+        "radius_validated": false,
+        "contained": true,
+        "length_m": 13.21
+      },
+      {
+        "sequence": 109,
+        "area": "AREA-BACKYARD-GARDENS",
+        "label": "AREA-BACKYARD-GARDENS to cell 2 stripe C045-2",
+        "mode": "CONTAINED_BOUNDARY_RELOCATION_REQUIRES_TURN_SMOOTHING",
+        "turn_radius_m": null,
+        "radius_validated": false,
+        "contained": true,
+        "length_m": 13.537
+      },
+      {
+        "sequence": 113,
+        "area": "AREA-BACKYARD-GARDENS",
+        "label": "AREA-BACKYARD-GARDENS to cell 2 stripe C053-1",
+        "mode": "CONTAINED_BOUNDARY_RELOCATION_REQUIRES_TURN_SMOOTHING",
+        "turn_radius_m": null,
+        "radius_validated": false,
+        "contained": true,
+        "length_m": 5.496
+      },
+      {
+        "sequence": 121,
+        "area": "AREA-BACKYARD-GARDENS",
+        "label": "AREA-BACKYARD-GARDENS to cell 2 stripe C042-2",
+        "mode": "CONTAINED_BOUNDARY_RELOCATION_REQUIRES_TURN_SMOOTHING",
+        "turn_radius_m": null,
+        "radius_validated": false,
+        "contained": true,
+        "length_m": 62.13
+      },
+      {
+        "sequence": 123,
+        "area": "AREA-BACKYARD-GARDENS",
+        "label": "AREA-BACKYARD-GARDENS to cell 2 stripe C046-1",
+        "mode": "CONTAINED_BOUNDARY_RELOCATION_REQUIRES_TURN_SMOOTHING",
+        "turn_radius_m": null,
+        "radius_validated": false,
+        "contained": true,
+        "length_m": 59.791
+      },
+      {
+        "sequence": 125,
+        "area": "AREA-BACKYARD-GARDENS",
+        "label": "AREA-BACKYARD-GARDENS to cell 2 stripe C050-1",
+        "mode": "CONTAINED_BOUNDARY_RELOCATION_REQUIRES_TURN_SMOOTHING",
+        "turn_radius_m": null,
+        "radius_validated": false,
+        "contained": true,
+        "length_m": 27.879
+      },
+      {
+        "sequence": 141,
+        "area": "AREA-BACKYARD-GARDENS",
+        "label": "AREA-BACKYARD-GARDENS to cell 2 stripe C055-1",
+        "mode": "CONTAINED_BOUNDARY_RELOCATION_REQUIRES_TURN_SMOOTHING",
+        "turn_radius_m": null,
+        "radius_validated": false,
+        "contained": true,
+        "length_m": 7.612
+      },
+      {
+        "sequence": 143,
+        "area": "AREA-BACKYARD-GARDENS",
+        "label": "AREA-BACKYARD-GARDENS to cell 2 stripe C059-1",
+        "mode": "CONTAINED_BOUNDARY_RELOCATION_REQUIRES_TURN_SMOOTHING",
+        "turn_radius_m": null,
+        "radius_validated": false,
+        "contained": true,
+        "length_m": 7.775
+      },
+      {
+        "sequence": 169,
+        "area": "AREA-BACKYARD-GARDENS",
+        "label": "AREA-BACKYARD-GARDENS to cell 4 stripe C104-1",
+        "mode": "CONTAINED_BOUNDARY_RELOCATION_REQUIRES_TURN_SMOOTHING",
+        "turn_radius_m": null,
+        "radius_validated": false,
+        "contained": true,
+        "length_m": 106.548
+      },
+      {
+        "sequence": 171,
+        "area": "AREA-BACKYARD-GARDENS",
+        "label": "AREA-BACKYARD-GARDENS to cell 4 stripe C105-1",
+        "mode": "CONTAINED_BOUNDARY_RELOCATION_REQUIRES_TURN_SMOOTHING",
+        "turn_radius_m": null,
+        "radius_validated": false,
+        "contained": true,
+        "length_m": 8.464
+      },
+      {
+        "sequence": 175,
+        "area": "AREA-BACKYARD-GARDENS",
+        "label": "AREA-BACKYARD-GARDENS to cell 4 stripe C103-1",
+        "mode": "CONTAINED_BOUNDARY_RELOCATION_REQUIRES_TURN_SMOOTHING",
+        "turn_radius_m": null,
+        "radius_validated": false,
+        "contained": true,
+        "length_m": 4.838
+      },
+      {
+        "sequence": 177,
+        "area": "AREA-BACKYARD-GARDENS",
+        "label": "AREA-BACKYARD-GARDENS to cell 5 stripe C048-2",
+        "mode": "UNRESOLVED_STRAIGHT_REVIEW_CHORD",
+        "turn_radius_m": null,
+        "radius_validated": false,
+        "contained": false,
+        "length_m": 61.224
+      },
+      {
+        "sequence": 181,
+        "area": "AREA-BACKYARD-GARDENS",
+        "label": "AREA-BACKYARD-GARDENS to cell 5 stripe C050-2",
+        "mode": "CONTAINED_BOUNDARY_RELOCATION_REQUIRES_TURN_SMOOTHING",
+        "turn_radius_m": null,
+        "radius_validated": false,
+        "contained": true,
+        "length_m": 4.958
+      },
+      {
+        "sequence": 183,
+        "area": "AREA-BACKYARD-GARDENS",
+        "label": "AREA-BACKYARD-GARDENS to cell 6 stripe C062-2",
+        "mode": "CONTAINED_BOUNDARY_RELOCATION_REQUIRES_TURN_SMOOTHING",
+        "turn_radius_m": null,
+        "radius_validated": false,
+        "contained": true,
+        "length_m": 37.864
+      },
+      {
+        "sequence": 185,
+        "area": "AREA-BACKYARD-GARDENS",
+        "label": "AREA-BACKYARD-GARDENS to cell 6 stripe C063-3",
+        "mode": "CONTAINED_BOUNDARY_RELOCATION_REQUIRES_TURN_SMOOTHING",
+        "turn_radius_m": null,
+        "radius_validated": false,
+        "contained": true,
+        "length_m": 5.134
+      },
+      {
+        "sequence": 187,
+        "area": "AREA-BACKYARD-GARDENS",
+        "label": "AREA-BACKYARD-GARDENS to cell 7 stripe C050-3",
+        "mode": "CONTAINED_BOUNDARY_RELOCATION_REQUIRES_TURN_SMOOTHING",
+        "turn_radius_m": null,
+        "radius_validated": false,
+        "contained": true,
+        "length_m": 38.737
+      },
+      {
+        "sequence": 191,
+        "area": "AREA-FRONT-YARD",
+        "label": "AREA-FRONT-YARD headland pass 2 splice",
+        "mode": "CONTAINED_BOUNDARY_RELOCATION_REQUIRES_TURN_SMOOTHING",
+        "turn_radius_m": null,
+        "radius_validated": false,
+        "contained": true,
+        "length_m": 1.085
+      },
+      {
+        "sequence": 193,
+        "area": "AREA-FRONT-YARD",
+        "label": "AREA-FRONT-YARD headland pass 3 splice",
+        "mode": "CONTAINED_BOUNDARY_RELOCATION_REQUIRES_TURN_SMOOTHING",
+        "turn_radius_m": null,
+        "radius_validated": false,
+        "contained": true,
+        "length_m": 5.588
+      },
+      {
+        "sequence": 203,
+        "area": "AREA-FRONT-YARD",
+        "label": "AREA-FRONT-YARD to cell 1 stripe C001-2",
+        "mode": "CONTAINED_BOUNDARY_RELOCATION_REQUIRES_TURN_SMOOTHING",
+        "turn_radius_m": null,
+        "radius_validated": false,
+        "contained": true,
+        "length_m": 33.304
+      },
+      {
+        "sequence": 231,
+        "area": "AREA-FRONT-YARD",
+        "label": "AREA-FRONT-YARD to cell 2 stripe C012-2",
+        "mode": "CONTAINED_BOUNDARY_RELOCATION_REQUIRES_TURN_SMOOTHING",
+        "turn_radius_m": null,
+        "radius_validated": false,
+        "contained": true,
+        "length_m": 31.501
+      },
+      {
+        "sequence": 233,
+        "area": "AREA-FRONT-YARD",
+        "label": "AREA-FRONT-YARD to cell 2 stripe C013-2",
+        "mode": "CONTAINED_BOUNDARY_RELOCATION_REQUIRES_TURN_SMOOTHING",
+        "turn_radius_m": null,
+        "radius_validated": false,
+        "contained": true,
+        "length_m": 7.511
+      },
+      {
+        "sequence": 237,
+        "area": "AREA-FRONT-YARD",
+        "label": "AREA-FRONT-YARD to cell 3 stripe C020-1",
+        "mode": "CONTAINED_BOUNDARY_RELOCATION_REQUIRES_TURN_SMOOTHING",
+        "turn_radius_m": null,
+        "radius_validated": false,
+        "contained": true,
+        "length_m": 43.369
+      },
+      {
+        "sequence": 239,
+        "area": "AREA-FRONT-YARD",
+        "label": "AREA-FRONT-YARD to cell 3 stripe C018-2",
+        "mode": "CONTAINED_BOUNDARY_RELOCATION_REQUIRES_TURN_SMOOTHING",
+        "turn_radius_m": null,
+        "radius_validated": false,
+        "contained": true,
+        "length_m": 4.541
+      },
+      {
+        "sequence": 243,
+        "area": "AREA-FRONT-YARD",
+        "label": "AREA-FRONT-YARD to cell 4 stripe C014-2",
+        "mode": "CONTAINED_BOUNDARY_RELOCATION_REQUIRES_TURN_SMOOTHING",
+        "turn_radius_m": null,
+        "radius_validated": false,
+        "contained": true,
+        "length_m": 7.732
+      },
+      {
+        "sequence": 253,
+        "area": "AREA-OVER-ROAD",
+        "label": "AREA-OVER-ROAD to cell 1 stripe C008-1",
+        "mode": "CONTAINED_BOUNDARY_RELOCATION_REQUIRES_TURN_SMOOTHING",
+        "turn_radius_m": null,
+        "radius_validated": false,
+        "contained": true,
+        "length_m": 15.269
+      },
+      {
+        "sequence": 255,
+        "area": "AREA-OVER-ROAD",
+        "label": "AREA-OVER-ROAD to cell 1 stripe C012-1",
+        "mode": "CONTAINED_BOUNDARY_RELOCATION_REQUIRES_TURN_SMOOTHING",
+        "turn_radius_m": null,
+        "radius_validated": false,
+        "contained": true,
+        "length_m": 18.449
+      },
+      {
+        "sequence": 257,
+        "area": "AREA-OVER-ROAD",
+        "label": "AREA-OVER-ROAD to cell 1 stripe C005-1",
+        "mode": "CONTAINED_BOUNDARY_RELOCATION_REQUIRES_TURN_SMOOTHING",
+        "turn_radius_m": null,
+        "radius_validated": false,
+        "contained": true,
+        "length_m": 23.076
+      },
+      {
+        "sequence": 259,
+        "area": "AREA-OVER-ROAD",
+        "label": "AREA-OVER-ROAD to cell 1 stripe C009-1",
+        "mode": "CONTAINED_BOUNDARY_RELOCATION_REQUIRES_TURN_SMOOTHING",
+        "turn_radius_m": null,
+        "radius_validated": false,
+        "contained": true,
+        "length_m": 15.185
+      },
+      {
+        "sequence": 261,
+        "area": "AREA-OVER-ROAD",
+        "label": "AREA-OVER-ROAD to cell 1 stripe C002-1",
+        "mode": "CONTAINED_BOUNDARY_RELOCATION_REQUIRES_TURN_SMOOTHING",
+        "turn_radius_m": null,
+        "radius_validated": false,
+        "contained": true,
+        "length_m": 24.414
+      },
+      {
+        "sequence": 263,
+        "area": "AREA-OVER-ROAD",
+        "label": "AREA-OVER-ROAD to cell 1 stripe C006-1",
+        "mode": "CONTAINED_BOUNDARY_RELOCATION_REQUIRES_TURN_SMOOTHING",
+        "turn_radius_m": null,
+        "radius_validated": false,
+        "contained": true,
+        "length_m": 15.473
+      },
+      {
+        "sequence": 265,
+        "area": "AREA-OVER-ROAD",
+        "label": "AREA-OVER-ROAD to cell 1 stripe C010-1",
+        "mode": "CONTAINED_BOUNDARY_RELOCATION_REQUIRES_TURN_SMOOTHING",
+        "turn_radius_m": null,
+        "radius_validated": false,
+        "contained": true,
+        "length_m": 15.07
+      },
+      {
+        "sequence": 267,
+        "area": "AREA-OVER-ROAD",
+        "label": "AREA-OVER-ROAD to cell 1 stripe C003-1",
+        "mode": "CONTAINED_BOUNDARY_RELOCATION_REQUIRES_TURN_SMOOTHING",
+        "turn_radius_m": null,
+        "radius_validated": false,
+        "contained": true,
+        "length_m": 24.175
+      },
+      {
+        "sequence": 269,
+        "area": "AREA-OVER-ROAD",
+        "label": "AREA-OVER-ROAD to cell 1 stripe C007-1",
+        "mode": "CONTAINED_BOUNDARY_RELOCATION_REQUIRES_TURN_SMOOTHING",
+        "turn_radius_m": null,
+        "radius_validated": false,
+        "contained": true,
+        "length_m": 15.571
+      },
+      {
+        "sequence": 271,
+        "area": "AREA-OVER-ROAD",
+        "label": "AREA-OVER-ROAD to cell 1 stripe C011-1",
+        "mode": "CONTAINED_BOUNDARY_RELOCATION_REQUIRES_TURN_SMOOTHING",
+        "turn_radius_m": null,
+        "radius_validated": false,
+        "contained": true,
+        "length_m": 15.449
+      }
+    ]
+  },
+  "obstacle_clearance": [
+    {
+      "asset_id": "OBS-NEW-001",
+      "related_area": "AREA-BACKYARD-GARDENS",
+      "minimum_centerline_clearance_m": 1.199,
+      "minimum_deck_edge_clearance_m": 0.665,
+      "deck_intersection": false
+    },
+    {
+      "asset_id": "OBS-NEW-002",
+      "related_area": "AREA-BACKYARD-GARDENS",
+      "minimum_centerline_clearance_m": 5.981,
+      "minimum_deck_edge_clearance_m": 5.447,
+      "deck_intersection": false
+    },
+    {
+      "asset_id": "OBS-NEW-003",
+      "related_area": "AREA-BACKYARD-GARDENS",
+      "minimum_centerline_clearance_m": 0.689,
+      "minimum_deck_edge_clearance_m": 0.156,
+      "deck_intersection": false
+    },
+    {
+      "asset_id": "OBS-NEW-004",
+      "related_area": "AREA-BACKYARD-GARDENS",
+      "minimum_centerline_clearance_m": 1.964,
+      "minimum_deck_edge_clearance_m": 1.431,
+      "deck_intersection": false
+    },
+    {
+      "asset_id": "OBS-NEW-005",
+      "related_area": "AREA-BACKYARD-GARDENS",
+      "minimum_centerline_clearance_m": 0.815,
+      "minimum_deck_edge_clearance_m": 0.282,
+      "deck_intersection": false
+    },
+    {
+      "asset_id": "OBS-NEW-006",
+      "related_area": "AREA-BACKYARD-GARDENS",
+      "minimum_centerline_clearance_m": 1.423,
+      "minimum_deck_edge_clearance_m": 0.89,
+      "deck_intersection": false
+    },
+    {
+      "asset_id": "OBS-NEW-013",
+      "related_area": "AREA-BACKYARD-GARDENS",
+      "minimum_centerline_clearance_m": 1.73,
+      "minimum_deck_edge_clearance_m": 1.197,
+      "deck_intersection": false
+    },
+    {
+      "asset_id": "OBS-TREE-001",
+      "related_area": "AREA-BACKYARD-GARDENS",
+      "minimum_centerline_clearance_m": 0.703,
+      "minimum_deck_edge_clearance_m": 0.17,
+      "deck_intersection": false
+    },
+    {
+      "asset_id": "OBS-NEW-007",
+      "related_area": "AREA-FRONT-YARD",
+      "minimum_centerline_clearance_m": 0.693,
+      "minimum_deck_edge_clearance_m": 0.16,
+      "deck_intersection": false
+    },
+    {
+      "asset_id": "OBS-NEW-008",
+      "related_area": "AREA-FRONT-YARD",
+      "minimum_centerline_clearance_m": 0.929,
+      "minimum_deck_edge_clearance_m": 0.396,
+      "deck_intersection": false
+    },
+    {
+      "asset_id": "OBS-NEW-009",
+      "related_area": "AREA-FRONT-YARD",
+      "minimum_centerline_clearance_m": 0.904,
+      "minimum_deck_edge_clearance_m": 0.371,
+      "deck_intersection": false
+    },
+    {
+      "asset_id": "OBS-NEW-010",
+      "related_area": "AREA-FRONT-YARD",
+      "minimum_centerline_clearance_m": 1.094,
+      "minimum_deck_edge_clearance_m": 0.56,
+      "deck_intersection": false
+    },
+    {
+      "asset_id": "OBS-NEW-011",
+      "related_area": "AREA-FRONT-YARD",
+      "minimum_centerline_clearance_m": 0.689,
+      "minimum_deck_edge_clearance_m": 0.155,
+      "deck_intersection": false
+    },
+    {
+      "asset_id": "OBS-NEW-014",
+      "related_area": "AREA-FRONT-YARD",
+      "minimum_centerline_clearance_m": 1.916,
+      "minimum_deck_edge_clearance_m": 1.383,
+      "deck_intersection": false
+    },
+    {
+      "asset_id": "OBS-POLE-001",
+      "related_area": "AREA-OVER-ROAD",
+      "minimum_centerline_clearance_m": 0.692,
+      "minimum_deck_edge_clearance_m": 0.158,
+      "deck_intersection": false
+    }
+  ],
+  "field_authorization": "NONE"
+}

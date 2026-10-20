@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Coverage Dataset Verifier</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="safety-banner">REVIEW ONLY — NOT APPROVED FOR FIELD USE</div>
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Coverage planning · source checkpoint</p>
+      <h1>Dataset verifier</h1>
+      <p class="subtitle">Confirm exactly which files and assumptions define a yard before reviewing any geometry.</p>
+    </div>
+    <div class="header-actions">
+      <button class="button secondary" id="new-project">New blank site</button>
+      <button class="button secondary" id="import-project">Import project JSON</button>
+      <button class="button secondary" id="export-project">Export working copy</button>
+      <input id="project-file" type="file" accept="application/json,.json" hidden>
+    </div>
+  </header>
+
+  <nav class="steps" aria-label="Dataset review progress">
+    <button class="step active" type="button"><span>1</span><strong>Sources</strong><small id="source-progress">needs review</small></button>
+    <button class="step locked" type="button" disabled><span>2</span><strong>Boundaries</strong><small>locked</small></button>
+    <button class="step locked" type="button" disabled><span>3</span><strong>Obstacles</strong><small>locked</small></button>
+    <button class="step locked" type="button" disabled><span>4</span><strong>Transitions</strong><small>locked</small></button>
+    <button class="step locked" type="button" disabled><span>5</span><strong>Dataset approval</strong><small>blocked</small></button>
+  </nav>
+
+  <main>
+    <section class="intro-card">
+      <div>
+        <p class="section-number">TAB 1</p>
+        <h2>Site and source files</h2>
+        <p>Verify file identity, structure, and coordinate ranges. Completing this tab approves only the source inputs—not boundaries, obstacles, coverage, or field use.</p>
+      </div>
+      <div class="gate-status" id="gate-status"><span class="status-dot"></span><strong>Gate blocked</strong><small>Verify all required files</small></div>
+    </section>
+
+    <section class="panel prior-package" id="prior-package" hidden>
+      <div class="panel-heading">
+        <div><p class="section-number">PRIOR REVIEWED WORK</p><h2>Prior approved perimeter package</h2></div>
+        <p>Preserved separately from today’s source-verification gate</p>
+      </div>
+      <div class="prior-package-grid">
+        <div>
+          <h3 id="prior-title"></h3>
+          <p id="prior-scope"></p>
+          <p class="lineage-warning" id="prior-execution"></p>
+          <p id="prior-notes"></p>
+        </div>
+        <dl class="prior-metrics">
+          <div><dt>Waypoints</dt><dd id="prior-waypoints"></dd></div>
+          <div><dt>Route length</dt><dd id="prior-length"></dd></div>
+          <div><dt>Speed</dt><dd id="prior-speed"></dd></div>
+          <div><dt>Mission SHA-256</dt><dd><code id="prior-hash"></code></dd></div>
+        </dl>
+      </div>
+      <div class="prior-actions">
+        <a class="button primary" id="prior-play" target="_blank" rel="noopener">▶ Play mission replay</a>
+        <a class="button secondary" id="prior-validation" target="_blank" rel="noopener">Open validation report</a>
+        <a class="button secondary" id="prior-readme" target="_blank" rel="noopener">Open field-test notes</a>
+      </div>
+      <div class="notice"><strong>No action is required here today.</strong> Playing the replay does not verify a file, approve a boundary, or authorize field use.</div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-heading">
+        <div><p class="section-number">A</p><h2>Site setup</h2></div>
+        <p>Reusable yard identity and output location</p>
+      </div>
+      <div class="form-grid">
+        <label>Site ID<input id="site-id" autocomplete="off"></label>
+        <label>Friendly name<input id="site-name" autocomplete="off"></label>
+        <label class="wide">Output directory <span class="hint">repository-relative</span><input id="output-directory" autocomplete="off"></label>
+        <label class="wide">How the survey was performed<textarea id="survey-notes" rows="3"></textarea></label>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-heading">
+        <div><p class="section-number">B</p><h2>Source register</h2></div>
+        <div class="heading-actions"><button class="button secondary" id="add-source">Add source</button><button class="button primary" id="verify-all">Verify all required files</button></div>
+      </div>
+      <p class="panel-note"><strong>Source type</strong> says whether a file is raw or derived. <strong>Used for</strong> connects it to boundary, obstacle, transition, or coordinate-frame review. These labels do not approve the file or its geometry.</p>
+      <div id="source-list" class="source-list" aria-live="polite"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-heading"><div><p class="section-number">C</p><h2>Source evidence preview</h2></div><p>See what the selected file actually contains</p></div>
+      <div id="preview-empty" class="preview-empty">Choose <strong>View evidence</strong> on a source above. The preview will show its line segments or polygons, feature names, file lineage, and any available detailed legacy viewer.</div>
+      <div id="preview-workspace" class="preview-workspace" hidden>
+        <div class="preview-heading">
+          <div><p class="section-number" id="preview-type"></p><h3 id="preview-title"></h3><p id="preview-path" class="mono"></p></div>
+          <a id="legacy-viewer-link" class="button secondary" target="_blank" rel="noopener" hidden>Open detailed replay viewer</a>
+        </div>
+        <div id="lineage-warning" class="lineage-warning"></div>
+        <div class="evidence-grid">
+          <div class="map-wrap"><canvas id="evidence-map" aria-label="Source geometry preview"></canvas><div class="map-note">Diagram view · fitted to the selected source</div></div>
+          <div>
+            <h4>Contained features</h4>
+            <div id="feature-list" class="feature-list"></div>
+          </div>
+        </div>
+        <div class="lineage-grid">
+          <div><h4>What this file is</h4><p id="lineage-summary"></p></div>
+          <div><h4>How it was produced</h4><p id="lineage-generator"></p></div>
+          <div class="wide"><h4>Recorded parent inputs</h4><ul id="lineage-inputs"></ul></div>
+        </div>
+        <div class="notice"><strong>This preview is evidence, not approval.</strong> Boundary decisions will be recorded in Tab 2 and obstacle decisions in Tab 3. The detailed legacy viewer is included for visual context but cannot record decisions.</div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-heading"><div><p class="section-number">D</p><h2>Coordinate frame</h2></div><p>How latitude/longitude becomes local metres</p></div>
+      <div class="form-grid">
+        <label>Origin source<select id="frame-source"></select></label>
+        <label>Row selection<input id="frame-row"></label>
+        <label class="wide">Method<textarea id="frame-method" rows="2"></textarea></label>
+        <div class="wide origin-readout" id="frame-origin">Verify the selected source to show the exact coordinate origin.</div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-heading"><div><p class="section-number">E</p><h2>Dimensions and later assumptions</h2></div><p>Later values are recorded now but cannot affect source geometry</p></div>
+      <div class="form-grid numeric-grid">
+        <label>Deck width <span class="unit">metres</span><input id="deck-width" type="number" min="0" step="0.0001"></label>
+        <label class="later">Lane spacing <span class="unit">later stage · metres</span><input id="lane-spacing" type="number" min="0" step="0.0001"></label>
+        <label class="later">Nominal overlap <span class="unit">later stage · metres</span><input id="overlap" type="number" min="0" step="0.0001"></label>
+        <label class="later">Weaker right turn radius <span class="unit">later stage · metres</span><input id="right-radius" type="number" min="0" step="0.01"></label>
+        <label class="later">Soft-turn review radius <span class="unit">later stage · metres</span><input id="soft-radius" type="number" min="0" step="0.01"></label>
+      </div>
+      <div class="notice">These later-stage assumptions are stored for visibility. They are not applied to source geometry in Tab 1.</div>
+    </section>
+
+    <section class="panel approval-panel">
+      <div class="panel-heading"><div><p class="section-number">F</p><h2>Sources approval gate</h2></div><p>Recorded in the audit ledger</p></div>
+      <div id="blockers" class="blockers"></div>
+      <div class="form-grid">
+        <label>Reviewer<input id="reviewer" placeholder="Al"></label>
+        <label>Review date<input id="review-date" type="date"></label>
+        <label class="wide">Comments<textarea id="approval-comments" rows="3" placeholder="What was checked, changed, or still deserves attention?"></textarea></label>
+      </div>
+      <label class="attestation"><input id="attestation" type="checkbox"><span>I confirm these are the intended source inputs. This does not approve derived geometry, field validation, coverage planning, or mission use.</span></label>
+      <div class="approval-actions">
+        <button class="button secondary" id="save-draft">Save draft and audit event</button>
+        <button class="button approve" id="approve-sources" disabled>Approve Tab 1 sources</button>
+      </div>
+      <div id="message" class="message" role="status" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <footer>Coverage Dataset Verifier · Source gate only · No coverage or mission generation</footer>
+  <script src="app.js"></script>
+</body>
+</html>

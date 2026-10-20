@@ -22,6 +22,7 @@ import subprocess
 import sys
 import threading
 import time
+from dataclasses import dataclass
 from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
@@ -46,7 +47,143 @@ ZEROTIER_INITIAL_WINDOW_S = 90.0
 NETWORK_POLL_S = 3.0
 NETWORK_STABLE_CHECKS = 3
 NOTIFY_RETRY_S = 15.0
+SERVER_PHONE_FRESH_S = 0.5
 DEFAULT_CONTROL_SUBNET = "192.168.10.0/24"
+ZEROTIER_NETWORK = ipaddress.ip_network("192.168.193.0/24")
+
+
+@dataclass(frozen=True)
+class AuthorityPolicy:
+    name: str
+    network: ipaddress.IPv4Network
+    allow_auto: bool
+    qualification: str
+    min_drive_percent: int = -100
+    max_drive_percent: int = 100
+    recovery_only: bool = False
+    interface_name: str = ""
+    numeric_host: str = ""
+    expected_ssid: str = ""
+
+
+AUTHORITY_POLICIES = {
+    "zerotier-primary": AuthorityPolicy(
+        "zerotier-primary",
+        ZEROTIER_NETWORK,
+        True,
+        "production target; home phone path verified, Tractor01 acceptance deferred",
+    ),
+    "tractorfield-mission": AuthorityPolicy(
+        "tractorfield-mission",
+        ipaddress.ip_network("192.168.10.0/24"),
+        True,
+        "historical-current; failed October 6 reliability qualification",
+    ),
+    "onboard-router-recovery": AuthorityPolicy(
+        "onboard-router-recovery",
+        ipaddress.ip_network("192.168.8.0/24"),
+        False,
+        "Manual-only recovery; physical acceptance deferred",
+        min_drive_percent=-25,
+        max_drive_percent=60,
+        recovery_only=True,
+        interface_name="eth0",
+        numeric_host="192.168.8.20",
+        expected_ssid="TractorField",
+    ),
+}
+
+
+def authority_policy(
+    name: str,
+    subnet_override: str | None = None,
+    allow_zerotier_dry_run: bool = False,
+) -> AuthorityPolicy:
+    try:
+        selected = AUTHORITY_POLICIES[name]
+    except KeyError as exc:
+        raise ValueError(f"unknown authority policy: {name}") from exc
+    if subnet_override is None:
+        return selected
+    network = ipaddress.ip_network(subnet_override, strict=False)
+    if network.version != 4:
+        raise ValueError("control subnet must be an IPv4 network")
+    if network.overlaps(ZEROTIER_NETWORK) and not allow_zerotier_dry_run:
+        raise ValueError(
+            "ZeroTier motion authority is not implemented or qualified; "
+            "the overlay subnet cannot be used as a custom control subnet"
+        )
+    return AuthorityPolicy(
+        f"{selected.name}-custom-subnet",
+        network,
+        selected.allow_auto,
+        "UNQUALIFIED custom subnet; bench testing required",
+        selected.min_drive_percent,
+        selected.max_drive_percent,
+        selected.recovery_only,
+        selected.interface_name,
+        selected.numeric_host,
+        selected.expected_ssid,
+    )
+
+
+def acquire_ownership_lock(path: Path | None):
+    """Hold a Linux advisory lock for the lifetime of the control server."""
+    if path is None:
+        return None
+    try:
+        import fcntl
+    except ImportError as exc:  # pragma: no cover - deployment is Linux
+        raise RuntimeError("--ownership-lock requires Linux fcntl support") from exc
+    path.parent.mkdir(parents=True, exist_ok=True)
+    handle = path.open("a+", encoding="utf-8")
+    try:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError as exc:
+        handle.close()
+        raise RuntimeError(
+            f"another phone-control process owns {path}; remain in Pause"
+        ) from exc
+    handle.seek(0)
+    handle.truncate()
+    handle.write(f"pid={os.getpid()} policy=phone-control\n")
+    handle.flush()
+    return handle
+
+
+def simulated_bridge_loop(state: "WifiPrimaryState") -> None:
+    """Provide non-hardware telemetry only for an explicitly dry-run server."""
+    while state.running:
+        with state.lock:
+            age_ms = (
+                round((time.monotonic() - state.owner_at) * 1000)
+                if state.owner_at
+                else 0
+            )
+            phone_mode = {"pause": 0, "manual": 1, "auto": 2, "estop": 3}.get(
+                state.phone_mode, 0
+            )
+            low_level_mode = {"pause": 2, "manual": 1, "auto": 0, "estop": 2}.get(
+                state.phone_mode, 2
+            )
+            state.bridge = {
+                "system": {"firmware": EXPECTED_FIRMWARE, "simulated": True},
+                "steering": {
+                    "mode": low_level_mode,
+                    "state": "SIMULATED",
+                    "cmd_age_ms": age_ms,
+                },
+                "transmission": {"mode": low_level_mode, "target": 0, "current": 0},
+                "wifi_control": {
+                    "mode": phone_mode,
+                    "heartbeat_fresh": int(age_ms <= 500),
+                    "estop_latched": int(state.phone_mode == "estop"),
+                    "command_age_ms": age_ms,
+                    "simulated": True,
+                },
+            }
+            state.bridge_at = time.monotonic()
+        time.sleep(0.05)
 
 
 def load_or_create_operator_key(path: Path | None) -> str:
@@ -362,6 +499,66 @@ class ConnectivityMonitor:
 
 
 class WifiPrimaryState(base.FieldState):
+    def __init__(
+        self,
+        command_ip: str,
+        dry_run: bool,
+        log_path: Path,
+        policy: AuthorityPolicy | None = None,
+    ) -> None:
+        super().__init__(command_ip, dry_run, log_path)
+        self.authority_policy = policy or AUTHORITY_POLICIES["tractorfield-mission"]
+        if log_path.name.startswith("wifi_primary_control_"):
+            client_log_name = log_path.name.replace(
+                "wifi_primary_control_", "phone_flight_recorder_", 1
+            )
+        else:
+            client_log_name = f"phone_flight_recorder_{log_path.name}"
+        self.client_log_path = log_path.with_name(client_log_name)
+        self.client_log_file = self.client_log_path.open(
+            "a", encoding="utf-8", buffering=1
+        )
+        self.last_accepted_command_at = 0.0
+        self.last_command_gap_ms: float | None = None
+
+    def ingest_client_events(
+        self, data: Any, client_ip: str
+    ) -> dict[str, Any]:
+        """Append a bounded batch of diagnostic browser events.
+
+        These records are diagnostic only. They never grant or refresh motion
+        authority and deliberately do not alter owner_at or the active session.
+        """
+        if not isinstance(data, dict) or not isinstance(data.get("events"), list):
+            raise ValueError("events list required")
+        events = data["events"]
+        if not 1 <= len(events) <= 64:
+            raise ValueError("flight-recorder batch must contain 1 to 64 events")
+        accepted = 0
+        with self.lock:
+            for event in events:
+                if not isinstance(event, dict):
+                    raise ValueError("each flight-recorder event must be an object")
+                encoded = json.dumps(event, separators=(",", ":"), allow_nan=False)
+                if len(encoded.encode("utf-8")) > 2048:
+                    raise ValueError("flight-recorder event exceeds 2048 bytes")
+                record = {
+                    "server_time": base.utc_now(),
+                    "client_ip": client_ip,
+                    "event": event,
+                }
+                self.client_log_file.write(
+                    json.dumps(record, separators=(",", ":"), allow_nan=False) + "\n"
+                )
+                accepted += 1
+        return {"accepted": accepted}
+
+    def close(self) -> None:
+        try:
+            super().close()
+        finally:
+            self.client_log_file.close()
+
     def bridge_ready(self) -> bool:
         bridge, age = self.bridge_snapshot()
         return (
@@ -430,7 +627,7 @@ class WifiPrimaryState(base.FieldState):
             steering_percent=steering_percent,
         )
 
-    def claim(self, client_id: str) -> dict[str, Any]:
+    def claim(self, client_id: str, client_ip: str | None = None) -> dict[str, Any]:
         now = time.monotonic()
         with self.lock:
             if not client_id or len(client_id) > 100:
@@ -445,6 +642,8 @@ class WifiPrimaryState(base.FieldState):
                 and now - self.owner_at <= base.OWNER_EXPIRE_S
             ):
                 raise RuntimeError("another phone currently owns control")
+            previous_session = self.owner_session
+            previous_client = self.owner_client
             self.owner_client = client_id
             self.owner_session = secrets.token_urlsafe(16)
             self.owner_at = now
@@ -461,7 +660,20 @@ class WifiPrimaryState(base.FieldState):
             )
             self.stop_sent_for_expiry = False
             session = self.owner_session
-            self.log("owner_claimed", client_id=client_id, session=session)
+            self.log(
+                "owner_claimed",
+                client_id=client_id,
+                client_ip=client_ip,
+                session=session,
+                authority_path=self.authority_policy.name,
+            )
+            if previous_session:
+                self.log(
+                    "session_invalidated",
+                    client_id=previous_client,
+                    session=previous_session,
+                    reason="new_claim",
+                )
         if estop_latched:
             for _ in range(5):
                 self.send_drive_command(
@@ -476,11 +688,21 @@ class WifiPrimaryState(base.FieldState):
             "rate_hz": 5,
             "heartbeat_timeout_ms": 500,
             "automatic_link_recovery": False,
-            "min_drive_percent": -100,
-            "max_drive_percent": 100,
+            "authority_path": self.authority_policy.name,
+            "authority_network": str(self.authority_policy.network),
+            "auto_allowed": self.authority_policy.allow_auto,
+            "min_drive_percent": self.authority_policy.min_drive_percent,
+            "max_drive_percent": self.authority_policy.max_drive_percent,
+            "recovery_only": self.authority_policy.recovery_only,
+            "interface_name": self.authority_policy.interface_name,
+            "numeric_host": self.authority_policy.numeric_host,
+            "expected_ssid": self.authority_policy.expected_ssid,
+            "client_ip": client_ip,
         }
 
-    def accept_command(self, data: Any) -> tuple[HTTPStatus, dict[str, Any]]:
+    def accept_command(
+        self, data: Any, client_ip: str | None = None
+    ) -> tuple[HTTPStatus, dict[str, Any]]:
         received_monotonic = time.monotonic()
         received_epoch_ms = round(time.time() * 1000)
         if not isinstance(data, dict):
@@ -509,6 +731,18 @@ class WifiPrimaryState(base.FieldState):
                 "error": "malformed command",
             }
 
+        self.log(
+            "command_received",
+            client_ip=client_ip,
+            client_id=client_id,
+            session=session,
+            sequence=sequence,
+            requested_mode=requested_mode,
+            drive_percent=drive,
+            steering_percent=steering,
+            reason=reason,
+        )
+
         with self.lock:
             if client_id != self.owner_client or session != self.owner_session:
                 self.rejected += 1
@@ -530,11 +764,30 @@ class WifiPrimaryState(base.FieldState):
                     "accepted": False,
                     "error": "mode must be Manual, Auto, Pause, or E-stop",
                 }
-            if not base.finite_number(drive) or not -100 <= drive <= 100:
+            if requested_mode == "auto" and not self.authority_policy.allow_auto:
+                self.rejected += 1
+                return HTTPStatus.CONFLICT, {
+                    "accepted": False,
+                    "error": (
+                        f"Auto is disabled by authority policy "
+                        f"{self.authority_policy.name}"
+                    ),
+                    "phone_mode": self.phone_mode,
+                }
+            if (
+                not base.finite_number(drive)
+                or not self.authority_policy.min_drive_percent
+                <= drive
+                <= self.authority_policy.max_drive_percent
+            ):
                 self.rejected += 1
                 return HTTPStatus.BAD_REQUEST, {
                     "accepted": False,
-                    "error": "drive demand must be -100 to +100 percent",
+                    "error": (
+                        "drive demand must be "
+                        f"{self.authority_policy.min_drive_percent} to "
+                        f"+{self.authority_policy.max_drive_percent} percent"
+                    ),
                 }
             if not base.finite_number(steering) or not -100 <= steering <= 100:
                 self.rejected += 1
@@ -573,6 +826,12 @@ class WifiPrimaryState(base.FieldState):
                     "error": "Teensy bridge or expected firmware is not fresh",
                 }
 
+            previous_phone_mode = self.phone_mode
+            if self.last_accepted_command_at:
+                self.last_command_gap_ms = round(
+                    (received_monotonic - self.last_accepted_command_at) * 1000, 1
+                )
+            self.last_accepted_command_at = received_monotonic
             self.highest_sequence = sequence
             self.owner_at = received_monotonic
             self.stop_sent_for_expiry = False
@@ -605,21 +864,42 @@ class WifiPrimaryState(base.FieldState):
             reason,
             phone_mode=wire_mode,
         )
+        if previous_phone_mode != self.phone_mode:
+            self.log(
+                "mode_transition",
+                client_ip=client_ip,
+                client_id=client_id,
+                session=session,
+                from_mode=previous_phone_mode,
+                to_mode=self.phone_mode,
+                reason=reason,
+            )
         processing_ms = round((time.monotonic() - received_monotonic) * 1000, 2)
         phone_to_server_ms = (
             round(received_epoch_ms - client_time_ms, 2)
             if math.isfinite(client_time_ms)
             else None
         )
+        bridge, bridge_age = self.bridge_snapshot()
         self.log(
             "command",
             **self.last_command,
+            client_ip=client_ip,
+            session=session,
+            authority_path=self.authority_policy.name,
             client_time_ms=client_time_ms if math.isfinite(client_time_ms) else None,
             client_reported_rtt_ms=(
                 round(client_rtt_ms, 2) if math.isfinite(client_rtt_ms) else None
             ),
             estimated_phone_to_server_ms=phone_to_server_ms,
             server_processing_ms=processing_ms,
+            bridge_age_ms=(
+                round(bridge_age * 1000, 1) if math.isfinite(bridge_age) else None
+            ),
+            transmission=bridge.get("transmission", {}),
+            steering=bridge.get("steering", {}),
+            wifi_control=bridge.get("wifi_control", {}),
+            command_gap_ms=self.last_command_gap_ms,
         )
         return HTTPStatus.OK, {
             "accepted": True,
@@ -632,9 +912,22 @@ class WifiPrimaryState(base.FieldState):
     def snapshot(self) -> dict[str, Any]:
         result = super().snapshot()
         bridge, _ = self.bridge_snapshot()
+        result["system"] = bridge.get("system", {})
         result["wifi_control"] = bridge.get("wifi_control", {})
         result["wifi_primary_ready"] = self.bridge_ready()
         result["expected_firmware"] = EXPECTED_FIRMWARE
+        result["authority_path"] = self.authority_policy.name
+        result["authority_network"] = str(self.authority_policy.network)
+        result["authority_auto_allowed"] = self.authority_policy.allow_auto
+        result["authority_qualification"] = self.authority_policy.qualification
+        result["min_drive_percent"] = self.authority_policy.min_drive_percent
+        result["max_drive_percent"] = self.authority_policy.max_drive_percent
+        result["recovery_only"] = self.authority_policy.recovery_only
+        result["control_interface"] = self.authority_policy.interface_name
+        result["numeric_control_host"] = self.authority_policy.numeric_host
+        result["expected_ssid"] = self.authority_policy.expected_ssid
+        result["last_command_gap_ms"] = self.last_command_gap_ms
+        result["session_active"] = self.owner_session is not None
         return result
 
     def safety_loop(self) -> None:
@@ -648,10 +941,12 @@ class WifiPrimaryState(base.FieldState):
                 age = time.monotonic() - self.owner_at if self.owner_at else math.inf
                 if (
                     self.phone_mode in ("manual", "auto")
-                    and age > base.PHONE_FRESH_S
+                    and age > SERVER_PHONE_FRESH_S
                     and not self.stop_sent_for_expiry
                 ):
                     should_stop = True
+                    expired_session = self.owner_session
+                    expired_client = self.owner_client
                     self.stop_sent_for_expiry = True
                     if self.last_command:
                         sequence = int(self.last_command.get("sequence", -1))
@@ -668,6 +963,18 @@ class WifiPrimaryState(base.FieldState):
                     }
                     self.last_decision = "heartbeat expired; Pause latched"
             if should_stop:
+                self.log(
+                    "heartbeat_expired",
+                    client_id=expired_client,
+                    session=expired_session,
+                    freshness_limit_ms=round(SERVER_PHONE_FRESH_S * 1000),
+                )
+                self.log(
+                    "session_invalidated",
+                    client_id=expired_client,
+                    session=expired_session,
+                    reason="phone_freshness_expired",
+                )
                 self.send_stop_burst("phone_freshness_expired", sequence)
             time.sleep(0.05)
 
@@ -678,6 +985,11 @@ def main() -> None:
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--command-ip", default="127.0.0.1")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument(
+        "--simulate-bridge",
+        action="store_true",
+        help="serve fake expected-firmware telemetry; requires --dry-run",
+    )
     parser.add_argument("--log-dir", type=Path, default=Path("/home/al/field_logs"))
     parser.add_argument("--tls-cert", type=Path)
     parser.add_argument("--tls-key", type=Path)
@@ -703,20 +1015,51 @@ def main() -> None:
     )
     parser.add_argument("--network-poll-seconds", type=float, default=NETWORK_POLL_S)
     parser.add_argument(
+        "--authority-policy",
+        choices=sorted(AUTHORITY_POLICIES),
+        default="tractorfield-mission",
+        help="select exactly one startup motion-authority path",
+    )
+    parser.add_argument(
         "--control-subnet",
-        default=DEFAULT_CONTROL_SUBNET,
-        help="only clients in this IPv4 subnet may claim or command motion",
+        default=None,
+        help="unqualified explicit IPv4 override for bench development only",
+    )
+    parser.add_argument(
+        "--ownership-lock",
+        type=Path,
+        help="exclusive Linux lock shared by normal and recovery control services",
     )
     args = parser.parse_args()
 
     if bool(args.tls_cert) != bool(args.tls_key):
         raise SystemExit("--tls-cert and --tls-key must be supplied together")
+    if args.simulate_bridge and not args.dry_run:
+        raise SystemExit("--simulate-bridge requires --dry-run")
+    if args.control_subnet and not args.dry_run:
+        raise SystemExit("--control-subnet override requires --dry-run")
     try:
-        control_network = ipaddress.ip_network(args.control_subnet, strict=False)
+        selected_policy = authority_policy(
+            args.authority_policy,
+            args.control_subnet,
+            allow_zerotier_dry_run=args.dry_run,
+        )
     except ValueError as exc:
-        raise SystemExit(f"invalid --control-subnet: {exc}") from exc
-    if control_network.version != 4:
-        raise SystemExit("--control-subnet must be an IPv4 network")
+        raise SystemExit(f"invalid authority policy: {exc}") from exc
+    control_network = selected_policy.network
+    if selected_policy.recovery_only and not args.dry_run:
+        if args.host != selected_policy.numeric_host:
+            raise SystemExit(
+                "recovery must bind only to "
+                f"{selected_policy.numeric_host}, not {args.host}"
+            )
+        if not address_is_assigned(
+            selected_policy.numeric_host, selected_policy.interface_name
+        ):
+            raise SystemExit(
+                f"{selected_policy.numeric_host} is not assigned to "
+                f"{selected_policy.interface_name}; recovery remains in Pause"
+            )
 
     if not PAGE_PATH.is_file():
         raise SystemExit(f"Missing phone interface: {PAGE_PATH}")
@@ -724,7 +1067,11 @@ def main() -> None:
     stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     log_path = args.log_dir / f"wifi_primary_control_{stamp}.jsonl"
     operator_key = load_or_create_operator_key(args.operator_key_file)
-    state = WifiPrimaryState(args.command_ip, args.dry_run, log_path)
+    try:
+        ownership_lock = acquire_ownership_lock(args.ownership_lock)
+    except RuntimeError as exc:
+        raise SystemExit(str(exc)) from exc
+    state = WifiPrimaryState(args.command_ip, args.dry_run, log_path, selected_policy)
     # Every process start is a fresh, unarmed control session. Send an explicit
     # Pause burst as well as relying on the Teensy's independent 500 ms timeout.
     state.send_stop_burst("server_startup")
@@ -733,6 +1080,8 @@ def main() -> None:
         args=(state, base.STATUS_PORT, "bridge"),
         daemon=True,
     ).start()
+    if args.simulate_bridge:
+        threading.Thread(target=simulated_bridge_loop, args=(state,), daemon=True).start()
     # Do not bind the dedicated mission-dashboard GPS feed (UDP 6013).
     # Wi-Fi-primary control needs only fresh Teensy bridge telemetry; consuming
     # 6013 here can prevent the separately running mission dashboard from
@@ -749,24 +1098,51 @@ def main() -> None:
         server.socket = context.wrap_socket(server.socket, server_side=True)
         scheme = "https"
     zero = f"{scheme}://{base.TRACTOR_ZEROTIER_IP}:{args.port}/?key={operator_key}"
-    local = f"{scheme}://{LOCAL_CONTROL_HOSTNAME}:{args.port}/?key={operator_key}"
-    connectivity = ConnectivityMonitor(
-        state,
-        args.ntfy_topic,
-        local,
-        zero,
-        args.no_ntfy,
-        peer_ip=args.zerotier_peer,
-        peer_port=args.zerotier_peer_port,
-        initial_window_s=args.zerotier_initial_window,
-        poll_s=args.network_poll_seconds,
-    )
-    threading.Thread(target=connectivity.run, daemon=True).start()
+    local_host = selected_policy.numeric_host or LOCAL_CONTROL_HOSTNAME
+    local = f"{scheme}://{local_host}:{args.port}/?key={operator_key}"
+    if selected_policy.recovery_only:
+        if not args.no_ntfy:
+            threading.Thread(
+                target=post_ntfy,
+                args=(
+                    args.ntfy_topic,
+                    "Tractor01 RECOVERY MANUAL ONLY",
+                    "Connect to the onboard router and use this Manual-only "
+                    "recovery link. Starts in Pause; Auto is disabled.\n\n" + local,
+                    local,
+                    "tractor,warning",
+                ),
+                daemon=True,
+            ).start()
+    else:
+        connectivity = ConnectivityMonitor(
+            state,
+            args.ntfy_topic,
+            local,
+            zero,
+            args.no_ntfy,
+            peer_ip=args.zerotier_peer,
+            peer_port=args.zerotier_peer_port,
+            initial_window_s=args.zerotier_initial_window,
+            poll_s=args.network_poll_seconds,
+        )
+        threading.Thread(target=connectivity.run, daemon=True).start()
     print("Wi-Fi-primary tractor01 control")
     print(f"Expected:  {EXPECTED_FIRMWARE}")
-    print(f"ZeroTier status only (motion disabled): {zero}")
+    zero_label = (
+        "ZeroTier control"
+        if selected_policy.network.overlaps(ZEROTIER_NETWORK)
+        else "ZeroTier status only (motion disabled)"
+    )
+    if not selected_policy.recovery_only:
+        print(f"{zero_label}: {zero}")
     print(f"Local control: {local}")
     print(f"Control clients allowed: {control_network}")
+    print(
+        f"Authority policy: {selected_policy.name}; "
+        f"Auto {'allowed' if selected_policy.allow_auto else 'DISABLED'}; "
+        f"{selected_policy.qualification}"
+    )
     print(
         "Access:   persistent URL key"
         if args.operator_key_file
@@ -791,6 +1167,8 @@ def main() -> None:
     finally:
         server.server_close()
         state.close()
+        if ownership_lock is not None:
+            ownership_lock.close()
 
 
 if __name__ == "__main__":

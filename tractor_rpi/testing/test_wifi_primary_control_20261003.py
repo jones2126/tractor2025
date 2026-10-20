@@ -38,6 +38,9 @@ class FakeSerial:
 
 
 class WifiPrimaryTests(unittest.TestCase):
+    def test_server_phone_freshness_matches_teensy_watchdog(self):
+        self.assertEqual(0.5, primary.SERVER_PHONE_FRESH_S)
+
     def make_state(self):
         temporary = tempfile.TemporaryDirectory()
         state = primary.WifiPrimaryState(
@@ -169,6 +172,85 @@ class WifiPrimaryTests(unittest.TestCase):
             self.assertEqual(80, snapshot["wifi_control"]["command_age_ms"])
         finally:
             state.running = False
+            state.close()
+            temporary.cleanup()
+
+    def test_phone_flight_recorder_is_diagnostic_only(self):
+        temporary, state = self.make_state()
+        try:
+            owner_before = state.owner_at
+            result = state.ingest_client_events(
+                {
+                    "events": [
+                        {
+                            "time": "2026-10-19T12:00:00.000Z",
+                            "event": "visibility_change",
+                            "visibility": "hidden",
+                            "sequence": 8,
+                        }
+                    ]
+                },
+                "192.168.10.232",
+            )
+            self.assertEqual(1, result["accepted"])
+            self.assertEqual(owner_before, state.owner_at)
+            record = json.loads(state.client_log_path.read_text(encoding="utf-8"))
+            self.assertEqual("192.168.10.232", record["client_ip"])
+            self.assertEqual("visibility_change", record["event"]["event"])
+        finally:
+            state.running = False
+            state.close()
+            temporary.cleanup()
+
+    def test_phone_flight_recorder_rejects_unbounded_batches(self):
+        temporary, state = self.make_state()
+        try:
+            with self.assertRaises(ValueError):
+                state.ingest_client_events({"events": [{}] * 65}, "192.168.10.232")
+        finally:
+            state.running = False
+            state.close()
+            temporary.cleanup()
+
+    def test_phone_page_has_persistent_flight_recorder_and_wake_lock(self):
+        page = primary.PAGE_PATH.read_text(encoding="utf-8")
+        for marker in (
+            "FLIGHT_MAX=1500",
+            "localStorage.setItem(FLIGHT_KEY",
+            "/api/client-log",
+            "navigator.wakeLock.request('screen')",
+            "connection_hint_changed",
+            "session_cleared_after_visibility_restore",
+            "ACK_DEADLINE_MS=500",
+            "ack_watchdog_expired",
+            "new AbortController()",
+            "sentSession===session",
+            "connection_path_changed_fail_closed",
+        ):
+            self.assertIn(marker, page)
+
+    def test_phone_page_fails_closed_when_browser_reports_offline(self):
+        page = primary.PAGE_PATH.read_text(encoding="utf-8")
+        self.assertIn("failClosed('browser_offline_fail_closed')", page)
+        self.assertNotIn("reason='browser_offline';render();send(true)", page)
+
+    def test_simulated_bridge_is_explicitly_marked(self):
+        temporary, state = self.make_state()
+        state.bridge = {}
+        worker = threading.Thread(target=primary.simulated_bridge_loop, args=(state,))
+        try:
+            worker.start()
+            time.sleep(0.08)
+            snapshot = state.snapshot()
+            self.assertTrue(snapshot["system"]["simulated"])
+            self.assertTrue(snapshot["wifi_control"]["simulated"])
+            self.assertEqual(
+                primary.EXPECTED_FIRMWARE,
+                snapshot["system"]["firmware"],
+            )
+        finally:
+            state.running = False
+            worker.join(1)
             state.close()
             temporary.cleanup()
 
@@ -374,6 +456,61 @@ class WifiPrimaryTests(unittest.TestCase):
         self.assertFalse(
             primary.base.client_in_control_network("192.168.193.36", network)
         )
+
+    def test_authority_policies_make_zerotier_the_explicit_primary(self):
+        zerotier = primary.authority_policy("zerotier-primary")
+        self.assertEqual("192.168.193.0/24", str(zerotier.network))
+        self.assertTrue(zerotier.allow_auto)
+        self.assertIn("production target", zerotier.qualification)
+        mission = primary.authority_policy("tractorfield-mission")
+        recovery = primary.authority_policy("onboard-router-recovery")
+        self.assertTrue(mission.allow_auto)
+        self.assertFalse(recovery.allow_auto)
+        self.assertEqual("192.168.8.0/24", str(recovery.network))
+        with self.assertRaisesRegex(ValueError, "ZeroTier motion authority"):
+            primary.authority_policy(
+                "tractorfield-mission", "192.168.193.0/24"
+            )
+        dry_run = primary.authority_policy(
+            "tractorfield-mission",
+            "192.168.193.0/24",
+            allow_zerotier_dry_run=True,
+        )
+        self.assertIn("UNQUALIFIED", dry_run.qualification)
+
+    def test_manual_recovery_policy_rejects_auto(self):
+        temporary = tempfile.TemporaryDirectory()
+        state = primary.WifiPrimaryState(
+            "127.0.0.1",
+            True,
+            Path(temporary.name) / "control.jsonl",
+            primary.authority_policy("onboard-router-recovery"),
+        )
+        state.bridge = {
+            "system": {"firmware": primary.EXPECTED_FIRMWARE},
+            "wifi_control": {"estop_latched": 0},
+        }
+        state.bridge_at = time.monotonic()
+        try:
+            claim = state.claim("phone-a")
+            status, result = state.accept_command(
+                {
+                    "client_id": "phone-a",
+                    "session": claim["session"],
+                    "sequence": 1,
+                    "mode": "auto",
+                    "drive_percent": 0,
+                    "steering_percent": 0,
+                    "reason": "guarded_auto",
+                }
+            )
+            self.assertEqual(409, int(status))
+            self.assertIn("Auto is disabled", result["error"])
+            self.assertEqual("pause", state.phone_mode)
+        finally:
+            state.running = False
+            state.close()
+            temporary.cleanup()
 
     def test_failed_local_notice_retries_after_backoff(self):
         temporary, state = self.make_state()

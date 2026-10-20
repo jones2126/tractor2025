@@ -69,7 +69,7 @@ const key=new URLSearchParams(location.search).get('key')||'';
 const headers={'Content-Type':'application/json','X-Operator-Key':key};
 const svg=document.getElementById('map'),facts=document.getElementById('facts'),stateEl=document.getElementById('state'),ageEl=document.getElementById('age'),autoGate=document.getElementById('autoGate'),out=document.getElementById('output');
 const guideBtn=document.getElementById('guide'),startBtn=document.getElementById('start'),pauseBtn=document.getElementById('pause'),clearPauseBtn=document.getElementById('clearPause'),messagesBtn=document.getElementById('messages'),progress=document.getElementById('progress');
-const TRAIL_SECONDS=30,SAFETY_VOICE_REPEAT_SECONDS=10,CONTROL_STABLE_MS=5000,LINK_RECOVERY_LOCKOUT_MS=10000;let DATA=null,trailPoints=[],voiceGuidance=false,lastGuidanceAt=0,lastGuidanceKey='',missionWasActive=false,missionHasDriven=false,safetyStopActive=false,lastSafetyVoiceKey='',lastSafetyVoiceAt=0,controlFreshSinceMs=0,linkRecoveryUntilMs=0;const NS='http://www.w3.org/2000/svg';
+const TRAIL_SECONDS=30,SAFETY_VOICE_REPEAT_SECONDS=10,CONTROL_STABLE_MS=5000,LINK_RECOVERY_LOCKOUT_MS=10000;let DATA=null,trailPoints=[],voiceGuidance=false,lastGuidanceAt=0,lastGuidanceKey='',missionWasActive=false,missionHasDriven=false,safetyStopActive=false,lastSafetyVoiceKey='',lastSafetyVoiceAt=0,controlFreshSinceMs=0,linkRecoveryUntilMs=0,lastGoodAtMs=0,lastControllerGoodAtMs=0,lastFactsHtml='';const NS='http://www.w3.org/2000/svg';
 const el=(n,a={})=>{const x=document.createElementNS(NS,n);for(const[k,v]of Object.entries(a))x.setAttribute(k,v);return x};
 let sx=x=>x,sy=y=>y,trail,tractor,target,targetLine,startLine,startLabel,heading;
 function pathD(points){return points.map((p,i)=>(i?'L':'M')+sx(p.x).toFixed(1)+' '+sy(p.y).toFixed(1)).join(' ')}
@@ -147,7 +147,26 @@ function updateVoiceGuidance(s,p,heading,startDistance,toStartX,toStartY,handhel
   const urgentChange=key!==lastGuidanceKey&&['no position','no heading','quality not ready','ready select pause','ready'].includes(key);
   if(now-lastGuidanceAt>=interval||urgentChange){speak(message);lastGuidanceAt=now;lastGuidanceKey=key;if(key==='ready'&&navigator.vibrate)navigator.vibrate([250,100,250])}
 }
+function localClock(ms){return ms?new Date(ms).toLocaleTimeString():'never'}
+function dashboardAccessPath(){
+  const host=location.hostname;
+  if(host.startsWith('192.168.193.'))return 'ZeroTier dashboard link';
+  if(host.startsWith('192.168.8.'))return 'Onboard-router dashboard link';
+  if(host.startsWith('192.168.10.'))return 'TractorField dashboard link';
+  return host||'unknown dashboard link';
+}
+function showTelemetryLost(reason){
+  startBtn.disabled=true;pauseBtn.disabled=true;clearPauseBtn.disabled=true;
+  stateEl.textContent='TELEMETRY LOST — STATE UNKNOWN';stateEl.className='badge bad';
+  const browserAge=lastGoodAtMs?Math.max(0,(Date.now()-lastGoodAtMs)/1000):null;
+  ageEl.textContent=(browserAge==null?'No successful telemetry':'Browser telemetry age '+browserAge.toFixed(1)+' s')+' · last good '+localClock(lastGoodAtMs);
+  ageEl.className='badge bad';
+  autoGate.className='auto-gate';
+  autoGate.innerHTML='TELEMETRY LOST — DO NOT TRUST DISPLAY<small>'+reason+'. Select Pause on the phone and confirm live state before any guarded re-arm.</small>';
+  facts.innerHTML=fact('Telemetry status','STALE — VALUES BELOW ARE HISTORICAL')+fact('Last good dashboard update',localClock(lastGoodAtMs))+(lastFactsHtml||'');
+}
 function draw(s){
+  lastGoodAtMs=Date.now();
   const c=s.controller||{},b=s.bridge||{},g=s.gps||{},st=b.steering||{},tr=b.transmission||{};
   const active=Boolean(s.mission_active);
   const controllerFresh=s.controller_age_s!=null&&s.controller_age_s<1;
@@ -159,6 +178,7 @@ function draw(s){
   const wifi=b.wifi_control||{},wifiPresent=Object.keys(wifi).length>0;
   const wifiMode=Number(wifi.mode),phonePaused=wifiPresent?wifiMode===0:legacyPaused,phoneAuto=wifiPresent?wifiMode===2:Number(st.mode)===0;
   const nowMs=Date.now(),instantLinkFresh=!wifiPresent||(Number(wifi.heartbeat_fresh)===1&&Number(wifi.estop_latched)===0&&Number(wifi.command_age_ms)<=500);
+  if(controllerFresh)lastControllerGoodAtMs=nowMs;
   if(wifiPresent){if(bridgeFresh&&instantLinkFresh){if(!controlFreshSinceMs)controlFreshSinceMs=nowMs}else{controlFreshSinceMs=0;linkRecoveryUntilMs=Math.max(linkRecoveryUntilMs,nowMs+LINK_RECOVERY_LOCKOUT_MS)}}
   const browserStableMs=wifiPresent&&controlFreshSinceMs?nowMs-controlFreshSinceMs:0;
   const controllerStableMs=Number(c.operator_link_stable_s||0)*1000;
@@ -176,7 +196,7 @@ function draw(s){
   ageEl.textContent=s.controller_age_s==null?'No controller telemetry':s.controller_age_s.toFixed(1)+' s telemetry age';
   ageEl.className='badge '+(controllerFresh?'ok':'bad');
   if(!active){autoGate.className='auto-gate';autoGate.innerHTML='AUTO NOT READY — START MISSION<small>Start the mission while control remains in Pause.</small>'}
-  else if(!controllerFresh){autoGate.className='auto-gate warn';autoGate.innerHTML='WAIT — CONTROLLER STARTING<small>Keep control in Pause. Do not select Auto.</small>'}
+  else if(!controllerFresh){autoGate.className='auto-gate';autoGate.innerHTML='CONTROLLER TELEMETRY STALE — DO NOT SELECT AUTO<small>Last fresh controller telemetry: '+localClock(lastControllerGoodAtMs)+'. Select Pause on the phone and wait for confirmed fresh state.</small>'}
   else if(driving&&phoneAuto&&controlLinkReady){autoGate.className='auto-gate ok';autoGate.innerHTML='AUTO ACTIVE — MISSION DRIVING<small>Continue direct supervision with the physical E-stop available.</small>'}
   else if(wifiPresent&&wifiMode===1){autoGate.className='auto-gate warn';autoGate.innerHTML='MANUAL ACTIVE — MISSION HELD<small>Navigation commands are inhibited. Return to Pause before considering Auto.</small>'}
   else if(wifiPresent&&!controlLinkReady){let remaining=Math.max(0,Math.ceil(Math.max(CONTROL_STABLE_MS-browserStableMs,linkRecoveryUntilMs-nowMs)/1000));autoGate.className='auto-gate warn';autoGate.innerHTML='NETWORK UNSTABLE — REMAIN IN PAUSE<small>Fresh local-router heartbeat must remain stable'+(remaining?' for '+remaining+' more seconds':'')+'. Do not select Auto.</small>'}
@@ -213,11 +233,13 @@ function draw(s){
   }
   const phase=(DATA.phases[idx]||'—').replaceAll('_',' ');
   const flags='fixOK='+String(g.relpos_gnss_fix_ok??'—')+' diff='+String(g.relpos_diff_solution??'—')+' valid='+String(g.relpos_valid??'—')+' moving='+String(g.relpos_moving??'—')+' refPosMiss='+String(g.relpos_ref_pos_miss??'—')+' refObsMiss='+String(g.relpos_ref_obs_miss??'—');
-  facts.innerHTML=fact('Distance to mission start',startDistance==null?'—':startDistance.toFixed(2)+' m')+fact('Drive toward start',startDirections)+fact('Mission phase',phase)+fact('Progress',idx+' / '+total+' ('+fmt(100*idx/Math.max(1,total),1)+'%)')+fact('Pause source',pauseSource)+fact('Controller state',c.controller_state||s.process_state)+fact('Wait reason',c.wait_reason||'—')+fact('Target / actual speed',fmt(c.speed_cmd_mps)+' / '+fmt(c.actual_speed_mps)+' m/s')+fact('Cross-track / lateral yt',fmt(c.cross_track_err_m,3)+' / '+fmt(c.yt_m,3)+' m')+fact('Target lookahead',fmt(c.lookahead_dist_m)+' m')+fact('Heading',fmt(positionHeading,1)+'°')+fact('Heading carrier',c.heading_carrier||g.carrier||'—')+fact('Heading baseline',fmt(c.relpos_length_m??g.relpos_length_m,3)+' m')+fact('Heading accuracy',fmt(c.heading_accuracy_deg??g.relpos_heading_accuracy_deg,3)+'°')+fact('RELPOSNED flags',flags)+fact('Heading satellites / C/N0',fmt(g.heading_numSV_used,0)+' / '+fmt(g.heading_cno_mean_dbhz,1)+' dB-Hz')+fact('Steering command',fmt(c.delta_deg,1)+'° / '+fmt(c.steer_normalized))+fact('Steering target / actual',(st.setpoint??'—')+' / '+(st.current??'—'))+fact('Steering error / PWM',(st.error??'—')+' / '+(st.pwm??'—'))+fact('JRK target / feedback',(tr.target??'—')+' / '+(tr.current??'—'))+fact('JRK motor current',tr.motor_current_mA==null?'—':tr.motor_current_mA+' mA')+fact('Wi-Fi heartbeat / steering state',(instantLinkFresh?'fresh':'stale')+' / '+(st.state||'—'))+fact('Phone / low-level modes',phoneMode(wifi.mode)+' / '+mode(st.mode)+' steering / '+mode(tr.mode)+' transmission')+fact('GPS / heading',(c.fix_quality||g.fix_quality||'—')+' / '+(String(c.head_valid??g.headValid).toLowerCase()==='true'?'valid':'invalid'));
+  const recoveryRemaining=Math.max(0,Math.ceil((linkRecoveryUntilMs-nowMs)/1000));
+  facts.innerHTML=fact('Dashboard access path',dashboardAccessPath())+fact('Authoritative phone mode',phoneMode(wifi.mode))+fact('Recovery lockout',recoveryRemaining?recoveryRemaining+' s remaining':controlLinkReady?'clear':'waiting for stable control')+fact('Last fresh controller telemetry',localClock(lastControllerGoodAtMs))+fact('Distance to mission start',startDistance==null?'—':startDistance.toFixed(2)+' m')+fact('Drive toward start',startDirections)+fact('Mission phase',phase)+fact('Progress',idx+' / '+total+' ('+fmt(100*idx/Math.max(1,total),1)+'%)')+fact('Pause source',pauseSource)+fact('Controller state',c.controller_state||s.process_state)+fact('Wait reason',c.wait_reason||'—')+fact('Target / actual speed',fmt(c.speed_cmd_mps)+' / '+fmt(c.actual_speed_mps)+' m/s')+fact('Cross-track / lateral yt',fmt(c.cross_track_err_m,3)+' / '+fmt(c.yt_m,3)+' m')+fact('Target lookahead',fmt(c.lookahead_dist_m)+' m')+fact('Heading',fmt(positionHeading,1)+'°')+fact('Heading carrier',c.heading_carrier||g.carrier||'—')+fact('Heading baseline',fmt(c.relpos_length_m??g.relpos_length_m,3)+' m')+fact('Heading accuracy',fmt(c.heading_accuracy_deg??g.relpos_heading_accuracy_deg,3)+'°')+fact('RELPOSNED flags',flags)+fact('Heading satellites / C/N0',fmt(g.heading_numSV_used,0)+' / '+fmt(g.heading_cno_mean_dbhz,1)+' dB-Hz')+fact('Steering command',fmt(c.delta_deg,1)+'° / '+fmt(c.steer_normalized))+fact('Steering target / actual',(st.setpoint??'—')+' / '+(st.current??'—'))+fact('Steering error / PWM',(st.error??'—')+' / '+(st.pwm??'—'))+fact('JRK target / feedback',(tr.target??'—')+' / '+(tr.current??'—'))+fact('JRK motor current',tr.motor_current_mA==null?'—':tr.motor_current_mA+' mA')+fact('Wi-Fi heartbeat / steering state',(instantLinkFresh?'fresh':'stale')+' / '+(st.state||'—'))+fact('Phone / low-level modes',phoneMode(wifi.mode)+' / '+mode(st.mode)+' steering / '+mode(tr.mode)+' transmission')+fact('GPS / heading',(c.fix_quality||g.fix_quality||'—')+' / '+(String(c.head_valid??g.headValid).toLowerCase()==='true'?'valid':'invalid'));
+  lastFactsHtml=facts.innerHTML;
   updateVoiceGuidance(s,p,positionHeading,startDistance,toStartX,toStartY,phonePaused);
   out.textContent=(s.output||[]).join('\n');out.scrollTop=out.scrollHeight;
 }
-async function poll(){try{const s=await api('/api/state');draw(s)}catch(e){stateEl.textContent='DISCONNECTED';stateEl.className='badge bad'}setTimeout(poll,250)}
+async function poll(){try{const s=await api('/api/state');draw(s)}catch(e){showTelemetryLost('Dashboard connection failed: '+e.message)}setTimeout(poll,250)}
 (async()=>{try{DATA=await api('/api/mission');setupMap();poll()}catch(e){document.body.innerHTML='<main><h1>Dashboard access failed</h1><p>'+e.message+'</p></main>'}})();
 </script></body></html>'''
 

@@ -2,6 +2,17 @@
 
 Revision 2 is the current site description for coverage planning. It preserves the three mowable areas and two obstacles from revision 1, removes transition lines inside mowing polygons, and represents travel with named entry/exit points and between-area routes. It does not contain a launchable mission.
 
+## Pending next-revision correction (2026-10-05)
+
+The later revision-3 review artifacts and approved perimeter previews include
+surveyed candidate `OBS-NEW-012`, displayed as `O012`. Al confirmed that this
+is a false obstacle and that no obstacle exists at that location. It is not
+part of current revision 2. Any next reconciled inventory for coverage planning
+must omit `OBS-NEW-012` from the active obstacle collection and must not create
+a keep-out area for it. Preserve the historical revision-3 and approved
+perimeter artifacts unchanged for provenance, and do not renumber the
+remaining obstacle IDs.
+
 ## Current files
 
 - `62_Collins_site_inventory.geojson` is the authoritative geometry.

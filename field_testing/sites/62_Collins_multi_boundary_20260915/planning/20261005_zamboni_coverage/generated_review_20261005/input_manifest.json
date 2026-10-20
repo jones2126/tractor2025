@@ -1,0 +1,20 @@
+{
+  "status": "REVIEW ONLY \u2014 NOT APPROVED FOR FIELD USE",
+  "inputs": [
+    {
+      "path": "field_testing/sites/62_Collins_multi_boundary_20260915/site_inventory/revisions/rev_003_20260926_REVIEW_ONLY/62_Collins_site_inventory_rev003_REVIEW_ONLY.geojson",
+      "sha256": "9fdb52503db3383c74f491a129b84bbc1d8893b931caa6e7c484156db4760bfb"
+    },
+    {
+      "path": "field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20260928_outer_perimeter_field_test/submitted_edits_review_REVIEW_ONLY/62_Collins_consolidated_route_REVIEW_ONLY.json",
+      "sha256": "e101cdd0ce2707a9c2af908a7d86ff8493ca7c1885bd1aac5dab9f65c6f9e8a5"
+    }
+  ],
+  "generator": "field_testing/tools/build_62_collins_zamboni_coverage_review_20261005.py",
+  "rules": [
+    "O012 / OBS-NEW-012 is rejected and absent from active obstacles.",
+    "Three boundary/headland passes precede stripes in every area.",
+    "Stripes are north-south and use a four-column Zamboni cycle within connected cells.",
+    "No field launcher or five-column mission is generated."
+  ]
+}
