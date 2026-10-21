@@ -67,7 +67,10 @@ def main() -> None:
             rejected += 1
         if event != "command":
             continue
-        mode = str(record.get("phone_mode", "")).lower()
+        # Accepted command records use ``mode``.  Keep the ``phone_mode``
+        # fallback for compatibility with any earlier logs that used that
+        # spelling.
+        mode = str(record.get("phone_mode") or record.get("mode", "")).lower()
         if mode in ARMED:
             try:
                 event_time = datetime.fromisoformat(str(record.get("time", record.get("server_time", ""))))
