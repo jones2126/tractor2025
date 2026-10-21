@@ -83,7 +83,8 @@ sudo tractor-manual-recovery stop
 Repeated start and stop requests are safe. If service ownership, interface
 identity, fresh Teensy telemetry, or mission Pause is ambiguous, the workflow
 fails closed. Normal and recovery services have systemd conflicts and also
-share `/run/tractor-phone-control.lock`.
+share `/run/tractor-phone-control/ownership.lock`. systemd creates the private
+runtime directory with ownership for the unprivileged service account.
 
 ## Physical validation ladder
 
