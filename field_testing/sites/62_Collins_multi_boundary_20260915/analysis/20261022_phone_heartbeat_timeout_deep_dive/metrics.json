@@ -1,0 +1,832 @@
+{
+  "accepted_sequence_discontinuities": [
+    {
+      "delta": 3,
+      "from_sequence": 1636,
+      "session": "qHGnRIwpY6uWXkugLih5cA",
+      "to_sequence": 1639,
+      "utc": "2026-10-21T18:23:48.351+00:00"
+    },
+    {
+      "delta": 4,
+      "from_sequence": 8,
+      "session": "uuRWnK9Kp4u3i0o2pK3xGg",
+      "to_sequence": 12,
+      "utc": "2026-10-21T18:50:59.941+00:00"
+    },
+    {
+      "delta": 9,
+      "from_sequence": 19,
+      "session": "uuRWnK9Kp4u3i0o2pK3xGg",
+      "to_sequence": 28,
+      "utc": "2026-10-21T18:51:11.401+00:00"
+    },
+    {
+      "delta": 3,
+      "from_sequence": 304,
+      "session": "Isj18Wibf37saNO3OxSvtQ",
+      "to_sequence": 307,
+      "utc": "2026-10-21T19:08:48.125+00:00"
+    }
+  ],
+  "all_armed_commands": {
+    "bridge_age_ms": {
+      "max": 118.7,
+      "mean": 17.642569549822962,
+      "min": 0.0,
+      "n": 19770,
+      "p50": 12.0,
+      "p90": 28.61000000000022,
+      "p95": 82.5,
+      "p99": 92.0
+    },
+    "client_reported_rtt_ms": {
+      "max": 520.6,
+      "mean": 43.48962569549823,
+      "min": 18.1,
+      "n": 19770,
+      "p50": 36.2,
+      "p90": 73.5,
+      "p95": 85.0,
+      "p99": 144.6310000000001
+    },
+    "command_gap_ms": {
+      "max": 445.3,
+      "mean": 199.60921092564493,
+      "min": 21.9,
+      "n": 19770,
+      "p50": 200.7,
+      "p90": 208.9,
+      "p95": 213.5,
+      "p99": 242.6
+    },
+    "estimated_phone_to_server_ms": {
+      "max": -1359.0,
+      "mean": -1608.97698533131,
+      "min": -1666.0,
+      "n": 19770,
+      "p50": -1600.0,
+      "p90": -1584.0,
+      "p95": -1580.0,
+      "p99": -1563.0
+    },
+    "server_processing_ms": {
+      "max": 24.66,
+      "mean": 0.19452908447142137,
+      "min": 0.13,
+      "n": 19770,
+      "p50": 0.17,
+      "p90": 0.21,
+      "p95": 0.31,
+      "p99": 0.64
+    }
+  },
+  "archive": {
+    "expected_sha256": "a316fcd031e60afdba5cddd6d9baf29377956043f5b2a772e74bd04344387574",
+    "path": "C:\\Repos\\tractor2025\\field_testing\\sites\\62_Collins_multi_boundary_20260915\\runs\\20261021_133807_master_manual_phone\\tractor01_master_manual_endurance_20261021_151604.tgz",
+    "sha256": "a316fcd031e60afdba5cddd6d9baf29377956043f5b2a772e74bd04344387574"
+  },
+  "armed_commands_within_2s_of_expiry": {
+    "bridge_age_ms": {
+      "max": 94.9,
+      "mean": 25.196,
+      "min": 0.1,
+      "n": 175,
+      "p50": 11.5,
+      "p90": 83.36,
+      "p95": 85.14999999999999,
+      "p99": 93.68999999999998
+    },
+    "client_reported_rtt_ms": {
+      "max": 520.6,
+      "mean": 74.40742857142857,
+      "min": 22.1,
+      "n": 175,
+      "p50": 52.0,
+      "p90": 141.92,
+      "p95": 194.37999999999994,
+      "p99": 366.6079999999996
+    },
+    "command_gap_ms": {
+      "max": 445.3,
+      "mean": 206.77714285714285,
+      "min": 65.6,
+      "n": 175,
+      "p50": 201.9,
+      "p90": 230.89999999999998,
+      "p95": 295.19999999999993,
+      "p99": 409.7139999999998
+    },
+    "estimated_phone_to_server_ms": {
+      "max": -1381.0,
+      "mean": -1629.7314285714285,
+      "min": -1666.0,
+      "n": 175,
+      "p50": -1641.0,
+      "p90": -1578.8,
+      "p95": -1542.8000000000002,
+      "p99": -1497.7400000000005
+    },
+    "server_processing_ms": {
+      "max": 1.76,
+      "mean": 0.21445714285714287,
+      "min": 0.15,
+      "n": 175,
+      "p50": 0.17,
+      "p90": 0.3019999999999999,
+      "p95": 0.4889999999999995,
+      "p99": 0.7329999999999995
+    }
+  },
+  "browser_events_within_2s_of_expiry": {
+    "event_counts": {
+      "ack_watchdog_expired": 26,
+      "claim_attempt": 17,
+      "claim_failed": 1,
+      "send_attempt": 287,
+      "send_failed": 17,
+      "send_ok": 265,
+      "send_queued": 97,
+      "session_claimed": 15,
+      "session_invalidated": 2
+    },
+    "failure_details": [
+      {
+        "count": 2,
+        "error": "control session is not current",
+        "status": "409"
+      },
+      {
+        "count": 16,
+        "error": "signal is aborted without reason",
+        "status": "None"
+      }
+    ],
+    "send_ok_rtt_ms": {
+      "max": 929.0,
+      "mean": 107.89433962264151,
+      "min": 22.0,
+      "n": 265,
+      "p50": 56.0,
+      "p90": 205.0,
+      "p95": 395.9999999999999,
+      "p99": 744.7200000000007
+    }
+  },
+  "clock_domains": {
+    "browser_alignment_offset_bound_ms": -1673.0,
+    "browser_event": "phone Date/new Date UTC wall clock plus performance.now monotonic_ms",
+    "browser_upload": "server UTC receipt time of a later batched diagnostic upload; not event occurrence",
+    "browser_upload_delay_ms": {
+      "max": 1692685.0,
+      "mean": 15277.767655347909,
+      "min": -1661.0,
+      "n": 73094,
+      "p50": 3777.0,
+      "p90": 11152.0,
+      "p95": 12384.0,
+      "p99": 38615.20999999998
+    },
+    "journal": "Tractor01 local EDT, one-second display resolution",
+    "mission": "UTC ISO-8601; aligns directly with server clock",
+    "pursuit": "Unix epoch seconds; interpreted as UTC",
+    "router": "AXE75 local EDT, one-second display resolution",
+    "server": "UTC ISO-8601 generated by Tractor01 system clock",
+    "server_minus_phone_send_ms": {
+      "max": 6568.0,
+      "mean": -1609.4498948254102,
+      "min": -1673.0,
+      "n": 35655,
+      "p50": -1607.0,
+      "p90": -1578.0,
+      "p95": -1573.0,
+      "p99": -1557.0
+    }
+  },
+  "control_event_counts": {
+    "command": 35655,
+    "command_received": 35668,
+    "heartbeat_expired": 23,
+    "mode_transition": 41,
+    "network_local_ready": 1,
+    "network_zerotier_lost": 4,
+    "network_zerotier_notice_sent": 5,
+    "network_zerotier_probe": 23,
+    "network_zerotier_ready": 5,
+    "nonlocal_control_rejected": 1,
+    "owner_claimed": 31,
+    "server_start": 1,
+    "session_invalidated": 30,
+    "stop_burst": 56
+  },
+  "existing_analyzer_reproduction": {
+    "command_intervals": 19740,
+    "command_received_without_matching_accepted_command": 13,
+    "heartbeat_expiries": 23,
+    "longest_continuous_armed_minutes": 38.73311666666667,
+    "max_armed_command_gap_ms": 423.7,
+    "reported_rejected_commands": 0,
+    "rtt_max_ms": 520.6,
+    "rtt_p95_ms": 85.0,
+    "unmatched_received": [
+      {
+        "_time": "2026-10-21T18:46:15.264+00:00",
+        "client_id": "8ff8becb-7b99-46bc-baca-dbfb12b2355a",
+        "client_ip": "192.168.193.206",
+        "drive_percent": 0.0,
+        "event": "command_received",
+        "reason": "heartbeat",
+        "requested_mode": "auto",
+        "sequence": 594,
+        "session": "AecjuX2IcWUsJ3sadcvRFA",
+        "steering_percent": 0.0,
+        "time": "2026-10-21T18:46:15.264+00:00"
+      },
+      {
+        "_time": "2026-10-21T18:50:43.891+00:00",
+        "client_id": "8ff8becb-7b99-46bc-baca-dbfb12b2355a",
+        "client_ip": "192.168.193.206",
+        "drive_percent": 0.0,
+        "event": "command_received",
+        "reason": "heartbeat",
+        "requested_mode": "auto",
+        "sequence": 86,
+        "session": "0CYmv95Z62aBoOwvJcyjMw",
+        "steering_percent": 0.0,
+        "time": "2026-10-21T18:50:43.891+00:00"
+      },
+      {
+        "_time": "2026-10-21T18:50:53.087+00:00",
+        "client_id": "8ff8becb-7b99-46bc-baca-dbfb12b2355a",
+        "client_ip": "192.168.193.206",
+        "drive_percent": 0.0,
+        "event": "command_received",
+        "reason": "heartbeat",
+        "requested_mode": "auto",
+        "sequence": 42,
+        "session": "FhATlwGEuvI2rEyQBSmA-g",
+        "steering_percent": 0.0,
+        "time": "2026-10-21T18:50:53.087+00:00"
+      },
+      {
+        "_time": "2026-10-21T18:51:13.292+00:00",
+        "client_id": "8ff8becb-7b99-46bc-baca-dbfb12b2355a",
+        "client_ip": "192.168.193.206",
+        "drive_percent": 0.0,
+        "event": "command_received",
+        "reason": "heartbeat",
+        "requested_mode": "pause",
+        "sequence": 20,
+        "session": "uuRWnK9Kp4u3i0o2pK3xGg",
+        "steering_percent": 0.0,
+        "time": "2026-10-21T18:51:13.292+00:00"
+      },
+      {
+        "_time": "2026-10-21T18:52:02.484+00:00",
+        "client_id": "8ff8becb-7b99-46bc-baca-dbfb12b2355a",
+        "client_ip": "192.168.193.206",
+        "drive_percent": 0.0,
+        "event": "command_received",
+        "reason": "heartbeat",
+        "requested_mode": "auto",
+        "sequence": 282,
+        "session": "uuRWnK9Kp4u3i0o2pK3xGg",
+        "steering_percent": 0.0,
+        "time": "2026-10-21T18:52:02.484+00:00"
+      },
+      {
+        "_time": "2026-10-21T18:53:07.965+00:00",
+        "client_id": "8ff8becb-7b99-46bc-baca-dbfb12b2355a",
+        "client_ip": "192.168.193.206",
+        "drive_percent": 0.0,
+        "event": "command_received",
+        "reason": "heartbeat",
+        "requested_mode": "auto",
+        "sequence": 288,
+        "session": "_4yukTOHNWqjlv4uEzR8vw",
+        "steering_percent": 0.0,
+        "time": "2026-10-21T18:53:07.965+00:00"
+      },
+      {
+        "_time": "2026-10-21T18:54:12.933+00:00",
+        "client_id": "8ff8becb-7b99-46bc-baca-dbfb12b2355a",
+        "client_ip": "192.168.193.206",
+        "drive_percent": 0.0,
+        "event": "command_received",
+        "reason": "heartbeat",
+        "requested_mode": "auto",
+        "sequence": 318,
+        "session": "QAzXCsMV053QDAxGieXHfg",
+        "steering_percent": 0.0,
+        "time": "2026-10-21T18:54:12.933+00:00"
+      },
+      {
+        "_time": "2026-10-21T18:57:57.129+00:00",
+        "client_id": "8ff8becb-7b99-46bc-baca-dbfb12b2355a",
+        "client_ip": "192.168.193.206",
+        "drive_percent": 0.0,
+        "event": "command_received",
+        "reason": "heartbeat",
+        "requested_mode": "auto",
+        "sequence": 161,
+        "session": "wdoxAuUQQmP8jIr9QFv7GA",
+        "steering_percent": 0.0,
+        "time": "2026-10-21T18:57:57.129+00:00"
+      },
+      {
+        "_time": "2026-10-21T18:58:51.824+00:00",
+        "client_id": "8ff8becb-7b99-46bc-baca-dbfb12b2355a",
+        "client_ip": "192.168.193.206",
+        "drive_percent": 0.0,
+        "event": "command_received",
+        "reason": "heartbeat",
+        "requested_mode": "auto",
+        "sequence": 64,
+        "session": "SQ69tRjOVxA3jm2c76wshg",
+        "steering_percent": 0.0,
+        "time": "2026-10-21T18:58:51.824+00:00"
+      },
+      {
+        "_time": "2026-10-21T18:59:12.435+00:00",
+        "client_id": "8ff8becb-7b99-46bc-baca-dbfb12b2355a",
+        "client_ip": "192.168.193.206",
+        "drive_percent": 0.0,
+        "event": "command_received",
+        "reason": "heartbeat",
+        "requested_mode": "auto",
+        "sequence": 89,
+        "session": "tBdmlzN7Un8XifQ-KWZfRw",
+        "steering_percent": 0.0,
+        "time": "2026-10-21T18:59:12.435+00:00"
+      },
+      {
+        "_time": "2026-10-21T18:59:25.779+00:00",
+        "client_id": "8ff8becb-7b99-46bc-baca-dbfb12b2355a",
+        "client_ip": "192.168.193.206",
+        "drive_percent": 0.0,
+        "event": "command_received",
+        "reason": "heartbeat",
+        "requested_mode": "auto",
+        "sequence": 59,
+        "session": "78jNs3emz1si1LQrq0G9rQ",
+        "steering_percent": 0.0,
+        "time": "2026-10-21T18:59:25.779+00:00"
+      },
+      {
+        "_time": "2026-10-21T18:59:40.579+00:00",
+        "client_id": "8ff8becb-7b99-46bc-baca-dbfb12b2355a",
+        "client_ip": "192.168.193.206",
+        "drive_percent": 0.0,
+        "event": "command_received",
+        "reason": "heartbeat",
+        "requested_mode": "auto",
+        "sequence": 32,
+        "session": "xxojTv1CbY2FImMgbYgCnA",
+        "steering_percent": 0.0,
+        "time": "2026-10-21T18:59:40.579+00:00"
+      },
+      {
+        "_time": "2026-10-21T19:07:42.404+00:00",
+        "client_id": "8ff8becb-7b99-46bc-baca-dbfb12b2355a",
+        "client_ip": "192.168.193.206",
+        "drive_percent": 0.0,
+        "event": "command_received",
+        "reason": "heartbeat",
+        "requested_mode": "manual",
+        "sequence": 431,
+        "session": "2AgsxtOA8AV-QHZ86wpDvA",
+        "steering_percent": 0.0,
+        "time": "2026-10-21T19:07:42.404+00:00"
+      }
+    ]
+  },
+  "healthy_armed_commands_more_than_10s_from_expiry": {
+    "bridge_age_ms": {
+      "max": 118.7,
+      "mean": 17.143502643807082,
+      "min": 0.0,
+      "n": 18723,
+      "p50": 12.1,
+      "p90": 27.1,
+      "p95": 81.5,
+      "p99": 91.4
+    },
+    "client_reported_rtt_ms": {
+      "max": 337.9,
+      "mean": 42.58809485659349,
+      "min": 18.1,
+      "n": 18723,
+      "p50": 35.7,
+      "p90": 72.2,
+      "p95": 83.0,
+      "p99": 134.65599999999975
+    },
+    "command_gap_ms": {
+      "max": 408.9,
+      "mean": 199.66266089836031,
+      "min": 21.9,
+      "n": 18723,
+      "p50": 200.7,
+      "p90": 208.6,
+      "p95": 212.9,
+      "p99": 237.95599999999976
+    },
+    "estimated_phone_to_server_ms": {
+      "max": -1359.0,
+      "mean": -1607.443411846392,
+      "min": -1666.0,
+      "n": 18723,
+      "p50": -1599.0,
+      "p90": -1584.0,
+      "p95": -1580.0,
+      "p99": -1564.0
+    },
+    "server_processing_ms": {
+      "max": 24.66,
+      "mean": 0.194523313571543,
+      "min": 0.13,
+      "n": 18723,
+      "p50": 0.17,
+      "p90": 0.21,
+      "p95": 0.31,
+      "p99": 0.64
+    }
+  },
+  "healthy_browser_events_more_than_10s_from_expiry": {
+    "event_counts": {
+      "ack_watchdog_expired": 1,
+      "claim_attempt": 6,
+      "page_loaded": 2,
+      "send_attempt": 34454,
+      "send_failed": 406,
+      "send_ok": 34050,
+      "send_queued": 344,
+      "session_claimed": 6,
+      "session_cleared_after_visibility_restore": 4,
+      "session_invalidated": 1,
+      "visibility_change": 11,
+      "wake_lock_acquired": 4,
+      "wake_lock_failed": 2,
+      "wake_lock_released": 5
+    },
+    "failure_details": [
+      {
+        "count": 1,
+        "error": "motion control requires the local tractor-router network 192.168.193.0/24",
+        "status": "403"
+      },
+      {
+        "count": 389,
+        "error": "Failed to fetch",
+        "status": "None"
+      },
+      {
+        "count": 16,
+        "error": "signal is aborted without reason",
+        "status": "None"
+      }
+    ],
+    "send_ok_rtt_ms": {
+      "max": 883.0,
+      "mean": 44.08875183553597,
+      "min": 12.0,
+      "n": 34050,
+      "p50": 36.0,
+      "p90": 73.0,
+      "p95": 86.0,
+      "p99": 154.0
+    }
+  },
+  "internal_hashes": [
+    {
+      "actual": "1e4038483714f32b0439126f5d2d10ea28ad9ad2c2156315f3ef4016332a0ed9",
+      "expected": "1e4038483714f32b0439126f5d2d10ea28ad9ad2c2156315f3ef4016332a0ed9",
+      "ok": true,
+      "path": "diagnostics/collection_info.txt"
+    },
+    {
+      "actual": "db86b7b7f5bc5281497136b6a709627183e0218e2b3c68e28b2e108ffc941362",
+      "expected": "db86b7b7f5bc5281497136b6a709627183e0218e2b3c68e28b2e108ffc941362",
+      "ok": true,
+      "path": "diagnostics/network_state.txt"
+    },
+    {
+      "actual": "71c1fb1e76533277c0c6eb9b101d9883ecf55825551f244ded021b225c3d151f",
+      "expected": "71c1fb1e76533277c0c6eb9b101d9883ecf55825551f244ded021b225c3d151f",
+      "ok": true,
+      "path": "diagnostics/repository_state.txt"
+    },
+    {
+      "actual": "74c520db328eb455adef3e421460f3eca2bc5dfd6076944be26a0bd4572db799",
+      "expected": "74c520db328eb455adef3e421460f3eca2bc5dfd6076944be26a0bd4572db799",
+      "ok": true,
+      "path": "diagnostics/service_journal.log"
+    },
+    {
+      "actual": "15e16542ad216c0f850a6284a758e20244b664d93744c3d07c0e58446bcaf0c7",
+      "expected": "15e16542ad216c0f850a6284a758e20244b664d93744c3d07c0e58446bcaf0c7",
+      "ok": true,
+      "path": "diagnostics/service_status.txt"
+    },
+    {
+      "actual": "860f9541b6a25225e1012310684ab600288175a6bc603ad15efbea5d03f3942f",
+      "expected": "860f9541b6a25225e1012310684ab600288175a6bc603ad15efbea5d03f3942f",
+      "ok": true,
+      "path": "mission_logs/master_manual_phone_20261021_133807.csv"
+    },
+    {
+      "actual": "222041a825071c7dfd1b40f5b22930f8c90b380f7b5b8d54d7d49b01149b407f",
+      "expected": "222041a825071c7dfd1b40f5b22930f8c90b380f7b5b8d54d7d49b01149b407f",
+      "ok": true,
+      "path": "pursuit_logs/pursuit_log_20261021_133810.csv"
+    },
+    {
+      "actual": "04654469e9c23c0c6a2e1a7fb53435f00c3fa0ad3ebfc3259c575a2ba66a6619",
+      "expected": "04654469e9c23c0c6a2e1a7fb53435f00c3fa0ad3ebfc3259c575a2ba66a6619",
+      "ok": true,
+      "path": "wifi_logs/phone_flight_recorder_20261021_130733.jsonl"
+    },
+    {
+      "actual": "7fe8831188d75e7ee30060ddcfebcbd7c5f0678a72b8547dd7fa7f3fb2d48a6b",
+      "expected": "7fe8831188d75e7ee30060ddcfebcbd7c5f0678a72b8547dd7fa7f3fb2d48a6b",
+      "ok": true,
+      "path": "wifi_logs/wifi_primary_control_20261021_130733.jsonl"
+    }
+  ],
+  "record_counts": {
+    "commands": 35655,
+    "control": 71544,
+    "expiries": 23,
+    "flight": 73094,
+    "flight_events": {
+      "ack_watchdog_expired": 30,
+      "claim_attempt": 32,
+      "claim_failed": 1,
+      "page_loaded": 2,
+      "send_attempt": 36190,
+      "send_failed": 436,
+      "send_ok": 35754,
+      "send_queued": 589,
+      "session_claimed": 31,
+      "session_cleared_after_visibility_restore": 4,
+      "session_invalidated": 3,
+      "visibility_change": 11,
+      "wake_lock_acquired": 4,
+      "wake_lock_failed": 2,
+      "wake_lock_released": 5
+    }
+  },
+  "router": {
+    "dhcp_ack_interval_seconds": {
+      "max": 155.0,
+      "mean": 154.1206896551724,
+      "min": 154.0,
+      "n": 116,
+      "p50": 154.0,
+      "p90": 155.0,
+      "p95": 155.0,
+      "p99": 155.0
+    },
+    "events_near_expiries": {
+      "2026-10-21T17:31:11.315+00:00": [
+        "2026-10-21 13:30:34 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 13:30:34 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 13:30:34 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 13:33:09 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 13:33:09 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 13:33:09 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)"
+      ],
+      "2026-10-21T18:18:14.028+00:00": [
+        "2026-10-21 14:16:49 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 14:16:49 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:16:49 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:19:23 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 14:19:23 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:19:23 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)"
+      ],
+      "2026-10-21T18:46:15.249+00:00": [
+        "2026-10-21 14:45:04 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 14:45:04 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:45:04 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:47:38 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:47:38 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:47:38 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state"
+      ],
+      "2026-10-21T18:49:29.849+00:00": [
+        "2026-10-21 14:47:38 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:47:38 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:47:38 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 14:50:13 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:50:13 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 14:50:13 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)"
+      ],
+      "2026-10-21T18:49:39.313+00:00": [
+        "2026-10-21 14:47:38 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:47:38 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:47:38 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 14:50:13 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:50:13 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 14:50:13 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)"
+      ],
+      "2026-10-21T18:50:08.260+00:00": [
+        "2026-10-21 14:47:38 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:47:38 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:47:38 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 14:50:13 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:50:13 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 14:50:13 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:52:47 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:52:47 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 14:52:47 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)"
+      ],
+      "2026-10-21T18:50:22.131+00:00": [
+        "2026-10-21 14:47:38 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:47:38 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:47:38 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 14:50:13 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:50:13 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 14:50:13 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:52:47 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:52:47 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 14:52:47 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)"
+      ],
+      "2026-10-21T18:50:42.062+00:00": [
+        "2026-10-21 14:50:13 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:50:13 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 14:50:13 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:52:47 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:52:47 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 14:52:47 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)"
+      ],
+      "2026-10-21T18:50:52.679+00:00": [
+        "2026-10-21 14:50:13 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:50:13 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 14:50:13 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:52:47 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:52:47 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 14:52:47 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)"
+      ],
+      "2026-10-21T18:52:02.038+00:00": [
+        "2026-10-21 14:50:13 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:50:13 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 14:50:13 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:52:47 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:52:47 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 14:52:47 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)"
+      ],
+      "2026-10-21T18:53:07.038+00:00": [
+        "2026-10-21 14:50:13 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:50:13 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 14:50:13 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:52:47 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:52:47 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 14:52:47 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:55:21 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 14:55:21 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:55:21 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)"
+      ],
+      "2026-10-21T18:54:12.040+00:00": [
+        "2026-10-21 14:52:47 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:52:47 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 14:52:47 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:55:21 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 14:55:21 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:55:21 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)"
+      ],
+      "2026-10-21T18:56:39.669+00:00": [
+        "2026-10-21 14:55:21 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 14:55:21 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:55:21 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:57:55 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 14:57:55 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:57:55 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)"
+      ],
+      "2026-10-21T18:57:53.482+00:00": [
+        "2026-10-21 14:55:21 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 14:55:21 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:55:21 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:57:55 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 14:57:55 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:57:55 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 15:00:29 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 15:00:29 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 15:00:29 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)"
+      ],
+      "2026-10-21T18:58:35.647+00:00": [
+        "2026-10-21 14:57:55 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 14:57:55 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:57:55 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 15:00:29 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 15:00:29 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 15:00:29 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)"
+      ],
+      "2026-10-21T18:58:49.869+00:00": [
+        "2026-10-21 14:57:55 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 14:57:55 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:57:55 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 15:00:29 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 15:00:29 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 15:00:29 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)"
+      ],
+      "2026-10-21T18:59:10.050+00:00": [
+        "2026-10-21 14:57:55 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 14:57:55 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:57:55 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 15:00:29 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 15:00:29 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 15:00:29 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)"
+      ],
+      "2026-10-21T18:59:25.023+00:00": [
+        "2026-10-21 14:57:55 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 14:57:55 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:57:55 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 15:00:29 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 15:00:29 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 15:00:29 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)"
+      ],
+      "2026-10-21T18:59:40.046+00:00": [
+        "2026-10-21 14:57:55 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 14:57:55 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:57:55 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 15:00:29 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 15:00:29 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 15:00:29 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)"
+      ],
+      "2026-10-21T19:00:51.155+00:00": [
+        "2026-10-21 14:57:55 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 14:57:55 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 14:57:55 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 15:00:29 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 15:00:29 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 15:00:29 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 15:03:03 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 15:03:03 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 15:03:03 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state"
+      ],
+      "2026-10-21T19:00:57.915+00:00": [
+        "2026-10-21 15:00:29 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 15:00:29 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 15:00:29 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 15:03:03 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 15:03:03 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 15:03:03 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state"
+      ],
+      "2026-10-21T19:05:51.650+00:00": [
+        "2026-10-21 15:03:03 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 15:03:03 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 15:03:03 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 15:05:37 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 15:05:37 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 15:05:37 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 15:08:11 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 15:08:11 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 15:08:11 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)"
+      ],
+      "2026-10-21T19:07:40.260+00:00": [
+        "2026-10-21 15:05:37 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 15:05:37 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 15:05:37 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 15:08:11 dhcpc[21316]: <6> 210058 1/2 lease passed, enter renewing state",
+        "2026-10-21 15:08:11 dhcpc[21316]: <6> 210054 receive ack from server with ip 100.81.44.171, options(subnet=255.192.0.0;serverid=100.64.0.1;router=100.64.0.1;lease=300;dns=1.1.1.1 8.8.8.8;cliid=01/6c:4c:bc:44:dd:41:;)",
+        "2026-10-21 15:08:11 dhcpc[21316]: <6> 210053 send select request with options(cliid=01/6c:4c:bc:44:dd:41:;)"
+      ]
+    },
+    "exports": [
+      {
+        "dhcp_acks": 9,
+        "event_count": 94,
+        "header": [
+          "####################################################################",
+          "#                 Archer AXE75 System Log",
+          "# Time = 2026-10-21 10:52:00",
+          "# H-Ver = 1.0.0 ; S-Ver = 1.5.6 Build 20260623 rel.56854",
+          "# LAN: I = 192.168.10.1 ; M = 255.255.255.0 ; MAC = 6C:4C:BC:44:DD:40 ",
+          "# WAN: W = dhcp ; I = 100.81.44.171 ; M = 255.192.0.0 ; MAC = 6C:4C:BC:44:DD:41 ",
+          "#      G = 100.64.0.1 ; D1 = 1.1.1.1 ; D2 = 8.8.8.8 ",
+          "# Clients connected: 5 ; WI-FI : 4 ",
+          "####################################################################"
+        ],
+        "path": "C:\\Users\\al532\\Downloads\\20261021\\Archer-AXE75-Log-2026-10-21-105200.log",
+        "sha256": "088478fb28d96d42d184c61eaf02d4b9408044498bf5b81d16ffb7d74fae6c16"
+      },
+      {
+        "dhcp_acks": 118,
+        "event_count": 421,
+        "header": [
+          "####################################################################",
+          "#                 Archer AXE75 System Log",
+          "# Time = 2026-10-21 15:32:44",
+          "# H-Ver = 1.0.0 ; S-Ver = 1.5.6 Build 20260623 rel.56854",
+          "# LAN: I = 192.168.10.1 ; M = 255.255.255.0 ; MAC = 6C:4C:BC:44:DD:40 ",
+          "# WAN: W = dhcp ; I = 100.81.44.171 ; M = 255.192.0.0 ; MAC = 6C:4C:BC:44:DD:41 ",
+          "#      G = 100.64.0.1 ; D1 = 1.1.1.1 ; D2 = 8.8.8.8 ",
+          "# Clients connected: 4 ; WI-FI : 3 ",
+          "####################################################################"
+        ],
+        "path": "C:\\Users\\al532\\Downloads\\20261021\\Archer-AXE75-Log-2026-10-21-153200.log",
+        "sha256": "edd6ce33cad3ef2a179ae6ce182b748ce18ae6d305df234d04a369318baadc75"
+      }
+    ],
+    "unique_dhcp_ack_count": 118
+  }
+}

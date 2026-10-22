@@ -39,6 +39,9 @@ AUDIT = PLAN / "62_Collins_master_manual_resampled_1mps_20260920_audit.csv"
 TEMPLATE = Path(__file__).with_name("tractor-mission-replay-template.html")
 SHARED_BUILDER = Path(__file__).with_name("build_tractor_mission_replays_20260919.py")
 OUTPUT_HTML = OUTPUT / "replay_20260923_124933_master_manual_5hz.html"
+REQUIRED_EVENT_CATEGORIES = {
+    "rtk", "heading", "mode", "radio", "driving", "reacquisition", "phase"
+}
 
 
 def event_labels(previous, current):
@@ -194,7 +197,7 @@ def validate_output(page, payload):
         raise ValueError("embedded replay payload does not round-trip")
     if len(embedded["trail"]) < 1 or len(embedded["mission"]) != len(embedded["summary"]["auditRows"] * [None]):
         raise ValueError("embedded mission/trail validation failed")
-    required = {"rtk", "heading", "mode", "radio", "driving", "reacquisition", "phase"}
+    required = REQUIRED_EVENT_CATEGORIES
     present = {event["category"] for event in embedded["events"]}
     missing = required - present
     if missing:
