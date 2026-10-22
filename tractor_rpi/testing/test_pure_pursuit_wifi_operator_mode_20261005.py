@@ -9,7 +9,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-SOURCE = ROOT / "tractor_rpi" / "pure-pursuit" / "pure_pursuit_controller_20260915.py"
+SOURCE = ROOT / "tractor_rpi" / "pure-pursuit" / "pure_pursuit_controller_20261022.py"
 SPEC = importlib.util.spec_from_file_location("pursuit_wifi_mode", SOURCE)
 controller = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None

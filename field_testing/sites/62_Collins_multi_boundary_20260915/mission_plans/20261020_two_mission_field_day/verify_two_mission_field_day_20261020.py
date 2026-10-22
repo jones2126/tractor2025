@@ -44,7 +44,7 @@ def main() -> None:
         sys.executable,
         "-m",
         "unittest",
-        "tractor_rpi.testing.test_wifi_primary_control_20261003",
+        "tractor_rpi.testing.test_wifi_primary_control_20261022",
         "tractor_rpi.testing.test_mission_dashboard_stale_state_20261019",
         "tractor_rpi.testing.test_manual_recovery_20261019",
         "tractor_rpi.testing.test_phone_control_log_analyzer_20261021",

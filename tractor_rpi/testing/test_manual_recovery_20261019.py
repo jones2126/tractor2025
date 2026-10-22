@@ -15,7 +15,7 @@ for path in (str(WEBRTC), str(ROOT)):
     if path not in sys.path:
         sys.path.insert(0, path)
 
-import wifi_primary_control_20261003 as primary
+import wifi_primary_control_20261022 as primary
 from tractor_rpi.recovery import manual_recovery_workflow_20261019 as workflow
 
 

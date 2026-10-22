@@ -159,7 +159,12 @@ class FieldState:
         self.last_stop_reason = reason
         self.log("stop_burst", reason=reason, sequence=sequence, steering_percent=steering_percent)
 
-    def claim(self, client_id: str, client_ip: str | None = None) -> dict[str, Any]:
+    def claim(
+        self,
+        client_id: str,
+        client_ip: str | None = None,
+        recover_auto: bool = False,
+    ) -> dict[str, Any]:
         now = time.monotonic()
         with self.lock:
             if not client_id or len(client_id) > 100:
@@ -468,7 +473,9 @@ def handler_factory(
             try:
                 if path == "/api/claim":
                     result = state.claim(
-                        str(data.get("client_id", "")), self.client_address[0]
+                        str(data.get("client_id", "")),
+                        self.client_address[0],
+                        bool(data.get("recover_auto", False)),
                     )
                     self.send_json(HTTPStatus.OK, result)
                     return

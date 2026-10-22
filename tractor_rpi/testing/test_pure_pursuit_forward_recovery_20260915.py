@@ -10,7 +10,7 @@ import unittest
 CONTROLLER = (
     pathlib.Path(__file__).resolve().parents[1]
     / "pure-pursuit"
-    / "pure_pursuit_controller_20260915.py"
+    / "pure_pursuit_controller_20261022.py"
 )
 SPEC = importlib.util.spec_from_file_location("pure_pursuit_20260915", CONTROLLER)
 MODULE = importlib.util.module_from_spec(SPEC)

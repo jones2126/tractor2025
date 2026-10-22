@@ -11,9 +11,9 @@ AUDIT="${GENERATED}/62_Collins_master_manual_resampled_1mps_20260920_audit.csv"
 VERIFY="${SCRIPT_DIR}/verify_master_manual_phone_20261006.py"
 PREFLIGHT="${TRACTOR_REPO}/tractor_rpi/testing/mission_preflight_20261002.py"
 HEADING_CONFIG="${TRACTOR_REPO}/tractor_rpi/testing/configure_dual_f9p_5hz_profile_20260923.py"
-CONTROLLER="${TRACTOR_REPO}/tractor_rpi/pure-pursuit/pure_pursuit_controller_20260915.py"
+CONTROLLER="${TRACTOR_REPO}/tractor_rpi/pure-pursuit/pure_pursuit_controller_20261022.py"
 LOGGER="${TRACTOR_REPO}/tractor_rpi/field_test_logger_20260828.py"
-WIFI_SERVER="${TRACTOR_REPO}/tractor_rpi/testing/webrtc/wifi_primary_control_20261003.py"
+WIFI_SERVER="${TRACTOR_REPO}/tractor_rpi/testing/webrtc/wifi_primary_control_20261022.py"
 EXPECTED_FIRMWARE="teensy_main_20261003_wifi_v3"
 EXPECTED_CONFIRMATION="RUN SEPTEMBER 23 MASTER PHONE BLADES OFF"
 
@@ -73,7 +73,7 @@ for required in "${MISSION}" "${AUDIT}" "${PREFLIGHT}" "${CONTROLLER}" "${LOGGER
         exit 1
     }
 done
-pgrep -f '[p]ython3.*wifi_primary_control_20261003.py' >/dev/null || {
+pgrep -f '[p]ython3.*wifi_primary_control_20261022.py' >/dev/null || {
     echo "ERROR: Wi-Fi phone control server is not running" >&2
     exit 1
 }
@@ -81,7 +81,7 @@ pgrep -f '[p]ython3.*field_test_logger_20260828.py' >/dev/null && {
     echo "ERROR: field logger already running" >&2
     exit 1
 }
-pgrep -f '[p]ython3.*pure_pursuit_controller_20260915.py' >/dev/null && {
+pgrep -f '[p]ython3.*pure_pursuit_controller_20261022.py' >/dev/null && {
     echo "ERROR: Pure Pursuit controller already running" >&2
     exit 1
 }
