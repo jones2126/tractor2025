@@ -59,3 +59,7 @@ field_testing/sites/*/runs/
 # site_inventory, or mission_plans instead.
 field_testing/sites/*/scratch/
 field_testing/sites/*/tmp/
+
+# Field-test log/recovery archive bundles copied off the robot (keep local, not in git).
+/field_testing/*.tgz
+/field_testing/*.tar.gz
