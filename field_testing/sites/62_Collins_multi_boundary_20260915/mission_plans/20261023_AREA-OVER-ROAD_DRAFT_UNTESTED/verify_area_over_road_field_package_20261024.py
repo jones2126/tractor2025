@@ -16,13 +16,18 @@ AUDIT = HERE / "generated/62_Collins_AREA_OVER_ROAD_1mps_DRAFT_UNTESTED_20261024
 LAUNCHER = HERE / "run_area_over_road_field_20261024.sh"
 
 EXPECTED_MISSION_SHA256 = "150e70a2be00eed9cf0e5aedc0bc26ba3c8a122a2b37a7c666aab7e3a7859979"
-EXPECTED_AUDIT_SHA256 = "b1b435a5c8318e8a34bd0a8e62376316fec8a3fd537ad489fc8558a648423046"
-EXPECTED_VALIDATION_SHA256 = "ed8b0bab431e7aa201d43d4f9103a0509e188b3f6e8db2bee910823bbf28d363"
+EXPECTED_AUDIT_SHA256 = "d3c41cb43080470b1366a4a1af580a1d22c01038196778b4475b41604849bbae"
+EXPECTED_VALIDATION_SHA256 = "0ffc97449bdcb86476b5ab8dd272b0d464175744703b7f951b18d33215c0038e"
 EXPECTED_ROWS = 3463
 
 
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def sha256_lf_text(path: Path) -> str:
+    """Hash text canonically so Windows CRLF and Tractor01 LF checkouts agree."""
+    return hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
 
 
 def main() -> None:
@@ -31,9 +36,9 @@ def main() -> None:
             raise SystemExit(f"ERROR: required file missing: {path}")
     if sha256(MISSION) != EXPECTED_MISSION_SHA256:
         raise SystemExit("ERROR: mission checksum differs from the approved controller route")
-    if sha256(AUDIT) != EXPECTED_AUDIT_SHA256:
+    if sha256_lf_text(AUDIT) != EXPECTED_AUDIT_SHA256:
         raise SystemExit("ERROR: waypoint-audit checksum differs from the approved package")
-    if sha256(VALIDATION) != EXPECTED_VALIDATION_SHA256:
+    if sha256_lf_text(VALIDATION) != EXPECTED_VALIDATION_SHA256:
         raise SystemExit("ERROR: controller validation checksum differs from the reviewed package")
 
     project = json.loads(PROJECT.read_text(encoding="utf-8"))

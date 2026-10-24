@@ -4,6 +4,7 @@
   "field_authorized": true,
   "authorization_scope": "one directly supervised blades-off AREA-OVER-ROAD feasibility run; does not authorize mowing",
   "blade_state": "off",
+  "hash_context": "Raw SHA-256 values from the Tractor01 Linux checkout; verifier canonicalizes CRLF to LF for the CSV and JSON evidence so Windows and Linux validation agree.",
   "files": [
     {
       "path": "generated/62_Collins_AREA_OVER_ROAD_1mps_DRAFT_UNTESTED_20261024.txt",
@@ -13,12 +14,12 @@
     {
       "path": "generated/62_Collins_AREA_OVER_ROAD_1mps_DRAFT_UNTESTED_20261024_audit.csv",
       "path_basis": "mission_package",
-      "sha256": "b1b435a5c8318e8a34bd0a8e62376316fec8a3fd537ad489fc8558a648423046"
+      "sha256": "d3c41cb43080470b1366a4a1af580a1d22c01038196778b4475b41604849bbae"
     },
     {
       "path": "checkpoint_6_controller_validation_rev003.json",
       "path_basis": "mission_package",
-      "sha256": "ed8b0bab431e7aa201d43d4f9103a0509e188b3f6e8db2bee910823bbf28d363"
+      "sha256": "0ffc97449bdcb86476b5ab8dd272b0d464175744703b7f951b18d33215c0038e"
     },
     {
       "path": "checkpoint_7_pure_pursuit_responses_rev001.txt",
@@ -28,7 +29,7 @@
     {
       "path": "verify_area_over_road_field_package_20261024.py",
       "path_basis": "mission_package",
-      "sha256": "070b99804feb5f9e49c26017cfa73b9e87d77270ba4a954082f7d77f36f1b778"
+      "sha256": "43d31bd50d4beabc5c3784ba0d538bd19c4a0253176a00a42a5799985be8be30"
     },
     {
       "path": "run_area_over_road_field_20261024.sh",
