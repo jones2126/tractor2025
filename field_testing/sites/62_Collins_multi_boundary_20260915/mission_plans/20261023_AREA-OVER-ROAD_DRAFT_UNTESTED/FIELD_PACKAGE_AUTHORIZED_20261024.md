@@ -4,6 +4,23 @@
 
 This package is authorized for one directly supervised blades-off feasibility run. It does not authorize mowing.
 
+## Mandatory Heading-F9P preparation before preflight
+
+After every Heading-F9P power cycle, apply and independently read back the
+established 5 Hz moving-base profile in volatile RAM before running the live
+preflight. Keep the tractor stationary in Pause with blades disengaged:
+
+```bash
+cd /home/al/tractor2025
+bash field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20261023_AREA-OVER-ROAD_DRAFT_UNTESTED/prepare_heading_and_preflight_20261024.sh
+```
+
+The helper stops `rtcm-server`, applies the RAM-only profile, independently
+verifies its targeted settings, restarts the service, waits 60 seconds for
+reacquisition, and runs the live mission preflight. Require both the Heading
+configuration PASS and final `MISSION PREFLIGHT PASS`. It does not start the
+logger, Pure Pursuit, or motion.
+
 ## What happens when Start Mission is pressed
 
 1. The dashboard requires fresh Teensy and navigation telemetry and phone Pause.
@@ -46,14 +63,15 @@ ssh -t al@192.168.193.76 "cd /home/al/tractor2025 && git pull --ff-only origin m
 ## Field control sequence
 
 1. Blades off; open phone control and confirm Pause.
-2. Start the dashboard from PowerShell and open its printed URL.
-3. Start voice guidance.
-4. Select Manual and drive to the start.
-5. Stop and select Pause.
-6. Press Start Mission. The launcher performs all gates and starts Pure Pursuit, but Pause still prevents motion.
-7. Wait for `READY FOR GUARDED AUTO`.
-8. With the route clear, select Auto. Pure Pursuit now controls the tractor.
-9. On completion, select Pause and then Manual; drive to parking, select Pause, set the parking brake, and turn off the engine.
+2. Run the mandatory Heading-F9P preparation and require `MISSION PREFLIGHT PASS`.
+3. Start the dashboard from PowerShell and open its printed URL.
+4. Start voice guidance.
+5. Select Manual and drive to the start.
+6. Stop and select Pause.
+7. Press Start Mission. The launcher performs all gates and starts Pure Pursuit, but Pause still prevents motion.
+8. Wait for `READY FOR GUARDED AUTO`.
+9. With the route clear, select Auto. Pure Pursuit now controls the tractor.
+10. On completion, select Pause and then Manual; drive to parking, select Pause, set the parking brake, and turn off the engine.
 
 ## Post-run evidence
 

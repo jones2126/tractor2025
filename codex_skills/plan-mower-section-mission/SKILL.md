@@ -119,6 +119,15 @@ available. Use the repository's current controller, phone authority, logger,
 preflight, and recovery components. Do not change firmware or controller code
 without a separate request.
 
+Before telling the operator to run a generic live preflight, inspect the
+project's prior field commands and handoff records for required sensor startup
+or volatile-RAM initialization. Preserve their order. When a service owns the
+device port, stop that service, apply the established configuration, require an
+independent readback, restart and require the service active, allow the stated
+reacquisition interval, and only then run preflight. Include this preparation
+in the site package, printable checklist, and field instructions; never assume
+service startup has already restored volatile receiver settings.
+
 The collector should copy—not delete—mission logs, controller logs,
 operator-control logs, recovery logs, service journals, repository state,
 network state, checksums, and collection metadata into a timestamped archive.

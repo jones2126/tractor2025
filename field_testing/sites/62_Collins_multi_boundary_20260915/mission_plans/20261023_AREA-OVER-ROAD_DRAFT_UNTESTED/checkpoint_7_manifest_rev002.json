@@ -47,6 +47,11 @@
       "sha256": "48336d845a9e4e7cc2fbcc3e0d73bc3d1f93e30ef4ac2e933e785b9cc87ca141"
     },
     {
+      "path": "prepare_heading_and_preflight_20261024.sh",
+      "path_basis": "mission_package",
+      "sha256": "196c50591296647985179149582ee377ce536302ded0b40b9e58beba75684b66"
+    },
+    {
       "path": "start_area_over_road_field_dashboard_20261024.ps1",
       "path_basis": "mission_package",
       "sha256": "330edf4c24a0851ee905a234ef65e439c3f993b0c269e60bb7d43585242c362d"
@@ -64,7 +69,7 @@
     {
       "path": "FIELD_PACKAGE_AUTHORIZED_20261024.md",
       "path_basis": "mission_package",
-      "sha256": "e3dec67a6423183d49d4e150a5db494246a0e2cd96004f0449cd5bd4cf869dc3"
+      "sha256": "054ed4750915e1dc96c43ae1fecae1018795490dffab49bccdce92eed376d738"
     },
     {
       "path": "output/pdf/AREA-OVER-ROAD_blades-off_field_test_checklist_rev002.pdf",

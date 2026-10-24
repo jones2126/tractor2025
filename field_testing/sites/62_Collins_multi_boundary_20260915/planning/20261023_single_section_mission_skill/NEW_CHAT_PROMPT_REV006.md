@@ -332,6 +332,14 @@ current safety requirements. Include mission format, launcher/dashboard
 integration, hashes, preflight, blades and supervision rules, abort criteria,
 logging, recovery expectations, and post-run evidence collection.
 
+Before live preflight, follow the established Tractor01 Heading-F9P startup
+sequence from `field_testing/FIELD_COMMANDS_20260930.md`: stop the service that
+owns the serial port, apply the 5 Hz moving-base profile to volatile RAM with
+`configure_dual_f9p_5hz_profile_20260923.py --heading-startup`, require the
+independent readback to pass, restart and require `rtcm-server` active, wait for
+reacquisition, and only then run `mission_preflight_20261002.py`. Include this
+step in the site launcher documentation and printable field checklist.
+
 The first package revision must be review-only and fail closed:
 
 - set `APPROVED_FOR_FIELD=false` until a separate explicit field-package

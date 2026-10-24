@@ -214,6 +214,7 @@
     "field_launcher": "run_area_over_road_field_20261024.sh",
     "windows_dashboard_starter": "start_area_over_road_field_dashboard_20261024.ps1",
     "linux_dashboard_starter": "start_area_over_road_field_dashboard_20261024.sh",
+    "heading_preflight_preparer": "prepare_heading_and_preflight_20261024.sh",
     "verifier": "verify_area_over_road_field_package_20261024.py",
     "manifest": "checkpoint_7_manifest_rev002.json",
     "authorization_scope": "one directly supervised blades-off AREA-OVER-ROAD feasibility run; does not authorize mowing"
