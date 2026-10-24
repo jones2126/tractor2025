@@ -674,6 +674,8 @@ class WifiPrimaryTests(unittest.TestCase):
         self.assertTrue(mission.allow_auto)
         self.assertFalse(recovery.allow_auto)
         self.assertEqual("192.168.8.0/24", str(recovery.network))
+        self.assertEqual(-100, recovery.min_drive_percent)
+        self.assertEqual(100, recovery.max_drive_percent)
         with self.assertRaisesRegex(ValueError, "ZeroTier motion authority"):
             primary.authority_policy(
                 "tractorfield-mission", "192.168.193.0/24"
@@ -714,6 +716,42 @@ class WifiPrimaryTests(unittest.TestCase):
             self.assertEqual(409, int(status))
             self.assertIn("Auto is disabled", result["error"])
             self.assertEqual("pause", state.phone_mode)
+        finally:
+            state.running = False
+            state.close()
+            temporary.cleanup()
+
+    def test_manual_recovery_policy_accepts_full_drive_range(self):
+        temporary = tempfile.TemporaryDirectory()
+        state = primary.WifiPrimaryState(
+            "127.0.0.1",
+            True,
+            Path(temporary.name) / "control.jsonl",
+            primary.authority_policy("onboard-router-recovery"),
+        )
+        state.bridge = {
+            "system": {"firmware": primary.EXPECTED_FIRMWARE},
+            "wifi_control": {"estop_latched": 0},
+        }
+        state.bridge_at = time.monotonic()
+        try:
+            claim = state.claim("phone-a")
+            for sequence, drive, reason in (
+                (1, 100, "guarded_manual"),
+                (2, -100, "manual_range_test"),
+            ):
+                status, result = state.accept_command(
+                    {
+                        "client_id": "phone-a",
+                        "session": claim["session"],
+                        "sequence": sequence,
+                        "mode": "manual",
+                        "drive_percent": drive,
+                        "steering_percent": 100,
+                        "reason": reason,
+                    }
+                )
+                self.assertEqual(200, int(status), result)
         finally:
             state.running = False
             state.close()

@@ -92,9 +92,12 @@ AUTHORITY_POLICIES = {
         "onboard-router-recovery",
         ipaddress.ip_network("192.168.8.0/24"),
         False,
-        "Manual-only recovery; physical acceptance deferred",
-        min_drive_percent=-25,
-        max_drive_percent=60,
+        (
+            "Manual-only recovery; full drive and steering range owner-authorized "
+            "2026-10-24; physical acceptance deferred"
+        ),
+        min_drive_percent=-100,
+        max_drive_percent=100,
         recovery_only=True,
         interface_name="eth0",
         numeric_host="192.168.8.20",

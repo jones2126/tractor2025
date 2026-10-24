@@ -13,7 +13,8 @@
    - `CONNECTED · PAUSE`
 6. Inspect clear route to parking.
 7. Hold **MODE SELECT** + press **MANUAL**.
-8. Drive slowly: max 25% reverse / 60% forward.
+8. Full drive and steering ranges are available. Apply commands gradually and
+   use only the power needed for the recovery maneuver.
 9. Park → Neutral → guarded **PAUSE** → verify stopped.
 10. Tractor01: `sudo tractor-manual-recovery stop`
 11. Shut down safely; collect recovery evidence.

@@ -17,15 +17,17 @@ The October 6 recovery established the network proof point on `eth0` at
 - permitted phone subnet `192.168.8.0/24` only;
 - expected phone-facing SSID `TractorField`;
 - Manual and Pause only; Auto is hidden and rejected by the server;
-- drive bounds of 25% reverse and 60% forward;
-- full steering range, used at low speed;
+- full drive range from 100% reverse to 100% forward, owner-authorized on
+  2026-10-24 after the earlier 25% reverse / 60% forward limits proved
+  insufficient;
+- full steering range;
 - the server and Teensy 500 ms freshness/watchdog protections.
 
-The speed bounds are conservative relative to the current firmware mapping.
-Positive 60% maps to approximately JRK target 2507, less aggressive than the
-lowest current Auto calibration target (2428). Reverse 25% maps to approximately
-2912, the first reverse-side calibration bucket. These calculations justify a
-starting test envelope; they are not field approval.
+Full-range availability does not authorize abrupt or maximum-power operation.
+The operator should apply drive and steering commands progressively and use
+only the power required for the recovery maneuver. Auto remains disabled, and
+the unchanged server and Teensy freshness/watchdog protections still latch
+Pause after a link failure.
 
 ## One-time Tractor01 installation (deferred)
 

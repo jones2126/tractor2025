@@ -168,7 +168,7 @@ def start() -> None:
     print("Manual Recovery is active and starts in Pause.")
     print(f"Phone SSID (verify on router): {EXPECTED_PHONE_SSID}")
     print(f"Open the recovery-only ntfy link for https://{RECOVERY_ADDRESS}:8765/")
-    print("Auto is disabled. Limits: 25% reverse, 60% forward.")
+    print("Auto is disabled. Manual drive and steering ranges are -100% to +100%.")
 
 
 def stop() -> None:
