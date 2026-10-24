@@ -128,6 +128,14 @@ reacquisition interval, and only then run preflight. Include this preparation
 in the site package, printable checklist, and field instructions; never assume
 service startup has already restored volatile receiver settings.
 
+For Tractor01, this is a non-negotiable field-start invariant before every
+mission: stationary in Pause with blades off; apply and independently verify
+the established Heading-F9P moving-base profile in volatile RAM; restart and
+require `rtcm-server` active; wait for heading reacquisition; then run the full
+mission preflight and require `MISSION PREFLIGHT PASS`. Never describe the
+tractor as ready to start a mission when either the current-session Heading-F9P
+configuration proof or the subsequent preflight PASS is missing.
+
 The collector should copy—not delete—mission logs, controller logs,
 operator-control logs, recovery logs, service journals, repository state,
 network state, checksums, and collection metadata into a timestamped archive.

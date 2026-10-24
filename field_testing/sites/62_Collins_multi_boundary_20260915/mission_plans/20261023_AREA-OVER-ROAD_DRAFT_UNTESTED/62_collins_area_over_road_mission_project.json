@@ -217,6 +217,21 @@
     "heading_preflight_preparer": "prepare_heading_and_preflight_20261024.sh",
     "verifier": "verify_area_over_road_field_package_20261024.py",
     "manifest": "checkpoint_7_manifest_rev002.json",
+    "latest_preflight": {
+      "recorded_at_utc": "2026-10-24T16:24:57Z",
+      "result": "MISSION PREFLIGHT PASS",
+      "heading_profile_configured_first": true,
+      "nav_relposned_rate_hz": 4.98,
+      "heading_carrier_fixed_fraction": 1.0,
+      "heading_baseline_m": 1.1029,
+      "heading_accuracy_deg": 0.541,
+      "heading_satellites_used": 31,
+      "rtk_fix": "RTK Fixed",
+      "safe_starting_mode": "PAUSE",
+      "firmware": "teensy_main_20261003_wifi_v3",
+      "wifi_estop_latched": 0,
+      "evidence_note": "obsidian_vault/02-testing/20261024-area-over-road-preflight.md"
+    },
     "authorization_scope": "one directly supervised blades-off AREA-OVER-ROAD feasibility run; does not authorize mowing"
   },
   "checkpoint_ledger": "field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20261023_AREA-OVER-ROAD_DRAFT_UNTESTED/checkpoint_ledger.jsonl"

@@ -339,6 +339,10 @@ owns the serial port, apply the 5 Hz moving-base profile to volatile RAM with
 independent readback to pass, restart and require `rtcm-server` active, wait for
 reacquisition, and only then run `mission_preflight_20261002.py`. Include this
 step in the site launcher documentation and printable field checklist.
+Treat this as mandatory before every Tractor01 mission start, not merely as a
+recovery step after a failed preflight. Never declare mission readiness without
+both current-session Heading-F9P configuration/readback evidence and the
+subsequent final `MISSION PREFLIGHT PASS`.
 
 The first package revision must be review-only and fail closed:
 
