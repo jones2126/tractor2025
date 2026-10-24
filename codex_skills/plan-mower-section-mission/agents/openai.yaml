@@ -1,0 +1,4 @@
+interface:
+  display_name: "Plan Mower Section Mission"
+  short_description: "Plan one mower section with explicit review gates"
+  default_prompt: "Plan and review one mower section from traceable boundary, obstacle, access, and operating evidence using explicit visual approval checkpoints."

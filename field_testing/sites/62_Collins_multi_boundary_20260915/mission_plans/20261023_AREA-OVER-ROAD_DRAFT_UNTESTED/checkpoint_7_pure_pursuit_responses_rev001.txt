@@ -1,0 +1,30 @@
+DRAFT - UNTESTED IN THE FIELD
+AREA-OVER-ROAD Pure Pursuit mission review responses
+
+Source download: AREA-OVER-ROAD_pure_pursuit_mission_responses_rev001.txt
+Source SHA-256: 921a7f1325b3035d5904de401d137e151a5714a0a4e4735a89dc1e9faf31429a
+Imported: 2026-10-24
+
+1. 00:12.4 - Explicit left entry turn
+Review the continuous 1.4 m-radius left-turn transition from O-out/F-out into the perimeter. This curve is written into the controller .txt file.
+Response: approved
+
+2. 02:26.2 - Tangent entry to the pole loop
+Review where the perimeter leaves the edge and enters the pole maneuver without an instantaneous direction change.
+Response: approved
+
+3. 02:34.6 - Full forward-only pole loop
+Review the modeled 1.4 m-radius loop around the pole. Lookahead will affect the tractor's measured track, but the requested maneuver is explicitly represented by waypoints.
+Response: approved
+
+4. 05:19.6 - First stripe obstacle bypass
+Review the tangent bypass that preserves the stripe direction while turning only enough to clear the pole obstacle.
+Response: approved
+
+5. 07:16.2 - Remaining stripe obstacle bypasses
+Review the later forward-only bypasses. These use the same explicit tangent-turn construction rather than sharp internal corners.
+Response: approved
+
+6. 11:06.2 - Explicit exit turn to O-out/F-out
+Review the continuous 1.4 m-radius exit transition from the final stripe onto the shared outbound/return access line.
+Response: approved

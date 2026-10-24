@@ -1,0 +1,30 @@
+DRAFT - UNTESTED IN THE FIELD
+AREA-OVER-ROAD Checkpoint 4 replay responses
+
+Source replay: checkpoint_4_mission_review_replay_rev004.html
+Downloaded source SHA-256: 114a62a29f3fb6685e4419558eefd5be9b37880d50e4ab02cad2d2243ba23cb6
+
+1. 03:09.3 — Revised first-stripe entry
+This now continues straight for 2.0 m, then uses a continuous 1.4 m right-turn path into the first stripe. Does it match the less-aggressive top-headland entry you intended?
+Response: yes
+
+2. 04:17.3 — Reordered edge-sliver transition
+The route now moves from the first stripe directly to the far edge sliver with a contained 1.4 m forward-only turn. Is this transition understandable and physically plausible?
+Response: understandable and plausible
+
+3. 04:38.1 — Smoothed sliver exit
+This continuous 1.4 m turn replaces the sharp adjustment and likely impossible turn seen near 04:31 in the prior replay. Does this revised sliver exit look workable?
+Response: yes, workable
+
+4. 09:54.4 — Long relocation removed
+The stripe order now works back across the area, so the prior 102-second perimeter relocation is gone. Does this ordering match the area you expected the tractor to cut?
+Response: I'm happy to test this.  I think it will work.
+
+5. 11:13.4 — Shorter exit relocation
+After the last stripe, the tractor now takes the shorter direction on already-cut perimeter ground to O-out. Is this exit acceptable?
+Response: It would help if I could zoom in to the replay map to view this area, but it looks acceptable.
+
+6. 11:34.7 — Cleanup still deferred
+No cleanup passes were added. The modeled remaining gap is shown for later field-test review and possible manual-path capture. Is that still the correct plan?
+Response: Yes.  The plan will be to run the mission, capture all the appropriate logs and then go back driving manually to capture any clean up paths which can be later incorporated into the overall mission.
+

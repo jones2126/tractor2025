@@ -1,0 +1,93 @@
+{
+  "status": "DRAFT - UNTESTED IN THE FIELD",
+  "scope": "AREA-OVER-ROAD high-level strategy comparison only",
+  "not_executable": true,
+  "inputs": {
+    "planned_cut_width_m": 0.9652,
+    "lane_spacing_m": 0.9652,
+    "physical_deck_width_m": 1.0668,
+    "turn_radius_m": 1.4,
+    "speed_mps": 1.0,
+    "long_axis_math_degrees": 110.48513023161809,
+    "long_axis_compass_headings_degrees": [
+      339.5148697683819,
+      159.5148697683819
+    ],
+    "lane_count": 7,
+    "split_lane_count_at_obstacle": 1,
+    "access_round_trip_m": 24.894198989133933,
+    "common_cut_path_before_connectors_m": 658.849093532193
+  },
+  "coverage_model": {
+    "covered_area_m2": 437.5656981992063,
+    "approved_area_m2": 440.5577933527191,
+    "coverage_percent": 99.32083935441422,
+    "uncovered_area_m2": 2.9920951535129734,
+    "note": "Approximate buffered-swath model before detailed connector and asymmetric chute validation."
+  },
+  "alternatives": [
+    {
+      "id": "A",
+      "name": "Adjacent-lane snake",
+      "order": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "route_length_m": 694.849093532193,
+      "turns_or_connectors": "6 compact end turns; 1 affected stripe bypass; perimeter pole loop",
+      "risk": "Adjacent 0.965 m lane changes need compact omega/keyhole-like turns; feasibility at 1.4 m is unproven.",
+      "estimated_motion_time_min": 11.58081822553655,
+      "modeled_coverage_percent": 99.32083935441422,
+      "modeled_uncovered_area_m2": 2.9920951535129734,
+      "minimum_centerline_boundary_clearance_m": 0.04396799051771093,
+      "minimum_centerline_obstacle_clearance_m": 0.828692369337558
+    },
+    {
+      "id": "B",
+      "name": "Three-lane skip phases",
+      "order": [
+        0,
+        3,
+        6,
+        1,
+        4,
+        2,
+        5
+      ],
+      "route_length_m": 749.7418906242049,
+      "turns_or_connectors": "radius-friendly skip turns plus two phase relocations; affected stripe bypass; perimeter pole loop",
+      "risk": "Phase changes create long relocation connectors and may cross finished cuts or require perimeter travel.",
+      "estimated_motion_time_min": 12.49569817707008,
+      "modeled_coverage_percent": 99.32083935441422,
+      "modeled_uncovered_area_m2": 2.9920951535129734,
+      "minimum_centerline_boundary_clearance_m": 0.04396799051771093,
+      "minimum_centerline_obstacle_clearance_m": 0.828692369337558
+    },
+    {
+      "id": "C",
+      "name": "Same-direction stripes with perimeter returns",
+      "order": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "route_length_m": 1143.9003554371413,
+      "turns_or_connectors": "6 perimeter returns; no immediate adjacent-lane U-turn; affected stripe bypass; pole loop",
+      "risk": "Longest route; repeated perimeter traffic may rut and each return must merge safely into the next stripe.",
+      "estimated_motion_time_min": 19.065005923952356,
+      "modeled_coverage_percent": 99.32083935441422,
+      "modeled_uncovered_area_m2": 2.9920951535129734,
+      "minimum_centerline_boundary_clearance_m": 0.04396799051771093,
+      "minimum_centerline_obstacle_clearance_m": 0.828692369337558
+    }
+  ]
+}

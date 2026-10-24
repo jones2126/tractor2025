@@ -1,0 +1,38 @@
+DRAFT - UNTESTED IN THE FIELD
+AREA-OVER-ROAD Checkpoint 4 replay responses
+
+1. 00:12.4 — Entry transition
+How should the F-out/O-out access line blend into the clockwise perimeter? The current join is only a placeholder and must be smoothed.
+Response: Make a typical left hand turn to join the path.  On the replay its looks fine.
+
+2. 02:27.8 — Full pole circle
+Does this full 1.4 m circle, followed by the wide-side rejoin arc, match the pole maneuver you intended? The centerline margin is about 0.044 m and the deck overhang is intentional.
+Response: Yes
+
+3. 03:07.3 — Start of interior stripes
+Should the next revision keep this entry into the first stripe, or should stripe phase and ordering be re-optimized before this connector is smoothed?
+Response: At about 3:06 you make a right turn about 45 degrees and then at ~3:18 you make a likely impossible right turn.  At 3:06 continue straight and make a less aggressive right turn at the top of the polygon expanding the headland and getting lined up for the first stripe.
+
+4. 04:13.7 — First short edge sliver
+May this short edge stripe use the already-cut perimeter for relocation instead of forcing an ordinary adjacent-lane turn?
+Response: Yes, but I might smooth the path out a little so there is not such an aggressive adjustment to enter the stripe.
+
+5. 05:43.4 — First ordinary headland turn
+Is this the shortened-stripe, forward-only 1.4 m headland turn behavior you expected? The turn deliberately recuts part of the headland.
+Response: It's fine, but the turn near 4:31 appears impossible.
+
+6. 07:10.4 — First stripe pole detour
+Does this minimum-offset return to the original stripe match your intended later-pass behavior around the pole?
+Response: Yes
+
+7. 11:01.9 — Second short edge sliver
+This perimeter relocation lasts about 102 seconds. Should it remain, or should the stripe angle and phase be changed to avoid this long relocation?
+Response: It's unclear to me why this needs to be so long.  Maybe I don't understand what area you are trying to cut.
+
+8. 12:56.8 — Exit relocation
+Should the tractor return to O-out on the already-cut safe perimeter as shown, before taking the access path back to F-out?
+Response: That is fine.  But if you shorten #7 above maybe won't be covering as much already-cut space.
+
+9. 14:04.9 — Coverage gaps before departure
+Before departure, should revision 002 optimize stripe placement and add cleanup passes to reduce the modeled 9.83 m² remaining under the actual 42-inch deck model?
+Response: We can wait to actually run this mission to decide how best to clean it up.  Maybe I will put the tractor in manual mode and capture the path to repeat for cleanup.

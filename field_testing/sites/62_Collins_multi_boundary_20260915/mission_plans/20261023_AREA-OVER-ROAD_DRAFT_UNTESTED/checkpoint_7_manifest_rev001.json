@@ -1,0 +1,23 @@
+{
+  "status": "DRAFT - UNTESTED IN THE FIELD",
+  "created_at": "2026-10-24",
+  "field_authorized": false,
+  "blade_state": "off",
+  "files": [
+    {
+      "path": "checkpoint_7_pure_pursuit_responses_rev001.txt",
+      "path_basis": "mission_package",
+      "sha256": "ec9d160b45f3ff89c80a1ece6af5cbdddfb8920d01bd3b80be5e88a8e21615f2"
+    },
+    {
+      "path": "output/pdf/AREA-OVER-ROAD_blades-off_field_test_checklist_rev001.pdf",
+      "path_basis": "repository_root",
+      "sha256": "766b684e79402dc1308fa14c90930a75d2555f0ed8baaa73a54e494a5bf92a6b"
+    },
+    {
+      "path": "collect_area_over_road_postrun_20261024.sh",
+      "path_basis": "mission_package",
+      "sha256": "b0ca69bd6feb161f373731e0682f1f52debd3ef35d787a85474aca5430726473"
+    }
+  ]
+}

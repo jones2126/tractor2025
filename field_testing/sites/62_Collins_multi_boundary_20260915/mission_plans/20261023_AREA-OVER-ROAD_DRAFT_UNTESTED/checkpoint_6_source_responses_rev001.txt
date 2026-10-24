@@ -1,0 +1,30 @@
+DRAFT - UNTESTED IN THE FIELD
+AREA-OVER-ROAD Checkpoint 4 replay responses
+
+Source download: AREA-OVER-ROAD_checkpoint_4_replay_responses_rev005.txt
+Source SHA-256: b40f24fe36102d6ffff9bccb80b98e8283fd32ccf2a6f08a9d5ceb3518504d43
+Imported: 2026-10-24
+
+1. 00:12.4 — Access line into short connector — 152.4° join
+The route concept is approved, but this instantaneous heading change cannot be sent to the controller. A continuous forward-only entry transition must replace it before field approval.
+Response: I'm not sure what you are saying.  This file (field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20261023_AREA-OVER-ROAD_DRAFT_UNTESTED/start_area_over_road_dashboard_20261024.sh) is referenced in the start script, but I cannot find it.  I was looking to find the .txt file that would be read by the pure pursuit controller to see if a turn had been defined in the .txt file.
+
+2. 00:12.5 — Short connector into perimeter — 90.0° join
+This second entry join also needs a continuous radius-valid transition. It is only 0.08 seconds after the prior marker, so zoom in to distinguish them.
+Response: I'm not sure what the problem is.  A left turn should be designed.
+
+3. 02:27.8 — Perimeter into pole loop — 129.7° join
+The intended leave-edge pole loop is approved. Its exact entry tangent must be rebuilt as one continuous forward-only maneuver without reducing obstacle clearance.
+Response: I'm assuming the lookahead value will be 2 m so when the tractor gets close it will begin a right turn leaving an actual path somewhat different than what appears in the replay tool.  What is the problem?
+
+4. 02:43.0 — Pole loop back to perimeter — 130.1° join
+The pole-loop exit must be tangent to the continuing perimeter while retaining the approved loop behavior and modeled pole/deck/chute clearance.
+Response: I think you must be mentioning the same problem as above.  The actual path will be different than the replay tool because the tractor cannot instantly change direction.
+
+5. 11:13.4 — Last stripe into exit connector — 54.4° join
+The approved shorter exit direction remains, but this join needs a continuous forward-only transition on already-cut ground.
+Response: Plan the path.  We can check the actual performance later.
+
+6. 11:34.7 — Exit connector into O-out/F-out access — 62.4° join
+This final join also has a 0.078 m position gap. It must be replaced by one continuous path before the dashboard Start action can be enabled.
+Response: Plan the path.  We can check the actual performance later.

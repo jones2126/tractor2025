@@ -1,0 +1,74 @@
+{
+  "status": "DRAFT - UNTESTED IN THE FIELD",
+  "created_at": "2026-10-24",
+  "field_authorized": true,
+  "authorization_scope": "one directly supervised blades-off AREA-OVER-ROAD feasibility run; does not authorize mowing",
+  "blade_state": "off",
+  "files": [
+    {
+      "path": "generated/62_Collins_AREA_OVER_ROAD_1mps_DRAFT_UNTESTED_20261024.txt",
+      "path_basis": "mission_package",
+      "sha256": "150e70a2be00eed9cf0e5aedc0bc26ba3c8a122a2b37a7c666aab7e3a7859979"
+    },
+    {
+      "path": "generated/62_Collins_AREA_OVER_ROAD_1mps_DRAFT_UNTESTED_20261024_audit.csv",
+      "path_basis": "mission_package",
+      "sha256": "b1b435a5c8318e8a34bd0a8e62376316fec8a3fd537ad489fc8558a648423046"
+    },
+    {
+      "path": "checkpoint_6_controller_validation_rev003.json",
+      "path_basis": "mission_package",
+      "sha256": "ed8b0bab431e7aa201d43d4f9103a0509e188b3f6e8db2bee910823bbf28d363"
+    },
+    {
+      "path": "checkpoint_7_pure_pursuit_responses_rev001.txt",
+      "path_basis": "mission_package",
+      "sha256": "ec9d160b45f3ff89c80a1ece6af5cbdddfb8920d01bd3b80be5e88a8e21615f2"
+    },
+    {
+      "path": "verify_area_over_road_field_package_20261024.py",
+      "path_basis": "mission_package",
+      "sha256": "070b99804feb5f9e49c26017cfa73b9e87d77270ba4a954082f7d77f36f1b778"
+    },
+    {
+      "path": "run_area_over_road_field_20261024.sh",
+      "path_basis": "mission_package",
+      "sha256": "5203397f9de5b5f4bc51916808dd1313d15a5b8145a7b28e4e8ed1bf9f70e9b0"
+    },
+    {
+      "path": "mission_dashboard_area_over_road_field_20261024.py",
+      "path_basis": "mission_package",
+      "sha256": "64d1d4cb7d7275d9fbecf626ea73a3013ff46d9ad7fd328373d714d3e0ccf2cb"
+    },
+    {
+      "path": "start_area_over_road_field_dashboard_20261024.sh",
+      "path_basis": "mission_package",
+      "sha256": "48336d845a9e4e7cc2fbcc3e0d73bc3d1f93e30ef4ac2e933e785b9cc87ca141"
+    },
+    {
+      "path": "start_area_over_road_field_dashboard_20261024.ps1",
+      "path_basis": "mission_package",
+      "sha256": "330edf4c24a0851ee905a234ef65e439c3f993b0c269e60bb7d43585242c362d"
+    },
+    {
+      "path": "collect_area_over_road_postrun_20261024.sh",
+      "path_basis": "mission_package",
+      "sha256": "242ad852d8e77d6e6a9568815a2640af1b09f1cbea6c15dd1f28887b9f571f55"
+    },
+    {
+      "path": "finish_area_over_road_session_20261024.sh",
+      "path_basis": "mission_package",
+      "sha256": "ed142a1785c754ca20b3da437d38b306affe82000e2bff7bc7bd7c9f5b9fb366"
+    },
+    {
+      "path": "FIELD_PACKAGE_AUTHORIZED_20261024.md",
+      "path_basis": "mission_package",
+      "sha256": "e3dec67a6423183d49d4e150a5db494246a0e2cd96004f0449cd5bd4cf869dc3"
+    },
+    {
+      "path": "output/pdf/AREA-OVER-ROAD_blades-off_field_test_checklist_rev002.pdf",
+      "path_basis": "repository_root",
+      "sha256": "df9c08d3f04caeb277c008745aa3d4b32169c8b5f91e70536c679c87306b9582"
+    }
+  ]
+}

@@ -1,0 +1,222 @@
+{
+  "project_id": "62_COLLINS_AREA-OVER-ROAD_MISSION",
+  "site_id": "62_COLLINS",
+  "asset_id": "AREA-OVER-ROAD",
+  "asset_name": "Over the road",
+  "scope": "this section only",
+  "status_text": "DRAFT - UNTESTED IN THE FIELD",
+  "authoritative_inputs": {
+    "inventory_pointer": "field_testing/sites/62_Collins_multi_boundary_20260915/site_inventory/current_inventory.json",
+    "inventory_revision": 4,
+    "inventory_geojson": "field_testing/sites/62_Collins_multi_boundary_20260915/site_inventory/62_Collins_site_inventory.geojson",
+    "inventory_geojson_sha256": "703a6b03845598cc4ef6596369fa13ebef43c28b2c7df176aa77d1de7571817b",
+    "asset_pointer": "field_testing/sites/62_Collins_multi_boundary_20260915/site_inventory/assets/AREA-OVER-ROAD/current.json",
+    "asset_revision": "rev_001_20261023_DRAFT_UNTESTED",
+    "planning_geometry": "field_testing/sites/62_Collins_multi_boundary_20260915/site_inventory/assets/AREA-OVER-ROAD/revisions/rev_001_20261023_DRAFT_UNTESTED/AREA-OVER-ROAD_mowable_area.geojson",
+    "planning_geometry_sha256": "692514bc11c25340e1424f79d87e0e29b3da6aea44920a031d10115ba50a2a93",
+    "hash_verification": "passed_2026-10-23"
+  },
+  "completed_prerequisites": {
+    "boundary_lineage": "approved",
+    "AREA-OVER-ROAD": "approved_for_draft_mission_planning",
+    "OBS-POLE-001": "confirmed_active_obstacle_already_applied_as_geometry_hole",
+    "OBS-NEW-012": "confirmed_turnaround_not_obstacle_no_keep_out",
+    "inventory_promotion": "revision_4_current"
+  },
+  "access_evidence": {
+    "outbound_route": {
+      "asset_id": "ROUTE-FRONT-TO-OVERROAD",
+      "length_m": 13.444,
+      "directionality": "recorded_direction_only",
+      "from_access_point": "ACCESS-FRONT-NORTH-OUTBOUND",
+      "to_access_point": "ACCESS-OVERROAD-NORTH-OUTBOUND",
+      "endpoint_join_check": "exact"
+    },
+    "return_route": {
+      "asset_id": "ROUTE-OVERROAD-TO-FRONT",
+      "length_m": 13.795,
+      "directionality": "recorded_direction_only",
+      "from_access_point": "ACCESS-OVERROAD-NORTH-INBOUND",
+      "to_access_point": "ACCESS-FRONT-NORTH-INBOUND",
+      "endpoint_join_check": "exact"
+    },
+    "overroad_points": {
+      "ACCESS-OVERROAD-NORTH-OUTBOUND": {
+        "role": "entry_from_front",
+        "latitude": 40.48589275247693,
+        "longitude": -80.3319376343241,
+        "inside_promoted_polygon_m": 0.485,
+        "status": "reviewed_not_field_validated"
+      },
+      "ACCESS-OVERROAD-NORTH-INBOUND": {
+        "role": "exit_to_front",
+        "latitude": 40.485883453884234,
+        "longitude": -80.3319318765088,
+        "inside_promoted_polygon_m": 0.611,
+        "status": "reviewed_not_field_validated"
+      }
+    },
+    "point_separation_m": 1.138,
+    "interpretation": "The legacy named points remain connected to their recorded-direction routes and lie inside the promoted polygon. They are nominal access anchors, not newly field-validated boundary crossings. Do not silently move them."
+  },
+  "approved_access_assumption": {
+    "from_point": "ACCESS-FRONT-NORTH-OUTBOUND",
+    "to_point": "ACCESS-OVERROAD-NORTH-INBOUND",
+    "map_labels": [
+      "F-out",
+      "O-out"
+    ],
+    "use": "single_bidirectional_access_path",
+    "decision_date": "2026-10-23",
+    "provenance_note": "Owner-selected planning corridor. This is an explicit override of the inventory's separate recorded-direction routes and must not be described as a previously recorded bidirectional route."
+  },
+  "checkpoint_state": {
+    "completed_prerequisites": "approved",
+    "checkpoint_1_access_and_operating_assumptions": "approved",
+    "checkpoint_2_necessary_decomposition": "approved",
+    "checkpoint_3_strategy_alternatives": "approved",
+    "checkpoint_4_detailed_draft_and_replay": "approved route concept; mission transitions still require field-package review",
+    "checkpoint_5_freeze_and_skill": "in review",
+    "checkpoint_6_supervised_field_test_package": "controller-ready geometry revision 003 approved; field start disabled",
+    "checkpoint_7_field_test_sequence": "authorized for one directly supervised blades-off run"
+  },
+  "approved_operating_assumptions": {
+    "field_test_purpose": "draft a mission that can be tested",
+    "start_location": "front yard at F-out",
+    "end_location": "front yard at F-out after returning from O-out",
+    "travel_direction": "F-out to O-out for entry and O-out to F-out for exit",
+    "entry_point": "ACCESS-OVERROAD-NORTH-INBOUND / map label O-out",
+    "exit_point": "ACCESS-OVERROAD-NORTH-INBOUND / map label O-out",
+    "physical_deck_width_m": 1.0668,
+    "planned_cutting_width_m": 0.9652,
+    "right_chute_extension_m_approx": 0.127,
+    "lane_spacing_m": 0.9652,
+    "nominal_physical_blade_overlap_m": 0.1016,
+    "boundary_capture_rule": "tractor was driven with the left deck edge on the cutting boundary",
+    "operating_speed_mps": {
+      "straight": 1.0,
+      "headland": 1.0,
+      "turn": 1.0,
+      "access": 1.0
+    },
+    "lookahead_m": {
+      "straight": 2.0,
+      "headland": 1.5,
+      "turn": 1.5,
+      "access": 2.0,
+      "note": "test value to monitor and revise from field evidence"
+    },
+    "turn_radius_m": 1.4,
+    "turn_radius_note": "initial test assumption; telephone-pole hard-left evidence may have been about 1.1 m",
+    "headland_strategy": "one outer-boundary pass followed by best-fit straight lines along the long edge while avoiding the pole",
+    "forward_only": true,
+    "manual_only_pockets_allowed": "must be clearly reported for owner review",
+    "blade_state": "off for first feasibility test",
+    "supervision_level": "Al near tractor with handheld ready for MODE+PAUSE, MANUAL, or E-STOP",
+    "abort_expectations": "preserve all previous control-stack and safety rules; no Teensy or pure-pursuit changes in this planning work",
+    "recovery_expectations": "preserve all previous rules; this work creates coverage geometry only"
+  },
+  "approved_decomposition": {
+    "decision_date": "2026-10-23",
+    "area_model": "one mowing area to be cut in its entirety before departure",
+    "separate_coverage_cells": false,
+    "north_and_south_turn_zones": true,
+    "clockwise_outer_pass": true,
+    "pole_policy": {
+      "policy_name": "plain-language obstacle handling around the pole",
+      "perimeter_maneuver": "leave-edge pole loop: leave the outer edge, cut around the pole, and rejoin the edge",
+      "stripe_maneuver": "minimum-offset stripe detour: make the minimum smooth lateral offset needed to clear the pole and then return to the original stripe",
+      "manual_only_pocket": false,
+      "coverage_expectation": "plan to cut all reachable grass around the obstacle and report any residual only after detailed geometric validation"
+    },
+    "turn_radius_m": 1.4,
+    "forward_only": true
+  },
+  "approved_strategy": {
+    "decision_date": "2026-10-23",
+    "alternative_id": "A",
+    "name": "adjacent-lane snake",
+    "turn_method": "shorten stripes and use forward-only multi-arc/omega-style turns in the already-cut headland; overlap and recutting of the perimeter pass are permitted",
+    "simple_adjacent_semicircle": false,
+    "planning_turn_radius_m": 1.4,
+    "observed_hard_left_radius_m_approx": 1.1,
+    "coverage_gap_policy": "show and measure residual gaps in Checkpoint 4 for owner decision",
+    "outer_boundary_overhang_policy": "limited physical mower-envelope overhang is acceptable for design exploration and must be displayed and verified blades-off",
+    "terminology": {
+      "perimeter_maneuver": "leave-edge pole loop",
+      "stripe_maneuver": "minimum-offset stripe detour",
+      "retired_term": "progressive obstacle bypass"
+    }
+  },
+  "checkpoint_4_current_draft": {
+    "revision": "002",
+    "status": "approved route concept",
+    "report": "checkpoint_4_detailed_draft_and_replay_rev002.md",
+    "geometry": "checkpoint_4_detailed_draft_rev002.geojson",
+    "replay": "checkpoint_4_interactive_replay_rev002.html",
+    "timestamped_review_replay": "checkpoint_4_mission_review_replay_rev005.html",
+    "prior_timestamped_review_responses": "checkpoint_4_replay_responses_rev002.txt",
+    "timestamped_review_responses": "checkpoint_4_replay_responses_rev004.txt",
+    "validation": "checkpoint_4_validation_rev002.json",
+    "lineage": "checkpoint_4_segment_lineage_rev002.csv",
+    "static_overview": "checkpoint_4_detailed_overview_rev002.png",
+    "not_executable": true,
+    "route_length_m": 707.1790425302279,
+    "estimated_motion_time_min": 11.786317375503799,
+    "planned_38in_coverage_percent": 97.7485530530509,
+    "planned_38in_uncovered_m2": 9.91892498798559,
+    "actual_42in_coverage_percent": 98.8120290903292,
+    "actual_42in_uncovered_m2": 5.23369842531804,
+    "ordinary_adjacent_headland_turns": 7,
+    "short_edge_sliver_perimeter_relocations": 0,
+    "unsmoothed_joins_over_10_degrees": 6,
+    "owner_decision": "approved 2026-10-24",
+    "approval_scope": "route concept and ordering only; does not authorize field motion or waive the six joins over 10 degrees",
+    "remaining_field_package_gate": "review mission-level transition smoothing, launch package, and safety verification before enabling field start"
+  },
+  "checkpoint_5_current": {
+    "status": "in review",
+    "skill_name": "plan-mower-section-mission",
+    "repository_source": "codex_skills/plan-mower-section-mission",
+    "personal_install": "%CODEX_HOME%/skills/plan-mower-section-mission",
+    "site_specific_geometry_in_skill": false,
+    "frozen_inputs": "checkpoint_5_frozen_inputs_rev001.json",
+    "current_prompt": "planning/20261023_single_section_mission_skill/NEW_CHAT_PROMPT_REV006.md"
+  },
+  "checkpoint_6_current": {
+    "status": "controller-ready geometry approved",
+    "approved_for_field": false,
+    "field_tested": false,
+    "source_responses": "checkpoint_6_source_responses_rev001.txt",
+    "review_replay": "checkpoint_6_pure_pursuit_review_replay_rev001.html",
+    "field_package_readme": "FIELD_PACKAGE_REVIEW_20261024.md",
+    "dashboard_starter_linux": "start_area_over_road_dashboard_20261024.sh",
+    "dashboard_starter_windows": "start_area_over_road_dashboard_20261024.ps1",
+    "postrun_collector": "collect_area_over_road_postrun_20261024.sh",
+    "session_finish_checklist": "finish_area_over_road_session_20261024.sh",
+    "mission_candidate": "generated/62_Collins_AREA_OVER_ROAD_1mps_DRAFT_UNTESTED_20261024.txt",
+    "mission_audit": "generated/62_Collins_AREA_OVER_ROAD_1mps_DRAFT_UNTESTED_20261024_audit.csv",
+    "controller_geometry": "checkpoint_6_controller_route_rev003.geojson",
+    "validation": "checkpoint_6_controller_validation_rev003.json",
+    "manifest": "checkpoint_6_manifest_rev001.json",
+    "mission_candidate_purpose": "Pure Pursuit controller-format route for review; field start remains disabled",
+    "owner_geometry_approval_responses": "checkpoint_7_pure_pursuit_responses_rev001.txt",
+    "approval_scope": "all six replay maneuvers and controller-ready route geometry; not field authorization",
+    "blocking_issue": "explicit authorization for one supervised blades-off run is required before enabling motion"
+  },
+  "checkpoint_7_current": {
+    "status": "authorized for one directly supervised blades-off run",
+    "approved_for_field": true,
+    "blade_state": "off",
+    "supervision": "Al alongside tractor with phone control ready for PAUSE, MANUAL, or E-STOP",
+    "printable_checklist": "output/pdf/AREA-OVER-ROAD_blades-off_field_test_checklist_rev002.pdf",
+    "dashboard": "mission_dashboard_area_over_road_field_20261024.py",
+    "field_launcher": "run_area_over_road_field_20261024.sh",
+    "windows_dashboard_starter": "start_area_over_road_field_dashboard_20261024.ps1",
+    "linux_dashboard_starter": "start_area_over_road_field_dashboard_20261024.sh",
+    "verifier": "verify_area_over_road_field_package_20261024.py",
+    "manifest": "checkpoint_7_manifest_rev002.json",
+    "authorization_scope": "one directly supervised blades-off AREA-OVER-ROAD feasibility run; does not authorize mowing"
+  },
+  "checkpoint_ledger": "field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20261023_AREA-OVER-ROAD_DRAFT_UNTESTED/checkpoint_ledger.jsonl"
+}

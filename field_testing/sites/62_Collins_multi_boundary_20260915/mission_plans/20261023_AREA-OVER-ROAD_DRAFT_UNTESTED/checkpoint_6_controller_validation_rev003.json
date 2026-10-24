@@ -1,0 +1,462 @@
+{
+  "status": "DRAFT - UNTESTED IN THE FIELD",
+  "revision": "003",
+  "parameters": {
+    "planned_cut_width_and_lane_spacing_m": 0.9652,
+    "physical_deck_width_m": 1.0668,
+    "right_chute_extension_m_approx": 0.127,
+    "planning_turn_radius_m": 1.4,
+    "speed_mps": 1.0,
+    "stripe_heading_compass_deg": 339.5148697683819
+  },
+  "route_concept": "approved",
+  "field_authorized": false,
+  "controller_file_created": true,
+  "route": {
+    "segment_count": 21,
+    "total_length_m": 690.2159170679012,
+    "estimated_motion_time_min": 11.503598617798353,
+    "forward_only": true
+  },
+  "joins": {
+    "continuity": [
+      {
+        "from": "S001",
+        "to": "S002",
+        "gap_m": 0.0
+      },
+      {
+        "from": "S002",
+        "to": "S003",
+        "gap_m": 0.0
+      },
+      {
+        "from": "S003",
+        "to": "S004",
+        "gap_m": 0.0
+      },
+      {
+        "from": "S004",
+        "to": "S005",
+        "gap_m": 0.0
+      },
+      {
+        "from": "S005",
+        "to": "S006",
+        "gap_m": 0.0
+      },
+      {
+        "from": "S006",
+        "to": "S007",
+        "gap_m": 0.0
+      },
+      {
+        "from": "S007",
+        "to": "S008",
+        "gap_m": 0.0
+      },
+      {
+        "from": "S008",
+        "to": "S009",
+        "gap_m": 0.0
+      },
+      {
+        "from": "S009",
+        "to": "S010",
+        "gap_m": 0.0
+      },
+      {
+        "from": "S010",
+        "to": "S011",
+        "gap_m": 0.0
+      },
+      {
+        "from": "S011",
+        "to": "S012",
+        "gap_m": 0.0
+      },
+      {
+        "from": "S012",
+        "to": "S013",
+        "gap_m": 0.0
+      },
+      {
+        "from": "S013",
+        "to": "S014",
+        "gap_m": 0.0
+      },
+      {
+        "from": "S014",
+        "to": "S015",
+        "gap_m": 0.0
+      },
+      {
+        "from": "S015",
+        "to": "S016",
+        "gap_m": 0.0
+      },
+      {
+        "from": "S016",
+        "to": "S017",
+        "gap_m": 0.0
+      },
+      {
+        "from": "S017",
+        "to": "S018",
+        "gap_m": 0.0
+      },
+      {
+        "from": "S018",
+        "to": "S019",
+        "gap_m": 0.0
+      },
+      {
+        "from": "S019",
+        "to": "S020",
+        "gap_m": 0.0
+      },
+      {
+        "from": "S020",
+        "to": "S021",
+        "gap_m": 0.0
+      }
+    ],
+    "maximum_gap_m": 0.0,
+    "heading_changes": [
+      {
+        "from": "S001",
+        "to": "S002",
+        "heading_change_deg": 3.195280780717239
+      },
+      {
+        "from": "S002",
+        "to": "S003",
+        "heading_change_deg": 3.044477194843662
+      },
+      {
+        "from": "S003",
+        "to": "S004",
+        "heading_change_deg": 3.837493304061537
+      },
+      {
+        "from": "S004",
+        "to": "S005",
+        "heading_change_deg": 4.5162004290784905
+      },
+      {
+        "from": "S005",
+        "to": "S006",
+        "heading_change_deg": 0.04748186841410665
+      },
+      {
+        "from": "S006",
+        "to": "S007",
+        "heading_change_deg": 3.2365686271350995
+      },
+      {
+        "from": "S007",
+        "to": "S008",
+        "heading_change_deg": 3.10657127266314
+      },
+      {
+        "from": "S008",
+        "to": "S009",
+        "heading_change_deg": 3.106571082741813
+      },
+      {
+        "from": "S009",
+        "to": "S010",
+        "heading_change_deg": 3.249597427269391
+      },
+      {
+        "from": "S010",
+        "to": "S011",
+        "heading_change_deg": 3.163035337142534
+      },
+      {
+        "from": "S011",
+        "to": "S012",
+        "heading_change_deg": 2.6008145574391817
+      },
+      {
+        "from": "S012",
+        "to": "S013",
+        "heading_change_deg": 3.153036611292943
+      },
+      {
+        "from": "S013",
+        "to": "S014",
+        "heading_change_deg": 3.157024382386889
+      },
+      {
+        "from": "S014",
+        "to": "S015",
+        "heading_change_deg": 2.957951154682698
+      },
+      {
+        "from": "S015",
+        "to": "S016",
+        "heading_change_deg": 3.267609959661727
+      },
+      {
+        "from": "S016",
+        "to": "S017",
+        "heading_change_deg": 3.0931185173711353
+      },
+      {
+        "from": "S017",
+        "to": "S018",
+        "heading_change_deg": 3.14168129016044
+      },
+      {
+        "from": "S018",
+        "to": "S019",
+        "heading_change_deg": 2.9302141316281993
+      },
+      {
+        "from": "S019",
+        "to": "S020",
+        "heading_change_deg": 3.249768672673219
+      },
+      {
+        "from": "S020",
+        "to": "S021",
+        "heading_change_deg": 3.137533876719515
+      }
+    ],
+    "maximum_heading_change_deg": 4.5162004290784905,
+    "joins_over_10_degrees": []
+  },
+  "internal_path_sampling": {
+    "per_segment_maximum_heading_change": [
+      {
+        "segment_id": "S001",
+        "maximum_sample_heading_change_deg": 0.0
+      },
+      {
+        "segment_id": "S002",
+        "maximum_sample_heading_change_deg": 3.195280780719402
+      },
+      {
+        "segment_id": "S003",
+        "maximum_sample_heading_change_deg": 32.6524510867665
+      },
+      {
+        "segment_id": "S004",
+        "maximum_sample_heading_change_deg": 3.2731049728750214
+      },
+      {
+        "segment_id": "S005",
+        "maximum_sample_heading_change_deg": 2.529000581346935
+      },
+      {
+        "segment_id": "S006",
+        "maximum_sample_heading_change_deg": 3.2365700048820005
+      },
+      {
+        "segment_id": "S007",
+        "maximum_sample_heading_change_deg": 1.0034075993508484e-06
+      },
+      {
+        "segment_id": "S008",
+        "maximum_sample_heading_change_deg": 3.1065721113578273
+      },
+      {
+        "segment_id": "S009",
+        "maximum_sample_heading_change_deg": 9.995716977383788e-07
+      },
+      {
+        "segment_id": "S010",
+        "maximum_sample_heading_change_deg": 3.2495986010664546
+      },
+      {
+        "segment_id": "S011",
+        "maximum_sample_heading_change_deg": 3.0401359820774396
+      },
+      {
+        "segment_id": "S012",
+        "maximum_sample_heading_change_deg": 3.254218224514783
+      },
+      {
+        "segment_id": "S013",
+        "maximum_sample_heading_change_deg": 2.973988732859961
+      },
+      {
+        "segment_id": "S014",
+        "maximum_sample_heading_change_deg": 3.2508261698201553
+      },
+      {
+        "segment_id": "S015",
+        "maximum_sample_heading_change_deg": 2.735966839776316
+      },
+      {
+        "segment_id": "S016",
+        "maximum_sample_heading_change_deg": 3.270369145319374
+      },
+      {
+        "segment_id": "S017",
+        "maximum_sample_heading_change_deg": 1.0038131836838286e-06
+      },
+      {
+        "segment_id": "S018",
+        "maximum_sample_heading_change_deg": 3.264655024034826
+      },
+      {
+        "segment_id": "S019",
+        "maximum_sample_heading_change_deg": 1.003386607689951e-06
+      },
+      {
+        "segment_id": "S020",
+        "maximum_sample_heading_change_deg": 3.2497686726764248
+      },
+      {
+        "segment_id": "S021",
+        "maximum_sample_heading_change_deg": 0.0
+      }
+    ],
+    "note": "Pure Pursuit intentionally rounds polyline changes according to lookahead and steering saturation; these are disclosed for the blades-off field test."
+  },
+  "turns": [
+    {
+      "segment_id": "S002",
+      "sampled_minimum_radius_m": 1.3999999999975743
+    },
+    {
+      "segment_id": "S004",
+      "sampled_minimum_radius_m": 1.3999999999962507
+    },
+    {
+      "segment_id": "S006",
+      "sampled_minimum_radius_m": 1.3999995965729681
+    },
+    {
+      "segment_id": "S008",
+      "sampled_minimum_radius_m": 1.3999994794182438
+    },
+    {
+      "segment_id": "S010",
+      "sampled_minimum_radius_m": 1.399999535814163
+    },
+    {
+      "segment_id": "S011",
+      "sampled_minimum_radius_m": 1.3999999999973298
+    },
+    {
+      "segment_id": "S012",
+      "sampled_minimum_radius_m": 1.3999994834372165
+    },
+    {
+      "segment_id": "S013",
+      "sampled_minimum_radius_m": 1.399999999999591
+    },
+    {
+      "segment_id": "S014",
+      "sampled_minimum_radius_m": 1.399999543121654
+    },
+    {
+      "segment_id": "S015",
+      "sampled_minimum_radius_m": 1.3999999999967103
+    },
+    {
+      "segment_id": "S016",
+      "sampled_minimum_radius_m": 1.3999995105663903
+    },
+    {
+      "segment_id": "S018",
+      "sampled_minimum_radius_m": 1.399999386583979
+    },
+    {
+      "segment_id": "S020",
+      "sampled_minimum_radius_m": 1.3999999999989001
+    }
+  ],
+  "coverage": {
+    "approved_area_m2": 440.5577933527191,
+    "planned_38in_covered_m2": 428.20569864631517,
+    "planned_38in_uncovered_m2": 12.352094706403568,
+    "physical_42in_covered_m2": 433.7871213071952,
+    "physical_42in_uncovered_m2": 6.770672045522909
+  },
+  "containment_and_clearance": {
+    "centerline_outside_outer_boundary_m": 11.757308911439946,
+    "physical_deck_intersection_with_pole_m2": 0.0,
+    "conservative_deck_plus_chute_intersection_with_pole_m2": 0.0,
+    "conservative_envelope_outside_outer_boundary_m2": 48.24413566801105
+  },
+  "smoothing": {
+    "entry": {
+      "word": "LSR",
+      "centerline_outside_m": 0.0,
+      "centerline_pole_intersection_m": 0.0,
+      "deck_pole_intersection_m2": 0.0,
+      "conservative_pole_intersection_m2": 0.0,
+      "conservative_envelope_outside_m2": 0.0584151759909614
+    },
+    "pole_entry": {
+      "word": "RSL",
+      "centerline_outside_m": 0.0,
+      "centerline_pole_intersection_m": 0.0,
+      "deck_pole_intersection_m2": 0.0,
+      "conservative_pole_intersection_m2": 0.0,
+      "conservative_envelope_outside_m2": 0.05825948985820142
+    },
+    "pole_exit": {
+      "word": "LSR",
+      "centerline_outside_m": 0.0,
+      "centerline_pole_intersection_m": 0.0,
+      "deck_pole_intersection_m2": 0.0,
+      "conservative_pole_intersection_m2": 0.0,
+      "conservative_envelope_outside_m2": 0.0582767554654828
+    },
+    "exit": {
+      "centerline_outside_m": 0.0,
+      "centerline_pole_intersection_m": 0.0,
+      "deck_pole_intersection_m2": 0.0,
+      "conservative_pole_intersection_m2": 0.0,
+      "conservative_envelope_outside_m2": 0.0
+    },
+    "stripe_detours": {
+      "S011": {
+        "direction": "counterclockwise",
+        "circle_span_deg": 22.5,
+        "entry_word": "RSL",
+        "exit_word": "LSR",
+        "buffer_distance_m": 9.0,
+        "centerline_outside_m": 0.0,
+        "centerline_pole_intersection_m": 0.0,
+        "deck_pole_intersection_m2": 0.0,
+        "conservative_pole_intersection_m2": 0.0,
+        "conservative_envelope_outside_m2": 12.148041850470097
+      },
+      "S013": {
+        "direction": "clockwise",
+        "circle_span_deg": 22.5,
+        "entry_word": "LSL",
+        "exit_word": "LSL",
+        "buffer_distance_m": 9.0,
+        "centerline_outside_m": 0.0,
+        "centerline_pole_intersection_m": 0.0,
+        "deck_pole_intersection_m2": 0.0,
+        "conservative_pole_intersection_m2": 0.0,
+        "conservative_envelope_outside_m2": 0.0
+      },
+      "S015": {
+        "direction": "counterclockwise",
+        "circle_span_deg": 22.5,
+        "entry_word": "RSR",
+        "exit_word": "RSR",
+        "buffer_distance_m": 9.0,
+        "centerline_outside_m": 0.0,
+        "centerline_pole_intersection_m": 0.0,
+        "deck_pole_intersection_m2": 0.0,
+        "conservative_pole_intersection_m2": 0.0,
+        "conservative_envelope_outside_m2": 0.0
+      }
+    }
+  },
+  "lookahead_policy": {
+    "straight_access_perimeter_m": 2.0,
+    "turn_headland_pole_detour_m": 1.5,
+    "note": "Retains the previously approved provisional test values. Geometry, not lookahead alone, defines the new six turns."
+  }
+}

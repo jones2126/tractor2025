@@ -1,0 +1,37 @@
+{
+  "status": "DRAFT - UNTESTED IN THE FIELD",
+  "created_at": "2026-10-24",
+  "controller_route_revision": "003",
+  "review_revision": "001",
+  "field_authorized": false,
+  "files": [
+    {
+      "path": "checkpoint_6_source_responses_rev001.txt",
+      "sha256": "76077124ef43faa608ec704ed41b6aea244e5ae03770556f48da5671a10e9c1e"
+    },
+    {
+      "path": "checkpoint_6_controller_route_rev003.geojson",
+      "sha256": "c561ab1f88253ebfd01c4a5235dce23fbeda593edb6d007750e542c654155152"
+    },
+    {
+      "path": "checkpoint_6_controller_validation_rev003.json",
+      "sha256": "ed8b0bab431e7aa201d43d4f9103a0509e188b3f6e8db2bee910823bbf28d363"
+    },
+    {
+      "path": "generated/62_Collins_AREA_OVER_ROAD_1mps_DRAFT_UNTESTED_20261024.txt",
+      "sha256": "150e70a2be00eed9cf0e5aedc0bc26ba3c8a122a2b37a7c666aab7e3a7859979"
+    },
+    {
+      "path": "generated/62_Collins_AREA_OVER_ROAD_1mps_DRAFT_UNTESTED_20261024_audit.csv",
+      "sha256": "b1b435a5c8318e8a34bd0a8e62376316fec8a3fd537ad489fc8558a648423046"
+    },
+    {
+      "path": "checkpoint_6_pure_pursuit_review_replay_rev001.html",
+      "sha256": "2befad19c99ece8e819ce5befc936bac359c2527f0c3fd8caae2cb0d3957c174"
+    },
+    {
+      "path": "checkpoint_6_pure_pursuit_mission_rev001.md",
+      "sha256": "73b671998a8d53a83c4c87b91554931d82e1f0512d5784699f663c0ba32ca0bd"
+    }
+  ]
+}

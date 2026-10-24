@@ -1,0 +1,44 @@
+{
+  "status_text": "DRAFT - UNTESTED IN THE FIELD",
+  "frozen_at": "2026-10-24",
+  "approval_scope": "approved route concept; not controller-ready geometry and not field authorization",
+  "files": [
+    {
+      "path": "checkpoint_4_detailed_draft_rev002.geojson",
+      "sha256": "17221680130092ee1bd232633ec3cb04380f891fed494a0c9d581590edecea42"
+    },
+    {
+      "path": "checkpoint_4_validation_rev002.json",
+      "sha256": "bdde568dfcc06ecd4a5d048c408d40658a2305753199e9d4b222b919964f3073"
+    },
+    {
+      "path": "checkpoint_4_segment_lineage_rev002.csv",
+      "sha256": "cf2eab9a9d91897d9d24c475258e8f2657ffd72d0c8b807d32a08412bd5939be"
+    },
+    {
+      "path": "checkpoint_4_replay_responses_rev004.txt",
+      "sha256": "f8b2308799f41cbeb92b2f2d09512f42599f592011daf0b31f93b201a7a4ef58"
+    },
+    {
+      "path": "checkpoint_4_mission_review_replay_rev005.html",
+      "sha256": "b7136ecff4e35a73c796ae1f63345bfeb4e82f8d16f740fb4c4d13a220d7c6f5"
+    },
+    {
+      "path": "../../planning/20261023_single_section_mission_skill/NEW_CHAT_PROMPT_REV006.md",
+      "sha256": "9b309a204a6fdef467d3ae4695e7b31f3a68b346648c3269d9890e3e93c708c9"
+    },
+    {
+      "path": "../../../../../codex_skills/plan-mower-section-mission/SKILL.md",
+      "sha256": "f7d7ec4b1fefab501d18d09ae0c2eae60c86420b16f6303572998c0043179802"
+    },
+    {
+      "path": "../../../../../codex_skills/plan-mower-section-mission/references/checkpoint-contract.md",
+      "sha256": "3b2e1430aca9beacb300fdade017ea83ce668e94fec02fce1015183997d6846e"
+    }
+  ],
+  "known_blockers": [
+    "six joins exceed 10 degrees",
+    "review-only waypoint candidate must not be used for live control",
+    "APPROVED_FOR_FIELD remains false"
+  ]
+}

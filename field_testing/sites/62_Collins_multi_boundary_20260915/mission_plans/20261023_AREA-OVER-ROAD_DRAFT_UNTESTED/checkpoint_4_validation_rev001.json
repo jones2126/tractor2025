@@ -1,0 +1,892 @@
+{
+  "status": "DRAFT - UNTESTED IN THE FIELD",
+  "scope": "AREA-OVER-ROAD selected Alternative A detailed draft",
+  "not_executable": true,
+  "revision": "001",
+  "parameters": {
+    "planned_cut_width_and_lane_spacing_m": 0.9652,
+    "physical_deck_width_m": 1.0668,
+    "right_chute_extension_m_approx": 0.127,
+    "planning_turn_radius_m": 1.4,
+    "speed_mps": 1.0,
+    "stripe_heading_compass_deg": 339.5148697683819,
+    "stripe_phase_m": 0.28956,
+    "lane_count": 7
+  },
+  "route": {
+    "segment_count": 21,
+    "total_length_m": 857.350085858086,
+    "estimated_motion_time_min": 14.289168097634766,
+    "forward_only": true,
+    "reversal_count": 0
+  },
+  "coverage": {
+    "approved_area_m2": 440.5577933527191,
+    "planned_38in_covered_m2": 425.1876487810967,
+    "planned_38in_coverage_percent": 96.51120810855416,
+    "planned_38in_uncovered_m2": 15.370144571622443,
+    "actual_42in_cut_covered_m2": 430.725424355061,
+    "actual_42in_cut_coverage_percent": 97.76819996240854,
+    "actual_42in_cut_uncovered_m2": 9.832368997657635,
+    "planned_overlap_m2_sum_minus_union": 349.76373369405275,
+    "planned_swath_outside_outer_boundary_m2": 20.96587149981569,
+    "physical_cut_outside_outer_boundary_m2": 25.846198776822394,
+    "conservative_deck_plus_chute_envelope_outside_outer_boundary_m2": 46.888068493474464,
+    "gap_components": [
+      {
+        "area_m2": 2.672766401955442,
+        "centroid_local_east_m": 13.09857885599756,
+        "centroid_local_north_m": -33.9973904759001,
+        "bounds_local_m": [
+          12.004566154427879,
+          -35.028398094189,
+          14.003924578392954,
+          -31.942854222379363
+        ]
+      },
+      {
+        "area_m2": 2.503649573980898,
+        "centroid_local_east_m": 10.572110322029548,
+        "centroid_local_north_m": -33.5342628820507,
+        "bounds_local_m": [
+          9.520888463349522,
+          -34.64042714469052,
+          11.405536354884267,
+          -31.659431346443238
+        ]
+      },
+      {
+        "area_m2": 1.733809714671269,
+        "centroid_local_east_m": -13.632636033259658,
+        "centroid_local_north_m": 33.963206400665904,
+        "bounds_local_m": [
+          -14.376323355429777,
+          31.977497484573348,
+          -12.44964316004506,
+          35.05395616055445
+        ]
+      },
+      {
+        "area_m2": 1.6166833855044567,
+        "centroid_local_east_m": -1.8961815997779603,
+        "centroid_local_north_m": 1.4278044596068449,
+        "bounds_local_m": [
+          -2.8130335642708157,
+          0.5111139321660013,
+          -0.9788953191239173,
+          2.3447237116362345
+        ]
+      },
+      {
+        "area_m2": 1.4744316866802094,
+        "centroid_local_east_m": -11.52622056646036,
+        "centroid_local_north_m": 34.5411131438705,
+        "bounds_local_m": [
+          -12.161231180224126,
+          33.174388183886606,
+          -11.097761598758868,
+          35.47898704412486
+        ]
+      },
+      {
+        "area_m2": 1.3662120826048847,
+        "centroid_local_east_m": -13.16038004358496,
+        "centroid_local_north_m": 36.322997189617176,
+        "bounds_local_m": [
+          -14.57246163587088,
+          35.800269144440925,
+          -11.797981043952166,
+          36.78370700012688
+        ]
+      },
+      {
+        "area_m2": 1.3542163169002468,
+        "centroid_local_east_m": 12.203991883343628,
+        "centroid_local_north_m": -28.50477014984669,
+        "bounds_local_m": [
+          8.884814632063499,
+          -36.99617795969715,
+          15.163899129828511,
+          -16.324219028533953
+        ]
+      },
+      {
+        "area_m2": 1.2321623766152356,
+        "centroid_local_east_m": 1.1918472015192954,
+        "centroid_local_north_m": -11.65277924077481,
+        "bounds_local_m": [
+          -2.8639890717620085,
+          -23.120789656929734,
+          5.231089885207453,
+          -0.18651782136442185
+        ]
+      },
+      {
+        "area_m2": 0.8945019843339107,
+        "centroid_local_east_m": -10.60408316727123,
+        "centroid_local_north_m": 34.04728349397778,
+        "bounds_local_m": [
+          -15.612369188622433,
+          26.697028504324717,
+          -6.676572417397757,
+          37.80255537329168
+        ]
+      },
+      {
+        "area_m2": 0.4863412495033784,
+        "centroid_local_east_m": 11.546756441839916,
+        "centroid_local_north_m": -35.69819039685893,
+        "bounds_local_m": [
+          10.887245211954307,
+          -35.974008911787,
+          12.271319952138978,
+          -35.313450075964404
+        ]
+      },
+      {
+        "area_m2": 0.03503011153251023,
+        "centroid_local_east_m": -4.517819786362642,
+        "centroid_local_north_m": 4.361517604220332,
+        "bounds_local_m": [
+          -6.024234322450823,
+          2.0658609482933694,
+          -3.661918809252528,
+          8.402915025194746
+        ]
+      },
+      {
+        "area_m2": 0.0003396873399571859,
+        "centroid_local_east_m": -11.33167627492041,
+        "centroid_local_north_m": 32.562192594900075,
+        "bounds_local_m": [
+          -11.42940637152283,
+          32.52413526180507,
+          -11.282653216146914,
+          32.583599972734035
+        ]
+      }
+    ]
+  },
+  "containment_and_clearance": {
+    "centerline_outside_outer_boundary_length_m": 0.0,
+    "minimum_centerline_to_outer_boundary_m": 0.024823506910796208,
+    "minimum_centerline_to_pole_exclusion_m": 0.8281391761515107,
+    "physical_cut_intersection_with_pole_exclusion_m2": 0.0,
+    "conservative_deck_plus_chute_intersection_with_pole_exclusion_m2": 0.0,
+    "pole_loop_centerline_to_outer_boundary_m": 0.04400514142305956,
+    "pole_loop_centerline_to_pole_exclusion_m": 0.8288057871996134,
+    "per_segment_pole_clearance": [
+      {
+        "segment_id": "S002",
+        "segment_type": "connector",
+        "centerline_to_pole_exclusion_m": 24.82600672797245,
+        "physical_deck_intersection_with_pole_m2": 0.0,
+        "conservative_deck_plus_chute_intersection_with_pole_m2": 0.0
+      },
+      {
+        "segment_id": "S003",
+        "segment_type": "perimeter",
+        "centerline_to_pole_exclusion_m": 0.8289255622009699,
+        "physical_deck_intersection_with_pole_m2": 0.0,
+        "conservative_deck_plus_chute_intersection_with_pole_m2": 0.0
+      },
+      {
+        "segment_id": "S004",
+        "segment_type": "pole_loop",
+        "centerline_to_pole_exclusion_m": 0.8288057871996134,
+        "physical_deck_intersection_with_pole_m2": 0.0,
+        "conservative_deck_plus_chute_intersection_with_pole_m2": 0.0
+      },
+      {
+        "segment_id": "S005",
+        "segment_type": "perimeter",
+        "centerline_to_pole_exclusion_m": 0.8289057516090477,
+        "physical_deck_intersection_with_pole_m2": 0.0,
+        "conservative_deck_plus_chute_intersection_with_pole_m2": 0.0
+      },
+      {
+        "segment_id": "S006",
+        "segment_type": "connector",
+        "centerline_to_pole_exclusion_m": 24.829624389509608,
+        "physical_deck_intersection_with_pole_m2": 0.0,
+        "conservative_deck_plus_chute_intersection_with_pole_m2": 0.0
+      },
+      {
+        "segment_id": "S007",
+        "segment_type": "stripe",
+        "centerline_to_pole_exclusion_m": 3.3110939111055426,
+        "physical_deck_intersection_with_pole_m2": 0.0,
+        "conservative_deck_plus_chute_intersection_with_pole_m2": 0.0
+      },
+      {
+        "segment_id": "S008",
+        "segment_type": "connector",
+        "centerline_to_pole_exclusion_m": 20.1146067892392,
+        "physical_deck_intersection_with_pole_m2": 0.0,
+        "conservative_deck_plus_chute_intersection_with_pole_m2": 0.0
+      },
+      {
+        "segment_id": "S009",
+        "segment_type": "stripe",
+        "centerline_to_pole_exclusion_m": 2.345893911105537,
+        "physical_deck_intersection_with_pole_m2": 0.0,
+        "conservative_deck_plus_chute_intersection_with_pole_m2": 0.0
+      },
+      {
+        "segment_id": "S010",
+        "segment_type": "headland_turn",
+        "centerline_to_pole_exclusion_m": 31.78931384147007,
+        "physical_deck_intersection_with_pole_m2": 0.0,
+        "conservative_deck_plus_chute_intersection_with_pole_m2": 0.0
+      },
+      {
+        "segment_id": "S011",
+        "segment_type": "stripe",
+        "centerline_to_pole_exclusion_m": 1.3806939111055405,
+        "physical_deck_intersection_with_pole_m2": 0.0,
+        "conservative_deck_plus_chute_intersection_with_pole_m2": 0.0
+      },
+      {
+        "segment_id": "S012",
+        "segment_type": "headland_turn",
+        "centerline_to_pole_exclusion_m": 35.833974963509505,
+        "physical_deck_intersection_with_pole_m2": 0.0,
+        "conservative_deck_plus_chute_intersection_with_pole_m2": 0.0
+      },
+      {
+        "segment_id": "S013",
+        "segment_type": "stripe_with_pole_detour",
+        "centerline_to_pole_exclusion_m": 0.8283137052314835,
+        "physical_deck_intersection_with_pole_m2": 0.0,
+        "conservative_deck_plus_chute_intersection_with_pole_m2": 0.0
+      },
+      {
+        "segment_id": "S014",
+        "segment_type": "headland_turn",
+        "centerline_to_pole_exclusion_m": 32.03277687698278,
+        "physical_deck_intersection_with_pole_m2": 0.0,
+        "conservative_deck_plus_chute_intersection_with_pole_m2": 0.0
+      },
+      {
+        "segment_id": "S015",
+        "segment_type": "stripe_with_pole_detour",
+        "centerline_to_pole_exclusion_m": 0.8282254870590028,
+        "physical_deck_intersection_with_pole_m2": 0.0,
+        "conservative_deck_plus_chute_intersection_with_pole_m2": 0.0
+      },
+      {
+        "segment_id": "S016",
+        "segment_type": "headland_turn",
+        "centerline_to_pole_exclusion_m": 34.59029165722996,
+        "physical_deck_intersection_with_pole_m2": 0.0,
+        "conservative_deck_plus_chute_intersection_with_pole_m2": 0.0
+      },
+      {
+        "segment_id": "S017",
+        "segment_type": "stripe_with_pole_detour",
+        "centerline_to_pole_exclusion_m": 0.8281391761515107,
+        "physical_deck_intersection_with_pole_m2": 0.0,
+        "conservative_deck_plus_chute_intersection_with_pole_m2": 0.0
+      },
+      {
+        "segment_id": "S018",
+        "segment_type": "connector",
+        "centerline_to_pole_exclusion_m": 3.0474374768191717,
+        "physical_deck_intersection_with_pole_m2": 0.0,
+        "conservative_deck_plus_chute_intersection_with_pole_m2": 0.0
+      },
+      {
+        "segment_id": "S019",
+        "segment_type": "stripe",
+        "centerline_to_pole_exclusion_m": 24.974824445131517,
+        "physical_deck_intersection_with_pole_m2": 0.0,
+        "conservative_deck_plus_chute_intersection_with_pole_m2": 0.0
+      },
+      {
+        "segment_id": "S020",
+        "segment_type": "connector",
+        "centerline_to_pole_exclusion_m": 0.8288325140434624,
+        "physical_deck_intersection_with_pole_m2": 0.0,
+        "conservative_deck_plus_chute_intersection_with_pole_m2": 0.0
+      }
+    ]
+  },
+  "spacing": {
+    "lane_offsets_m": [
+      -2.60604,
+      -1.6408399999999999,
+      -0.67564,
+      0.28956,
+      1.2547599999999999,
+      2.21996,
+      3.1851599999999998
+    ],
+    "adjacent_spacing_m": [
+      0.9652000000000003,
+      0.9651999999999998,
+      0.9652000000000001,
+      0.9651999999999998,
+      0.9652000000000001,
+      0.9651999999999998
+    ]
+  },
+  "connectors": {
+    "continuity": [
+      {
+        "from": "S001",
+        "to": "S002",
+        "gap_m": 0.0
+      },
+      {
+        "from": "S002",
+        "to": "S003",
+        "gap_m": 0.0
+      },
+      {
+        "from": "S003",
+        "to": "S004",
+        "gap_m": 5.502214326675242e-07
+      },
+      {
+        "from": "S004",
+        "to": "S005",
+        "gap_m": 6.575094425041655e-06
+      },
+      {
+        "from": "S005",
+        "to": "S006",
+        "gap_m": 0.0
+      },
+      {
+        "from": "S006",
+        "to": "S007",
+        "gap_m": 0.0
+      },
+      {
+        "from": "S007",
+        "to": "S008",
+        "gap_m": 0.0
+      },
+      {
+        "from": "S008",
+        "to": "S009",
+        "gap_m": 0.0
+      },
+      {
+        "from": "S009",
+        "to": "S010",
+        "gap_m": 7.32410687763558e-15
+      },
+      {
+        "from": "S010",
+        "to": "S011",
+        "gap_m": 7.105427357601002e-15
+      },
+      {
+        "from": "S011",
+        "to": "S012",
+        "gap_m": 0.0
+      },
+      {
+        "from": "S012",
+        "to": "S013",
+        "gap_m": 0.0
+      },
+      {
+        "from": "S013",
+        "to": "S014",
+        "gap_m": 7.32410687763558e-15
+      },
+      {
+        "from": "S014",
+        "to": "S015",
+        "gap_m": 0.0
+      },
+      {
+        "from": "S015",
+        "to": "S016",
+        "gap_m": 0.0
+      },
+      {
+        "from": "S016",
+        "to": "S017",
+        "gap_m": 0.0
+      },
+      {
+        "from": "S017",
+        "to": "S018",
+        "gap_m": 0.0
+      },
+      {
+        "from": "S018",
+        "to": "S019",
+        "gap_m": 0.0
+      },
+      {
+        "from": "S019",
+        "to": "S020",
+        "gap_m": 0.0
+      },
+      {
+        "from": "S020",
+        "to": "S021",
+        "gap_m": 0.07797817232672916
+      }
+    ],
+    "maximum_position_gap_m": 0.07797817232672916,
+    "heading_jumps": [
+      {
+        "from": "S001",
+        "to": "S002",
+        "heading_change_deg": 152.41493622524507
+      },
+      {
+        "from": "S002",
+        "to": "S003",
+        "heading_change_deg": 89.99433561658454
+      },
+      {
+        "from": "S003",
+        "to": "S004",
+        "heading_change_deg": 129.69771137530006
+      },
+      {
+        "from": "S004",
+        "to": "S005",
+        "heading_change_deg": 130.12784357342943
+      },
+      {
+        "from": "S005",
+        "to": "S006",
+        "heading_change_deg": 23.931726636798132
+      },
+      {
+        "from": "S006",
+        "to": "S007",
+        "heading_change_deg": 155.71447065192172
+      },
+      {
+        "from": "S007",
+        "to": "S008",
+        "heading_change_deg": 73.21313463671926
+      },
+      {
+        "from": "S008",
+        "to": "S009",
+        "heading_change_deg": 157.75263396936668
+      },
+      {
+        "from": "S009",
+        "to": "S010",
+        "heading_change_deg": 3.20355028379631
+      },
+      {
+        "from": "S010",
+        "to": "S011",
+        "heading_change_deg": 3.1455448702148963
+      },
+      {
+        "from": "S011",
+        "to": "S012",
+        "heading_change_deg": 3.2005380688470955
+      },
+      {
+        "from": "S012",
+        "to": "S013",
+        "heading_change_deg": 3.1494043151416395
+      },
+      {
+        "from": "S013",
+        "to": "S014",
+        "heading_change_deg": 3.195114558765391
+      },
+      {
+        "from": "S014",
+        "to": "S015",
+        "heading_change_deg": 3.164481158674708
+      },
+      {
+        "from": "S015",
+        "to": "S016",
+        "heading_change_deg": 3.1974221093880173
+      },
+      {
+        "from": "S016",
+        "to": "S017",
+        "heading_change_deg": 3.162642130560366
+      },
+      {
+        "from": "S017",
+        "to": "S018",
+        "heading_change_deg": 30.181407235720066
+      },
+      {
+        "from": "S018",
+        "to": "S019",
+        "heading_change_deg": 178.73370171831058
+      },
+      {
+        "from": "S019",
+        "to": "S020",
+        "heading_change_deg": 130.4028387282908
+      },
+      {
+        "from": "S020",
+        "to": "S021",
+        "heading_change_deg": 116.45263699228988
+      }
+    ],
+    "maximum_heading_jump_deg": 178.73370171831058,
+    "joins_over_10_degrees": [
+      {
+        "from": "S001",
+        "to": "S002",
+        "heading_change_deg": 152.41493622524507
+      },
+      {
+        "from": "S002",
+        "to": "S003",
+        "heading_change_deg": 89.99433561658454
+      },
+      {
+        "from": "S003",
+        "to": "S004",
+        "heading_change_deg": 129.69771137530006
+      },
+      {
+        "from": "S004",
+        "to": "S005",
+        "heading_change_deg": 130.12784357342943
+      },
+      {
+        "from": "S005",
+        "to": "S006",
+        "heading_change_deg": 23.931726636798132
+      },
+      {
+        "from": "S006",
+        "to": "S007",
+        "heading_change_deg": 155.71447065192172
+      },
+      {
+        "from": "S007",
+        "to": "S008",
+        "heading_change_deg": 73.21313463671926
+      },
+      {
+        "from": "S008",
+        "to": "S009",
+        "heading_change_deg": 157.75263396936668
+      },
+      {
+        "from": "S017",
+        "to": "S018",
+        "heading_change_deg": 30.181407235720066
+      },
+      {
+        "from": "S018",
+        "to": "S019",
+        "heading_change_deg": 178.73370171831058
+      },
+      {
+        "from": "S019",
+        "to": "S020",
+        "heading_change_deg": 130.4028387282908
+      },
+      {
+        "from": "S020",
+        "to": "S021",
+        "heading_change_deg": 116.45263699228988
+      }
+    ],
+    "note": "Nonzero heading jumps identify joins that require smoothing before an executable mission can be produced."
+  },
+  "curvature": {
+    "turn_segments": [
+      {
+        "segment_id": "S004",
+        "type": "pole_loop",
+        "construction": "1.4 m circle at OBS-POLE-001",
+        "sampled_minimum_radius_m": 1.399999999998002,
+        "passes_1_4_m_test": true
+      },
+      {
+        "segment_id": "S010",
+        "type": "headland_turn",
+        "construction": "Dubins RLR at 1.4 m radius",
+        "sampled_minimum_radius_m": 1.3999999999980504,
+        "passes_1_4_m_test": true
+      },
+      {
+        "segment_id": "S012",
+        "type": "headland_turn",
+        "construction": "Dubins LRL at 1.4 m radius",
+        "sampled_minimum_radius_m": 1.399999999998243,
+        "passes_1_4_m_test": true
+      },
+      {
+        "segment_id": "S014",
+        "type": "headland_turn",
+        "construction": "Dubins RLR at 1.4 m radius",
+        "sampled_minimum_radius_m": 1.3999999999979433,
+        "passes_1_4_m_test": true
+      },
+      {
+        "segment_id": "S016",
+        "type": "headland_turn",
+        "construction": "Dubins LRL at 1.4 m radius",
+        "sampled_minimum_radius_m": 1.3999999999985795,
+        "passes_1_4_m_test": true
+      }
+    ]
+  },
+  "intersections": {
+    "non_simple_segments": [
+      "S004"
+    ],
+    "nonadjacent_route_intersection_count": 43,
+    "nonadjacent_route_intersections": [
+      {
+        "first": "S002",
+        "second": "S005",
+        "geometry": "Point"
+      },
+      {
+        "first": "S002",
+        "second": "S006",
+        "geometry": "Point"
+      },
+      {
+        "first": "S002",
+        "second": "S020",
+        "geometry": "Point"
+      },
+      {
+        "first": "S003",
+        "second": "S005",
+        "geometry": "Point"
+      },
+      {
+        "first": "S003",
+        "second": "S006",
+        "geometry": "MultiPoint"
+      },
+      {
+        "first": "S003",
+        "second": "S007",
+        "geometry": "MultiPoint"
+      },
+      {
+        "first": "S003",
+        "second": "S008",
+        "geometry": "MultiLineString"
+      },
+      {
+        "first": "S003",
+        "second": "S014",
+        "geometry": "MultiPoint"
+      },
+      {
+        "first": "S003",
+        "second": "S016",
+        "geometry": "MultiPoint"
+      },
+      {
+        "first": "S003",
+        "second": "S017",
+        "geometry": "MultiPoint"
+      },
+      {
+        "first": "S003",
+        "second": "S018",
+        "geometry": "MultiLineString"
+      },
+      {
+        "first": "S003",
+        "second": "S020",
+        "geometry": "GeometryCollection"
+      },
+      {
+        "first": "S004",
+        "second": "S013",
+        "geometry": "MultiPoint"
+      },
+      {
+        "first": "S004",
+        "second": "S015",
+        "geometry": "MultiPoint"
+      },
+      {
+        "first": "S004",
+        "second": "S017",
+        "geometry": "MultiPoint"
+      },
+      {
+        "first": "S004",
+        "second": "S020",
+        "geometry": "GeometryCollection"
+      },
+      {
+        "first": "S005",
+        "second": "S017",
+        "geometry": "Point"
+      },
+      {
+        "first": "S005",
+        "second": "S020",
+        "geometry": "GeometryCollection"
+      },
+      {
+        "first": "S006",
+        "second": "S010",
+        "geometry": "Point"
+      },
+      {
+        "first": "S006",
+        "second": "S011",
+        "geometry": "Point"
+      },
+      {
+        "first": "S006",
+        "second": "S013",
+        "geometry": "Point"
+      },
+      {
+        "first": "S006",
+        "second": "S015",
+        "geometry": "Point"
+      },
+      {
+        "first": "S006",
+        "second": "S018",
+        "geometry": "Point"
+      },
+      {
+        "first": "S006",
+        "second": "S020",
+        "geometry": "Point"
+      },
+      {
+        "first": "S007",
+        "second": "S010",
+        "geometry": "MultiPoint"
+      },
+      {
+        "first": "S007",
+        "second": "S018",
+        "geometry": "MultiPoint"
+      },
+      {
+        "first": "S008",
+        "second": "S012",
+        "geometry": "Point"
+      },
+      {
+        "first": "S008",
+        "second": "S018",
+        "geometry": "MultiLineString"
+      },
+      {
+        "first": "S009",
+        "second": "S012",
+        "geometry": "Point"
+      },
+      {
+        "first": "S010",
+        "second": "S014",
+        "geometry": "MultiPoint"
+      },
+      {
+        "first": "S012",
+        "second": "S016",
+        "geometry": "MultiPoint"
+      },
+      {
+        "first": "S013",
+        "second": "S015",
+        "geometry": "MultiPoint"
+      },
+      {
+        "first": "S013",
+        "second": "S017",
+        "geometry": "MultiPoint"
+      },
+      {
+        "first": "S013",
+        "second": "S020",
+        "geometry": "MultiPoint"
+      },
+      {
+        "first": "S014",
+        "second": "S017",
+        "geometry": "Point"
+      },
+      {
+        "first": "S014",
+        "second": "S018",
+        "geometry": "Point"
+      },
+      {
+        "first": "S015",
+        "second": "S017",
+        "geometry": "MultiPoint"
+      },
+      {
+        "first": "S015",
+        "second": "S020",
+        "geometry": "MultiPoint"
+      },
+      {
+        "first": "S016",
+        "second": "S018",
+        "geometry": "MultiPoint"
+      },
+      {
+        "first": "S016",
+        "second": "S019",
+        "geometry": "MultiPoint"
+      },
+      {
+        "first": "S016",
+        "second": "S020",
+        "geometry": "MultiPoint"
+      },
+      {
+        "first": "S017",
+        "second": "S020",
+        "geometry": "MultiPoint"
+      },
+      {
+        "first": "S018",
+        "second": "S020",
+        "geometry": "MultiLineString"
+      }
+    ],
+    "note": "Crossing already-cut perimeter/headland ground is permitted; each crossing still requires replay review."
+  },
+  "stripe_detours": [
+    {
+      "lane_index": 3,
+      "side_selection": "larger outer-boundary clearance",
+      "arc_direction": "counterclockwise",
+      "minimum_outer_boundary_clearance_m": 2.4227820739212023
+    },
+    {
+      "lane_index": 4,
+      "side_selection": "larger outer-boundary clearance",
+      "arc_direction": "counterclockwise",
+      "minimum_outer_boundary_clearance_m": 1.4570625330885536
+    },
+    {
+      "lane_index": 5,
+      "side_selection": "larger outer-boundary clearance",
+      "arc_direction": "counterclockwise",
+      "minimum_outer_boundary_clearance_m": 0.49232686593511243
+    }
+  ],
+  "decision_summary": {
+    "coverage_gap_preclassified_manual_only": false,
+    "limited_outer_overhang_accepted_for_design_review": true,
+    "blades_off_physical_verification_required": true
+  }
+}
