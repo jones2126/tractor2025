@@ -74,6 +74,23 @@ cd /home/al/tractor2025
 sudo bash tractor_rpi/setup/install_tractor_startup_preflight_service.sh --start-now
 ```
 
-The required result is an enabled, active/exited
-`tractor-startup-preflight.service` and a final `MISSION PREFLIGHT PASS`. If it
-fails, remain in Pause with blades off and do not select Auto.
+The service was installed, enabled, and exercised on 2026-10-26. The first run
+correctly ran the full preflight but exposed a false negative in the new
+Heading-startup proof: `systemctl daemon-reload` had cleared the completed
+`ExecStartPre` status fields. The proof gate was corrected to use the
+successful current-boot independent-readback journal when those fields are no
+longer retained.
+
+The corrected run completed 35 checks and ended in `MISSION PREFLIGHT PASS`.
+The service state was `active (exited)` with `status=0/SUCCESS`. The earlier
+2026-10-24 preflight had 29 checks; none were removed. The six added checks are
+the Heading-startup proof plus the five network-path gates listed above.
+
+If an automatic run fails, remain in Pause with blades off, do not select Auto,
+and view the complete preflight report with:
+
+```bash
+journalctl -u tractor-startup-preflight.service -b --no-pager -o cat
+```
+
+The ntfy failure notice includes this command.

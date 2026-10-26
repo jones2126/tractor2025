@@ -48,10 +48,32 @@ def heading_startup_configuration_check() -> base.Check:
     required = (
         "configure_dual_f9p_5hz_profile_20260923.py",
         "--heading-startup",
-        "code=exited",
-        "status=0",
     )
-    passed = code == 0 and all(item in output for item in required)
+    hook_installed = code == 0 and all(item in output for item in required)
+    explicit_success = "code=exited" in output and "status=0" in output
+    journal_proof = False
+    if hook_installed and not explicit_success:
+        journal_code, journal = base.command_output(
+            [
+                "journalctl",
+                "-u",
+                "rtcm-server.service",
+                "-b",
+                "--no-pager",
+                "-o",
+                "cat",
+            ],
+            timeout=8.0,
+        )
+        journal_proof = journal_code == 0 and all(
+            marker in journal
+            for marker in (
+                "HEADING STARTUP RECOVERY",
+                "Heading startup: PASS independent readback",
+                "PASS: heading startup profile is verified in RAM",
+            )
+        )
+    passed = hook_installed and (explicit_success or journal_proof)
     detail = (
         "current rtcm-server invocation completed the RAM-only Heading-F9P "
         "write and independent readback"

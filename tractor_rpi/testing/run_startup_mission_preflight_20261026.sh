@@ -40,5 +40,5 @@ fi
 notify \
     "Tractor01 startup preflight FAILED" \
     "high" \
-    "Automatic boot preflight failed. Keep the tractor in Pause and do not select Auto; inspect the service journal."
+    "Automatic boot preflight failed. Keep the tractor in Pause and do not select Auto. View the full log: journalctl -u tractor-startup-preflight.service -b --no-pager -o cat"
 exit "${status}"

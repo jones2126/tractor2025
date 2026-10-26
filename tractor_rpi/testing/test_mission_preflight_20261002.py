@@ -45,12 +45,34 @@ class StartupAndNetworkGateTests(unittest.TestCase):
 
     @mock.patch.object(preflight.base, "command_output")
     def test_heading_startup_failed_invocation_blocks(self, command_output):
-        command_output.return_value = (
-            0,
-            "configure_dual_f9p_5hz_profile_20260923.py --heading-startup "
-            "code=exited status=1",
-        )
+        command_output.side_effect = [
+            (
+                0,
+                "configure_dual_f9p_5hz_profile_20260923.py --heading-startup "
+                "code=exited status=1",
+            ),
+            (0, "Heading startup began but no successful readback was recorded"),
+        ]
         self.assertFalse(preflight.heading_startup_configuration_check().passed)
+
+    @mock.patch.object(preflight.base, "command_output")
+    def test_heading_startup_uses_current_boot_journal_after_daemon_reload(
+        self, command_output
+    ):
+        command_output.side_effect = [
+            (
+                0,
+                "configure_dual_f9p_5hz_profile_20260923.py --heading-startup "
+                "start_time=[n/a] code=(null) status=0/0",
+            ),
+            (
+                0,
+                "HEADING STARTUP RECOVERY\n"
+                "Heading startup: PASS independent readback of 22 targeted values\n"
+                "PASS: heading startup profile is verified in RAM",
+            ),
+        ]
+        self.assertTrue(preflight.heading_startup_configuration_check().passed)
 
     @mock.patch.object(preflight.base, "command_output")
     def test_expected_network_path_passes(self, command_output):
