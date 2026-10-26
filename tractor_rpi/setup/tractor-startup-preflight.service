@@ -8,8 +8,11 @@ After=network-online.target zerotier-one.service rtcm-server.service teensy-brid
 [Service]
 Type=oneshot
 ExecStart=/usr/bin/bash /home/al/tractor2025/tractor_rpi/testing/run_startup_mission_preflight_20261026.sh
-TimeoutStartSec=180
+TimeoutStartSec=480
 RemainAfterExit=yes
+Restart=on-failure
+RestartSec=30
+RestartPreventExitStatus=1
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=tractor-startup-preflight

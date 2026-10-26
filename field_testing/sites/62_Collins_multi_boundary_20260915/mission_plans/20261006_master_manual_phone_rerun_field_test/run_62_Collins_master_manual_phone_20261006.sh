@@ -91,7 +91,7 @@ echo " SEPTEMBER 23 MASTER MISSION RERUN — PHONE CONTROL"
 echo " Exact route : 19,825 waypoints; SHA-256 0276fa22...8436b4"
 echo " Speed       : 1.00 m/s; lookahead 2.00 m"
 echo " Safety      : blades off, direct supervision, physical e-stop ready"
-echo " Phone       : local tractor Wi-Fi only; keep the page open in Pause"
+echo " Phone       : ZeroTier-primary control; keep ZeroTier and the page open in Pause"
 echo "============================================================"
 if [[ "${TRACTOR_HEADING_PROFILE_READY:-0}" == 1 ]]; then
     [[ "$(systemctl is-active rtcm-server.service 2>/dev/null || true)" == active ]] || {

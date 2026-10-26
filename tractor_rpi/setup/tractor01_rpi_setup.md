@@ -167,22 +167,26 @@ You should receive a ntfy notification on your phone confirming the repo status.
 
 ## 6. Systemd Services
 
-Three services run on boot to operate the robot:
+Four core services run on boot to operate and qualify the robot:
 
 | Service | Script | Purpose |
 |---------|--------|---------|
 | `rtcm-server` | `rtcm_server_20260828.py` | Receives RTCM GPS correction data and publishes independent feeds for the Teensy bridge (6002), field logger (6009), and Pure Pursuit (6010) |
 | `teensy-bridge` | `teensy_serial_bridge_20260728.py` | Serial bridge between RPi and Teensy 4.1 (starts after rtcm-server) |
 | `led-controller` | `led_status_controller.py` | LED tower status display (starts after both above) |
+| `tractor-startup-preflight` | `run_startup_mission_preflight_20261026.sh` | Waits for the qualified network path and ntfy reachability, then runs the non-motion startup preflight |
 
-### Install all three services
+### Install all four services
 
 ```bash
 cd ~/tractor2025/tractor_rpi
 sudo bash install_services.sh
 ```
 
-The script creates the `.service` files in `/etc/systemd/system/`, enables them for auto-start, and optionally starts them immediately.
+The script creates the `.service` files in `/etc/systemd/system/`, enables them
+for auto-start, and optionally starts them immediately. On a rebuilt Tractor01,
+this also restores the mandatory Heading-F9P RAM configuration before
+`rtcm-server` and the network-gated automatic startup preflight.
 
 To update only tractor01's RTCM service to the current dual-F9P version:
 
@@ -200,6 +204,30 @@ configuration verification fails. This deliberately treats every boot or
 service restart as if the heading receiver has returned to factory defaults;
 it does not repeatedly write battery-backed RAM or flash.
 
+The startup preflight does not begin merely because systemd has reached
+`network-online.target`. Its wrapper waits for all of the following first:
+
+- `eth0` address `192.168.8.20/24`;
+- default route through the GL router at `192.168.8.1`;
+- a successful probe to that gateway;
+- the ZeroTier route to `192.168.193.88` sourced from `192.168.193.76`; and
+- the normal `tractor-wifi-control.service` active; and
+- successful HTTPS reachability to `ntfy.sh`.
+
+If the path is not ready within five minutes, the preflight and notification
+are skipped and systemd retries after 30 seconds. A completed preflight failure
+does not loop; it waits for inspection and a manual rerun.
+
+To rerun the complete startup preflight manually and display every PASS/FAIL
+item:
+
+```bash
+sudo systemctl restart tractor-startup-preflight.service
+journalctl -u tractor-startup-preflight.service -b --no-pager -o cat
+```
+
+The FAILED ntfy message contains that same `journalctl` command.
+
 ### Helper scripts (in `~/tractor2025/tractor_rpi/`)
 
 ```bash
@@ -213,7 +241,7 @@ bash view_logs.sh teensy-bridge # tail logs from one service
 
 ```bash
 # Check status
-systemctl status rtcm-server teensy-bridge led-controller
+systemctl status rtcm-server teensy-bridge led-controller tractor-startup-preflight
 
 # View live logs
 sudo journalctl -u rtcm-server -f

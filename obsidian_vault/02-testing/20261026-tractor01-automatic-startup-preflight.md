@@ -2,7 +2,7 @@
 
 ## Status
 
-`DRAFT - UNTESTED IN THE FIELD`
+`INSTALLED AND FIELD-EXERCISED ON TRACTOR01`
 
 This is a stationary startup/preflight improvement for the already-built
 AREA-OVER-ROAD mission. It does not change route geometry, firmware, Pure
@@ -21,6 +21,16 @@ Pursuit behavior, field authorization, or blade authorization.
    kicked off, followed by a PASS or FAILED notice.
 6. A startup PASS is informative only. The mission launcher still runs a fresh
    full preflight and must end in `MISSION PREFLIGHT PASS` before guarded Auto.
+
+The wrapper now waits before step 4 until the qualified network path is
+actually usable. It requires the expected `eth0` address/default route, a live
+GL-router gateway, the expected ZeroTier route and source address, the normal
+phone-control service, and HTTPS reachability to `ntfy.sh`. Therefore it does
+not start preflight merely because systemd declared `network-online.target`,
+and it does not knowingly attempt an ntfy publish before ntfy is reachable.
+Temporary network-readiness failures are retried by systemd. A completed
+preflight failure is not automatically retried or spammed; it requires review
+and an explicit manual restart.
 
 ## New fail-closed preflight gates
 
@@ -94,3 +104,10 @@ journalctl -u tractor-startup-preflight.service -b --no-pager -o cat
 ```
 
 The ntfy failure notice includes this command.
+
+To rerun after correcting a failed gate:
+
+```bash
+sudo systemctl restart tractor-startup-preflight.service
+journalctl -u tractor-startup-preflight.service -b --no-pager -o cat
+```

@@ -33,6 +33,9 @@ systemctl enable tractor-startup-preflight.service
 
 echo "Installed and enabled tractor-startup-preflight.service."
 echo "The existing rtcm-server ExecStartPre remains the mandatory Heading-F9P RAM configuration step."
+echo "The startup preflight waits for the qualified network path and ntfy reachability before it runs."
+echo "Manual rerun: sudo systemctl restart tractor-startup-preflight.service"
+echo "Full PASS/FAIL log: journalctl -u tractor-startup-preflight.service -b --no-pager -o cat"
 
 if [[ "${START_NOW}" == true ]]; then
     systemctl restart tractor-startup-preflight.service

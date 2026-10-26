@@ -2,10 +2,10 @@
 
 > **Current operating sequence:** use
 > `../20261020_two_mission_field_day/FIELD_DAY_SEQUENCE.md`. The network and
-> recovery instructions below preserve the October 6 package history and still
-> describe the failed `192.168.10.x` arrangement. They must not override the
-> newer ZeroTier-primary qualification gates or the requirement to archive and
-> review this run before attempting the consolidated perimeter.
+> recovery instructions below have been reconciled to the installed
+> ZeroTier-primary policy. Historical `192.168.10.x` instructions are retired.
+> The current sequence and its requirement to archive and review this run
+> remain authoritative before attempting any later mission.
 
 This package reruns the completed mission shown in the historical replay
 `20260923_124933_master_manual_5hz`. It deliberately reuses the immutable route
@@ -27,9 +27,13 @@ coverage-map work.
 ## Safety scope
 
 This remains a directly supervised, blades-off field test. Keep the physical
-E-stop immediately available. The phone control page must stay open in the
-foreground and use the tractor router's local `192.168.10.x` network; ZeroTier is
-for maintenance/status, not motion authorization.
+E-stop immediately available. The installed normal-control policy is
+`zerotier-primary`: keep ZeroTier connected, keep exactly one phone-control tab
+open in the foreground, and confirm that the page identifies the expected
+authority path. The GL-router path (`eth0` at `192.168.8.20` through
+`192.168.8.1`) remains the tractor's upstream network path and the separately
+guarded Manual-only recovery path; the retired `192.168.10.x` instructions are
+not valid for this run.
 
 The current phone-control stack fails closed to Pause, invalidates the phone
 session after heartbeat loss, requires a new guarded choice, and prevents Auto
@@ -67,13 +71,30 @@ same preparation when it is run directly rather than through the dashboard.
 
 1. Keep the mower deck disengaged. Confirm regulated router power, the loaded
    low-voltage alarm, and physical E-stop operation.
-2. After Tractor01 boots, wait for the ntfy notification titled
-   `Tractor01 local control ready`. The enabled `tractor-wifi-control` service
-   sends this when the local control hostname is ready. Connect the phone to the
-   tractor router's local Wi-Fi, open that ntfy link, and leave the phone in
-   Pause. A separate ZeroTier status notification may also arrive, but it cannot
-   authorize motion and is not the phone-control link.
-3. On the field laptop, start the mission dashboard:
+2. After Tractor01 boots, require the automatic startup preflight ntfy PASS and
+   the ZeroTier-primary phone-control link. The boot preflight waits for the
+   qualified GL-router, ZeroTier, and ntfy path before it starts. Open exactly
+   one control tab and leave it in Pause. If startup preflight fails, display
+   every PASS/FAIL item with:
+
+   ```bash
+   journalctl -u tractor-startup-preflight.service -b --no-pager -o cat
+   ```
+
+   Correct the cause and rerun it with:
+
+   ```bash
+   sudo systemctl restart tractor-startup-preflight.service
+   ```
+3. In PuTTY on Tractor01, start the mission dashboard:
+
+   ```bash
+   cd /home/al/tractor2025
+   sudo -v
+   python3 field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20261006_master_manual_phone_rerun_field_test/mission_dashboard_master_manual_phone_20261006.py
+   ```
+
+   The equivalent Windows PowerShell command is:
 
    ```powershell
    ssh -t -i "$env:USERPROFILE\.ssh\id_ed25519_tractor01" al@192.168.193.76 "cd /home/al/tractor2025 && sudo -v && python3 field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20261006_master_manual_phone_rerun_field_test/mission_dashboard_master_manual_phone_20261006.py"

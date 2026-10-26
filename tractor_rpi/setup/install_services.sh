@@ -2,10 +2,11 @@
 # install_services.sh
 # Installation script for tractor robot systemd services
 # 
-# This script installs three systemd services:
+# This script installs four systemd services:
 # 1. rtcm-server.service - GPS/RTK correction data server
 # 2. teensy-bridge.service - Teensy serial communication bridge
 # 3. led-controller.service - LED status tower controller
+# 4. tractor-startup-preflight.service - network-gated non-motion boot preflight
 
 set -e  # Exit on any error
 
@@ -39,7 +40,14 @@ if [ ! -d "$SCRIPT_DIR" ]; then
 fi
 
 # Verify Python scripts exist
-SCRIPTS=("rtcm_server_20260617.py" "teensy_serial_bridge_20260728.py" "led_status_controller.py")
+SCRIPTS=(
+    "rtcm_server_20260828.py"
+    "teensy_serial_bridge_20260728.py"
+    "led_status_controller.py"
+    "testing/configure_dual_f9p_5hz_profile_20260923.py"
+    "testing/mission_preflight_20261002.py"
+    "testing/run_startup_mission_preflight_20261026.sh"
+)
 for script in "${SCRIPTS[@]}"; do
     if [ ! -f "$SCRIPT_DIR/$script" ]; then
         echo -e "${RED}Error: Script not found: $SCRIPT_DIR/$script${NC}"
@@ -154,6 +162,12 @@ WantedBy=multi-user.target
 EOF
 
 echo -e "${GREEN}✓${NC} Created led-controller.service"
+
+# 4. Automatic startup preflight
+install -m 0644 \
+    "$SCRIPT_DIR/setup/tractor-startup-preflight.service" \
+    /etc/systemd/system/tractor-startup-preflight.service
+echo -e "${GREEN}✓${NC} Installed tractor-startup-preflight.service"
 echo ""
 
 # Reload systemd
@@ -167,6 +181,7 @@ echo "Enabling services to start on boot..."
 systemctl enable rtcm-server.service
 systemctl enable teensy-bridge.service
 systemctl enable led-controller.service
+systemctl enable tractor-startup-preflight.service
 echo -e "${GREEN}✓${NC} Services enabled for auto-start on boot"
 echo ""
 
@@ -180,6 +195,7 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     systemctl start teensy-bridge.service
     sleep 2
     systemctl start led-controller.service
+    systemctl restart tractor-startup-preflight.service
     echo -e "${GREEN}✓${NC} Services started"
     echo ""
     
@@ -191,6 +207,8 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     systemctl status teensy-bridge.service --no-pager -l | head -n 5
     echo ""
     systemctl status led-controller.service --no-pager -l | head -n 5
+    echo ""
+    systemctl status tractor-startup-preflight.service --no-pager -l | head -n 8
     echo ""
 fi
 
@@ -207,7 +225,7 @@ echo "Tractor Robot Service Status"
 echo "========================================="
 echo ""
 
-services=("rtcm-server" "teensy-bridge" "led-controller")
+services=("rtcm-server" "teensy-bridge" "led-controller" "tractor-startup-preflight")
 
 for service in "${services[@]}"; do
     echo "[$service]"
@@ -228,8 +246,10 @@ done
 echo "========================================="
 echo "Quick Commands:"
 echo "  View logs:    sudo journalctl -u <service-name> -f"
-echo "  Restart all:  sudo systemctl restart rtcm-server teensy-bridge led-controller"
-echo "  Stop all:     sudo systemctl stop rtcm-server teensy-bridge led-controller"
+echo "  Rerun preflight: sudo systemctl restart tractor-startup-preflight.service"
+echo "  Preflight log:   journalctl -u tractor-startup-preflight.service -b --no-pager -o cat"
+echo "  Restart all:     sudo systemctl restart rtcm-server teensy-bridge led-controller tractor-startup-preflight"
+echo "  Stop all:        sudo systemctl stop tractor-startup-preflight led-controller teensy-bridge rtcm-server"
 echo "========================================="
 EOFHELPER
 
@@ -256,6 +276,8 @@ echo "✓ Teensy Bridge restarted"
 sleep 1
 systemctl restart led-controller.service
 echo "✓ LED Controller restarted"
+systemctl restart tractor-startup-preflight.service
+echo "✓ Startup preflight rerun"
 echo ""
 echo "All services restarted successfully!"
 EOFHELPER
@@ -275,18 +297,19 @@ if [ $# -eq 0 ]; then
     echo "  rtcm-server"
     echo "  teensy-bridge"
     echo "  led-controller"
+    echo "  tractor-startup-preflight"
     echo "  all           (view all logs interleaved)"
     exit 1
 fi
 
 case $1 in
-    rtcm-server|teensy-bridge|led-controller)
+    rtcm-server|teensy-bridge|led-controller|tractor-startup-preflight)
         echo "Viewing logs for $1 (Ctrl+C to exit)..."
         sudo journalctl -u $1.service -f
         ;;
     all)
         echo "Viewing all tractor service logs (Ctrl+C to exit)..."
-        sudo journalctl -u rtcm-server.service -u teensy-bridge.service -u led-controller.service -f
+        sudo journalctl -u rtcm-server.service -u teensy-bridge.service -u led-controller.service -u tractor-startup-preflight.service -f
         ;;
     *)
         echo "Unknown service: $1"
@@ -307,6 +330,7 @@ echo "Services installed:"
 echo "  • rtcm-server.service"
 echo "  • teensy-bridge.service"
 echo "  • led-controller.service"
+echo "  • tractor-startup-preflight.service"
 echo ""
 echo "Helper scripts created in $SCRIPT_DIR:"
 echo "  • check_services.sh   - Check service status"
@@ -316,13 +340,16 @@ echo ""
 echo "Useful commands:"
 echo "  Check status:  $SCRIPT_DIR/check_services.sh"
 echo "  View logs:     $SCRIPT_DIR/view_logs.sh all"
-echo "  Restart all:   sudo systemctl restart rtcm-server teensy-bridge led-controller"
-echo "  Stop all:      sudo systemctl stop rtcm-server teensy-bridge led-controller"
+echo "  Restart all:   sudo systemctl restart rtcm-server teensy-bridge led-controller tractor-startup-preflight"
+echo "  Stop all:      sudo systemctl stop tractor-startup-preflight led-controller teensy-bridge rtcm-server"
+echo "  Rerun preflight: sudo systemctl restart tractor-startup-preflight.service"
+echo "  Preflight log: journalctl -u tractor-startup-preflight.service -b --no-pager -o cat"
 echo ""
 echo "Logs can also be viewed with:"
 echo "  sudo journalctl -u rtcm-server -f"
 echo "  sudo journalctl -u teensy-bridge -f"
 echo "  sudo journalctl -u led-controller -f"
+echo "  journalctl -u tractor-startup-preflight.service -b --no-pager -o cat"
 echo ""
 echo -e "${YELLOW}Note: Services will start automatically on next boot${NC}"
 echo ""
