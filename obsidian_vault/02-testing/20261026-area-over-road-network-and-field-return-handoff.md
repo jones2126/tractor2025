@@ -4,7 +4,9 @@
 
 This note preserves the network-path work, boot/preflight changes, field-log
 evidence, and the exact startup command for the next supervised field session.
-It does not approve a new route, blades-on operation, or unattended motion.
+For the 2026-10-27 rerun, the operator has explicitly changed the established
+September master/manual route to **blades on with continuous direct
+supervision**. This does not approve a new route or unattended motion.
 
 The AREA-OVER-ROAD mission completed, followed by a separately logged manual
 cleanup pass. Both archives and the 41,607-row manual log were copied to the
@@ -51,6 +53,14 @@ The corrected automatic service completed all 35 checks and ended in
 `MISSION PREFLIGHT PASS` on Tractor01.
 
 ## Boot ordering and network-readiness behavior
+
+The 35-check preflight service was already installed and enabled on Tractor01
+before shutdown. No reinstall is normally required. Commit `9a2ae15` adds a
+new network-readiness wait and temporary-network retry policy after that field
+installation. Applying the installer once after pulling that commit updates
+the copy of the unit under `/etc/systemd/system`; `--start-now` is only a
+convenient way to exercise the revised service immediately. It is not needed
+on every field day.
 
 The permanent startup order is:
 
@@ -179,10 +189,12 @@ The October 6 package reruns the immutable September master/manual mission:
 - route SHA-256
   `0276fa22f2c7def0a516b2dcd5516bfd3b05fa647f3b50607a6ca5ec218436b4`.
 
-It is a **directly supervised, blades-off field-test package**. The attached
-startup checklist's blade-engagement step is incompatible with this launcher
-and must remain omitted unless a separate reviewed package explicitly approves
-blades-on operation.
+For the 2026-10-27 session it is a **directly supervised, blades-on mission** by
+the operator's explicit decision. The dashboard and launcher require the
+confirmation `RUN SEPTEMBER 23 MASTER PHONE BLADES ON SUPERVISED`. Deck
+engagement remains a deliberate operator action after reaching the start and
+before guarded Auto; the software does not control or verify the mechanical
+PTO.
 
 After boot startup preflight passes, start its dashboard from PuTTY with:
 

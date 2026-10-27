@@ -11,9 +11,11 @@ The field-day order is fixed:
    previously approved consolidated perimeter mission;
 5. archive and copy Mission 2 evidence before considering later coverage work.
 
-Both moving missions are directly supervised and blades off. The physical
-E-stop must remain immediately available. Do not combine intentional network
-failure testing with either moving mission.
+Both moving missions require direct supervision and the physical E-stop
+immediately available. For the 2026-10-27 master/manual endurance rerun, the
+operator has explicitly selected blades on with continuous supervision. The
+consolidated-perimeter package remains blades off. Do not combine intentional
+network failure testing with either moving mission.
 
 ## Route identities
 
@@ -25,6 +27,8 @@ failure testing with either moving mission.
 - Nominal uninterrupted travel time is about **50.3 minutes**, not 40 minutes;
   positioning, pauses, and gates make the field session longer.
 - SHA-256: `0276fa22f2c7def0a516b2dcd5516bfd3b05fa647f3b50607a6ca5ec218436b4`.
+- 2026-10-27 operating decision: blades on with continuous direct
+  supervision; software does not control or verify the mechanical PTO.
 
 ### Mission 2 — consolidated perimeter
 

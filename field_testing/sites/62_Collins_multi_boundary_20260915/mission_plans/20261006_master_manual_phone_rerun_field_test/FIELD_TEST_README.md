@@ -26,8 +26,11 @@ coverage-map work.
 
 ## Safety scope
 
-This remains a directly supervised, blades-off field test. Keep the physical
-E-stop immediately available. The installed normal-control policy is
+For the 2026-10-27 rerun, the operator has explicitly selected **blades on with
+continuous direct supervision** for this established route. Keep the physical
+E-stop immediately available. The software does not control or verify the
+mechanical PTO; blade engagement remains a deliberate operator action after
+reaching the start and before guarded Auto. The installed normal-control policy is
 `zerotier-primary`: keep ZeroTier connected, keep exactly one phone-control tab
 open in the foreground, and confirm that the page identifies the expected
 authority path. The GL-router path (`eth0` at `192.168.8.20` through
@@ -118,6 +121,8 @@ same preparation when it is run directly rather than through the dashboard.
    RTK Fixed, fixed-carrier heading, a 0.80-1.30 m baseline, heading accuracy no
    worse than 1 degree, start distance no more than 1.50 m, and heading error no
    more than 20 degrees.
+   Confirm the supervised blades-on prompt exactly as displayed. This starts
+   the software controller but does not operate the mechanical PTO.
 7. If preflight fails or another message needs analysis, select `OPEN MESSAGES`
    on the dashboard. Copy the relevant message text and paste it into the Codex
    chat. Future field checklists should retain this troubleshooting step.

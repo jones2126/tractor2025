@@ -33,15 +33,17 @@ dashboard.AUDIT = (
     / "62_Collins_master_manual_resampled_1mps_20260920_audit.csv"
 )
 dashboard.LAUNCHER = HERE / "run_62_Collins_master_manual_phone_20261006.sh"
-dashboard.EXPECTED_CONFIRMATION = "RUN SEPTEMBER 23 MASTER PHONE BLADES OFF"
+dashboard.EXPECTED_CONFIRMATION = (
+    "RUN SEPTEMBER 23 MASTER PHONE BLADES ON SUPERVISED"
+)
 
 replacements = {
     "Tractor01 — consolidated perimeter field test":
         "Tractor01 — September 23 master mission rerun",
     "Approved blades-off field test. Voice notes listen for ‘Tractor note…’ while guidance is active.":
-        "Exact September 23 route, now using the Wi-Fi phone handheld. Blades off and direct supervision required.",
+        "Exact September 23 route using the Wi-Fi phone handheld. Blades on with continuous direct supervision.",
     "Start the approved consolidated perimeter mission with blades off and direct supervision?":
-        "Rerun the exact September 23 master mission with phone control, blades off, and direct supervision?",
+        "Rerun the exact September 23 master mission with phone control, blades on, and continuous direct supervision?",
     "RUN CONSOLIDATED PERIMETER BLADES OFF": dashboard.EXPECTED_CONFIRMATION,
 }
 for original, updated in replacements.items():

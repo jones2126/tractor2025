@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Supervised, blades-off rerun of the September 23 mission with phone control.
+# Supervised, blades-on rerun of the September 23 mission with phone control.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
@@ -15,7 +15,7 @@ CONTROLLER="${TRACTOR_REPO}/tractor_rpi/pure-pursuit/pure_pursuit_controller_202
 LOGGER="${TRACTOR_REPO}/tractor_rpi/field_test_logger_20260828.py"
 WIFI_SERVER="${TRACTOR_REPO}/tractor_rpi/testing/webrtc/wifi_primary_control_20261022.py"
 EXPECTED_FIRMWARE="teensy_main_20261003_wifi_v3"
-EXPECTED_CONFIRMATION="RUN SEPTEMBER 23 MASTER PHONE BLADES OFF"
+EXPECTED_CONFIRMATION="RUN SEPTEMBER 23 MASTER PHONE BLADES ON SUPERVISED"
 
 verify_only=false
 dashboard_mode=false
@@ -90,7 +90,7 @@ echo "============================================================"
 echo " SEPTEMBER 23 MASTER MISSION RERUN — PHONE CONTROL"
 echo " Exact route : 19,825 waypoints; SHA-256 0276fa22...8436b4"
 echo " Speed       : 1.00 m/s; lookahead 2.00 m"
-echo " Safety      : blades off, direct supervision, physical e-stop ready"
+echo " Safety      : blades on, continuous direct supervision, physical e-stop ready"
 echo " Phone       : ZeroTier-primary control; keep ZeroTier and the page open in Pause"
 echo "============================================================"
 if [[ "${TRACTOR_HEADING_PROFILE_READY:-0}" == 1 ]]; then
