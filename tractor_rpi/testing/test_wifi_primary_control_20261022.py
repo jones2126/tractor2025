@@ -49,6 +49,28 @@ class FakeClock:
 
 
 class WifiPrimaryTests(unittest.TestCase):
+    def test_simulated_bridge_feed_does_not_start_udp_listener(self):
+        state = object()
+        with mock.patch.object(primary.threading, "Thread") as thread:
+            selected = primary.start_bridge_feed(state, True)
+        self.assertEqual(selected, "simulated")
+        thread.assert_called_once_with(
+            target=primary.simulated_bridge_loop,
+            args=(state,),
+            daemon=True,
+        )
+
+    def test_live_bridge_feed_starts_only_udp_listener(self):
+        state = object()
+        with mock.patch.object(primary.threading, "Thread") as thread:
+            selected = primary.start_bridge_feed(state, False)
+        self.assertEqual(selected, "udp")
+        thread.assert_called_once_with(
+            target=primary.base.udp_listener,
+            args=(state, primary.base.STATUS_PORT, "bridge"),
+            daemon=True,
+        )
+
     def test_server_phone_freshness_matches_teensy_watchdog(self):
         self.assertEqual(0.5, primary.SERVER_PHONE_FRESH_S)
 

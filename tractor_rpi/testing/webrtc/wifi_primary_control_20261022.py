@@ -203,6 +203,23 @@ def simulated_bridge_loop(state: "WifiPrimaryState") -> None:
         time.sleep(0.05)
 
 
+def start_bridge_feed(state: "WifiPrimaryState", simulate_bridge: bool) -> str:
+    """Start exactly one bridge feed so dry-run telemetry cannot mix with UDP."""
+    if simulate_bridge:
+        threading.Thread(
+            target=simulated_bridge_loop,
+            args=(state,),
+            daemon=True,
+        ).start()
+        return "simulated"
+    threading.Thread(
+        target=base.udp_listener,
+        args=(state, base.STATUS_PORT, "bridge"),
+        daemon=True,
+    ).start()
+    return "udp"
+
+
 def load_or_create_operator_key(path: Path | None) -> str:
     """Return a persistent bearer key, or an ephemeral key for manual tests."""
     if path is None:
@@ -1589,13 +1606,8 @@ def main() -> None:
     # Every process start is a fresh, unarmed control session. Send an explicit
     # Pause burst as well as relying on the Teensy's independent 500 ms timeout.
     state.send_stop_burst("server_startup")
-    threading.Thread(
-        target=base.udp_listener,
-        args=(state, base.STATUS_PORT, "bridge"),
-        daemon=True,
-    ).start()
-    if args.simulate_bridge:
-        threading.Thread(target=simulated_bridge_loop, args=(state,), daemon=True).start()
+    bridge_feed = start_bridge_feed(state, args.simulate_bridge)
+    print(f"Bridge feed: {bridge_feed}", flush=True)
     # Do not bind the dedicated mission-dashboard GPS feed (UDP 6013).
     # Wi-Fi-primary control needs only fresh Teensy bridge telemetry; consuming
     # 6013 here can prevent the separately running mission dashboard from
