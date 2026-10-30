@@ -1,0 +1,387 @@
+DRAFT - UNTESTED IN THE FIELD
+
+TRACTOR01 STARTUP / STATIONARY PHONE-NETWORK DIAGNOSTICS / SHUTDOWN
+Revision: 2026-10-29 rev 2
+Scope: APPROVAL A ONLY — instrumentation deployment and stationary motor-off tests
+
+THIS CHECKLIST DOES NOT AUTHORIZE MOTION, A MISSION, OR BLADES.
+COMMUNICATIONS DEGRADED MUST DISPLAY DISABLED_PENDING_STATIONARY_APPROVAL.
+
+======================================================================
+0. APPROVAL AND PHYSICAL HOLD POINT
+======================================================================
+
+[ ] Approval A has been given specifically for instrumentation deployment and
+    stationary motor-off testing.
+[ ] Tractor is stationary on suitable ground.
+[ ] Engine OFF.
+[ ] PTO / blades OFF.
+[ ] Rear hydrostatic-transmission lever pulled fully out. Operator-confirmed
+    meaning: pulled out mechanically disengages the transmission, so a JRK
+    forward/reverse command cannot propel the tractor.
+[ ] Physical Pause selected and physical E-stop available.
+[ ] Drive wheels chocked.
+[ ] No person is in a pinch, steering, deck, or wheel hazard area.
+[ ] Session scope is exactly one 10-minute Trial A run and one 10-minute
+    Trial B run, followed by shutdown, evidence collection, and review.
+
+STOP if any box above is not true.
+
+The pulled-out rear transmission lever is a required independent mechanical
+barrier for Approval A. Wheel chocks, physical Pause, E-stop availability, and
+the dry-run software setting remain separately required; none substitutes for
+another.
+
+Operator-confirmed movement rule (2026-10-29): the rear lever is pushed into
+the drive-enabled position only when all prerequisites for an authorized
+physical movement are satisfied and the tractor is ready to move. It is never
+pushed in during Approval A. Pushing the lever makes forward/reverse movement
+possible; it does not by itself authorize Manual, Auto, or blade operation.
+
+Do not use Manual, Auto, Start Mission, CLEAR PAUSE, or blade engagement during
+Approval A. The dry-run servers below do not send UDP motion commands.
+
+======================================================================
+1. OPTIONAL BASE-STATION / LAPTOP HOUSEKEEPING
+======================================================================
+
+These steps are separate from Tractor01 motion authority.
+
+[ ] At the base station, turn on the blue switch and set up Starlink/router.
+[ ] Connect laptop power. Do not connect or remove a tractor battery charger
+    while the engine is running; the engine remains off for Approval A.
+[ ] If base-station ESP32 data is needed, run on the base-station host:
+
+    python3 /home/al/tractor2025/RTKBase/Bridgeville/esp32_downloader_20260623.py
+
+[ ] Copy the newly created ESP32 file and the previous day's file with FileZilla.
+[ ] Confirm the laptop has the intended network connection and correct date/time.
+
+======================================================================
+2. DEPLOY THE REVIEWED INSTRUMENTATION TO TRACTOR01
+======================================================================
+
+Prerequisite: the reviewed changes have been committed and pushed. From PuTTY
+on Tractor01:
+
+    cd /home/al/tractor2025
+    git pull --ff-only origin main
+
+Run the deterministic tests before installing the service:
+
+    python3 -m unittest \
+      tractor_rpi.testing.test_wifi_primary_control_20261022 \
+      tractor_rpi.testing.test_communications_degraded_guard_20261029 \
+      tractor_rpi.testing.test_mission_dashboard_stale_state_20261019 \
+      tractor_rpi.testing.test_mission_dashboard_phone_diagnostics_20261029 \
+      tractor_rpi.testing.test_republish_wifi_control_url_20261029
+
+Require PASS. Then install and restart the phone-control service:
+
+    sudo systemctl stop tractor-wifi-control.service
+    sudo bash tractor_rpi/setup/install_tractor_wifi_control_service.sh
+    sudo systemctl start tractor-wifi-control.service
+    systemctl is-active tractor-wifi-control.service
+
+Require the final command to print:
+
+    active
+
+Inspect service startup without restarting it again:
+
+    systemctl status tractor-wifi-control.service --no-pager -l
+    journalctl -u tractor-wifi-control.service -b --no-pager -o cat -n 120
+
+Require no startup traceback or repeated restart loop.
+
+======================================================================
+3. HEADING-F9P CURRENT-SESSION PROOF AND PREFLIGHT
+======================================================================
+
+Even though Approval A is stationary, collect the same local-safety evidence
+needed by the later design review.
+
+Restart rtcm-server so its ExecStartPre applies the established Heading-F9P
+moving-base profile in volatile RAM and independently reads it back:
+
+    sudo systemctl restart rtcm-server.service
+    systemctl is-active rtcm-server.service
+    journalctl -u rtcm-server.service -b --no-pager -o cat -n 160
+
+Require:
+
+[ ] rtcm-server is active.
+[ ] Current-session Heading-F9P profile application PASS is present.
+[ ] Independent readback PASS is present.
+[ ] Heading has reacquired before continuing.
+
+Run the non-motion startup preflight after the heading restart:
+
+    sudo systemctl restart tractor-startup-preflight.service
+    journalctl -u tractor-startup-preflight.service -b --no-pager -o cat
+
+Require the exact final result:
+
+    MISSION PREFLIGHT PASS
+
+For Approval A this proves the instrumentation environment only. It does not
+authorize Start Mission or Auto.
+
+======================================================================
+4. VERIFY THE NEW DIAGNOSTICS
+======================================================================
+
+    python3 -m json.tool /run/tractor-phone-control/diagnostics.json
+
+Require:
+
+[ ] The file parses as JSON.
+[ ] updated_epoch_ms changes when checked again.
+[ ] authority_path is zerotier-primary for the installed service.
+[ ] communications_degraded.enabled is false.
+[ ] communications_degraded.state is
+    DISABLED_PENDING_STATIONARY_APPROVAL.
+[ ] The file contains no operator session key.
+
+If the existing phone-control ntfy notice did not arrive, republish the same
+ZeroTier URL without restarting the service or changing its key:
+
+    cd /home/al/tractor2025
+    python3 tractor_rpi/testing/webrtc/republish_wifi_control_url_20261029.py
+
+Open exactly one phone-control tab. Leave the real tractor in physical Pause.
+Do not test steering or drive motion in this session.
+
+======================================================================
+5. STATIONARY TRIAL A — HTTPS FETCH OVER ZEROTIER, DRY RUN
+======================================================================
+
+Connect the phone to TractorField, the operator-reported SSID for the
+192.168.10.1 router. This is the production-like phone underlay for the
+ZeroTier trial; it is not the direct onboard-router path used in Trial B.
+On the phone Wi-Fi details screen, record or photograph the displayed SSID,
+BSSID, band/frequency, and signal strength. The BSSID is the radio access
+point's MAC address, not another network name.
+
+Create the log directory:
+
+    mkdir -p /home/al/field_logs/20261029_stationary_network_ab
+
+Record ZeroTier state before the trial:
+
+    date --iso-8601=seconds | tee /home/al/field_logs/20261029_stationary_network_ab/trial_A_zerotier_before.txt
+    sudo zerotier-cli peers | tee -a /home/al/field_logs/20261029_stationary_network_ab/trial_A_zerotier_before.txt
+    ip -4 route get 192.168.193.206 | tee -a /home/al/field_logs/20261029_stationary_network_ab/trial_A_zerotier_before.txt
+
+Start an isolated dry-run server. It uses simulated bridge telemetry and cannot
+send UDP motion commands:
+
+    cd /home/al/tractor2025
+    python3 -u tractor_rpi/testing/webrtc/wifi_primary_control_20261022.py \
+      --port 8766 \
+      --dry-run \
+      --simulate-bridge \
+      --authority-policy zerotier-primary \
+      --tls-cert /home/al/.config/tractor-wifi-control/tls/server.crt \
+      --tls-key /home/al/.config/tractor-wifi-control/tls/server.key \
+      --operator-key-file /home/al/.config/tractor-wifi-control/stationary-zt.key \
+      --diagnostics-status-file /run/tractor-phone-control/stationary-zt-diagnostics.json \
+      --log-dir /home/al/field_logs/20261029_stationary_network_ab \
+      --no-ntfy
+
+Open the printed ZeroTier URL on the phone. Confirm the page identifies dry-run
+UDP 6004 as DISABLED. Use guarded Auto only on this dry-run page, never on the
+installed production-control tab. Run for 10 minutes with the screen awake and
+page visible. Record the exact start/end times and trial ID. Then return the
+dry-run page to Pause and press Ctrl+C in its terminal.
+
+Record ZeroTier state again:
+
+    date --iso-8601=seconds | tee /home/al/field_logs/20261029_stationary_network_ab/trial_A_zerotier_after.txt
+    sudo zerotier-cli peers | tee -a /home/al/field_logs/20261029_stationary_network_ab/trial_A_zerotier_after.txt
+
+The ZeroTier output must be retained to determine direct versus relay. Do not
+substitute the NAS reachability probe.
+
+======================================================================
+6. STATIONARY TRIAL B — DIRECT ONBOARD-ROUTER HTTPS FETCH, DRY RUN
+======================================================================
+
+Connect the phone to GL-SFT1200-9f4, the operator-reported SSID for the onboard
+GL router at 192.168.8.1. The direct router network is 192.168.8.0/24 and the
+tractor Ethernet address is 192.168.8.20. Record or photograph the phone's
+displayed SSID, BSSID, band/frequency, and signal strength again. Do not use a
+192.168.10.x address for the direct Trial B connection.
+
+Start the isolated direct-path dry-run server:
+
+    cd /home/al/tractor2025
+    python3 -u tractor_rpi/testing/webrtc/wifi_primary_control_20261022.py \
+      --host 192.168.8.20 \
+      --port 8767 \
+      --dry-run \
+      --simulate-bridge \
+      --authority-policy tractorfield-mission \
+      --control-subnet 192.168.8.0/24 \
+      --tls-cert /home/al/.config/tractor-wifi-control/tls/server.crt \
+      --tls-key /home/al/.config/tractor-wifi-control/tls/server.key \
+      --operator-key-file /home/al/.config/tractor-wifi-control/stationary-direct.key \
+      --diagnostics-status-file /run/tractor-phone-control/stationary-direct-diagnostics.json \
+      --log-dir /home/al/field_logs/20261029_stationary_network_ab \
+      --no-ntfy
+
+Open the printed local hostname URL. The certificate covers raspberrypi.local;
+do not bypass a certificate warning. Confirm the server log records the phone
+client in 192.168.8.0/24, which proves this is the direct router trial. Confirm
+UDP 6004 is DISABLED. Run the same 10-minute procedure, then return the dry-run
+page to Pause and press Ctrl+C.
+
+Do not attempt the WebSocket trials C/D: a persistent WebSocket candidate has
+not yet been implemented or approved.
+
+The operator selected the first Approval A session as a shakedown consisting
+of exactly two 10-minute runs: run Trial A once and Trial B once. Stop, collect
+the evidence, and review it before any request to schedule more repetitions.
+
+This pair compares the two complete operating paths. It does not, by itself,
+prove that any measured difference was caused specifically by ZeroTier because
+the phone also changes Wi-Fi routers between A and B.
+
+The later full qualification is ten runs total: five separate 10-minute Trial
+A runs plus five separate 10-minute Trial B runs. Randomize the order of those
+ten runs and place a two-minute idle interval between them. The first two-run
+shakedown does not itself satisfy that full qualification.
+
+======================================================================
+7. STOP CONDITIONS DURING ANY STATIONARY TRIAL
+======================================================================
+
+Immediately stop the dry-run server and retain physical Pause if:
+
+- the page does not explicitly show a dry-run/non-motion server;
+- any real steering, transmission, or wheel motion occurs;
+- the rear hydrostatic-transmission lever is not still fully pulled out;
+- physical Pause or E-stop does not retain authority;
+- the wrong client subnet or authority policy is shown;
+- the service or dry-run server enters a restart loop;
+- the Pi overheats, loses stable power, or logs storage errors; or
+- any step is unclear.
+
+ntfy is diagnostic only. A missing or delayed notice never authorizes a retry,
+mission, Auto on the production page, or an extension of a test.
+
+======================================================================
+8. COLLECT APPROVAL A EVIDENCE
+======================================================================
+
+Copy these files without deleting the originals:
+
+    ls -lh /home/al/field_logs/20261029_stationary_network_ab/
+    journalctl -u tractor-wifi-control.service -b --no-pager -o short-iso \
+      > /home/al/field_logs/20261029_stationary_network_ab/tractor-wifi-control-journal.log
+    cp -p /run/tractor-phone-control/stationary-zt-diagnostics.json \
+      /home/al/field_logs/20261029_stationary_network_ab/ 2>/dev/null || true
+    cp -p /run/tractor-phone-control/stationary-direct-diagnostics.json \
+      /home/al/field_logs/20261029_stationary_network_ab/ 2>/dev/null || true
+    find /home/al/field_logs/20261029_stationary_network_ab -type f -print0 \
+      | sort -z | xargs -0 sha256sum \
+      > /home/al/field_logs/20261029_stationary_network_ab/SHA256SUMS
+
+From the RPi5NAS, copy the directory into a date-specific run folder:
+
+    mkdir -p /home/al/repos/tractor2025/field_testing/runs/20261029_stationary_network_ab
+    scp -r al@192.168.193.76:/home/al/field_logs/20261029_stationary_network_ab/. \
+      /home/al/repos/tractor2025/field_testing/runs/20261029_stationary_network_ab/
+
+For Trial A, export the 192.168.10.1 TractorField router system log and any
+available per-phone client statistics. For Trial B, export the 192.168.8.1
+GL-SFT1200-9f4 system log and any available per-phone client statistics. Save
+screenshots when the router interface does not offer an export. Per-station
+radio retry counters may require a router command that is not yet verified;
+do not improvise a configuration change on test day. Save the SSID/BSSID
+photos and both router exports beside the copied run evidence.
+
+There is no mission replay for Approval A because no mission or motion occurs.
+
+======================================================================
+9. SHUTDOWN AFTER APPROVAL A
+======================================================================
+
+[ ] Dry-run page is in Pause.
+[ ] Every dry-run server has been stopped with Ctrl+C.
+[ ] Installed production phone page remains in Pause.
+[ ] Confirm tractor-wifi-control.service is still active:
+
+    systemctl is-active tractor-wifi-control.service
+
+[ ] Close extra dry-run browser tabs; retain only the intended production tab
+    if Tractor01 will remain powered.
+[ ] Confirm the evidence copied successfully and SHA256SUMS was retained.
+[ ] Shut down Tractor01 cleanly before removing master power:
+
+    sudo shutdown -h now
+
+[ ] Wait until the Pi has completed shutdown before turning off master power.
+[ ] Base station, Starlink, router, laptop power, covers, and charger are handled
+    according to the normal equipment shutdown routine.
+
+======================================================================
+10. FUTURE MOVING WORK — NOT AUTHORIZED BY THIS CHECKLIST
+======================================================================
+
+Approval B (later): a short, supervised, blades-off bounded-route test only
+after Approval A evidence is reviewed and local-health integration is proven.
+That later moving checklist must contain a distinct physical-movement hold
+point. The rear hydrostatic-transmission lever remains pulled out and
+mechanically disengaged until every prerequisite at that hold point passes.
+Only then may the operator deliberately push the lever into the drive-enabled
+position. Approval A does not authorize that action.
+
+Operator-confirmed blades-off mission-start sequence for that later checklist:
+
+    turn on voice guidance
+    -> use Manual to drive to the displayed starting position
+    -> select physical Pause
+    -> pull the rear transmission-disengage lever fully out
+    -> walk back to the web dashboard
+    -> press Start Mission while the transmission remains disengaged
+    -> wait for the dashboard to show READY FOR GUARDED AUTO
+    -> walk back to the tractor
+    -> push the rear lever into the drive-enabled position
+    -> while standing on the ground beside the tractor, press Auto on the
+       handheld
+
+This recorded sequence is not an Approval B authorization. The moving
+checklist must retain physical Pause/E-stop authority. The operator described
+the Auto position as "about [NUMBER NOT SUPPLIED] feet away"; that numeric
+distance must be supplied before a later moving checklist is finalized. It is
+not needed for the stationary Approval A session.
+
+Approval C (later): rerun the known valid mission only after Approval B evidence
+is reviewed. Required control order remains:
+
+    stationary in physical Pause, blades off
+    -> current-session Heading-F9P profile + independent readback
+    -> rtcm-server active and heading reacquired
+    -> fresh MISSION PREFLIGHT PASS
+    -> Manual only to reach the approved start
+    -> return to Pause
+    -> start controller while still in Pause
+    -> wait for READY FOR GUARDED AUTO
+    -> separately authorize Auto / blades state
+
+For a separately approved future blade-authorized mission, the operator
+confirmed this original four-step order:
+
+    1. Stand behind the rear wheel and engage PTO / blades.
+    2. Push the rear transmission lever into the drive-enabled position.
+    3. Move to the side of the tractor and remain standing on the ground.
+    4. Press Auto on the handheld.
+
+This recorded order is not blade authorization. Physical placement, clearance,
+Pause/E-stop authority, and all other blade/motion gates remain mandatory.
+
+The AREA-OVER-ROAD package remains DRAFT - UNTESTED IN THE FIELD. The full
+September mission also requires its own explicit Approval C. Neither mission is
+selected or started during Approval A.
+

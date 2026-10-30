@@ -11,6 +11,7 @@ the tractor remains in effective Pause through the stable-link gate.
 from __future__ import annotations
 
 import argparse
+from collections import deque
 import ipaddress
 import json
 import math
@@ -57,6 +58,9 @@ NETWORK_POLL_S = 3.0
 NETWORK_STABLE_CHECKS = 3
 NOTIFY_RETRY_S = 15.0
 SERVER_PHONE_FRESH_S = PHONE_HEARTBEAT_TIMEOUT_S
+DEFAULT_DIAGNOSTICS_STATUS_PATH = Path(
+    "/run/tractor-phone-control/diagnostics.json"
+)
 DEFAULT_CONTROL_SUBNET = "192.168.10.0/24"
 ZEROTIER_NETWORK = ipaddress.ip_network("192.168.193.0/24")
 
@@ -412,7 +416,13 @@ class ConnectivityMonitor:
             return False
         if self.no_ntfy:
             return True
+        self.state.ntfy_pending_kind = kind
+        self.state.ntfy_last_attempt_epoch_ms = round(time.time() * 1000)
         sent = self.notifier(self.topic, title, message, click_url, tags)
+        self.state.ntfy_last_result = "acknowledged" if sent else "queued_for_retry"
+        if sent:
+            self.state.ntfy_pending_kind = None
+            self.state.ntfy_last_ack_epoch_ms = round(time.time() * 1000)
         if not sent:
             self.next_attempt[kind] = now + self.notify_retry_s
         return sent
@@ -555,6 +565,21 @@ class WifiPrimaryState(base.FieldState):
         )
         self.last_accepted_command_at = 0.0
         self.last_command_gap_ms: float | None = None
+        self.session_claim_count = 0
+        self.session_invalidation_count = 0
+        self.last_safety_stop_reason: str | None = None
+        self.last_safety_stop_epoch_ms: int | None = None
+        self.last_rejection_reason: str | None = None
+        self.ntfy_pending_kind: str | None = None
+        self.ntfy_last_result = "not_attempted"
+        self.ntfy_last_attempt_epoch_ms: int | None = None
+        self.ntfy_last_ack_epoch_ms: int | None = None
+        self.zerotier_transport = "not_measured"
+        self.diagnostics_status_path: Path | None = None
+        self._last_diagnostics_publish = 0.0
+        self.client_event_ids: set[str] = set()
+        self.client_event_id_order: deque[str] = deque(maxlen=4096)
+        self.client_events_deduplicated = 0
 
     def recovery_pending(self) -> bool:
         return self.effective_state in ("auto_link_wait", "auto_link_stabilizing")
@@ -605,6 +630,7 @@ class WifiPrimaryState(base.FieldState):
         if not 1 <= len(events) <= 64:
             raise ValueError("flight-recorder batch must contain 1 to 64 events")
         accepted = 0
+        duplicates = 0
         with self.lock:
             for event in events:
                 if not isinstance(event, dict):
@@ -612,6 +638,17 @@ class WifiPrimaryState(base.FieldState):
                 encoded = json.dumps(event, separators=(",", ":"), allow_nan=False)
                 if len(encoded.encode("utf-8")) > 2048:
                     raise ValueError("flight-recorder event exceeds 2048 bytes")
+                event_id = str(event.get("event_id", ""))
+                if event_id and event_id in self.client_event_ids:
+                    duplicates += 1
+                    self.client_events_deduplicated += 1
+                    continue
+                if event_id:
+                    if len(self.client_event_id_order) == self.client_event_id_order.maxlen:
+                        oldest = self.client_event_id_order.popleft()
+                        self.client_event_ids.discard(oldest)
+                    self.client_event_id_order.append(event_id)
+                    self.client_event_ids.add(event_id)
                 record = {
                     "server_time": base.utc_now(),
                     "client_ip": client_ip,
@@ -621,7 +658,7 @@ class WifiPrimaryState(base.FieldState):
                     json.dumps(record, separators=(",", ":"), allow_nan=False) + "\n"
                 )
                 accepted += 1
-        return {"accepted": accepted}
+        return {"accepted": accepted, "duplicates": duplicates}
 
     def close(self) -> None:
         try:
@@ -768,6 +805,7 @@ class WifiPrimaryState(base.FieldState):
             self.owner_client = client_id
             self.owner_client_ip = client_ip
             self.owner_session = secrets.token_urlsafe(16)
+            self.session_claim_count += 1
             self.owner_at = now
             self.highest_sequence = -1
             bridge, _ = self.bridge_snapshot()
@@ -823,6 +861,7 @@ class WifiPrimaryState(base.FieldState):
                     recovery_remaining_s=self.recovery_remaining_s(now),
                 )
             if previous_session:
+                self.session_invalidation_count += 1
                 self.log(
                     "session_invalidated",
                     client_id=previous_client,
@@ -882,6 +921,9 @@ class WifiPrimaryState(base.FieldState):
             drive = float(data["drive_percent"])
             steering = float(data["steering_percent"])
             reason = str(data.get("reason", "heartbeat"))[:40]
+            request_id = str(data.get("request_id", ""))[:80]
+            scheduler_delay_ms = float(data.get("scheduler_delay_ms", math.nan))
+            coalesced_wait_ms = float(data.get("coalesced_wait_ms", math.nan))
             client_time_ms = float(data.get("client_time_ms", math.nan))
             raw_client_rtt = data.get("client_rtt_ms")
             client_rtt_ms = (
@@ -905,11 +947,19 @@ class WifiPrimaryState(base.FieldState):
             drive_percent=drive,
             steering_percent=steering,
             reason=reason,
+            request_id=request_id or None,
         )
 
         with self.lock:
             if client_id != self.owner_client or session != self.owner_session:
                 self.rejected += 1
+                self.last_rejection_reason = "control session is not current"
+                self.log(
+                    "command_rejected",
+                    request_id=request_id or None,
+                    sequence=sequence,
+                    reason=self.last_rejection_reason,
+                )
                 return HTTPStatus.CONFLICT, {
                     "accepted": False,
                     "error": "control session is not current",
@@ -919,6 +969,13 @@ class WifiPrimaryState(base.FieldState):
                 }
             if sequence <= self.highest_sequence:
                 self.rejected += 1
+                self.last_rejection_reason = "stale or duplicate sequence"
+                self.log(
+                    "command_rejected",
+                    request_id=request_id or None,
+                    sequence=sequence,
+                    reason=self.last_rejection_reason,
+                )
                 return HTTPStatus.CONFLICT, {
                     "accepted": False,
                     "error": "stale or duplicate sequence",
@@ -986,6 +1043,15 @@ class WifiPrimaryState(base.FieldState):
                 and not self.bridge_ready()
             ):
                 self.rejected += 1
+                self.last_rejection_reason = (
+                    "Teensy bridge or expected firmware is not fresh"
+                )
+                self.log(
+                    "command_rejected",
+                    request_id=request_id or None,
+                    sequence=sequence,
+                    reason=self.last_rejection_reason,
+                )
                 return HTTPStatus.SERVICE_UNAVAILABLE, {
                     "accepted": False,
                     "error": "Teensy bridge or expected firmware is not fresh",
@@ -1164,6 +1230,17 @@ class WifiPrimaryState(base.FieldState):
                 round(client_rtt_ms, 2) if math.isfinite(client_rtt_ms) else None
             ),
             estimated_phone_to_server_ms=phone_to_server_ms,
+            request_id=request_id or None,
+            client_scheduler_delay_ms=(
+                round(scheduler_delay_ms, 2)
+                if math.isfinite(scheduler_delay_ms)
+                else None
+            ),
+            client_coalesced_wait_ms=(
+                round(coalesced_wait_ms, 2)
+                if math.isfinite(coalesced_wait_ms)
+                else None
+            ),
             server_processing_ms=processing_ms,
             bridge_age_ms=(
                 round(bridge_age * 1000, 1) if math.isfinite(bridge_age) else None
@@ -1177,7 +1254,9 @@ class WifiPrimaryState(base.FieldState):
             "accepted": True,
             "decision": wire_mode,
             "sequence": sequence,
-            "server_time_ms": round(time.time() * 1000),
+            "server_received_time_ms": received_epoch_ms,
+            "server_response_time_ms": round(time.time() * 1000),
+            "server_processing_ms": processing_ms,
             "phone_mode": self.requested_mode,
             "requested_mode": self.requested_mode,
             "effective_state": self.effective_state,
@@ -1210,6 +1289,19 @@ class WifiPrimaryState(base.FieldState):
         result["numeric_control_host"] = self.authority_policy.numeric_host
         result["expected_ssid"] = self.authority_policy.expected_ssid
         result["last_command_gap_ms"] = self.last_command_gap_ms
+        result["client_events_deduplicated"] = self.client_events_deduplicated
+        result["session_claim_count"] = self.session_claim_count
+        result["session_invalidation_count"] = self.session_invalidation_count
+        result["last_safety_stop_reason"] = self.last_safety_stop_reason
+        result["last_safety_stop_epoch_ms"] = self.last_safety_stop_epoch_ms
+        result["last_rejection_reason"] = self.last_rejection_reason
+        result["zerotier_transport"] = self.zerotier_transport
+        result["ntfy"] = {
+            "pending_kind": self.ntfy_pending_kind,
+            "last_result": self.ntfy_last_result,
+            "last_attempt_epoch_ms": self.ntfy_last_attempt_epoch_ms,
+            "last_ack_epoch_ms": self.ntfy_last_ack_epoch_ms,
+        }
         result["session_active"] = self.owner_session is not None
         result["phone_mode"] = self.requested_mode
         result["requested_mode"] = self.requested_mode
@@ -1314,6 +1406,10 @@ class WifiPrimaryState(base.FieldState):
                 }
 
         if should_stop:
+            self.last_safety_stop_reason = event
+            self.last_safety_stop_epoch_ms = round(time.time() * 1000)
+            if expired_session:
+                self.session_invalidation_count += 1
             self.log(
                 event,
                 client_id=expired_client,
@@ -1339,9 +1435,54 @@ class WifiPrimaryState(base.FieldState):
             self.send_stop_burst(event, sequence)
         return should_stop
 
+    def publish_diagnostics(self) -> None:
+        path = self.diagnostics_status_path
+        if path is None:
+            return
+        snapshot = self.snapshot()
+        record = {
+            "schema": 1,
+            "updated_epoch_ms": round(time.time() * 1000),
+            "authority_path": snapshot.get("authority_path"),
+            "effective_state": snapshot.get("effective_state"),
+            "requested_mode": snapshot.get("requested_mode"),
+            "server_heartbeat_fresh": snapshot.get("server_heartbeat_fresh"),
+            "last_command_gap_ms": snapshot.get("last_command_gap_ms"),
+            "accepted_commands": snapshot.get("accepted"),
+            "rejected_commands": snapshot.get("rejected"),
+            "session_claim_count": self.session_claim_count,
+            "session_invalidation_count": self.session_invalidation_count,
+            "last_safety_stop_reason": self.last_safety_stop_reason,
+            "last_safety_stop_epoch_ms": self.last_safety_stop_epoch_ms,
+            "last_rejection_reason": self.last_rejection_reason,
+            "client_events_deduplicated": self.client_events_deduplicated,
+            "zerotier_transport": self.zerotier_transport,
+            "ntfy": snapshot.get("ntfy"),
+            "communications_degraded": {
+                "enabled": False,
+                "state": "DISABLED_PENDING_STATIONARY_APPROVAL",
+                "maximum_seconds": 30,
+                "maximum_distance_m": 30,
+            },
+        }
+        path.parent.mkdir(parents=True, exist_ok=True)
+        temporary = path.with_suffix(path.suffix + ".tmp")
+        temporary.write_text(
+            json.dumps(record, separators=(",", ":"), allow_nan=False),
+            encoding="utf-8",
+        )
+        os.replace(temporary, path)
+
     def safety_loop(self) -> None:
         while self.running:
             self.safety_step()
+            now = self.clock()
+            if now - self._last_diagnostics_publish >= 0.2:
+                try:
+                    self.publish_diagnostics()
+                except OSError as exc:
+                    self.log("diagnostics_publish_failed", error=str(exc))
+                self._last_diagnostics_publish = now
             time.sleep(0.05)
 
 
@@ -1357,6 +1498,12 @@ def main() -> None:
         help="serve fake expected-firmware telemetry; requires --dry-run",
     )
     parser.add_argument("--log-dir", type=Path, default=Path("/home/al/field_logs"))
+    parser.add_argument(
+        "--diagnostics-status-file",
+        type=Path,
+        default=DEFAULT_DIAGNOSTICS_STATUS_PATH,
+        help="atomic status file read by the mission dashboard Messages tab",
+    )
     parser.add_argument("--tls-cert", type=Path)
     parser.add_argument("--tls-key", type=Path)
     parser.add_argument(
@@ -1438,6 +1585,7 @@ def main() -> None:
     except RuntimeError as exc:
         raise SystemExit(str(exc)) from exc
     state = WifiPrimaryState(args.command_ip, args.dry_run, log_path, selected_policy)
+    state.diagnostics_status_path = args.diagnostics_status_file
     # Every process start is a fresh, unarmed control session. Send an explicit
     # Pause burst as well as relying on the Teensy's independent 500 ms timeout.
     state.send_stop_burst("server_startup")

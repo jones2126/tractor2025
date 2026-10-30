@@ -55,7 +55,7 @@ cleanup() {
 trap cleanup EXIT
 mkdir -p "${STAGING}/mission_logs" "${STAGING}/wifi_logs" \
     "${STAGING}/recovery_logs" "${STAGING}/pursuit_logs" \
-    "${STAGING}/diagnostics"
+    "${STAGING}/diagnostics" "${STAGING}/diagnostics/pilog"
 
 copy_matches() {
     local destination="$1"
@@ -93,6 +93,19 @@ else
 fi
 
 DIAGNOSTICS="${STAGING}/diagnostics"
+if [[ -d /var/log/pilog ]]; then
+    while IFS= read -r -d '' source; do
+        if [[ -r "${source}" ]]; then
+            cp -p -- "${source}" "${DIAGNOSTICS}/pilog/" || \
+                echo "WARNING: could not copy readable Pi log: ${source}" >&2
+        else
+            echo "WARNING: Pi log is not readable; collect manually: ${source}" >&2
+        fi
+    done < <(find /var/log/pilog -maxdepth 1 -type f -newermt "${SINCE}" -print0)
+else
+    echo "WARNING: Pi log directory not found: /var/log/pilog" >&2
+fi
+
 {
     echo "Collected UTC: $(date -u --iso-8601=seconds)"
     echo "Collected local: $(date --iso-8601=seconds)"
@@ -148,7 +161,8 @@ mission_count="$(find "${STAGING}/mission_logs" -type f | wc -l)"
 wifi_count="$(find "${STAGING}/wifi_logs" -type f | wc -l)"
 recovery_count="$(find "${STAGING}/recovery_logs" -type f | wc -l)"
 pursuit_count="$(find "${STAGING}/pursuit_logs" -type f | wc -l)"
-echo "Mission files: ${mission_count}; Wi-Fi logs: ${wifi_count}; recovery logs: ${recovery_count}; pursuit logs: ${pursuit_count}"
+pilog_count="$(find "${DIAGNOSTICS}/pilog" -type f | wc -l)"
+echo "Mission files: ${mission_count}; Wi-Fi logs: ${wifi_count}; recovery logs: ${recovery_count}; pursuit logs: ${pursuit_count}; Pi logs: ${pilog_count}"
 
 tar -C "${STAGING}" -czf "${ARCHIVE}" .
 sync

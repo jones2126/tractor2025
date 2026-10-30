@@ -197,6 +197,24 @@ class WifiPrimaryTests(unittest.TestCase):
             state.close()
             temporary.cleanup()
 
+    def test_dashboard_diagnostics_file_is_atomic_and_contains_no_session_secret(self):
+        temporary, state = self.make_state()
+        try:
+            state.diagnostics_status_path = Path(temporary.name) / "diagnostics.json"
+            state.owner_session = "must-not-leak"
+            state.session_claim_count = 3
+            state.session_invalidation_count = 2
+            state.publish_diagnostics()
+            text = state.diagnostics_status_path.read_text(encoding="utf-8")
+            record = json.loads(text)
+            self.assertNotIn("must-not-leak", text)
+            self.assertEqual(3, record["session_claim_count"])
+            self.assertFalse(record["communications_degraded"]["enabled"])
+        finally:
+            state.running = False
+            state.close()
+            temporary.cleanup()
+
     def test_phone_flight_recorder_is_diagnostic_only(self):
         temporary, state = self.make_state()
         try:
@@ -219,6 +237,25 @@ class WifiPrimaryTests(unittest.TestCase):
             record = json.loads(state.client_log_path.read_text(encoding="utf-8"))
             self.assertEqual("192.168.10.232", record["client_ip"])
             self.assertEqual("visibility_change", record["event"]["event"])
+        finally:
+            state.running = False
+            state.close()
+            temporary.cleanup()
+
+    def test_phone_flight_recorder_deduplicates_retried_event_ids(self):
+        temporary, state = self.make_state()
+        try:
+            event = {
+                "event_id": "stable-event-id",
+                "time": "2026-10-29T12:00:00.000Z",
+                "event": "send_scheduler_summary",
+            }
+            first = state.ingest_client_events({"events": [event]}, "192.168.10.232")
+            second = state.ingest_client_events({"events": [event]}, "192.168.10.232")
+            self.assertEqual({"accepted": 1, "duplicates": 0}, first)
+            self.assertEqual({"accepted": 0, "duplicates": 1}, second)
+            self.assertEqual(1, state.client_events_deduplicated)
+            self.assertEqual(1, len(state.client_log_path.read_text().splitlines()))
         finally:
             state.running = False
             state.close()
@@ -252,6 +289,10 @@ class WifiPrimaryTests(unittest.TestCase):
             "recover_auto:recoverAuto",
             "autoRecoveryEligible=false",
             "window.addEventListener('pagehide'",
+            "send_scheduler_summary",
+            "clock_offset_estimate_ms",
+            "api_timeout_",
+            "request_id",
         ):
             self.assertIn(marker, page)
 

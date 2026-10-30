@@ -49,6 +49,12 @@ PREFERRED_LAN_CLIENT_IP = os.environ.get(
 )
 NTFY_TOPIC_URL = "https://ntfy.sh/rpi-tractor01-jones2126"
 EXPECTED_CONFIRMATION = "RUN PARTIAL RINGS BLADES OFF"
+PHONE_DIAGNOSTICS_PATH = Path(
+    os.environ.get(
+        "TRACTOR_PHONE_DIAGNOSTICS_PATH",
+        "/run/tractor-phone-control/diagnostics.json",
+    )
+)
 
 
 HTML = r'''<!doctype html>
@@ -247,11 +253,13 @@ async function poll(){try{const s=await api('/api/state');draw(s)}catch(e){showT
 MESSAGES_HTML = r'''<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Tractor01 mission messages</title><style>
-:root{color-scheme:dark;font-family:system-ui,sans-serif}body{margin:0;background:#101418;color:#e8edf2}main{padding:18px;max-width:1400px;margin:auto}.toolbar{display:flex;gap:10px;align-items:center;margin:12px 0}.button{border:0;border-radius:6px;padding:11px 17px;background:#1971c2;color:white;font-weight:700;cursor:pointer}#status{color:#b8c5cf}pre{min-height:70vh;max-height:82vh;overflow:auto;white-space:pre-wrap;user-select:text;background:#080b0d;border:1px solid #52606d;padding:14px;font:15px/1.45 ui-monospace,monospace}
-</style></head><body><main><h1>Tractor01 mission messages</h1><div class="toolbar"><button id="copy" class="button">COPY ALL MESSAGES</button><span id="status">Connecting…</span></div><pre id="output">Waiting for messages…</pre></main><script>
-const key=new URLSearchParams(location.search).get('key')||'',out=document.getElementById('output'),statusEl=document.getElementById('status');
-async function poll(){try{const r=await fetch('/api/state',{headers:{'X-Operator-Key':key}}),s=await r.json();if(!r.ok)throw Error(s.error||r.statusText);const text=(s.output||[]).join('\n')||'No mission messages yet.';if(out.textContent!==text){out.textContent=text;out.scrollTop=out.scrollHeight}statusEl.textContent='State: '+s.process_state}catch(e){statusEl.textContent='Disconnected: '+e.message}setTimeout(poll,500)}
-document.getElementById('copy').onclick=async()=>{const text=out.textContent;try{if(!navigator.clipboard)throw Error('clipboard unavailable');await navigator.clipboard.writeText(text)}catch(e){const area=document.createElement('textarea');area.value=text;area.style.position='fixed';area.style.opacity='0';document.body.appendChild(area);area.select();document.execCommand('copy');area.remove()}statusEl.textContent='Messages copied'};
+:root{color-scheme:dark;font-family:system-ui,sans-serif}body{margin:0;background:#101418;color:#e8edf2}main{padding:18px;max-width:1400px;margin:auto}.toolbar{display:flex;gap:10px;align-items:center;margin:12px 0;flex-wrap:wrap}.button{border:0;border-radius:6px;padding:11px 17px;background:#1971c2;color:white;font-weight:700;cursor:pointer}#status{color:#b8c5cf}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px;margin:12px 0}.card{background:#182028;border:1px solid #52606d;padding:10px}.card small{display:block;color:#9fb0bf}.card strong{font-size:1.05rem}.bad{border-color:#e03131;background:#35191c}.warn{border-color:#f08c00}pre{min-height:45vh;max-height:65vh;overflow:auto;white-space:pre-wrap;user-select:text;background:#080b0d;border:1px solid #52606d;padding:14px;font:15px/1.45 ui-monospace,monospace}
+</style></head><body><main><h1>Tractor01 diagnostics and messages</h1><div class="toolbar"><button id="copy" class="button">COPY DIAGNOSTICS + MESSAGES</button><span id="status">Connecting…</span></div><div id="diagnostics" class="grid"></div><pre id="output">Waiting for messages…</pre></main><script>
+const key=new URLSearchParams(location.search).get('key')||'',out=document.getElementById('output'),statusEl=document.getElementById('status'),diag=document.getElementById('diagnostics');let lastState={};
+const val=v=>v===null||v===undefined?'—':v,card=(label,value,cls='')=>`<div class="card ${cls}"><small>${label}</small><strong>${val(value)}</strong></div>`;
+function renderDiagnostics(s){const d=s.phone_diagnostics||{},n=d.ntfy||{},c=s.controller||{},b=s.bridge||{},w=b.wifi_control||{},st=b.steering||{},tr=b.transmission||{},reason=c.wait_reason||d.last_safety_stop_reason||'None';diag.innerHTML=card('Exact stop / wait reason',reason,reason==='None'?'':'warn')+card('Last rejected command',d.last_rejection_reason||'None',d.last_rejection_reason?'warn':'')+card('Accepted-command gap',d.last_command_gap_ms==null?'—':Math.round(d.last_command_gap_ms)+' ms',Number(d.last_command_gap_ms)>500?'bad':'')+card('Session claims / invalidations',val(d.session_claim_count)+' / '+val(d.session_invalidation_count))+card('Phone → server scheduling','See phone scheduler summary and corrected clock-offset samples')+card('Server → bridge age',w.command_age_ms==null?'—':w.command_age_ms+' ms',Number(w.command_age_ms)>500?'bad':'')+card('Pi → Teensy modes',val(st.mode)+' steering / '+val(tr.mode)+' transmission')+card('Pure Pursuit command freshness',c.wait_reason||'driving / no wait reason')+card('ZeroTier transport',d.zerotier_transport||'not measured',d.zerotier_transport==='not_measured'?'warn':'')+card('ntfy queue / acknowledgement',(n.pending_kind?'pending '+n.pending_kind:'none')+' / '+val(n.last_result),n.pending_kind?'warn':'')+card('COMMUNICATIONS DEGRADED',d.communications_degraded?.state||'DISABLED',d.communications_degraded?.enabled?'warn':'');}
+async function poll(){try{const r=await fetch('/api/state',{headers:{'X-Operator-Key':key}}),s=await r.json();if(!r.ok)throw Error(s.error||r.statusText);lastState=s;renderDiagnostics(s);const text=(s.output||[]).join('\n')||'No mission messages yet.';if(out.textContent!==text){out.textContent=text;out.scrollTop=out.scrollHeight}const age=s.phone_diagnostics_age_s;statusEl.textContent='Mission: '+s.process_state+' · phone diagnostics '+(age==null?'unavailable':age.toFixed(1)+' s old')}catch(e){statusEl.textContent='Disconnected: '+e.message}setTimeout(poll,500)}
+document.getElementById('copy').onclick=async()=>{const text='DIAGNOSTICS\n'+JSON.stringify({process_state:lastState.process_state,controller:lastState.controller,bridge:lastState.bridge,phone_diagnostics:lastState.phone_diagnostics},null,2)+'\n\nMESSAGES\n'+out.textContent;try{if(!navigator.clipboard)throw Error('clipboard unavailable');await navigator.clipboard.writeText(text)}catch(e){const area=document.createElement('textarea');area.value=text;area.style.position='fixed';area.style.opacity='0';document.body.appendChild(area);area.select();document.execCommand('copy');area.remove()}statusEl.textContent='Diagnostics and messages copied'};
 poll();
 </script></body></html>'''
 
@@ -283,6 +291,19 @@ class MissionState:
     def snapshot(self):
         with self.lock:
             now = time.time()
+            phone_diagnostics = {}
+            phone_diagnostics_age_s = None
+            try:
+                phone_diagnostics = json.loads(
+                    PHONE_DIAGNOSTICS_PATH.read_text(encoding="utf-8")
+                )
+                updated_ms = float(phone_diagnostics.get("updated_epoch_ms"))
+                phone_diagnostics_age_s = max(0.0, now - updated_ms / 1000.0)
+            except (OSError, ValueError, TypeError, json.JSONDecodeError):
+                phone_diagnostics = {
+                    "available": False,
+                    "reason": "phone-control diagnostics file is unavailable",
+                }
             return {
                 "controller": dict(self.controller),
                 "controller_age_s": None if not self.controller_time else now - self.controller_time,
@@ -293,6 +314,8 @@ class MissionState:
                 "process_state": self.process_state,
                 "mission_active": self.process is not None,
                 "output": list(self.output),
+                "phone_diagnostics": phone_diagnostics,
+                "phone_diagnostics_age_s": phone_diagnostics_age_s,
             }
 
 
