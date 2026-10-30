@@ -107,6 +107,18 @@ AUTHORITY_POLICIES = {
         numeric_host="192.168.8.20",
         expected_ssid="TractorField",
     ),
+    "onboard-router-mission": AuthorityPolicy(
+        "onboard-router-mission",
+        ipaddress.ip_network("192.168.8.0/24"),
+        True,
+        (
+            "direct GL-SFT1200 path; stationary Approval A passed 2026-10-30; "
+            "moving Approval B remains separately gated"
+        ),
+        interface_name="eth0",
+        numeric_host="192.168.8.20",
+        expected_ssid="GL-SFT1200-9f4",
+    ),
 }
 
 
@@ -141,6 +153,25 @@ def authority_policy(
         selected.numeric_host,
         selected.expected_ssid,
     )
+
+
+def validate_live_policy_binding(
+    policy: AuthorityPolicy,
+    host: str,
+    dry_run: bool,
+) -> None:
+    """Fail closed when a dedicated live LAN policy is not bound as reviewed."""
+    if dry_run or not policy.numeric_host:
+        return
+    if host != policy.numeric_host:
+        raise ValueError(
+            f"{policy.name} must bind only to {policy.numeric_host}, not {host}"
+        )
+    if not address_is_assigned(policy.numeric_host, policy.interface_name):
+        raise ValueError(
+            f"{policy.numeric_host} is not assigned to {policy.interface_name}; "
+            "control remains in Pause"
+        )
 
 
 def acquire_ownership_lock(path: Path | None):
@@ -1577,19 +1608,10 @@ def main() -> None:
     except ValueError as exc:
         raise SystemExit(f"invalid authority policy: {exc}") from exc
     control_network = selected_policy.network
-    if selected_policy.recovery_only and not args.dry_run:
-        if args.host != selected_policy.numeric_host:
-            raise SystemExit(
-                "recovery must bind only to "
-                f"{selected_policy.numeric_host}, not {args.host}"
-            )
-        if not address_is_assigned(
-            selected_policy.numeric_host, selected_policy.interface_name
-        ):
-            raise SystemExit(
-                f"{selected_policy.numeric_host} is not assigned to "
-                f"{selected_policy.interface_name}; recovery remains in Pause"
-            )
+    try:
+        validate_live_policy_binding(selected_policy, args.host, args.dry_run)
+    except ValueError as exc:
+        raise SystemExit(f"invalid live authority binding: {exc}") from exc
 
     if not PAGE_PATH.is_file():
         raise SystemExit(f"Missing phone interface: {PAGE_PATH}")

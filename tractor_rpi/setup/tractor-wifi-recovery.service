@@ -3,7 +3,7 @@ Description=Tractor01 Manual Recovery Control (onboard router only)
 Documentation=https://github.com/jones2126/tractor2025
 After=network-online.target teensy-bridge.service
 Wants=network-online.target teensy-bridge.service
-Conflicts=tractor-wifi-control.service
+Conflicts=tractor-wifi-control.service tractor-wifi-direct-mission.service
 StartLimitIntervalSec=0
 
 [Service]

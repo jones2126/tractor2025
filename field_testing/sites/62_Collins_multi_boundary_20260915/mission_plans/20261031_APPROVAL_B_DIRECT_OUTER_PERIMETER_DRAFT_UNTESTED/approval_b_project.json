@@ -1,0 +1,57 @@
+{
+  "project": "Approval B direct-router bounded route",
+  "site": "62 Collins",
+  "section": "existing outer-perimeter route",
+  "stable_asset_id": "62COLLINS-OUTER-PERIMETER-20260928",
+  "status": "DRAFT - UNTESTED IN THE FIELD",
+  "mission_purpose": "one separately authorized supervised blades-off moving network and control-stack validation",
+  "field_authorized": false,
+  "blades_authorized": false,
+  "communications_degraded_enabled": false,
+  "phone_freshness_timeout_ms": 500,
+  "authoritative_inputs": [
+    {
+      "path": "../20260928_outer_perimeter_field_test/generated/62_Collins_outer_perimeter_field_test_1mps_20260928.txt",
+      "revision": "20260928",
+      "sha256_lf_normalized": "b47660b4c74d5e26ca5d9448f069fd7193c068cf62e3c0b62d5c083d9aed4d64"
+    },
+    {
+      "path": "../20260928_outer_perimeter_field_test/generated/62_Collins_outer_perimeter_field_test_1mps_20260928_audit.csv",
+      "revision": "20260928",
+      "sha256_lf_normalized": "54072d526370447f4efd22a84052798543135fc45298e6bda80e983178f5cf25"
+    },
+    {
+      "path": "../20260928_outer_perimeter_field_test/generated/62_Collins_outer_perimeter_field_test_1mps_20260928_report.json",
+      "revision": "20260928",
+      "sha256_lf_normalized": "2215cc7302527a7353548425fbb7c12ed463231a16d40be37d458b513c85817a"
+    }
+  ],
+  "route_metrics": {
+    "waypoints": 3462,
+    "length_m": 689.949,
+    "nominal_minutes_at_1mps": 11.5,
+    "maximum_waypoint_gap_m": 0.201,
+    "direction": "clockwise",
+    "speed_mps": 1.0,
+    "lookahead_m": 2.0,
+    "turn_softening_radius_m": 2.0
+  },
+  "phone_authority": {
+    "policy": "onboard-router-mission",
+    "ssid_operator_verified": "GL-SFT1200-9f4",
+    "phone_test_ip": "192.168.8.190",
+    "tractor_host": "192.168.8.20",
+    "network": "192.168.8.0/24",
+    "service": "tractor-wifi-direct-mission.service",
+    "boot_enabled": false
+  },
+  "current_checkpoint": "CP7 package prepared; field authorization pending",
+  "unresolved_blockers": [
+    "test-day physical hold points not yet reverified",
+    "direct live service not yet installed or accepted stationary on Tractor01",
+    "fresh Heading-F9P volatile-RAM readback and MISSION PREFLIGHT PASS not yet obtained",
+    "live Pi-to-Teensy and Pure Pursuit freshness not yet observed with this direct path",
+    "explicit Approval B field authorization not granted"
+  ],
+  "ledger": "checkpoint_ledger.jsonl"
+}

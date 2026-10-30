@@ -1,7 +1,7 @@
 [Unit]
 Description=Tractor01 Wi-Fi Handheld Control
 Documentation=https://github.com/jones2126/tractor2025
-Conflicts=tractor-wifi-recovery.service
+Conflicts=tractor-wifi-recovery.service tractor-wifi-direct-mission.service
 After=network-online.target zerotier-one.service teensy-bridge.service
 Wants=network-online.target zerotier-one.service teensy-bridge.service
 StartLimitIntervalSec=0

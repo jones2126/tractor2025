@@ -740,11 +740,19 @@ class WifiPrimaryTests(unittest.TestCase):
         self.assertIn("production target", zerotier.qualification)
         mission = primary.authority_policy("tractorfield-mission")
         recovery = primary.authority_policy("onboard-router-recovery")
+        direct = primary.authority_policy("onboard-router-mission")
         self.assertTrue(mission.allow_auto)
         self.assertFalse(recovery.allow_auto)
         self.assertEqual("192.168.8.0/24", str(recovery.network))
         self.assertEqual(-100, recovery.min_drive_percent)
         self.assertEqual(100, recovery.max_drive_percent)
+        self.assertTrue(direct.allow_auto)
+        self.assertFalse(direct.recovery_only)
+        self.assertEqual("192.168.8.0/24", str(direct.network))
+        self.assertEqual("192.168.8.20", direct.numeric_host)
+        self.assertEqual("eth0", direct.interface_name)
+        self.assertEqual("GL-SFT1200-9f4", direct.expected_ssid)
+        self.assertIn("Approval A passed", direct.qualification)
         with self.assertRaisesRegex(ValueError, "ZeroTier motion authority"):
             primary.authority_policy(
                 "tractorfield-mission", "192.168.193.0/24"
@@ -755,6 +763,26 @@ class WifiPrimaryTests(unittest.TestCase):
             allow_zerotier_dry_run=True,
         )
         self.assertIn("UNQUALIFIED", dry_run.qualification)
+
+    @mock.patch.object(primary, "address_is_assigned", return_value=True)
+    def test_direct_mission_live_binding_requires_exact_reviewed_address(self, assigned):
+        policy = primary.authority_policy("onboard-router-mission")
+        primary.validate_live_policy_binding(policy, "192.168.8.20", False)
+        assigned.assert_called_once_with("192.168.8.20", "eth0")
+        with self.assertRaisesRegex(ValueError, "must bind only"):
+            primary.validate_live_policy_binding(policy, "0.0.0.0", False)
+
+    @mock.patch.object(primary, "address_is_assigned", return_value=False)
+    def test_direct_mission_live_binding_requires_assigned_interface(self, _assigned):
+        policy = primary.authority_policy("onboard-router-mission")
+        with self.assertRaisesRegex(ValueError, "control remains in Pause"):
+            primary.validate_live_policy_binding(policy, "192.168.8.20", False)
+
+    @mock.patch.object(primary, "address_is_assigned", return_value=False)
+    def test_dry_run_does_not_require_live_interface(self, assigned):
+        policy = primary.authority_policy("onboard-router-mission")
+        primary.validate_live_policy_binding(policy, "127.0.0.1", True)
+        assigned.assert_not_called()
 
     def test_manual_recovery_policy_rejects_auto(self):
         temporary = tempfile.TemporaryDirectory()

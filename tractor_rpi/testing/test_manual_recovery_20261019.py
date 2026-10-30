@@ -43,8 +43,8 @@ class ManualRecoveryTests(unittest.TestCase):
             claim = state.claim("phone-a", "192.168.8.42")
             self.assertTrue(claim["recovery_only"])
             self.assertFalse(claim["auto_allowed"])
-            self.assertEqual(-25, claim["min_drive_percent"])
-            self.assertEqual(60, claim["max_drive_percent"])
+            self.assertEqual(-100, claim["min_drive_percent"])
+            self.assertEqual(100, claim["max_drive_percent"])
             self.assertEqual("192.168.8.20", claim["numeric_host"])
             self.assertEqual("eth0", claim["interface_name"])
         finally:
@@ -63,12 +63,12 @@ class ManualRecoveryTests(unittest.TestCase):
                 "steering_percent": 0,
                 "reason": "guarded_manual",
             }
-            for sequence, demand in ((1, 61), (2, -26)):
+            for sequence, demand in ((1, 101), (2, -101)):
                 status, result = state.accept_command(
                     {**common, "sequence": sequence, "drive_percent": demand}
                 )
                 self.assertEqual(400, int(status))
-                self.assertIn("-25 to +60", result["error"])
+                self.assertIn("-100 to +100", result["error"])
         finally:
             state.running = False
             state.close()
@@ -164,15 +164,26 @@ class ManualRecoveryTests(unittest.TestCase):
     def test_units_conflict_and_recovery_never_auto_starts(self):
         normal = (ROOT / "tractor_rpi/setup/tractor-wifi-control.service").read_text()
         recovery = (ROOT / "tractor_rpi/setup/tractor-wifi-recovery.service").read_text()
+        direct = (ROOT / "tractor_rpi/setup/tractor-wifi-direct-mission.service").read_text()
         self.assertIn("Conflicts=tractor-wifi-recovery.service", normal)
         self.assertIn("Conflicts=tractor-wifi-control.service", recovery)
+        self.assertIn("tractor-wifi-direct-mission.service", normal)
+        self.assertIn("tractor-wifi-direct-mission.service", recovery)
+        self.assertIn(
+            "Conflicts=tractor-wifi-control.service tractor-wifi-recovery.service",
+            direct,
+        )
         self.assertIn("RuntimeDirectory=tractor-phone-control", normal)
         self.assertIn("RuntimeDirectoryMode=0700", normal)
         self.assertIn("--ownership-lock /run/tractor-phone-control/ownership.lock", normal)
         self.assertIn("RuntimeDirectory=tractor-phone-control", recovery)
         self.assertIn("RuntimeDirectoryMode=0700", recovery)
         self.assertIn("--ownership-lock /run/tractor-phone-control/ownership.lock", recovery)
+        self.assertIn("--authority-policy onboard-router-mission", direct)
+        self.assertIn("--host 192.168.8.20", direct)
+        self.assertIn("--ownership-lock /run/tractor-phone-control/ownership.lock", direct)
         self.assertNotIn("WantedBy=", recovery)
+        self.assertNotIn("WantedBy=", direct)
 
     @mock.patch.object(workflow, "show_status")
     @mock.patch.object(workflow, "service_active", return_value=True)
