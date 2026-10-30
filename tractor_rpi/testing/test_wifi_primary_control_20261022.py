@@ -296,6 +296,12 @@ class WifiPrimaryTests(unittest.TestCase):
         ):
             self.assertIn(marker, page)
 
+    def test_phone_page_displays_server_verified_dry_run_banner(self):
+        page = primary.PAGE_PATH.read_text(encoding="utf-8")
+        self.assertIn("DRY RUN — UDP 6004 DISABLED", page)
+        self.assertIn("NO TRACTOR MOTION COMMANDS", page)
+        self.assertIn("classList.toggle('dry-run-on',d.dry_run===true)", page)
+
     def test_phone_page_fails_closed_when_browser_reports_offline(self):
         page = primary.PAGE_PATH.read_text(encoding="utf-8")
         self.assertIn("failClosed('browser_offline_fail_closed')", page)
