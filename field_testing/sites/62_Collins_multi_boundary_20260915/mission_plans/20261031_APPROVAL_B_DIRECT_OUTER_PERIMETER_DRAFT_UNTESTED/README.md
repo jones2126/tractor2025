@@ -43,6 +43,25 @@ Both commands are read-only. The launcher contains
 authorization must create a new enabled revision after test-day conditions and
 the stationary hold points are reviewed.
 
+## Which server starts what
+
+The direct system service is the **phone-control server**. It does not start a
+mission. The separate Python dashboard is the **mission dashboard server**.
+In an authorized revision, pressing **START MISSION** makes that dashboard run
+the package launcher with `--dashboard`; the launcher then starts the field
+logger followed by `pure_pursuit_controller_20261022.py`.
+
+This revision provides only a review dashboard:
+
+```bash
+bash field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20261031_APPROVAL_B_DIRECT_OUTER_PERIMETER_DRAFT_UNTESTED/start_approval_b_review_dashboard_20261031.sh
+```
+
+Its Start action is disabled and it cannot launch Pure Pursuit. Do not use the
+old master-mission dashboard command: it selects a different route. The later
+enabled revision will state its exact dashboard command at the field-
+authorization hold point.
+
 The post-run collector is `collect_approval_b_evidence_20261031.sh`. It requires
 an explicit `--since` time, copies rather than deletes source logs, captures
 service/network/repository state, and writes internal plus archive SHA-256

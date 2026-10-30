@@ -28,7 +28,13 @@ Phone freshness: unchanged 500 ms; stop on the first expiry
 [ ] Confirm phone SSID GL-SFT1200-9f4 and 192.168.8.x address.
 [ ] Confirm Tractor01 eth0 has 192.168.8.20.
 [ ] Physical Pause selected; blades off; rear lever OUT; wheels chocked.
-[ ] Start the direct service only after the separate stationary-service hold point.
+[ ] Start the direct phone-control server:
+    sudo systemctl start tractor-wifi-direct-mission.service
+[ ] Require direct service active and both other phone-control services inactive:
+    systemctl is-active tractor-wifi-direct-mission.service
+    systemctl is-active tractor-wifi-control.service tractor-wifi-recovery.service
+[ ] Display its recent output and open the printed Local control URL on the phone:
+    sudo journalctl -u tractor-wifi-direct-mission.service -n 40 --no-pager
 [ ] Require the page to say onboard-router-mission and start in Pause.
 [ ] Require diagnostics: client IP 192.168.8.x; server heartbeat fresh;
     zero unexplained rejections; COMMUNICATIONS DEGRADED disabled.
@@ -37,6 +43,9 @@ Phone freshness: unchanged 500 ms; stop on the first expiry
     automatic re-arm, or unexplained warning is a FAIL.
 [ ] Test page hide/lock: require immediate Pause and a fresh session in Pause.
 [ ] Return to visible page and Pause. Do not select Auto.
+[ ] Optional route/telemetry review dashboard (cannot start Pure Pursuit):
+    cd /home/al/tractor2025
+    bash field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20261031_APPROVAL_B_DIRECT_OUTER_PERIMETER_DRAFT_UNTESTED/start_approval_b_review_dashboard_20261031.sh
 
 =============== FIELD AUTHORIZATION HOLD POINT ===============
 STOP. Report the stationary results and exact diagnostics. A separate explicit
@@ -45,6 +54,12 @@ The current launcher MUST still report APPROVED_FOR_FIELD=false.
 ===============================================================
 
 3. ONLY AFTER A NEW ENABLED REVISION AND EXPLICIT AUTHORIZATION
+[ ] Pull the new enabled revision and run its verifier. The present review
+    dashboard and APPROVED_FOR_FIELD=false launcher cannot start Pure Pursuit.
+[ ] Use the exact mission-dashboard command printed by that enabled revision.
+    The dashboard is the mission server. Pressing START MISSION invokes the
+    package launcher, which starts the field logger and Pure Pursuit. Do not
+    substitute the old master-mission dashboard command.
 [ ] Stationary in physical Pause; blades off; rear lever OUT.
 [ ] Apply and independently read back Heading-F9P volatile-RAM profile.
 [ ] Restart rtcm-server; require active; wait 60 seconds for reacquisition.
@@ -59,6 +74,8 @@ The current launcher MUST still report APPROVED_FOR_FIELD=false.
 [ ] Select Pause and confirm stationary/zero command.
 [ ] Pull rear transmission lever OUT.
 [ ] Walk to dashboard and press START MISSION while lever remains OUT.
+[ ] Confirm dashboard output reports the field logger running and the Pure
+    Pursuit controller live. If either is absent, remain in Pause.
 [ ] Wait for dashboard to say READY FOR GUARDED AUTO.
 [ ] Walk back to tractor; push rear transmission lever IN.
 [ ] Standing on the ground beside the tractor, about 2 feet away, press AUTO

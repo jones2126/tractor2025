@@ -41,7 +41,9 @@ def main() -> None:
 
     launcher = HERE / "run_approval_b_outer_perimeter_20261031.sh"
     require_text(launcher, "APPROVED_FOR_FIELD=false")
-    require_text(launcher, "exit 1")
+    require_text(launcher, "pure_pursuit_controller_20261022.py")
+    require_text(launcher, "field_test_logger_20260828.py")
+    require_text(launcher, "tractor-wifi-direct-mission.service")
     direct_unit = REPO / "tractor_rpi/setup/tractor-wifi-direct-mission.service"
     require_text(direct_unit, "--authority-policy onboard-router-mission")
     require_text(direct_unit, "--host 192.168.8.20")
@@ -62,6 +64,17 @@ def main() -> None:
         HERE / "run_approval_b_software_tests_20261030.sh",
         "test_communications_degraded_guard_20261029",
     )
+    require_text(
+        HERE / "mission_dashboard_approval_b_review_20261031.py",
+        "Pure Pursuit start is disabled",
+    )
+    require_text(
+        HERE / "start_approval_b_review_dashboard_20261031.sh",
+        "Review dashboard only",
+    )
+    checklist = HERE / "FIELD_CHECKLIST_20261031.txt"
+    require_text(checklist, "sudo systemctl start tractor-wifi-direct-mission.service")
+    require_text(checklist, "The dashboard is the mission server")
 
     print("PASS: disabled Approval B package and immutable route verified.")
     print("      3,462 waypoints; 689.949 m; nominal 11.50 min at 1.00 m/s.")
