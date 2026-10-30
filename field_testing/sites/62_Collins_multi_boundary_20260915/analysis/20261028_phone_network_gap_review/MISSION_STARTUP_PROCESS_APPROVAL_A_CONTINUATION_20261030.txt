@@ -1,0 +1,258 @@
+DRAFT - UNTESTED IN THE FIELD
+
+TRACTOR01 APPROVAL A CONTINUATION — CLEAN DIRECT-PATH RETEST
+Revision: 2026-10-30 rev 1
+Scope: ONE STATIONARY MOTOR-OFF DIRECT-ROUTER RUN + SOFTWARE FAULT SUITE
+
+THIS CHECKLIST DOES NOT AUTHORIZE MOTION, A MISSION, OR BLADES.
+COMMUNICATIONS DEGRADED MUST REMAIN DISABLED_PENDING_STATIONARY_APPROVAL.
+
+======================================================================
+0. APPROVED SCOPE AND PHYSICAL HOLD POINT
+======================================================================
+
+[ ] Approval A continuation is limited to the steps in this checklist.
+[ ] Tractor stationary on suitable ground; engine OFF; PTO/blades OFF.
+[ ] Rear hydrostatic-transmission lever fully pulled out/disengaged.
+[ ] Physical Pause selected and physical e-stop available.
+[ ] Drive wheels chocked.
+[ ] No person in a pinch, steering, deck, or wheel hazard area.
+[ ] Phone will remain beside the test position on GL-SFT1200-9f4 for the
+    entire controlled ten-minute interval. No walk-away or network switch.
+
+STOP if any box is false. Do not push in the rear lever, use the production
+Auto page, start a mission, or engage blades.
+
+Suggested note:
+
+    mark "Approval A continuation physical hold point complete; engine off, blades off, rear transmission lever pulled out, physical Pause selected, wheels chocked"
+
+======================================================================
+1. CREATE THE NEW EVIDENCE DIRECTORY AND RECORD SOURCE STATE
+======================================================================
+
+On Tractor01:
+
+    export TRACTOR_STATIONARY_RETEST_DIR=/home/al/field_logs/20261030_stationary_direct_retest
+    mkdir -p "$TRACTOR_STATIONARY_RETEST_DIR"
+    cd /home/al/tractor2025
+    git status --short --branch | tee "$TRACTOR_STATIONARY_RETEST_DIR/git-status-before.txt"
+    git rev-parse HEAD | tee "$TRACTOR_STATIONARY_RETEST_DIR/git-head.txt"
+
+Do not remove or overwrite the existing untracked PlatformIO `.ini` files.
+The tested runtime fixes must include commits `a774971` and `87b0144`.
+
+    git merge-base --is-ancestor a774971 HEAD
+    git merge-base --is-ancestor 87b0144 HEAD
+
+Require both commands to return silently with status zero. If code was pushed
+after the prior field session, first inspect `git status`; then use only:
+
+    git pull --ff-only origin main
+
+Do not stash, clean, reset, or delete the untracked `.ini` files.
+
+======================================================================
+2. RUN THE MOTION-FREE SOFTWARE FAULT SUITE
+======================================================================
+
+    cd /home/al/tractor2025
+    bash field_testing/sites/62_Collins_multi_boundary_20260915/analysis/20261028_phone_network_gap_review/run_approval_a_continuation_fault_tests_20261030.sh \
+      "$TRACTOR_STATIONARY_RETEST_DIR"
+
+Require all tests to pass. This suite verifies fail-closed phone expiry,
+session invalidation, recovery-window behavior, reconnects not extending the
+budget, every local degraded-health input, independent time/distance limits,
+stopped-Pause acknowledgement reset, diagnostics, ntfy retry state, and the
+dry-run bridge separation. It is deterministic software evidence, not a radio,
+serial-hardware, or motion test.
+
+    mark "Approval A continuation software fault suite passed"
+
+======================================================================
+3. VERIFY PRODUCTION REMAINS IN PAUSE AND DEGRADED MODE IS DISABLED
+======================================================================
+
+    systemctl is-active tractor-wifi-control.service
+    python3 -m json.tool /run/tractor-phone-control/diagnostics.json
+
+Require:
+
+[ ] Service prints `active`.
+[ ] requested_mode/effective_state are Pause/pause_latched.
+[ ] communications_degraded.enabled is false.
+[ ] communications_degraded.state is DISABLED_PENDING_STATIONARY_APPROVAL.
+
+The isolated server below uses port 8767. It does not replace or reconfigure
+the production service.
+
+======================================================================
+4. CONNECT THE PHONE AND RECORD THE DIRECT PATH
+======================================================================
+
+Connect the phone to GL-SFT1200-9f4. Record or photograph:
+
+[ ] SSID: GL-SFT1200-9f4
+[ ] Phone IP: expected 192.168.8.x (previously 192.168.8.190)
+[ ] Band/frequency
+[ ] Signal strength
+[ ] BSSID if the phone displays it
+[ ] Randomized client MAC, clearly labeled as client MAC, not BSSID
+
+Keep the phone and operator in the normal stationary test position. Do not
+walk out of coverage during this controlled run.
+
+    mark "Clean direct retest phone connected to GL-SFT1200-9f4; record IP, band, signal, BSSID if shown, and randomized client MAC"
+
+======================================================================
+5. START AUXILIARY EVIDENCE COLLECTION
+======================================================================
+
+Open a second PuTTY terminal if possible. Re-establish the variable there:
+
+    export TRACTOR_STATIONARY_RETEST_DIR=/home/al/field_logs/20261030_stationary_direct_retest
+    sudo -v
+
+Record ZeroTier peer state every two seconds even though it is not the control
+path. Stop this sampler after the trial with the saved PID:
+
+    while true; do
+      date --iso-8601=seconds
+      sudo zerotier-cli peers
+      sleep 2
+    done > "$TRACTOR_STATIONARY_RETEST_DIR/zerotier-peers-continuous.log" 2>&1 &
+    export TRACTOR_ZT_SAMPLER_PID=$!
+
+Record bounded Pi/network counters:
+
+    while true; do
+      date --iso-8601=seconds
+      uptime
+      vcgencmd measure_temp 2>/dev/null || true
+      ip -s link show eth0
+      sleep 2
+    done > "$TRACTOR_STATIONARY_RETEST_DIR/pi-network-health.log" 2>&1 &
+    export TRACTOR_HEALTH_SAMPLER_PID=$!
+
+Optional encrypted-port packet metadata, only if tcpdump is already installed:
+
+    if command -v tcpdump >/dev/null 2>&1; then
+      sudo timeout 660 tcpdump -i any -nn -s 128 -C 10 -W 10 \
+        -w "$TRACTOR_STATIONARY_RETEST_DIR/direct-8767-%02d.pcap" \
+        'tcp port 8767' > "$TRACTOR_STATIONARY_RETEST_DIR/tcpdump-console.txt" 2>&1 &
+      export TRACTOR_PCAP_PID=$!
+    fi
+
+Do not install packages or change router/network configuration on test day.
+
+======================================================================
+6. RUN ONE CLEAN TEN-MINUTE DIRECT DRY-RUN WITH NTFY ENABLED
+======================================================================
+
+In the primary PuTTY terminal:
+
+    export TRACTOR_STATIONARY_RETEST_DIR=/home/al/field_logs/20261030_stationary_direct_retest
+    cd /home/al/tractor2025
+    python3 -u tractor_rpi/testing/webrtc/wifi_primary_control_20261022.py \
+      --host 192.168.8.20 \
+      --port 8767 \
+      --dry-run \
+      --simulate-bridge \
+      --authority-policy tractorfield-mission \
+      --control-subnet 192.168.8.0/24 \
+      --tls-cert /home/al/.config/tractor-wifi-control/tls/server.crt \
+      --tls-key /home/al/.config/tractor-wifi-control/tls/server.key \
+      --operator-key-file /home/al/.config/tractor-wifi-control/stationary-direct.key \
+      --diagnostics-status-file /run/tractor-phone-control/stationary-direct-retest-diagnostics.json \
+      --log-dir "$TRACTOR_STATIONARY_RETEST_DIR"
+
+There is intentionally no `--no-ntfy` argument. ntfy is diagnostic only and
+cannot grant, continue, reset, or extend authority.
+
+Open the printed local `raspberrypi.local:8767` URL. Do not use the ZeroTier
+URL for this run. Require all of the following before selecting dry-run Auto:
+
+[ ] Page visibly says DRY RUN — UDP 6004 DISABLED — NO TRACTOR MOTION COMMANDS.
+[ ] Terminal says UDP 6004 DISABLED.
+[ ] Client IP is in 192.168.8.0/24.
+[ ] Authority is tractorfield-mission-custom-subnet.
+[ ] Page starts in Pause.
+[ ] Physical tractor remains in Pause with rear lever pulled out.
+
+Set a separate ten-minute timer. Then select guarded Auto on this dry-run page
+only and immediately record:
+
+    mark "Clean direct Trial B replacement started; ten-minute timer started; dry-run banner confirmed; phone remains on GL-SFT1200-9f4 without walking or switching networks"
+
+Wait the full ten minutes. The Python server does not end itself. Do not walk,
+hide the page, lock the screen, change Wi-Fi, or open another control tab.
+
+At ten minutes, return the dry-run page to Pause and record:
+
+    mark "Clean direct Trial B replacement ten-minute interval complete; dry-run page returned to Pause"
+
+Check the diagnostics before stopping the server:
+
+    python3 -m json.tool /run/tractor-phone-control/stationary-direct-retest-diagnostics.json
+
+Record whether ntfy shows `acknowledged`, `queued_for_retry`, or another exact
+state. A delayed phone notification is not proof that the server failed to
+acknowledge it.
+
+Then press Ctrl+C once in the server terminal. Require a clean stop message.
+
+======================================================================
+7. STOP SAMPLERS AND COLLECT EVIDENCE
+======================================================================
+
+In the second terminal:
+
+    kill "$TRACTOR_ZT_SAMPLER_PID" "$TRACTOR_HEALTH_SAMPLER_PID" 2>/dev/null || true
+    if test -n "${TRACTOR_PCAP_PID:-}"; then
+      wait "$TRACTOR_PCAP_PID" 2>/dev/null || true
+    fi
+
+Copy diagnostics and the production journal without deleting originals:
+
+    cp -p /run/tractor-phone-control/stationary-direct-retest-diagnostics.json \
+      "$TRACTOR_STATIONARY_RETEST_DIR/"
+    journalctl -u tractor-wifi-control.service -b --no-pager -o short-iso \
+      > "$TRACTOR_STATIONARY_RETEST_DIR/tractor-wifi-control-journal.log"
+    ls -lh "$TRACTOR_STATIONARY_RETEST_DIR"
+
+Create a relative-path checksum manifest that does not hash itself:
+
+    ( cd "$TRACTOR_STATIONARY_RETEST_DIR" && \
+      find . -type f ! -name 'SHA256SUMS*' -print0 | sort -z | \
+      xargs -0 sha256sum > SHA256SUMS )
+    ( cd "$TRACTOR_STATIONARY_RETEST_DIR" && sha256sum -c SHA256SUMS )
+
+Require every listed file to print OK.
+
+Export the GL router system log after the run. Save available per-client
+statistics or screenshots for randomized client MAC 5a:55:ca:3f:5f:95 if the
+phone retained that MAC. Do not assume the MAC remained unchanged. The AXE75
+log may be added later and must be identified as separate evidence.
+
+    mark "Clean direct retest evidence collected and checksum verification passed; GL router export pending or saved separately as noted"
+
+======================================================================
+8. SHUTDOWN / REVIEW HOLD POINT
+======================================================================
+
+[ ] Dry-run server stopped.
+[ ] Dry-run page closed or left in Pause.
+[ ] Production phone page remains in Pause.
+[ ] tractor-wifi-control.service still active.
+[ ] Rear transmission lever remains pulled out.
+[ ] No motion occurred.
+
+Do not proceed to a bounded route or known mission. Copy the new evidence to
+RPi5NAS, attach it for review, and request a separate Approval B decision.
+
+Suggested NAS destination:
+
+    /home/al/repos/tractor2025/field_testing/runs/20261030_stationary_direct_retest
+
+Approval B, Approval C, COMMUNICATIONS DEGRADED activation, physical movement,
+and blades remain outside this checklist.
