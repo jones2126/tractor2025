@@ -47,8 +47,9 @@ SCOPE
       --tls-cert /home/al/.config/tractor-wifi-control/tls/server.crt \
       --tls-key /home/al/.config/tractor-wifi-control/tls/server.key \
       --operator-key-file /home/al/.config/tractor-wifi-control/stationary-rpi-lease-pause.key \
-      --diagnostics-status-file /run/tractor-phone-control/rpi-lease-pause-diagnostics.json \
+      --diagnostics-status-file "$TRACTOR_PHONE_LEASE_EVIDENCE_DIR/rpi-lease-pause-diagnostics.json" \
       --log-dir "$TRACTOR_PHONE_LEASE_EVIDENCE_DIR" \
+      --ownership-lock "$TRACTOR_PHONE_LEASE_EVIDENCE_DIR/ownership.lock" \
       --no-ntfy \
       2>&1 | tee "$TRACTOR_PHONE_LEASE_EVIDENCE_DIR/pause-only-phone-server-console.txt"
 

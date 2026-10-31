@@ -56,6 +56,14 @@ def main():
     require("platformio.wifi-primary.ini" in checklist_text, "rollback step missing")
     require("MANDATORY SAME-SESSION" in checklist_text, "mandatory rollback hold missing")
     require("does not authorize candidate motion" in checklist_text, "motion prohibition missing")
+    require(
+        '"$TRACTOR_PHONE_LEASE_EVIDENCE_DIR/ownership.lock"' in checklist_text,
+        "temporary ownership lock must use the operator-owned evidence directory",
+    )
+    require(
+        "/run/tractor-phone-control" not in checklist_text,
+        "interactive checklist must not require a systemd-created runtime directory",
+    )
 
     print("PASS: disabled motor-off phone integration package verified.")
     print("      UDP bridge and phone wrapper are hard-gated to zero Pause.")
