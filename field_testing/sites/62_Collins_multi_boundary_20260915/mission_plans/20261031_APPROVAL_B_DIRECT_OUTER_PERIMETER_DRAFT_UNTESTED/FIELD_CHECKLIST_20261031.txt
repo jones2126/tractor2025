@@ -2,6 +2,15 @@ APPROVAL B — DIRECT ROUTER / OUTER PERIMETER
 DRAFT - UNTESTED IN THE FIELD
 PACKAGE PREPARED; FIELD AUTHORIZATION NOT YET GRANTED
 
+KNOWN REQUIREMENT BLOCKER: This revision still pauses on the 500 ms phone-link
+expiry and does not integrate the required sticky 30-second/30-meter bounded
+COMMUNICATIONS DEGRADED state. Sections 0-2 are non-motion diagnostics only.
+Do not proceed to Sections 3-6 or physical movement with this revision.
+
+COMMAND RULE: Every required software action must include the exact command to
+run and the result to require. If a required action has no command, STOP and
+obtain a corrected checklist; do not improvise a command in the field.
+
 Route: 3,462 waypoints / 689.949 m / about 11.50 min at 1.00 m/s
 Blades: OFF for the entire session
 Phone path: GL-SFT1200-9f4 -> 192.168.8.20
@@ -16,13 +25,29 @@ Phone freshness: unchanged 500 ms; stop on the first expiry
 [ ] Wheels chocked for stationary acceptance.
 
 1. UPDATE AND VERIFY — NON-MOTION
-[ ] Pull the reviewed Git commit on Tractor01; preserve the two local .ini files.
+[ ] Pull the reviewed Git commit on Tractor01; preserve the two local .ini files:
+    cd /home/al/tractor2025
+    git pull --ff-only origin main
+    git rev-parse --short HEAD
+    Require the checklist's current published commit before continuing.
 [ ] Install the direct service with:
     sudo bash tractor_rpi/setup/install_tractor_direct_mission_service_20261030.sh
-[ ] Require tractor-wifi-direct-mission.service disabled and inactive.
-[ ] Run verify_approval_b_package_20261030.py and require its PASS.
-[ ] Run the software fault suite supplied with the package commit; require PASS.
-[ ] Record git HEAD and git status.
+[ ] Require tractor-wifi-direct-mission.service disabled and inactive:
+    systemctl is-enabled tractor-wifi-direct-mission.service || true
+    systemctl is-active tractor-wifi-direct-mission.service || true
+    Require disabled/static and inactive. Do not start it yet.
+[ ] Run the package verifier and require both PASS messages plus
+    NOT FIELD AUTHORIZATION:
+    python3 field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20261031_APPROVAL_B_DIRECT_OUTER_PERIMETER_DRAFT_UNTESTED/verify_approval_b_package_20261030.py
+[ ] Run the software fault suite, save its output, and require unittest OK plus
+    the package-verifier PASS messages:
+    mkdir -p /home/al/field_logs/20261031_approval_b
+    set -o pipefail
+    bash field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20261031_APPROVAL_B_DIRECT_OUTER_PERIMETER_DRAFT_UNTESTED/run_approval_b_software_tests_20261030.sh 2>&1 | tee /home/al/field_logs/20261031_approval_b/software_fault_tests.txt
+    test "${PIPESTATUS[0]}" -eq 0
+[ ] Record git HEAD and status:
+    git rev-parse HEAD | tee /home/al/field_logs/20261031_approval_b/git-head.txt
+    git status --short --branch | tee /home/al/field_logs/20261031_approval_b/git-status.txt
 
 2. STATIONARY DIRECT-PATH ACCEPTANCE — LEVER OUT, ENGINE OFF
 [ ] Confirm phone SSID GL-SFT1200-9f4 and 192.168.8.x address.

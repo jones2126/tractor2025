@@ -73,6 +73,10 @@ def main() -> None:
         "Review dashboard only",
     )
     checklist = HERE / "FIELD_CHECKLIST_20261031.txt"
+    require_text(checklist, "KNOWN REQUIREMENT BLOCKER")
+    require_text(checklist, "COMMAND RULE: Every required software action")
+    require_text(checklist, "run_approval_b_software_tests_20261030.sh")
+    require_text(checklist, "test \"${PIPESTATUS[0]}\" -eq 0")
     require_text(checklist, "sudo systemctl start tractor-wifi-direct-mission.service")
     require_text(checklist, "The dashboard is the mission server")
 
