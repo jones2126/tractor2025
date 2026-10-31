@@ -56,6 +56,7 @@ class PhoneIntentSample:
     sequence: int
     manual_drive_percent: float = 0.0
     manual_steering: float = 0.0
+    operator_link_fresh: bool = True
 
 
 @dataclass(frozen=True)
@@ -197,7 +198,7 @@ class RpiArbitratorInputCollector:
         pp = self.pure_pursuit_health
         teensy = self.teensy
 
-        phone_fresh = self._fresh(
+        phone_fresh = bool(phone and phone.operator_link_fresh) and self._fresh(
             now_monotonic_s,
             None if phone is None else phone.received_monotonic_s,
             t.phone_fresh_s,
