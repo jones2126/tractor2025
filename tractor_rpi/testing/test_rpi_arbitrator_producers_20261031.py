@@ -76,7 +76,16 @@ class RpiArbitratorProducerTests(unittest.TestCase):
             safety_port=6015,
             route_sha256="a" * 64,
         )
-        original = {"controller_state": "RUNNING", "speed_cmd_mps": "1.0"}
+        original = {
+            "controller_state": "RUNNING",
+            "speed_cmd_mps": "1.0",
+            "gps_age_s": "0.05",
+            "fix_quality": "RTK Fixed",
+            "head_valid": True,
+            "heading_carrier": "fixed",
+            "heading_accuracy_deg": "0.2",
+            "path_progress_m": "10.0",
+        }
         wrapper.sendto(json.dumps(original).encode(), ("127.0.0.1", 6012))
         self.assertEqual(2, len(sink.sent))
         self.assertEqual(original, json.loads(sink.sent[0][0]))
@@ -84,6 +93,21 @@ class RpiArbitratorProducerTests(unittest.TestCase):
         self.assertEqual("pure_pursuit_safety", safety["kind"])
         self.assertEqual("a" * 64, safety["route_sha256"])
         self.assertEqual(1, safety["safety_sequence"])
+
+    def test_incomplete_startup_row_is_not_sent_as_safety_record(self):
+        sink = FakeSocket()
+        wrapper = self.pp_module.SafetyDuplicatingSocket(
+            sink,
+            telemetry_port=6012,
+            safety_port=6015,
+            route_sha256="a" * 64,
+        )
+        wrapper.sendto(
+            json.dumps({"controller_state": "WAITING"}).encode(),
+            ("127.0.0.1", 6012),
+        )
+        self.assertEqual(1, len(sink.sent))
+        self.assertEqual(("127.0.0.1", 6012), sink.sent[0][1])
 
     def test_normalized_route_hash_ignores_line_ending_style(self):
         import tempfile

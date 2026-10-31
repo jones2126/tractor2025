@@ -57,6 +57,23 @@ class SafetyDuplicatingSocket:
         if address[1] == self._telemetry_port:
             try:
                 payload = json.loads(data.decode("utf-8"))
+                required_health = (
+                    "controller_state",
+                    "gps_age_s",
+                    "fix_quality",
+                    "head_valid",
+                    "heading_carrier",
+                    "heading_accuracy_deg",
+                    "path_progress_m",
+                )
+                # Startup rows emitted before the first valid pose do not
+                # become safety records. Missing data therefore becomes feed
+                # staleness (fail closed), not a malformed proposal flood.
+                if any(
+                    field not in payload or payload[field] in (None, "")
+                    for field in required_health
+                ):
+                    return result
                 self._sequence += 1
                 payload.update(
                     schema=1,
