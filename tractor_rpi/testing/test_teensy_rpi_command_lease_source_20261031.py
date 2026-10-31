@@ -59,11 +59,22 @@ class TeensyRpiCommandLeaseSourceTests(unittest.TestCase):
         self.assertNotIn('memcmp(buffer, "WIFI,"', active_parser)
 
     def test_physical_pause_and_local_fault_logic_remain_present(self):
-        self.assertIn("physicalPause || !leaseFresh", self.source)
+        self.assertIn("physicalPause || !leaseUsable", self.source)
+        self.assertIn("rpiLeaseExpiredLatched = true", self.source)
+        self.assertIn("rpiLeaseExpiredLatched = false", self.source)
         self.assertIn("steeringFaultLatched", self.source)
         self.assertIn("estopCheck();", self.source)
         self.assertIn("controlTransmission();", self.source)
         self.assertIn("controlSteering();", self.source)
+
+    def test_new_rpi_session_requires_physical_pause_claim(self):
+        self.assertIn("physicalPauseForSessionClaim", self.source)
+        self.assertIn("parsedMode != RPI_MODE_PAUSE", self.source)
+        self.assertIn("RPI_REJECT_SESSION", self.source)
+
+    def test_telemetry_exposes_session_and_expiry_latch(self):
+        self.assertIn("RPI_CTL,m=%u,f=%d,u=%d,l=%d", self.source)
+        self.assertIn("ss=%lu,s=%lu", self.source)
 
     def test_separate_build_file_selects_only_new_candidate(self):
         self.assertIn(

@@ -10,13 +10,17 @@
   RPi command frame and enforces a fixed local command lease no longer than
   the existing 500 ms cmd_vel watchdog:
 
-    RPICMD,<uint32 sequence>,<mode>,<drive>,<steering>*<CRC16-CCITT>
+    RPICMD,<uint32 session>,<uint32 sequence>,<mode>,<drive>,<steering>*<CRC16-CCITT>
 
       mode 0: Pause; drive=0 and steering=0
       mode 1: Manual; drive=-100..100 percent, steering=-1..1
       mode 2: Auto; drive=0..1.8 m/s, steering=-1..1
 
   Invalid, corrupt, duplicate, or reordered frames do not refresh the lease.
+  A new RPi session is accepted only as a zero Pause claim while the physical
+  handheld is in Pause, so an RPi restart cannot silently re-arm motion.
+  Lease expiry latches Pause until a fresh explicit RPi Pause frame arrives;
+  delayed motion frames therefore cannot automatically resume the tractor.
   Lease expiry, physical Pause, physical e-stop, and existing local actuator
   faults retain immediate Teensy authority.
 
@@ -42,18 +46,22 @@ enum RpiRejectReason : byte {
     RPI_REJECT_RANGE = 3,
     RPI_REJECT_SEQUENCE = 4,
     RPI_REJECT_UNSUPPORTED = 5,
+    RPI_REJECT_SESSION = 6,
 };
 
 static const unsigned long RPI_COMMAND_LEASE_MS = CMD_VEL_TIMEOUT;
 static_assert(RPI_COMMAND_LEASE_MS <= 500UL, "RPi command lease may not exceed 500 ms");
 
 static bool rpiCommandSelected = false;
+static bool rpiSessionSeen = false;
+static uint32_t rpiSession = 0;
 static bool rpiSequenceSeen = false;
 static uint32_t rpiSequence = 0;
 static byte rpiCommandMode = RPI_MODE_PAUSE;
 static float rpiDriveCommand = 0.0f;
 static float rpiSteeringCommand = 0.0f;
 static unsigned long rpiCommandTimestamp = 0;
+static bool rpiLeaseExpiredLatched = false;
 static unsigned long rpiAcceptedCount = 0;
 static unsigned long rpiRejectedCount = 0;
 static byte rpiLastRejectReason = RPI_REJECT_NONE;
@@ -160,9 +168,9 @@ static bool acceptRpiCommandLine(char* line) {
     }
     *separator = '\0';
 
-    char* fields[4];
+    char* fields[5];
     char* cursor = line + 7;
-    for (byte i = 0; i < 3; i++) {
+    for (byte i = 0; i < 4; i++) {
         fields[i] = cursor;
         char* comma = strchr(cursor, ',');
         if (!comma) {
@@ -172,23 +180,25 @@ static bool acceptRpiCommandLine(char* line) {
         *comma = '\0';
         cursor = comma + 1;
     }
-    fields[3] = cursor;
-    if (strchr(fields[3], ',')) {
+    fields[4] = cursor;
+    if (strchr(fields[4], ',')) {
         rejectRpiCommand(RPI_REJECT_FORMAT);
         return true;
     }
 
+    uint32_t parsedSession = 0;
     uint32_t parsedSequence = 0;
     float parsedDrive = 0.0f;
     float parsedSteering = 0.0f;
-    if (!parseUint32Token(fields[0], &parsedSequence) ||
-        strlen(fields[1]) != 1 || fields[1][0] < '0' || fields[1][0] > '2' ||
-        !parseFiniteFloatToken(fields[2], &parsedDrive) ||
-        !parseFiniteFloatToken(fields[3], &parsedSteering)) {
+    if (!parseUint32Token(fields[0], &parsedSession) ||
+        !parseUint32Token(fields[1], &parsedSequence) ||
+        strlen(fields[2]) != 1 || fields[2][0] < '0' || fields[2][0] > '2' ||
+        !parseFiniteFloatToken(fields[3], &parsedDrive) ||
+        !parseFiniteFloatToken(fields[4], &parsedSteering)) {
         rejectRpiCommand(RPI_REJECT_FORMAT);
         return true;
     }
-    const byte parsedMode = (byte)(fields[1][0] - '0');
+    const byte parsedMode = (byte)(fields[2][0] - '0');
     if (parsedSteering < -1.0f || parsedSteering > 1.0f) {
         rejectRpiCommand(RPI_REJECT_RANGE);
         return true;
@@ -203,19 +213,30 @@ static bool acceptRpiCommandLine(char* line) {
         return true;
     }
 
-    const uint32_t candidateSequence = parsedSequence;
-    if (rpiSequenceSeen && !rpiSequenceIsNewer(candidateSequence, rpiSequence)) {
+    const bool sessionChanged = !rpiSessionSeen || parsedSession != rpiSession;
+    const bool physicalPauseForSessionClaim =
+        radioStats.signalGood && radioData.control_mode == 2;
+    if (sessionChanged &&
+        (!physicalPauseForSessionClaim || parsedMode != RPI_MODE_PAUSE)) {
+        rejectRpiCommand(RPI_REJECT_SESSION);
+        return true;
+    }
+    if (!sessionChanged && rpiSequenceSeen &&
+        !rpiSequenceIsNewer(parsedSequence, rpiSequence)) {
         rejectRpiCommand(RPI_REJECT_SEQUENCE);
         return true;
     }
 
+    rpiSessionSeen = true;
+    rpiSession = parsedSession;
     rpiSequenceSeen = true;
-    rpiSequence = candidateSequence;
+    rpiSequence = parsedSequence;
     rpiCommandMode = parsedMode;
     rpiDriveCommand = parsedDrive;
     rpiSteeringCommand = parsedSteering;
     rpiCommandTimestamp = millis();
     rpiCommandSelected = true;
+    if (rpiCommandMode == RPI_MODE_PAUSE) rpiLeaseExpiredLatched = false;
     rpiAcceptedCount++;
     rpiLastRejectReason = RPI_REJECT_NONE;
 
@@ -295,7 +316,7 @@ static void parseRpiCommandLeaseSerial() {
 }
 
 
-static void publishRpiCommandLeaseStatus(bool leaseFresh) {
+static void publishRpiCommandLeaseStatus(bool arrivalFresh, bool leaseUsable) {
     static unsigned long lastStatusPrint = 0;
     if (currentMillis - lastStatusPrint < 200) return;
     const unsigned long age = rpiCommandSelected
@@ -305,11 +326,14 @@ static void publishRpiCommandLeaseStatus(bool leaseFresh) {
     snprintf(
         buffer,
         sizeof(buffer),
-        "1,%lu,RPI_CTL,m=%u,f=%d,a=%lu,s=%lu,ok=%lu,rj=%lu,rr=%u",
+        "1,%lu,RPI_CTL,m=%u,f=%d,u=%d,l=%d,a=%lu,ss=%lu,s=%lu,ok=%lu,rj=%lu,rr=%u",
         currentMillis,
         (unsigned int)rpiCommandMode,
-        leaseFresh ? 1 : 0,
+        arrivalFresh ? 1 : 0,
+        leaseUsable ? 1 : 0,
+        rpiLeaseExpiredLatched ? 1 : 0,
         age,
+        (unsigned long)rpiSession,
         (unsigned long)rpiSequence,
         rpiAcceptedCount,
         rpiRejectedCount,
@@ -341,15 +365,17 @@ extern "C" void loop() {
     const int16_t savedTransmission = radioData.transmission_val;
     const bool physicalPause = savedSignalGood && savedMode == 2;
 
-    const bool leaseFresh = rpiCommandSelected &&
+    const bool arrivalFresh = rpiCommandSelected &&
         currentMillis - rpiCommandTimestamp <= RPI_COMMAND_LEASE_MS;
+    if (rpiCommandSelected && !arrivalFresh) rpiLeaseExpiredLatched = true;
+    const bool leaseUsable = arrivalFresh && !rpiLeaseExpiredLatched;
 
     if (rpiCommandSelected) {
         // RPi control does not require an NRF link, matching the proven direct
         // control behavior. Physical Pause still wins whenever received.
         radioStats.signalGood = true;
 
-        if (physicalPause || !leaseFresh || rpiCommandMode == RPI_MODE_PAUSE) {
+        if (physicalPause || !leaseUsable || rpiCommandMode == RPI_MODE_PAUSE) {
             radioData.control_mode = 2;
             wifiDriveCommand = true;
             wifiDrivePercent = 0.0f;
@@ -376,7 +402,7 @@ extern "C" void loop() {
         }
 
         // Preserve the proven Pause -> neutral Manual steering-fault recovery.
-        if (rpiCommandMode == RPI_MODE_MANUAL_PERCENT && leaseFresh &&
+        if (rpiCommandMode == RPI_MODE_MANUAL_PERCENT && leaseUsable &&
             steeringFaultLatched && steeringRecoveryPauseSeen &&
             fabsf(rpiDriveCommand) < 0.5f) {
             radioData.control_mode = 1;
@@ -389,7 +415,7 @@ extern "C" void loop() {
 
     controlTransmission();
     controlSteering();
-    publishRpiCommandLeaseStatus(leaseFresh);
+    publishRpiCommandLeaseStatus(arrivalFresh, leaseUsable);
 
     // Keep separately published NRF diagnostics truthful.
     radioStats.signalGood = savedSignalGood;

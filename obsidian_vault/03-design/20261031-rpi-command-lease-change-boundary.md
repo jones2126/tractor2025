@@ -34,6 +34,19 @@ Phone freshness must not be evaluated by new Teensy logic. A phone reconnect
 must not reset an active RPi degradation incident. The existing 500 ms Teensy
 watchdog is not extended to 30 seconds.
 
+The generic serial protocol additionally requires:
+
+- an RPi session identifier and monotonically increasing sequence number;
+- a new session to claim authority with a zero Pause frame while physical
+  Pause is active;
+- any command-lease expiry to latch Pause locally until a fresh explicit RPi
+  Pause frame is accepted;
+- matching `RPI_CTL` acknowledgement of that Pause before the RPi adapter may
+  emit Manual or Auto motion frames.
+
+These rules prevent an RPi process restart or delayed serial backlog from
+silently re-arming motion.
+
 ## Frozen reference paths
 
 The first implementation phases may not edit these proven files:

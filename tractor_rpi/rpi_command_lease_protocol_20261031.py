@@ -26,6 +26,7 @@ class RpiCommandMode(IntEnum):
 
 @dataclass(frozen=True)
 class RpiCommand:
+    session: int
     sequence: int
     mode: RpiCommandMode
     drive: float
@@ -51,6 +52,8 @@ def crc16_ccitt(data: bytes) -> int:
 
 
 def _validate(command: RpiCommand) -> None:
+    if not isinstance(command.session, int) or not 0 <= command.session <= MAX_SEQUENCE:
+        raise ValueError("session must be an unsigned 32-bit integer")
     if not isinstance(command.sequence, int) or not 0 <= command.sequence <= MAX_SEQUENCE:
         raise ValueError("sequence must be an unsigned 32-bit integer")
     if not isinstance(command.mode, RpiCommandMode):
@@ -72,7 +75,7 @@ def _validate(command: RpiCommand) -> None:
 def encode_frame(command: RpiCommand) -> bytes:
     _validate(command)
     body = (
-        f"RPICMD,{command.sequence},{int(command.mode)},"
+        f"RPICMD,{command.session},{command.sequence},{int(command.mode)},"
         f"{command.drive:.4f},{command.steering:.4f}"
     ).encode("ascii")
     return body + f"*{crc16_ccitt(body):04X}\n".encode("ascii")
@@ -102,14 +105,15 @@ def decode_frame(frame: bytes | str) -> RpiCommand:
     if crc16_ccitt(body) != supplied_checksum:
         raise ValueError("checksum mismatch")
     fields = body_text.split(",")
-    if len(fields) != 5 or fields[0] != "RPICMD":
+    if len(fields) != 6 or fields[0] != "RPICMD":
         raise ValueError("invalid RPICMD field layout")
     try:
         command = RpiCommand(
-            sequence=int(fields[1], 10),
-            mode=RpiCommandMode(int(fields[2], 10)),
-            drive=float(fields[3]),
-            steering=float(fields[4]),
+            session=int(fields[1], 10),
+            sequence=int(fields[2], 10),
+            mode=RpiCommandMode(int(fields[3], 10)),
+            drive=float(fields[4]),
+            steering=float(fields[5]),
         )
     except (TypeError, ValueError) as exc:
         raise ValueError("invalid RPICMD field value") from exc
@@ -134,25 +138,35 @@ class CommandLeaseReference:
         self.timeout_ms = timeout_ms
         self._last_command: RpiCommand | None = None
         self._last_accepted_ms: float | None = None
+        self._lease_expired_latched = False
 
-    def accept(self, frame: bytes | str, *, now_ms: float) -> bool:
+    def accept(
+        self,
+        frame: bytes | str,
+        *,
+        now_ms: float,
+        physical_pause_active: bool = False,
+    ) -> bool:
         if not math.isfinite(now_ms):
             return False
         try:
             command = decode_frame(frame)
         except (TypeError, ValueError):
             return False
-        if self._last_command is not None and not sequence_is_newer(
-            command.sequence, self._last_command.sequence
-        ):
+        if self._last_command is None or command.session != self._last_command.session:
+            if not physical_pause_active or command.mode != RpiCommandMode.PAUSE:
+                return False
+        elif not sequence_is_newer(command.sequence, self._last_command.sequence):
             return False
         self._last_command = command
         self._last_accepted_ms = now_ms
+        if command.mode == RpiCommandMode.PAUSE:
+            self._lease_expired_latched = False
         return True
 
     @staticmethod
-    def _pause(sequence: int = 0) -> RpiCommand:
-        return RpiCommand(sequence, RpiCommandMode.PAUSE, 0.0, 0.0)
+    def _pause(session: int = 0, sequence: int = 0) -> RpiCommand:
+        return RpiCommand(session, sequence, RpiCommandMode.PAUSE, 0.0, 0.0)
 
     def decide(
         self,
@@ -163,20 +177,30 @@ class CommandLeaseReference:
         steering_fault_latched: bool = False,
         transmission_fault_latched: bool = False,
     ) -> LeaseDecision:
+        session = self._last_command.session if self._last_command else 0
         sequence = self._last_command.sequence if self._last_command else 0
         if physical_estop_active:
-            return LeaseDecision(self._pause(sequence), False, math.inf, "physical e-stop active")
+            return LeaseDecision(self._pause(session, sequence), False, math.inf, "physical e-stop active")
         if physical_pause_active:
-            return LeaseDecision(self._pause(sequence), False, math.inf, "physical Pause active")
+            return LeaseDecision(self._pause(session, sequence), False, math.inf, "physical Pause active")
         if steering_fault_latched:
-            return LeaseDecision(self._pause(sequence), False, math.inf, "steering fault latched")
+            return LeaseDecision(self._pause(session, sequence), False, math.inf, "steering fault latched")
         if transmission_fault_latched:
-            return LeaseDecision(self._pause(sequence), False, math.inf, "transmission fault latched")
+            return LeaseDecision(self._pause(session, sequence), False, math.inf, "transmission fault latched")
         if self._last_command is None or self._last_accepted_ms is None:
             return LeaseDecision(self._pause(), False, math.inf, "no accepted RPi command")
         age_ms = max(0.0, now_ms - self._last_accepted_ms)
         if not math.isfinite(now_ms) or now_ms < self._last_accepted_ms:
-            return LeaseDecision(self._pause(sequence), False, math.inf, "invalid monotonic time")
+            self._lease_expired_latched = True
+            return LeaseDecision(self._pause(session, sequence), False, math.inf, "invalid monotonic time")
         if age_ms > self.timeout_ms:
-            return LeaseDecision(self._pause(sequence), False, age_ms, "RPi command lease expired")
+            self._lease_expired_latched = True
+            return LeaseDecision(self._pause(session, sequence), False, age_ms, "RPi command lease expired")
+        if self._lease_expired_latched:
+            return LeaseDecision(
+                self._pause(session, sequence),
+                False,
+                age_ms,
+                "RPi command lease expiry latched; fresh Pause rearm required",
+            )
         return LeaseDecision(self._last_command, True, age_ms, "RPi command lease fresh")
