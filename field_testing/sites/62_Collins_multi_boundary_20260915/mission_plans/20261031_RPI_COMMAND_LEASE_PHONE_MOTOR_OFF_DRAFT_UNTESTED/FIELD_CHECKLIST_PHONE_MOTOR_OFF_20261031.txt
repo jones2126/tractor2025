@@ -58,7 +58,8 @@ SCOPE
 [ ] Require no Manual/Auto buttons, sliders, voice, PTO, or mission control.
 [ ] Require firmware command_lease_v2, CONNECTED · PAUSE, active session,
     increasing Server accepted and Bridge phone Pause, Bridge rejected=0, and
-    Teensy Pause claim=ACKNOWLEDGED.
+    Pause session=ACCEPTED. Latest frame may briefly show PENDING between a
+    periodic Pause transmission and its matching Teensy status acknowledgement.
 [ ] Hold visible for 2 minutes. Hide/lock for 10 seconds, return, and require a
     fresh session in Pause. Do not attempt any motion input.
 
@@ -70,7 +71,7 @@ SCOPE
       | python3 -m json.tool
 
 [ ] Require pause_only=true; expected v2 firmware; bridge age fresh; mode=0;
-    Pause claim acknowledged; accepted_pause_packets > 5; rejected_packets=0;
+    pause_session_accepted=true; accepted_pause_packets > 5; rejected_packets=0;
     Teensy lease usable; expiry_latched=false; Teensy rejected_count=0.
 
 6. MANDATORY SAME-SESSION SHUTDOWN AND ROLLBACK

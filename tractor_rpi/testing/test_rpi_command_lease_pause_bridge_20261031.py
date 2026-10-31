@@ -105,6 +105,14 @@ class PauseOnlyBridgeTests(unittest.TestCase):
         self.assertNotIn('data-mode="manual"', page)
         self.assertNotIn('data-mode="auto"', page)
         self.assertNotIn('type="range"', page)
+        self.assertIn("pause_session_accepted", page)
+        self.assertIn("latest_pause_frame_acknowledged", page)
+
+    def test_broadcast_distinguishes_stable_session_from_latest_frame_ack(self):
+        source = BRIDGE.read_text(encoding="utf-8")
+        self.assertIn('lease["pause_session_accepted"]', source)
+        self.assertIn('"latest_pause_frame_acknowledged"', source)
+        self.assertNotIn('"pause_claim_acknowledged"', source)
 
     def test_phone_wrapper_rejects_motion_and_accepts_zero_pause(self):
         with tempfile.TemporaryDirectory() as temporary:

@@ -52,6 +52,15 @@ def main():
     require('data-mode="manual"' not in page_text, "phone page exposes Manual")
     require('data-mode="auto"' not in page_text, "phone page exposes Auto")
     require('type="range"' not in page_text, "phone page exposes motion sliders")
+    require("pause_session_accepted" in bridge_text, "stable Pause-session metric missing")
+    require(
+        "latest_pause_frame_acknowledged" in bridge_text,
+        "latest-frame acknowledgement metric missing",
+    )
+    require(
+        '"pause_claim_acknowledged"' not in bridge_text,
+        "ambiguous Pause-claim metric remains",
+    )
     require("platformio.rpi-command-lease.ini" in checklist_text, "candidate flash step missing")
     require("platformio.wifi-primary.ini" in checklist_text, "rollback step missing")
     require("MANDATORY SAME-SESSION" in checklist_text, "mandatory rollback hold missing")

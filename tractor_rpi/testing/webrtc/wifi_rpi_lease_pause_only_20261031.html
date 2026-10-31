@@ -21,7 +21,8 @@
     <div class="metric"><small>Server accepted</small><strong id="accepted">0</strong></div>
     <div class="metric"><small>Bridge phone Pause</small><strong id="bridgeAccepted">0</strong></div>
     <div class="metric"><small>Bridge rejected</small><strong id="rejected">0</strong></div>
-    <div class="metric"><small>Teensy Pause claim</small><strong id="claim">WAITING</strong></div>
+    <div class="metric"><small>Pause session</small><strong id="claim">WAITING</strong></div>
+    <div class="metric"><small>Latest frame</small><strong id="latestFrame">PENDING</strong></div>
   </div>
 </main>
 <script>
@@ -32,7 +33,7 @@
   function link(ok,text){$('connection').textContent=text;$('connection').className=ok?'live':'bad'}
   async function claim(){const data=await api('/api/claim','POST',{client_id:clientId});session=data.session;sequence=0;$('session').textContent='ACTIVE'}
   async function heartbeat(){if(!running||document.hidden){setTimeout(heartbeat,200);return}try{if(!session)await claim();await api('/api/command','POST',{client_id:clientId,session,sequence:++sequence,mode:'pause',drive_percent:0,steering_percent:0,reason:'motor_off_pause_heartbeat',client_time_ms:Date.now(),client_rtt_ms:null,scheduler_delay_ms:0,coalesced_wait_ms:0});link(true,'CONNECTED · PAUSE')}catch(error){session=null;$('session').textContent='NONE';link(false,'RECONNECTING · PAUSE')}setTimeout(heartbeat,200)}
-  async function poll(){try{const data=await api('/api/state'),lease=data.rpi_command_lease||{};$('firmware').textContent=(data.system?.firmware||'--').replace('teensy_main_','');$('age').textContent=Math.round(Number(data.wifi_control?.command_age_ms??0))+' ms';$('accepted').textContent=String(data.accepted??0);$('bridgeAccepted').textContent=String(lease.accepted_pause_packets??0);$('rejected').textContent=String(lease.rejected_packets??0);$('claim').textContent=lease.pause_claim_acknowledged?'ACKNOWLEDGED':'WAITING';$('claim').className=lease.pause_claim_acknowledged?'live':'bad'}catch{}setTimeout(poll,500)}
+  async function poll(){try{const data=await api('/api/state'),lease=data.rpi_command_lease||{};$('firmware').textContent=(data.system?.firmware||'--').replace('teensy_main_','');$('age').textContent=Math.round(Number(data.wifi_control?.command_age_ms??0))+' ms';$('accepted').textContent=String(data.accepted??0);$('bridgeAccepted').textContent=String(lease.accepted_pause_packets??0);$('rejected').textContent=String(lease.rejected_packets??0);$('claim').textContent=lease.pause_session_accepted?'ACCEPTED':'WAITING';$('claim').className=lease.pause_session_accepted?'live':'bad';$('latestFrame').textContent=lease.latest_pause_frame_acknowledged?'ACKNOWLEDGED':'PENDING'}catch{}setTimeout(poll,500)}
   document.addEventListener('visibilitychange',()=>{if(document.hidden){link(false,'HIDDEN · PAUSE');session=null;$('session').textContent='NONE'}});
   window.addEventListener('pagehide',()=>{running=false});heartbeat();poll();
 })();

@@ -213,7 +213,7 @@ class TeensySerialBridge(base.TeensySerialBridge):
             "expected_firmware": EXPECTED_FIRMWARE,
             "pause_only": True,
             "session": self.adapter.session,
-            "pause_claim_acknowledged": self.adapter.claim_acknowledged,
+            "latest_pause_frame_acknowledged": self.adapter.claim_acknowledged,
             "frames_sent": self.adapter.frames_sent,
             "accepted_pause_packets": self.pause_gate.accepted_pause_packets,
             "rejected_packets": self.pause_gate.rejected_packets,
@@ -221,6 +221,13 @@ class TeensySerialBridge(base.TeensySerialBridge):
             "status_age_s": status_age_s,
         }
         if status is not None:
+            lease["pause_session_accepted"] = (
+                status.session == self.adapter.session
+                and status.mode == RpiCommandMode.PAUSE
+                and status.arrival_fresh
+                and status.lease_usable
+                and not status.expiry_latched
+            )
             lease["teensy_status"] = {
                 **asdict(status),
                 "mode": int(status.mode),
@@ -233,6 +240,8 @@ class TeensySerialBridge(base.TeensySerialBridge):
                 "age": status_age_s,
                 "source": "rpi_command_lease_pause_only",
             }
+        else:
+            lease["pause_session_accepted"] = False
         message["rpi_command_lease"] = lease
         return message
 
