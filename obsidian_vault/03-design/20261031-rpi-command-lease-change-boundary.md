@@ -47,6 +47,14 @@ The generic serial protocol additionally requires:
 These rules prevent an RPi process restart or delayed serial backlog from
 silently re-arming motion.
 
+The RPi supervisor applies COMMUNICATIONS DEGRADED only to an already-running
+Auto mission. Manual phone loss pauses immediately. Normal Auto and degraded
+Auto both require fresh Pure Pursuit output, GPS, RTK Fixed, fixed heading,
+route/corridor validity, bridge and Teensy health, controller telemetry,
+released local safety inputs, and speed compliance. A failure of any required
+check pauses immediately. ntfy delivery is diagnostic only and is never a
+condition for continued motion.
+
 ## Frozen reference paths
 
 The first implementation phases may not edit these proven files:
