@@ -47,6 +47,7 @@ class SupervisorInputs:
     route_progress_m: float
     local_travel_m: float
     health: LocalSafetyHealth
+    additional_local_faults: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -64,17 +65,17 @@ ALWAYS_REQUIRED_HEALTH = (
     "physical_estop_released",
     "teensy_status_fresh",
     "teensy_command_watchdog_healthy",
-    "controller_telemetry_fresh",
-    "speed_within_limit",
 )
 
 AUTO_REQUIRED_HEALTH = ALWAYS_REQUIRED_HEALTH + (
     "pure_pursuit_command_fresh",
+    "controller_telemetry_fresh",
     "gps_fresh",
     "rtk_fixed",
     "heading_valid_fixed",
     "route_defined",
     "inside_route_corridor",
+    "speed_within_limit",
 )
 
 
@@ -131,6 +132,13 @@ class RpiSafetySupervisor:
             return self._pause(SupervisorState.PAUSE_LATCHED, self._pause_latched_reason)
         if not self._finite_inputs(inputs):
             self._pause_latched_reason = "non-finite RPi supervisor input"
+            return self._pause(SupervisorState.PAUSE_LATCHED, self._pause_latched_reason)
+
+        if inputs.additional_local_faults:
+            self._pause_latched_reason = (
+                "local safety check failed: "
+                + ", ".join(inputs.additional_local_faults)
+            )
             return self._pause(SupervisorState.PAUSE_LATCHED, self._pause_latched_reason)
 
         if inputs.requested_mode == RpiCommandMode.PAUSE:
