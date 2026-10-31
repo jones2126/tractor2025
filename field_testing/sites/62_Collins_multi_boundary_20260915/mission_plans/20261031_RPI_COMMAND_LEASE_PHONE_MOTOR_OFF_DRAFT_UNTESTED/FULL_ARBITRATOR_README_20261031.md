@@ -13,9 +13,11 @@ The additive producer integration consists of:
   controller/dashboard outputs while duplicating a versioned safety record,
   including the normalized exact-route SHA-256, on local UDP 6015.
 
-Neither producer is selected by an installed service in this revision. The
-serial-authority consumer remains deliberately absent pending a motor-off
-producer-feed test.
+Neither producer is selected by an installed service. The additive
+`teensy_serial_bridge_rpi_arbitrator_motor_off_20261031.py` consumer receives
+and reports both feeds, but inherits the previously commissioned Pause-only
+serial scheduler unchanged. It marks physical Pause/e-stop release false,
+advertises `approved_for_motion=false`, and cannot send Manual or AUTO.
 
 It is **not field-motion authorization**. It installs no service, changes no
 boot setting, opens no hardware, and does not enable the 30-second/30-meter

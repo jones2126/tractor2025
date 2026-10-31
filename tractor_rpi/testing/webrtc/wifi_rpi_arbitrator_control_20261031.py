@@ -10,6 +10,7 @@ to this file.
 from __future__ import annotations
 
 import json
+import os
 import secrets
 import socket
 import threading
@@ -87,6 +88,9 @@ class ArbitratorWifiState(base.WifiPrimaryState):
 
 
 def main() -> None:
+    expected_firmware = os.environ.get("TRACTOR_ARBITRATOR_EXPECTED_FIRMWARE")
+    if expected_firmware:
+        base.EXPECTED_FIRMWARE = expected_firmware
     base.WifiPrimaryState = ArbitratorWifiState
     base.main()
 
