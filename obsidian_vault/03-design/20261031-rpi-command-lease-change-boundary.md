@@ -55,6 +55,12 @@ released local safety inputs, and speed compliance. A failure of any required
 check pauses immediately. ntfy delivery is diagnostic only and is never a
 condition for continued motion.
 
+The offline command scheduler emits motion at 100 ms intervals, retries an
+unacknowledged Pause claim at 250 ms, and latches Pause if its own tick gap
+exceeds 250 ms. Configuration rejects any command, retry, or scheduler-gap
+limit at or above the Teensy's 500 ms lease. The scheduler currently has no
+live socket, serial-device, boot-service, or mission-launcher connection.
+
 ## Frozen reference paths
 
 The first implementation phases may not edit these proven files:
