@@ -32,7 +32,6 @@ class PauseOnlyCommissionTests(unittest.TestCase):
                 "--engine-off-confirmed",
                 "--blades-off-confirmed",
                 "--rear-lever-out-confirmed",
-                "--physical-pause-confirmed",
                 "--wheels-chocked-confirmed",
             ]
         )

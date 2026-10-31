@@ -58,8 +58,9 @@ class TeensyRpiCommandLeaseSourceTests(unittest.TestCase):
         self.assertNotIn('memcmp(buffer, "CMD,"', active_parser)
         self.assertNotIn('memcmp(buffer, "WIFI,"', active_parser)
 
-    def test_physical_pause_and_local_fault_logic_remain_present(self):
-        self.assertIn("physicalPause || !leaseUsable", self.source)
+    def test_local_fault_logic_remains_present_without_nrf_authority(self):
+        self.assertIn("if (!leaseUsable || rpiCommandMode == RPI_MODE_PAUSE)", self.source)
+        self.assertNotIn("const bool physicalPause", self.source)
         self.assertIn("rpiLeaseExpiredLatched = true", self.source)
         self.assertIn("rpiLeaseExpiredLatched = false", self.source)
         self.assertIn("steeringFaultLatched", self.source)
@@ -67,10 +68,14 @@ class TeensyRpiCommandLeaseSourceTests(unittest.TestCase):
         self.assertIn("controlTransmission();", self.source)
         self.assertIn("controlSteering();", self.source)
 
-    def test_new_rpi_session_requires_physical_pause_claim(self):
-        self.assertIn("physicalPauseForSessionClaim", self.source)
+    def test_new_rpi_session_requires_zero_pause_claim_without_nrf(self):
         self.assertIn("parsedMode != RPI_MODE_PAUSE", self.source)
         self.assertIn("RPI_REJECT_SESSION", self.source)
+        session_gate = self.source.split(
+            "const bool sessionChanged", 1
+        )[1].split("if (!sessionChanged", 1)[0]
+        self.assertNotIn("radioStats", session_gate)
+        self.assertNotIn("radioData", session_gate)
 
     def test_telemetry_exposes_session_and_expiry_latch(self):
         self.assertIn("RPI_CTL,m=%u,f=%d,u=%d,l=%d", self.source)

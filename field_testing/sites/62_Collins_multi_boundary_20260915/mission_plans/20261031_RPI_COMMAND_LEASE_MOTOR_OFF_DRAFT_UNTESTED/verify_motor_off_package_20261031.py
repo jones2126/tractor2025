@@ -34,12 +34,17 @@ def main():
     prepare_text = prepare.read_text(encoding="utf-8")
 
     require(
-        'TRACTOR_FIRMWARE_ID "teensy_main_20261031_rpi_command_lease_v1"' in candidate_text,
+        'TRACTOR_FIRMWARE_ID "teensy_main_20261031_rpi_command_lease_v2"' in candidate_text,
         "candidate identity mismatch",
     )
     require("RPI_COMMAND_LEASE_MS <= 500UL" in candidate_text, "500 ms cap missing")
     require("rpiLeaseExpiredLatched" in candidate_text, "expiry latch missing")
-    require("physicalPauseForSessionClaim" in candidate_text, "Pause claim gate missing")
+    require("sessionChanged && parsedMode != RPI_MODE_PAUSE" in candidate_text, "Pause claim gate missing")
+    session_gate = candidate_text.split("const bool sessionChanged", 1)[1].split(
+        "if (!sessionChanged", 1
+    )[0]
+    require("radioStats" not in session_gate, "obsolete NRF dependency in session gate")
+    require("radioData" not in session_gate, "obsolete NRF mode dependency in session gate")
     require(
         "teensy_main_20261031_rpi_command_lease.cpp" in candidate_build_text,
         "candidate build selects wrong source",
@@ -51,6 +56,23 @@ def main():
     require("send_auto(" not in pause_tool_text, "Pause tool contains Auto send")
     require("send_manual(" not in pause_tool_text, "Pause tool contains Manual send")
     require("adapter.send_pause()" in pause_tool_text, "Pause tool does not send Pause")
+    require(
+        'EXPECTED_FIRMWARE = "teensy_main_20261031_rpi_command_lease_v2"'
+        in pause_tool_text,
+        "Pause tool expects wrong candidate identity",
+    )
+    require(
+        "physical-pause-confirmed" not in pause_tool_text,
+        "obsolete NRF/physical handheld confirmation remains",
+    )
+    require(
+        "teensy_main_20261031_rpi_command_lease_v2_CANDIDATE.hex" in prepare_text,
+        "artifact preparation uses wrong candidate identity",
+    )
+    require(
+        "teensy_main_20261031_rpi_command_lease_v1_CANDIDATE.hex" not in prepare_text,
+        "obsolete v1 artifact name remains",
+    )
     require("-t upload" not in prepare_text, "preparation script must not upload")
 
     print("PASS: disabled motor-off command-lease package verified.")

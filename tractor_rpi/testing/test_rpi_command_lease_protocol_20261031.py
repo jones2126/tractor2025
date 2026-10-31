@@ -103,17 +103,15 @@ class RpiCommandLeaseProtocolTests(unittest.TestCase):
                 self.assertEqual(RpiCommandMode.PAUSE, decision.command.mode)
                 self.assertEqual(0.0, decision.command.drive)
 
-    def test_new_session_requires_physical_pause_and_zero_pause_claim(self):
+    def test_new_session_requires_zero_pause_claim_without_nrf(self):
         receiver = CommandLeaseReference()
         first = encode_frame(RpiCommand(100, 0, RpiCommandMode.PAUSE, 0.0, 0.0))
         motion = encode_frame(RpiCommand(101, 0, RpiCommandMode.AUTO_MPS, 1.0, 0.0))
         second = encode_frame(RpiCommand(101, 0, RpiCommandMode.PAUSE, 0.0, 0.0))
 
-        self.assertFalse(receiver.accept(first, now_ms=0))
-        self.assertTrue(receiver.accept(first, now_ms=1, physical_pause_active=True))
-        self.assertFalse(receiver.accept(motion, now_ms=2, physical_pause_active=True))
-        self.assertFalse(receiver.accept(second, now_ms=3))
-        self.assertTrue(receiver.accept(second, now_ms=4, physical_pause_active=True))
+        self.assertTrue(receiver.accept(first, now_ms=0))
+        self.assertFalse(receiver.accept(motion, now_ms=1))
+        self.assertTrue(receiver.accept(second, now_ms=2))
 
     def test_delayed_motion_cannot_resume_after_expiry_without_pause_rearm(self):
         receiver = CommandLeaseReference()

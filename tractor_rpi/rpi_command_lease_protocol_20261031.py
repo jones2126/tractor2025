@@ -154,7 +154,7 @@ class CommandLeaseReference:
         except (TypeError, ValueError):
             return False
         if self._last_command is None or command.session != self._last_command.session:
-            if not physical_pause_active or command.mode != RpiCommandMode.PAUSE:
+            if command.mode != RpiCommandMode.PAUSE:
                 return False
         elif not sequence_is_newer(command.sequence, self._last_command.sequence):
             return False

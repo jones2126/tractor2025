@@ -34,12 +34,12 @@ cp -p .pio/build/teensy41/firmware.hex \
 pio run --project-conf platformio.rpi-command-lease.ini \
   2>&1 | tee "$EVIDENCE_DIR/candidate-build.txt"
 cp -p .pio/build/teensy41/firmware.hex \
-  "$EVIDENCE_DIR/teensy_main_20261031_rpi_command_lease_v1_CANDIDATE.hex"
+  "$EVIDENCE_DIR/teensy_main_20261031_rpi_command_lease_v2_CANDIDATE.hex"
 
 cd "$EVIDENCE_DIR"
 sha256sum \
   teensy_main_20261003_wifi_v3_ROLLBACK.hex \
-  teensy_main_20261031_rpi_command_lease_v1_CANDIDATE.hex \
+  teensy_main_20261031_rpi_command_lease_v2_CANDIDATE.hex \
   > FIRMWARE_SHA256SUMS
 sha256sum -c FIRMWARE_SHA256SUMS
 

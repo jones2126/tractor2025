@@ -17,17 +17,19 @@
       mode 2: Auto; drive=0..1.8 m/s, steering=-1..1
 
   Invalid, corrupt, duplicate, or reordered frames do not refresh the lease.
-  A new RPi session is accepted only as a zero Pause claim while the physical
-  handheld is in Pause, so an RPi restart cannot silently re-arm motion.
+  A new RPi session is accepted only as a zero Pause claim. The retired NRF
+  handheld is not an authority input; phone and Wi-Fi safety are supervised by
+  the RPi. This prevents an RPi restart from silently re-arming motion without
+  coupling the Teensy to an obsolete radio link.
   Lease expiry latches Pause until a fresh explicit RPi Pause frame arrives;
   delayed motion frames therefore cannot automatically resume the tractor.
-  Lease expiry, physical Pause, physical e-stop, and existing local actuator
+  Lease expiry, the locally wired physical e-stop, and existing local actuator
   faults retain immediate Teensy authority.
 
   This candidate is not selected by platformio.ini and is not field approved.
 *********************************************************************/
 
-#define TRACTOR_FIRMWARE_ID "teensy_main_20261031_rpi_command_lease_v1"
+#define TRACTOR_FIRMWARE_ID "teensy_main_20261031_rpi_command_lease_v2"
 #define TRACTOR_TOP_LEVEL_LOOP loop_20260914_frozen_reference
 #include "teensy_main_20260914.cpp"
 #undef TRACTOR_TOP_LEVEL_LOOP
@@ -214,10 +216,7 @@ static bool acceptRpiCommandLine(char* line) {
     }
 
     const bool sessionChanged = !rpiSessionSeen || parsedSession != rpiSession;
-    const bool physicalPauseForSessionClaim =
-        radioStats.signalGood && radioData.control_mode == 2;
-    if (sessionChanged &&
-        (!physicalPauseForSessionClaim || parsedMode != RPI_MODE_PAUSE)) {
+    if (sessionChanged && parsedMode != RPI_MODE_PAUSE) {
         rejectRpiCommand(RPI_REJECT_SESSION);
         return true;
     }
@@ -356,14 +355,13 @@ extern "C" void loop() {
     monitorSerialBuffer();
     publishPeriodicSystemIdentity();
 
-    // Preserve NRF telemetry and physical controls. Once an RPi command has
-    // been selected, a received physical Pause remains an immediate override.
+    // Preserve legacy NRF telemetry for diagnosis only. The retired radio is
+    // not a command or safety-authority input in this candidate.
     handleRadio();
     const bool savedSignalGood = radioStats.signalGood;
     const byte savedMode = radioData.control_mode;
     const int16_t savedSteering = radioData.steering_val;
     const int16_t savedTransmission = radioData.transmission_val;
-    const bool physicalPause = savedSignalGood && savedMode == 2;
 
     const bool arrivalFresh = rpiCommandSelected &&
         currentMillis - rpiCommandTimestamp <= RPI_COMMAND_LEASE_MS;
@@ -372,10 +370,10 @@ extern "C" void loop() {
 
     if (rpiCommandSelected) {
         // RPi control does not require an NRF link, matching the proven direct
-        // control behavior. Physical Pause still wins whenever received.
+        // phone-control behavior.
         radioStats.signalGood = true;
 
-        if (physicalPause || !leaseUsable || rpiCommandMode == RPI_MODE_PAUSE) {
+        if (!leaseUsable || rpiCommandMode == RPI_MODE_PAUSE) {
             radioData.control_mode = 2;
             wifiDriveCommand = true;
             wifiDrivePercent = 0.0f;

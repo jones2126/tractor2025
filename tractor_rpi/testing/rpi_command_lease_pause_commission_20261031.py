@@ -23,7 +23,7 @@ from tractor_rpi.rpi_command_lease_adapter_20261031 import (
 from tractor_rpi.rpi_command_lease_protocol_20261031 import RpiCommandMode, decode_frame
 
 
-EXPECTED_FIRMWARE = "teensy_main_20261031_rpi_command_lease_v1"
+EXPECTED_FIRMWARE = "teensy_main_20261031_rpi_command_lease_v2"
 MINIMUM_MATCHING_PAUSE_STATUSES = 5
 
 
@@ -86,7 +86,6 @@ def require_physical_confirmations(args) -> None:
         "engine off": args.engine_off_confirmed,
         "blades off": args.blades_off_confirmed,
         "rear transmission lever out": args.rear_lever_out_confirmed,
-        "physical Pause selected": args.physical_pause_confirmed,
         "wheels chocked": args.wheels_chocked_confirmed,
     }
     missing = [name for name, confirmed in required.items() if not confirmed]
@@ -103,7 +102,6 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--engine-off-confirmed", action="store_true")
     parser.add_argument("--blades-off-confirmed", action="store_true")
     parser.add_argument("--rear-lever-out-confirmed", action="store_true")
-    parser.add_argument("--physical-pause-confirmed", action="store_true")
     parser.add_argument("--wheels-chocked-confirmed", action="store_true")
     return parser
 
