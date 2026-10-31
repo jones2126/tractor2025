@@ -1,0 +1,88 @@
+RPi COMMAND-LEASE PHONE INTEGRATION — MOTOR OFF — DRAFT, UNTESTED
+Date: 2026-10-31
+
+SCOPE
+  Authenticated direct-router phone Pause heartbeat -> UDP 6004 -> Pause-only
+  RPi supervisor/runtime -> RPICMD -> Teensy v2 acknowledgement. This package
+  authorizes no Manual, Auto, Pure Pursuit, engine start, PTO, or motion.
+
+0. PHYSICAL HOLD
+[ ] Engine OFF; key controlled by operator.
+[ ] Blades/PTO OFF.
+[ ] Rear hydrostatic transmission lever OUT.
+[ ] Wheels chocked.
+[ ] Phone connected to GL-SFT1200-9f4.
+
+1. BUILD-ONLY SOFTWARE HOLD — DO NOT STOP SERVICES OR FLASH
+    cd /home/al/tractor2025-rpi-lease
+    git status --short --branch
+    git rev-parse HEAD
+    bash field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20261031_RPI_COMMAND_LEASE_PHONE_MOTOR_OFF_DRAFT_UNTESTED/run_phone_motor_off_software_tests_20261031.sh
+
+[ ] Require package verifier PASS and all tests OK.
+[ ] STOP and provide output for separate temporary-flash approval.
+
+2. AFTER SEPARATE TEMPORARY-FLASH APPROVAL ONLY
+[ ] Reconfirm every physical hold in Section 0.
+[ ] Stop teensy-bridge.service and tractor-wifi-direct-mission.service.
+[ ] Require both inactive, /dev/teensy free, and no control/Pure Pursuit process.
+[ ] Upload only platformio.rpi-command-lease.ini; require SUCCESS.
+[ ] Wait 50 seconds; stop both services again; require /dev/teensy free.
+
+3. PUTTY SESSION A — PAUSE-ONLY LEASE BRIDGE
+    cd /home/al/tractor2025-rpi-lease
+    python3 -u tractor_rpi/teensy_serial_bridge_rpi_lease_pause_20261031.py \
+      2>&1 | tee "$TRACTOR_PHONE_LEASE_EVIDENCE_DIR/pause-only-bridge-console.txt"
+
+[ ] Require serial connected, Pause-only listener started, and lease scheduler
+    started. Do not start teensy-bridge.service.
+
+4. PUTTY SESSION B — PAUSE-ONLY PHONE SERVER
+    cd /home/al/tractor2025-rpi-lease
+    python3 -u tractor_rpi/testing/webrtc/wifi_rpi_lease_pause_only_20261031.py \
+      --host 192.168.8.20 \
+      --port 8768 \
+      --command-ip 127.0.0.1 \
+      --authority-policy rpi-lease-pause-only \
+      --tls-cert /home/al/.config/tractor-wifi-control/tls/server.crt \
+      --tls-key /home/al/.config/tractor-wifi-control/tls/server.key \
+      --operator-key-file /home/al/.config/tractor-wifi-control/stationary-rpi-lease-pause.key \
+      --diagnostics-status-file /run/tractor-phone-control/rpi-lease-pause-diagnostics.json \
+      --log-dir "$TRACTOR_PHONE_LEASE_EVIDENCE_DIR" \
+      --no-ntfy \
+      2>&1 | tee "$TRACTOR_PHONE_LEASE_EVIDENCE_DIR/pause-only-phone-server-console.txt"
+
+[ ] Open only the printed local URL on the phone.
+[ ] Require visible MOTOR-OFF TEST and PAUSE ONLY banners.
+[ ] Require no Manual/Auto buttons, sliders, voice, PTO, or mission control.
+[ ] Require firmware command_lease_v2, CONNECTED · PAUSE, active session,
+    increasing Server accepted and Bridge phone Pause, Bridge rejected=0, and
+    Teensy Pause claim=ACKNOWLEDGED.
+[ ] Hold visible for 2 minutes. Hide/lock for 10 seconds, return, and require a
+    fresh session in Pause. Do not attempt any motion input.
+
+5. PUTTY SESSION C — EVIDENCE SNAPSHOT
+    lease_key="$(cat /home/al/.config/tractor-wifi-control/stationary-rpi-lease-pause.key)"
+    curl -ksS -H "X-Operator-Key: $lease_key" \
+      https://127.0.0.1:8768/api/state \
+      | tee "$TRACTOR_PHONE_LEASE_EVIDENCE_DIR/final-api-state.json" \
+      | python3 -m json.tool
+
+[ ] Require pause_only=true; expected v2 firmware; bridge age fresh; mode=0;
+    Pause claim acknowledged; accepted_pause_packets > 5; rejected_packets=0;
+    Teensy lease usable; expiry_latched=false; Teensy rejected_count=0.
+
+6. MANDATORY SAME-SESSION SHUTDOWN AND ROLLBACK
+[ ] Ctrl+C phone server in Session B; require clean stop.
+[ ] Ctrl+C Pause-only bridge in Session A. The 500 ms Teensy lease expires to
+    Pause after the bridge stops.
+[ ] Require /dev/teensy free.
+[ ] Upload platformio.wifi-primary.ini; repeat once only for the familiar first
+    Teensy upload failure; require SUCCESS.
+[ ] Wait 50 seconds. Restore teensy-bridge.service, then
+    tractor-wifi-direct-mission.service.
+[ ] Require both active, serial owned by normal bridge, pause_latched, zero
+    unexplained rejections, and communications degraded disabled.
+[ ] Hash and verify the evidence directory.
+
+STOP. Passing this checklist does not authorize candidate motion.

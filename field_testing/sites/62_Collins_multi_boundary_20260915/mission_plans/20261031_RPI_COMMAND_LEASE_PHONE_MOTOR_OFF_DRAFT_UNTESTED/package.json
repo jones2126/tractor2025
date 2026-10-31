@@ -1,0 +1,8 @@
+{
+  "package": "20261031_RPI_COMMAND_LEASE_PHONE_MOTOR_OFF_DRAFT_UNTESTED",
+  "approved_for_flash": false,
+  "approved_for_motion": false,
+  "installs_services": false,
+  "enables_services": false,
+  "test_scope": "engine-off phone Pause to RPi command-lease bridge integration followed by mandatory rollback"
+}

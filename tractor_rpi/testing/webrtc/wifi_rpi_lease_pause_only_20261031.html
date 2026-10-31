@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>Tractor01 Motor-Off Pause Test</title>
+  <style>
+    :root{color-scheme:dark;--bg:#091118;--panel:#14222d;--green:#48d27b;--red:#ff5c5c;--amber:#ffc05a;--muted:#98a9b5}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:#eef5f8;font-family:system-ui,sans-serif}.app{max-width:720px;margin:auto;padding:14px;display:grid;gap:12px}.banner{padding:18px;border:5px solid white;border-radius:14px;background:#075f86;text-align:center;font-size:25px;font-weight:1000}.warning{padding:12px;border:2px solid var(--amber);border-radius:10px;background:#351500;text-align:center;font-weight:850}.state{display:grid;grid-template-columns:1fr 1fr;gap:8px}.metric{padding:12px;border-radius:10px;background:var(--panel);text-align:center}.metric small{display:block;color:var(--muted)}.metric strong{font-variant-numeric:tabular-nums}.pause{padding:22px;border:4px solid #ff9a75;border-radius:14px;background:#84351f;text-align:center;font-size:26px;font-weight:1000}.live{color:var(--green)}.bad{color:var(--red)}
+  </style>
+</head>
+<body><main class="app">
+  <div class="banner">MOTOR-OFF TEST<br>RPi COMMAND LEASE v2</div>
+  <div class="pause">PAUSE ONLY<br><small>ZERO DRIVE · ZERO STEERING</small></div>
+  <div class="warning">This page has no Manual, Auto, steering, drive, PTO, or mission control. Engine off, blades off, rear lever out, and wheels chocked remain required.</div>
+  <div class="state">
+    <div class="metric"><small>Connection</small><strong id="connection" class="bad">CONNECTING</strong></div>
+    <div class="metric"><small>Session</small><strong id="session">NONE</strong></div>
+    <div class="metric"><small>Firmware</small><strong id="firmware">--</strong></div>
+    <div class="metric"><small>Command age</small><strong id="age">--</strong></div>
+    <div class="metric"><small>Server accepted</small><strong id="accepted">0</strong></div>
+    <div class="metric"><small>Bridge phone Pause</small><strong id="bridgeAccepted">0</strong></div>
+    <div class="metric"><small>Bridge rejected</small><strong id="rejected">0</strong></div>
+    <div class="metric"><small>Teensy Pause claim</small><strong id="claim">WAITING</strong></div>
+  </div>
+</main>
+<script>
+(()=>{'use strict';
+  const $=id=>document.getElementById(id),key=new URLSearchParams(location.search).get('key')||'',headers={'Content-Type':'application/json','X-Operator-Key':key};
+  const clientId=crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random();let session=null,sequence=0,running=true;
+  async function api(path,method='GET',body=null){const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),1000);try{const response=await fetch(path,{method,headers,body:body?JSON.stringify(body):null,cache:'no-store',signal:controller.signal}),text=await response.text();let data;try{data=JSON.parse(text)}catch{data={error:'HTTP '+response.status}}if(!response.ok)throw new Error(data.error||'HTTP '+response.status);return data}finally{clearTimeout(timer)}}
+  function link(ok,text){$('connection').textContent=text;$('connection').className=ok?'live':'bad'}
+  async function claim(){const data=await api('/api/claim','POST',{client_id:clientId});session=data.session;sequence=0;$('session').textContent='ACTIVE'}
+  async function heartbeat(){if(!running||document.hidden){setTimeout(heartbeat,200);return}try{if(!session)await claim();await api('/api/command','POST',{client_id:clientId,session,sequence:++sequence,mode:'pause',drive_percent:0,steering_percent:0,reason:'motor_off_pause_heartbeat',client_time_ms:Date.now(),client_rtt_ms:null,scheduler_delay_ms:0,coalesced_wait_ms:0});link(true,'CONNECTED · PAUSE')}catch(error){session=null;$('session').textContent='NONE';link(false,'RECONNECTING · PAUSE')}setTimeout(heartbeat,200)}
+  async function poll(){try{const data=await api('/api/state'),lease=data.rpi_command_lease||{};$('firmware').textContent=(data.system?.firmware||'--').replace('teensy_main_','');$('age').textContent=Math.round(Number(data.wifi_control?.command_age_ms??0))+' ms';$('accepted').textContent=String(data.accepted??0);$('bridgeAccepted').textContent=String(lease.accepted_pause_packets??0);$('rejected').textContent=String(lease.rejected_packets??0);$('claim').textContent=lease.pause_claim_acknowledged?'ACKNOWLEDGED':'WAITING';$('claim').className=lease.pause_claim_acknowledged?'live':'bad'}catch{}setTimeout(poll,500)}
+  document.addEventListener('visibilitychange',()=>{if(document.hidden){link(false,'HIDDEN · PAUSE');session=null;$('session').textContent='NONE'}});
+  window.addEventListener('pagehide',()=>{running=false});heartbeat();poll();
+})();
+</script>
+</body></html>
