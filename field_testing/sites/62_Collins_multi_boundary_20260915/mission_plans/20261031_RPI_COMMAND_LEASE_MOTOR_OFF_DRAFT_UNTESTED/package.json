@@ -1,0 +1,9 @@
+{
+  "schema": 1,
+  "package": "20261031_RPI_COMMAND_LEASE_MOTOR_OFF_DRAFT_UNTESTED",
+  "approved_for_flash": false,
+  "approved_for_motion": false,
+  "candidate_firmware": "teensy_main_20261031_rpi_command_lease_v1",
+  "rollback_firmware": "teensy_main_20261003_wifi_v3",
+  "test_scope": "engine-off Pause-only temporary flash followed by mandatory rollback"
+}

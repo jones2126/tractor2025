@@ -1,0 +1,60 @@
+RPi COMMAND-LEASE MOTOR-OFF CHECKLIST — DRAFT, UNTESTED
+Date: 2026-10-31
+
+SCOPE
+  Temporary candidate flash, Pause-only serial acknowledgement test, evidence
+  collection, and mandatory rollback to teensy_main_20261003_wifi_v3.
+  This checklist does not authorize Manual, Auto, engine start, PTO, or motion.
+
+0. PHYSICAL HOLD
+[ ] Engine OFF.
+[ ] Blades/PTO OFF.
+[ ] Rear hydrostatic transmission lever pulled OUT.
+[ ] Physical handheld Pause selected.
+[ ] Wheels chocked.
+[ ] Key controlled by the operator; nobody may start the engine.
+
+1. FETCH INTO A SEPARATE CHECKOUT — DO NOT ALTER /home/al/tractor2025
+    cd /home/al/tractor2025
+    git fetch origin codex/rpi-command-lease
+    git worktree add /home/al/tractor2025-rpi-lease origin/codex/rpi-command-lease
+    cd /home/al/tractor2025-rpi-lease
+    git status --short --branch
+    git rev-parse HEAD
+
+2. BUILD AND VERIFY ONLY — NO UPLOAD
+    export TRACTOR_REPO=/home/al/tractor2025-rpi-lease
+    export TRACTOR_MOTOR_OFF_EVIDENCE_DIR=/home/al/field_logs/20261031_rpi_command_lease_motor_off
+    bash field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20261031_RPI_COMMAND_LEASE_MOTOR_OFF_DRAFT_UNTESTED/prepare_motor_off_artifacts_20261031.sh
+
+[ ] Require package verifier PASS.
+[ ] Require all focused software tests PASS.
+[ ] Require rollback and candidate builds SUCCESS.
+[ ] Require both firmware SHA256 checks OK.
+
+==================== SEPARATE FLASH APPROVAL HOLD ====================
+STOP. Send the exact outputs above for review. package.json must still say
+approved_for_flash=false and approved_for_motion=false. Do not stop services,
+upload firmware, or open the serial device without separate explicit approval.
+======================================================================
+
+3. AFTER SEPARATE MOTOR-OFF FLASH APPROVAL ONLY
+[ ] Reconfirm all five physical holds in Section 0.
+[ ] Record active services and diagnostics.
+[ ] Stop every service that owns /dev/teensy. Do not start a mission service.
+[ ] Upload only with the separately reviewed command.
+[ ] Run the Pause-only commissioning tool for 60 seconds.
+[ ] Require exact firmware identity, at least five matching Pause statuses,
+    no non-Pause RPI_CTL mode, and no expiry latch.
+[ ] Collect the JSONL evidence and current service journal.
+
+4. MANDATORY SAME-SESSION ROLLBACK
+[ ] Reconfirm physical holds.
+[ ] Upload the saved teensy_main_20261003_wifi_v3_ROLLBACK.hex using the
+    separately reviewed rollback command.
+[ ] Require exact teensy_main_20261003_wifi_v3 identity.
+[ ] Restore only the previously active service.
+[ ] Require physical Pause, zero command, and normal diagnostics.
+[ ] Hash the final evidence directory.
+
+STOP. Candidate motion remains unauthorized even if Pause commissioning passes.
