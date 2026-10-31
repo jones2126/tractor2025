@@ -80,6 +80,18 @@ class RpiArbitratorMotorOffConsumerTests(unittest.TestCase):
         self.assertIn("duplicate phone", snapshot["input_fault"])
         self.assertEqual("PAUSE_ONLY", snapshot["actual_serial_output"])
 
+    def test_current_diagnostics_are_separate_from_startup_latch(self):
+        receiver = ArbitratorFeedReceiver(ROUTE)
+        first = receiver.snapshot(now_monotonic_s=0.0, teensy_sample=None)
+        self.assertEqual("PAUSE_LATCHED", first["latched_observer_decision"])
+
+        # Current Pause is healthy after Teensy telemetry arrives, even though
+        # the historical observer latch remains visible for audit.
+        current = receiver.snapshot(now_monotonic_s=1.0, teensy_sample=teensy())
+        self.assertEqual("PAUSE", current["joined_decision"])
+        self.assertEqual("operator requested Pause", current["exact_reason"])
+        self.assertEqual("PAUSE_LATCHED", current["latched_observer_decision"])
+
 
 if __name__ == "__main__":
     unittest.main()

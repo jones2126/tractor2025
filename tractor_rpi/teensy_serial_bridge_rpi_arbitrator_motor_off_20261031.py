@@ -100,8 +100,17 @@ class ArbitratorFeedReceiver:
             if teensy_sample is not None:
                 self.collector.ingest_teensy(teensy_sample)
             inputs = self.collector.build(now_monotonic_s=now_monotonic_s)
-            decision = self.supervisor.evaluate(inputs)
-            guard = None if decision.guard is None else asdict(decision.guard)
+            # The persistent observer shows fail-latched history. A fresh
+            # supervisor also reports the current measured state so expected
+            # startup telemetry arrival does not masquerade as a current
+            # steering/transmission fault. Actual serial output is separately
+            # and unconditionally Pause-only.
+            latched_decision = self.supervisor.evaluate(inputs)
+            current_decision = RpiSafetySupervisor().evaluate(inputs)
+            guard = (
+                None if current_decision.guard is None
+                else asdict(current_decision.guard)
+            )
             return {
                 "schema": 1,
                 "approved_for_motion": False,
@@ -119,11 +128,13 @@ class ArbitratorFeedReceiver:
                     None if self.last_pursuit_at is None
                     else max(0.0, now_monotonic_s - self.last_pursuit_at)
                 ),
-                "joined_decision": decision.state.value,
-                "joined_mode": int(decision.mode),
-                "joined_drive": decision.drive,
-                "joined_steering": decision.steering,
-                "exact_reason": decision.reason,
+                "joined_decision": current_decision.state.value,
+                "joined_mode": int(current_decision.mode),
+                "joined_drive": current_decision.drive,
+                "joined_steering": current_decision.steering,
+                "exact_reason": current_decision.reason,
+                "latched_observer_decision": latched_decision.state.value,
+                "latched_observer_reason": latched_decision.reason,
                 "guard": guard,
                 "health": asdict(inputs.health),
                 "additional_local_faults": list(inputs.additional_local_faults),
