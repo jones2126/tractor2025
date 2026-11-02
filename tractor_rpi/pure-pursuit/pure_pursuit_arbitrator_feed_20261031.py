@@ -65,6 +65,7 @@ class SafetyDuplicatingSocket:
                     "heading_carrier",
                     "heading_accuracy_deg",
                     "path_progress_m",
+                    "cross_track_err_m",
                 )
                 # Startup rows emitted before the first valid pose do not
                 # become safety records. Missing data therefore becomes feed
@@ -85,7 +86,6 @@ class SafetyDuplicatingSocket:
                 # proposal in those states.
                 payload.setdefault("speed_cmd_mps", 0.0)
                 payload.setdefault("steer_normalized", 0.0)
-                payload.setdefault("cross_track_err_m", 0.0)
                 self._socket.sendto(
                     json.dumps(payload, separators=(",", ":")).encode("utf-8"),
                     ("127.0.0.1", self._safety_port),

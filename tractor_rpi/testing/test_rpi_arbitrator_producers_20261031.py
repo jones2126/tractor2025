@@ -85,6 +85,7 @@ class RpiArbitratorProducerTests(unittest.TestCase):
             "heading_carrier": "fixed",
             "heading_accuracy_deg": "0.2",
             "path_progress_m": "10.0",
+            "cross_track_err_m": "0.2",
         }
         wrapper.sendto(json.dumps(original).encode(), ("127.0.0.1", 6012))
         self.assertEqual(2, len(sink.sent))
@@ -108,6 +109,26 @@ class RpiArbitratorProducerTests(unittest.TestCase):
         )
         self.assertEqual(1, len(sink.sent))
         self.assertEqual(("127.0.0.1", 6012), sink.sent[0][1])
+
+    def test_waiting_row_without_measured_cross_track_is_not_declared_healthy(self):
+        sink = FakeSocket()
+        wrapper = self.pp_module.SafetyDuplicatingSocket(
+            sink,
+            telemetry_port=6012,
+            safety_port=6015,
+            route_sha256="a" * 64,
+        )
+        waiting = {
+            "controller_state": "WAITING_REACQUIRE",
+            "gps_age_s": "0.05",
+            "fix_quality": "RTK Fixed",
+            "head_valid": True,
+            "heading_carrier": "fixed",
+            "heading_accuracy_deg": "0.2",
+            "path_progress_m": "0.0",
+        }
+        wrapper.sendto(json.dumps(waiting).encode(), ("127.0.0.1", 6012))
+        self.assertEqual(1, len(sink.sent))
 
     def test_normalized_route_hash_ignores_line_ending_style(self):
         import tempfile
