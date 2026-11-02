@@ -78,6 +78,14 @@ WIFI_AUTO_STABLE_SECONDS = AUTO_LINK_STABLE_SECONDS
 DEFAULT_MAX_SPEED_MPS = 1.5
 LOG_DIR = os.path.expanduser("~/repos/field-testing-data")
 
+
+def validate_arbitrator_proposal_only(enabled, target_port):
+    """Keep proposal-only evaluation physically separated from UDP 6004."""
+    if enabled and target_port == CMD_VEL_UDP_PORT:
+        raise ValueError(
+            "--arbitrator-proposal-only refuses the tractor command port 6004"
+        )
+
 _FIX_RANK = {
     None: 0, "Unknown": 0, "Invalid": 0,
     "GPS Fix": 1, "DGPS": 1,
@@ -1299,9 +1307,20 @@ def main():
                         help='Local UDP port for dashboard Pause/Resume commands')
     parser.add_argument('--telemetry-port', type=int, default=0,
                         help='Local UDP port for live dashboard controller telemetry')
+    parser.add_argument('--arbitrator-proposal-only', action='store_true',
+                        help=('Compute a navigation proposal without waiting for low-level '
+                              'AUTO status; refuses UDP 6004 and requires a separate safety '
+                              'arbitrator to authorize any actuator output'))
     args = parser.parse_args()
     if args.resume_stable_seconds < 0.0:
         parser.error('--resume-stable-seconds must be zero or greater')
+    try:
+        validate_arbitrator_proposal_only(
+            args.arbitrator_proposal_only,
+            args.port,
+        )
+    except ValueError as exc:
+        parser.error(str(exc))
 
     pp = PurePursuit(
         target_ip=args.ip,
@@ -1337,7 +1356,18 @@ def main():
                                    require_head_valid=not args.allow_head_invalid,
                                    require_carrier_fixed=not args.basic_runtime_heading_gate,
                                    require_heading_geometry=not args.basic_runtime_heading_gate)
-        handheld_receiver = HandheldStatusReceiver(port=args.status_port)
+        # In the arbitrator architecture Pure Pursuit is a proposal producer,
+        # not the actuator authority. Waiting for low-level AUTO here would
+        # deadlock: the arbitrator needs a fresh proposal before it can grant
+        # AUTO, while this controller would wait for that grant before making
+        # a proposal. The explicit opt-in is allowed only when the destination
+        # is not the tractor command port (validated above). Default field
+        # behavior remains unchanged.
+        handheld_receiver = (
+            None
+            if args.arbitrator_proposal_only
+            else HandheldStatusReceiver(port=args.status_port)
+        )
         if not args.no_pursuit_log:
             logger = PursuitLogger()
         if args.control_port:

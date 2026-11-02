@@ -8,6 +8,7 @@ python3 -m unittest \
   tractor_rpi.testing.test_rpi_arbitrator_inputs_20261031 \
   tractor_rpi.testing.test_rpi_arbitrator_wire_20261031 \
   tractor_rpi.testing.test_rpi_arbitrator_producers_20261031 \
+  tractor_rpi.testing.test_pure_pursuit_wifi_operator_mode_20261005 \
   tractor_rpi.testing.test_rpi_arbitrator_motor_off_consumer_20261031 \
   tractor_rpi.testing.test_rpi_full_arbitrator_fault_simulation_20261031
 

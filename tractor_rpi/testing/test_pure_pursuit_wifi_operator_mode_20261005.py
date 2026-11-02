@@ -84,6 +84,14 @@ class WifiOperatorModeTests(unittest.TestCase):
         self.assertTrue(ready)
         self.assertEqual("", reason)
 
+    def test_arbitrator_proposal_only_refuses_tractor_command_port(self):
+        with self.assertRaisesRegex(ValueError, "refuses.*6004"):
+            controller.validate_arbitrator_proposal_only(True, 6004)
+
+    def test_arbitrator_proposal_only_allows_isolated_destination(self):
+        controller.validate_arbitrator_proposal_only(True, 16004)
+        controller.validate_arbitrator_proposal_only(False, 6004)
+
 
 if __name__ == "__main__":
     unittest.main()
