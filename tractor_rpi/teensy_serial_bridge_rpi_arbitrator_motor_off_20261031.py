@@ -128,6 +128,22 @@ class ArbitratorFeedReceiver:
                     None if self.last_pursuit_at is None
                     else max(0.0, now_monotonic_s - self.last_pursuit_at)
                 ),
+                # Expose the measured inputs separately from the joined
+                # decision.  Motor-off commissioning deliberately keeps the
+                # physical releases false, so the joined decision remains
+                # Pause even while we observe an authenticated AUTO request
+                # and a subsequent phone-link freshness transition.
+                "requested_mode": inputs.requested_mode.name,
+                "requested_mode_value": int(inputs.requested_mode),
+                "phone_link_fresh": inputs.phone_link_fresh,
+                "communications_degraded_preauthorized": (
+                    inputs.communications_degraded_preauthorized
+                ),
+                "auto_running": inputs.auto_running,
+                "pure_pursuit_speed_mps": inputs.pure_pursuit_speed_mps,
+                "pure_pursuit_steering": inputs.pure_pursuit_steering,
+                "route_progress_m": inputs.route_progress_m,
+                "local_travel_m": inputs.local_travel_m,
                 "joined_decision": current_decision.state.value,
                 "joined_mode": int(current_decision.mode),
                 "joined_drive": current_decision.drive,

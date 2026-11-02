@@ -67,8 +67,39 @@ class RpiArbitratorMotorOffConsumerTests(unittest.TestCase):
         self.assertEqual(1, snapshot["accepted_pure_pursuit_samples"])
         self.assertEqual("PAUSE_ONLY", snapshot["actual_serial_output"])
         self.assertFalse(snapshot["approved_for_motion"])
+        self.assertEqual("AUTO_MPS", snapshot["requested_mode"])
+        self.assertEqual(2, snapshot["requested_mode_value"])
+        self.assertTrue(snapshot["phone_link_fresh"])
+        self.assertFalse(snapshot["communications_degraded_preauthorized"])
+        self.assertTrue(snapshot["auto_running"])
+        self.assertEqual(1.0, snapshot["pure_pursuit_speed_mps"])
+        self.assertEqual(10.0, snapshot["route_progress_m"])
         self.assertEqual("PAUSE_LATCHED", snapshot["joined_decision"])
         self.assertIn("physical_pause_released", snapshot["exact_reason"])
+
+    def test_phone_freshness_transition_is_visible_without_motion_output(self):
+        receiver = ArbitratorFeedReceiver(ROUTE)
+        receiver.ingest(phone(), now_monotonic_s=1.0)
+        receiver.ingest(pursuit(), now_monotonic_s=1.0)
+        fresh = receiver.snapshot(
+            now_monotonic_s=1.1,
+            teensy_sample=teensy(),
+        )
+        self.assertEqual("AUTO_MPS", fresh["requested_mode"])
+        self.assertTrue(fresh["phone_link_fresh"])
+
+        stale_phone = phone(sequence=2)
+        stale_phone["operator_link_fresh"] = False
+        receiver.ingest(stale_phone, now_monotonic_s=1.2)
+        stale = receiver.snapshot(
+            now_monotonic_s=1.3,
+            teensy_sample=teensy(now=1.3),
+        )
+        self.assertEqual("AUTO_MPS", stale["requested_mode"])
+        self.assertFalse(stale["phone_link_fresh"])
+        self.assertEqual("PAUSE_ONLY", stale["actual_serial_output"])
+        self.assertEqual(0.0, stale["joined_drive"])
+        self.assertEqual(0.0, stale["joined_steering"])
 
     def test_malformed_and_duplicate_feeds_fail_closed_with_exact_counts(self):
         receiver = ArbitratorFeedReceiver(ROUTE)
