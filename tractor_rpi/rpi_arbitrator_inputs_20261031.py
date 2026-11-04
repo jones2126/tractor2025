@@ -112,9 +112,12 @@ class RpiArbitratorInputCollector:
         self.pure_pursuit_command: PurePursuitCommandSample | None = None
         self.pure_pursuit_health: PurePursuitHealthSample | None = None
         self.teensy: TeensySafetySample | None = None
+        # This collector receives a Pure Pursuit proposal, not proof that the
+        # proposal reached the actuators. Do not integrate proposal speed as
+        # actual travel. Until measured wheel/actuator odometry is joined, the
+        # degraded distance envelope uses fresh monotonic route progress.
         self.local_travel_m = 0.0
         self._last_pp_command_at: float | None = None
-        self._last_pp_speed_mps = 0.0
         self._last_phone_key: tuple[str, int] | None = None
         self._last_pp_sequence: int | None = None
         self._latched_input_fault: str | None = None
@@ -147,17 +150,14 @@ class RpiArbitratorInputCollector:
         if self._last_pp_sequence is not None and sample.sequence <= self._last_pp_sequence:
             self._latched_input_fault = "stale or duplicate Pure Pursuit sequence"
             return
-        if self._last_pp_command_at is not None:
-            elapsed = sample.received_monotonic_s - self._last_pp_command_at
-            if elapsed < 0:
-                self._latched_input_fault = "Pure Pursuit monotonic arrival moved backwards"
-                return
-            # Command-integrated travel is deliberately conservative and is
-            # compared with route progress by the sticky degraded guard.
-            self.local_travel_m += abs(self._last_pp_speed_mps) * elapsed
+        if (
+            self._last_pp_command_at is not None
+            and sample.received_monotonic_s < self._last_pp_command_at
+        ):
+            self._latched_input_fault = "Pure Pursuit monotonic arrival moved backwards"
+            return
         self.pure_pursuit_command = sample
         self._last_pp_command_at = sample.received_monotonic_s
-        self._last_pp_speed_mps = sample.speed_mps
         self._last_pp_sequence = sample.sequence
 
     def ingest_pure_pursuit_health(self, sample: PurePursuitHealthSample) -> None:

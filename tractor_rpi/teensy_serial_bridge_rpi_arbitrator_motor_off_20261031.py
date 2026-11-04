@@ -144,6 +144,7 @@ class ArbitratorFeedReceiver:
                 "pure_pursuit_steering": inputs.pure_pursuit_steering,
                 "route_progress_m": inputs.route_progress_m,
                 "local_travel_m": inputs.local_travel_m,
+                "distance_envelope_source": "ROUTE_PROGRESS_ONLY",
                 "joined_decision": current_decision.state.value,
                 "joined_mode": int(current_decision.mode),
                 "joined_drive": current_decision.drive,

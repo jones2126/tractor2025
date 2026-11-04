@@ -96,7 +96,7 @@ class RpiArbitratorInputCollectorTests(unittest.TestCase):
                 result = RpiSafetySupervisor().evaluate(c.build(now_monotonic_s=10.51))
                 self.assertEqual(SupervisorState.PAUSE_LATCHED, result.state)
 
-    def test_reconnect_does_not_reset_time_or_command_integrated_distance(self):
+    def test_reconnect_does_not_reset_time_or_route_progress_distance(self):
         c = self.collector()
         supervisor = RpiSafetySupervisor()
         # Phone stale, all local evidence refreshed.
@@ -113,6 +113,14 @@ class RpiArbitratorInputCollectorTests(unittest.TestCase):
         recovered = supervisor.evaluate(c.build(now_monotonic_s=20.1))
         self.assertEqual(incident, recovered.guard.incident_id)
         self.assertGreaterEqual(recovered.guard.distance_m, 9.4)
+
+    def test_proposal_speed_is_not_misreported_as_actual_local_travel(self):
+        c = self.collector()
+        c.ingest_pure_pursuit_command(
+            PurePursuitCommandSample(150.0, 2, ROUTE, 1.0, 0.2)
+        )
+        inputs = c.build(now_monotonic_s=150.0)
+        self.assertEqual(0.0, inputs.local_travel_m)
 
     def test_duplicate_sequences_latch_input_fault(self):
         c = self.collector()
