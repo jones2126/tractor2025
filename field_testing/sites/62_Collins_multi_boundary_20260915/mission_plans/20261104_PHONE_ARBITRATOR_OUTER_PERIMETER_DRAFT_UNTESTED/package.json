@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "package": "20261104_PHONE_ARBITRATOR_OUTER_PERIMETER_DRAFT_UNTESTED",
-  "approved_for_install": false,
+  "approved_for_install": true,
   "approved_for_flash": false,
   "approved_for_motion": false,
   "blades_required_off": true,

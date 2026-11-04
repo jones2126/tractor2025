@@ -25,7 +25,7 @@ def normalized_hash(path: Path) -> str:
 
 def main() -> None:
     package = json.loads((HERE / "package.json").read_text(encoding="utf-8"))
-    require(package["approved_for_install"] is False, "install gate must be false")
+    require(package["approved_for_install"] is True, "install approval missing")
     require(package["approved_for_flash"] is False, "flash gate must be false")
     require(package["approved_for_motion"] is False, "motion gate must be false")
     require(package["blades_required_off"] is True, "blades-off gate missing")
@@ -45,7 +45,7 @@ def main() -> None:
     require("UDP 6004" in phone and "do not call" in phone, "legacy phone output is not isolated")
     require("teensy_main_20261104_rpi_command_lease_v3" in firmware, "v3 firmware identity missing")
     require("APPROVED_FOR_FIELD=false" in launcher, "field launcher must remain disabled")
-    require("APPROVED_FOR_INSTALL=false" in installer, "installer must remain disabled")
+    require("APPROVED_FOR_INSTALL=true" in installer, "installer approval missing")
     require("systemctl enable" not in installer, "installer must not boot-enable services")
     require("--arbitrator-proposal-only" in launcher, "Pure Pursuit is not proposal-only")
     require("--port 16004" in launcher, "unused proposal destination missing")
@@ -56,7 +56,8 @@ def main() -> None:
     print("PASS: disabled motion-capable phone-arbitrator package verified.")
     print("      Exact outer-perimeter route; phone-only operator modes; v3 E-stop relay support.")
     print("      Pure Pursuit is proposal-only; one RPi arbitrator owns Teensy commands.")
-    print("NOT INSTALL AUTHORIZATION. NOT FLASH AUTHORIZATION. NOT MOTION AUTHORIZATION.")
+    print("INSTALL AUTHORIZED: units may be copied but not enabled or started.")
+    print("NOT FLASH AUTHORIZATION. NOT SERVICE-START AUTHORIZATION. NOT MOTION AUTHORIZATION.")
 
 
 if __name__ == "__main__":

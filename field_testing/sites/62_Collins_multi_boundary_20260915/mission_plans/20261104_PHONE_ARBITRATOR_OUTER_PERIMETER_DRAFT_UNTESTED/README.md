@@ -4,9 +4,9 @@ This package is the first motion-capable integration of the phone control page,
 Pure Pursuit proposals, the bounded communications-degraded guard, the RPi
 command lease, and the Teensy v3 phone E-stop relay behavior.
 
-It is deliberately disabled:
+Its current approval state is:
 
-- installation is not approved;
+- installation of inactive service definitions is approved;
 - Teensy flashing is not approved;
 - field motion is not approved; and
 - neither service has a boot target.

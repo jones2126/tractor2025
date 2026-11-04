@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-APPROVED_FOR_INSTALL=false
+APPROVED_FOR_INSTALL=true
 HERE="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
 python3 "${HERE}/verify_package_20261104.py"
