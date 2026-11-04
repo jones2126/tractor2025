@@ -26,7 +26,15 @@ def normalized_hash(path: Path) -> str:
 def main() -> None:
     package = json.loads((HERE / "package.json").read_text(encoding="utf-8"))
     require(package["approved_for_install"] is True, "install approval missing")
-    require(package["approved_for_flash"] is False, "flash gate must be false")
+    require(package["approved_for_flash"] is True, "flash approval missing")
+    require(
+        package["approved_for_candidate_service_start"] is True,
+        "candidate service-start approval missing",
+    )
+    require(
+        package["approved_for_motor_off_commissioning"] is True,
+        "motor-off commissioning approval missing",
+    )
     require(package["approved_for_motion"] is False, "motion gate must be false")
     require(package["blades_required_off"] is True, "blades-off gate missing")
     require(normalized_hash(ROUTE) == EXPECTED_ROUTE, "reviewed route hash mismatch")
@@ -37,6 +45,7 @@ def main() -> None:
     firmware = (REPO / "tractor_teensy/src/teensy_main_20261104_rpi_command_lease.cpp").read_text(encoding="utf-8")
     launcher = (HERE / "run_outer_perimeter_20261104.sh").read_text(encoding="utf-8")
     installer = (HERE / "install_candidate_20261104.sh").read_text(encoding="utf-8")
+    activator = (HERE / "activate_candidate_motor_off_20261104.sh").read_text(encoding="utf-8")
     bridge_unit = (HERE / "tractor-rpi-arbitrator.service").read_text(encoding="utf-8")
     phone_unit = (HERE / "tractor-phone-arbitrator.service").read_text(encoding="utf-8")
 
@@ -47,6 +56,19 @@ def main() -> None:
     require("APPROVED_FOR_FIELD=false" in launcher, "field launcher must remain disabled")
     require("APPROVED_FOR_INSTALL=true" in installer, "installer approval missing")
     require("systemctl enable" not in installer, "installer must not boot-enable services")
+    require(
+        "APPROVED_FOR_MOTOR_OFF_COMMISSIONING=true" in activator,
+        "motor-off activation approval missing",
+    )
+    for confirmation in (
+        "--engine-off-confirmed",
+        "--blades-off-confirmed",
+        "--rear-lever-out-confirmed",
+        "--red-estop-ready-confirmed",
+        "--wheels-chocked-confirmed",
+    ):
+        require(confirmation in activator, f"activation confirmation missing: {confirmation}")
+    require("pgrep -f '[p]ure_pursuit'" in activator, "Pure Pursuit exclusion missing")
     require("--arbitrator-proposal-only" in launcher, "Pure Pursuit is not proposal-only")
     require("--port 16004" in launcher, "unused proposal destination missing")
     require("WantedBy=" not in bridge_unit + phone_unit, "candidate services must not boot")
@@ -61,11 +83,11 @@ def main() -> None:
     require("Conflicts=teensy-bridge.service" in bridge_unit, "serial-owner conflict missing")
     require("Requires=tractor-rpi-arbitrator.service" in phone_unit, "phone/arbitrator ordering missing")
 
-    print("PASS: disabled motion-capable phone-arbitrator package verified.")
+    print("PASS: motion-capable phone-arbitrator package verified.")
     print("      Exact outer-perimeter route; phone-only operator modes; v3 E-stop relay support.")
     print("      Pure Pursuit is proposal-only; one RPi arbitrator owns Teensy commands.")
-    print("INSTALL AUTHORIZED: units may be copied but not enabled or started.")
-    print("NOT FLASH AUTHORIZATION. NOT SERVICE-START AUTHORIZATION. NOT MOTION AUTHORIZATION.")
+    print("INSTALL, FLASH, CANDIDATE SERVICE START, AND MOTOR-OFF COMMISSIONING AUTHORIZED.")
+    print("ENGINE START AND PHYSICAL MOTION ARE NOT AUTHORIZED.")
 
 
 if __name__ == "__main__":

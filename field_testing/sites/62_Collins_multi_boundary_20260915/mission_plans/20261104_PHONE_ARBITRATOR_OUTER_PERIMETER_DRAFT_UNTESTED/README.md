@@ -7,7 +7,7 @@ command lease, and the Teensy v3 phone E-stop relay behavior.
 Its current approval state is:
 
 - installation of inactive service definitions is approved;
-- Teensy flashing is not approved;
+- v3 Teensy flashing and engine-off commissioning are approved;
 - field motion is not approved; and
 - neither service has a boot target.
 
@@ -26,7 +26,7 @@ python3 field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/202
 bash field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20261104_PHONE_ARBITRATOR_OUTER_PERIMETER_DRAFT_UNTESTED/run_software_tests_20261104.sh
 ```
 
-The next separate approval is for installation plus a new motor-off test of
-the v3 E-stop/reset behavior and motion-capable bridge while the rear
-transmission lever remains OUT. It is not approval to start the engine or move.
-See `MOTOR_OFF_NEXT_APPROVAL.md` for that stage's exact scope.
+The approved motor-off test covers the v3 E-stop/reset behavior and
+motion-capable bridge while the engine and blades remain off, the rear
+transmission lever remains OUT, and the wheels remain chocked. It is not
+approval to start the engine or move.

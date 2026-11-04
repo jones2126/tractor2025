@@ -1,6 +1,6 @@
-# Next approval: installation and motor-off commissioning
+# Approved stage: installation and motor-off commissioning
 
-This stage is not yet approved. When separately approved, it will:
+This stage is approved. It will:
 
 1. verify the exact Git revision and package;
 2. build the v3 Teensy firmware;
