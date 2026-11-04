@@ -29,3 +29,4 @@ bash field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/202611
 The next separate approval is for installation plus a new motor-off test of
 the v3 E-stop/reset behavior and motion-capable bridge while the rear
 transmission lever remains OUT. It is not approval to start the engine or move.
+See `MOTOR_OFF_NEXT_APPROVAL.md` for that stage's exact scope.

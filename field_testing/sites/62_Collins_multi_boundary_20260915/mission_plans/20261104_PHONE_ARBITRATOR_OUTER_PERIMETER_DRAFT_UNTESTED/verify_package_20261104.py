@@ -36,6 +36,7 @@ def main() -> None:
     phone = (REPO / "tractor_rpi/testing/webrtc/wifi_rpi_arbitrator_control_20261104.py").read_text(encoding="utf-8")
     firmware = (REPO / "tractor_teensy/src/teensy_main_20261104_rpi_command_lease.cpp").read_text(encoding="utf-8")
     launcher = (HERE / "run_outer_perimeter_20261104.sh").read_text(encoding="utf-8")
+    installer = (HERE / "install_candidate_20261104.sh").read_text(encoding="utf-8")
     bridge_unit = (HERE / "tractor-rpi-arbitrator.service").read_text(encoding="utf-8")
     phone_unit = (HERE / "tractor-phone-arbitrator.service").read_text(encoding="utf-8")
 
@@ -44,6 +45,8 @@ def main() -> None:
     require("UDP 6004" in phone and "do not call" in phone, "legacy phone output is not isolated")
     require("teensy_main_20261104_rpi_command_lease_v3" in firmware, "v3 firmware identity missing")
     require("APPROVED_FOR_FIELD=false" in launcher, "field launcher must remain disabled")
+    require("APPROVED_FOR_INSTALL=false" in installer, "installer must remain disabled")
+    require("systemctl enable" not in installer, "installer must not boot-enable services")
     require("--arbitrator-proposal-only" in launcher, "Pure Pursuit is not proposal-only")
     require("--port 16004" in launcher, "unused proposal destination missing")
     require("WantedBy=" not in bridge_unit + phone_unit, "candidate services must not boot")
