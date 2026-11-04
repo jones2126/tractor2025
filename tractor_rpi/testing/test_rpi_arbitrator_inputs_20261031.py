@@ -17,14 +17,38 @@ from tractor_rpi.rpi_safety_supervisor_20261031 import RpiSafetySupervisor, Supe
 ROUTE = "a" * 64
 
 
-def status(*, fresh=1, usable=1, latched=0):
+def status(*, fresh=1, usable=1, latched=0, estop=0):
     return parse_rpi_ctl_line(
         f"1,100,RPI_CTL,m=2,f={fresh},u={usable},l={latched},a=10,"
-        "ss=42,s=10,ok=10,rj=0,rr=0"
+        f"ss=42,s=10,ok=10,rj=0,rr=0,e={estop}"
     )
 
 
 class RpiArbitratorInputCollectorTests(unittest.TestCase):
+    def test_phone_replaces_retired_nrf_mode_switch_without_claiming_red_button(self):
+        c = RpiArbitratorInputCollector(
+            expected_route_sha256=ROUTE,
+            degraded_preauthorized=True,
+            phone_replaces_nrf_mode_switch=True,
+        )
+        c.ingest_phone(PhoneIntentSample(10.0, RpiCommandMode.AUTO_MPS, "phone", 1))
+        c.ingest_teensy(
+            TeensySafetySample(10.0, status(), False, False, True, True)
+        )
+        auto = c.build(now_monotonic_s=10.1)
+        self.assertTrue(auto.health.physical_pause_released)
+        self.assertTrue(auto.health.physical_estop_released)
+
+        c.ingest_phone(PhoneIntentSample(10.2, RpiCommandMode.PAUSE, "phone", 2))
+        paused = c.build(now_monotonic_s=10.2)
+        self.assertFalse(paused.health.physical_pause_released)
+
+        c.ingest_teensy(
+            TeensySafetySample(10.3, status(estop=1), False, False, True, True)
+        )
+        stopped = c.build(now_monotonic_s=10.3)
+        self.assertFalse(stopped.health.physical_estop_released)
+
     def collector(self, *, preauthorized=True):
         c = RpiArbitratorInputCollector(
             expected_route_sha256=ROUTE,

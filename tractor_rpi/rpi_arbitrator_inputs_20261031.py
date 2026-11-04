@@ -100,6 +100,7 @@ class RpiArbitratorInputCollector:
         *,
         expected_route_sha256: str,
         degraded_preauthorized: bool,
+        phone_replaces_nrf_mode_switch: bool = False,
         thresholds: ArbitratorThresholds | None = None,
     ):
         route_hash = expected_route_sha256.strip().lower()
@@ -107,6 +108,7 @@ class RpiArbitratorInputCollector:
             raise ValueError("expected route SHA-256 must be 64 lowercase hex characters")
         self.expected_route_sha256 = route_hash
         self.degraded_preauthorized = bool(degraded_preauthorized)
+        self.phone_replaces_nrf_mode_switch = bool(phone_replaces_nrf_mode_switch)
         self.thresholds = thresholds or ArbitratorThresholds()
         self.phone: PhoneIntentSample | None = None
         self.pure_pursuit_command: PurePursuitCommandSample | None = None
@@ -225,9 +227,26 @@ class RpiArbitratorInputCollector:
             and command.route_sha256.lower() == self.expected_route_sha256
             and pp.route_sha256.lower() == self.expected_route_sha256
         )
+        # In the production phone architecture, the phone mode replaces the
+        # retired NRF MANUAL/AUTO/PAUSE switch. The compatibility field names
+        # are retained because they are part of the tested guard schema. The
+        # large red tractor E-stop and rear transmission release remain
+        # independent hardware barriers outside this software model.
+        if self.phone_replaces_nrf_mode_switch:
+            pause_released = bool(
+                phone
+                and phone.requested_mode
+                in (RpiCommandMode.MANUAL_PERCENT, RpiCommandMode.AUTO_MPS)
+            )
+            phone_estop_released = bool(
+                teensy and not teensy.lease_status.estop_latched
+            )
+        else:
+            pause_released = bool(teensy and teensy.physical_pause_released)
+            phone_estop_released = bool(teensy and teensy.physical_estop_released)
         health = LocalSafetyHealth(
-            physical_pause_released=bool(teensy and teensy.physical_pause_released),
-            physical_estop_released=bool(teensy and teensy.physical_estop_released),
+            physical_pause_released=pause_released,
+            physical_estop_released=phone_estop_released,
             teensy_status_fresh=teensy_fresh,
             teensy_command_watchdog_healthy=bool(
                 teensy_fresh
