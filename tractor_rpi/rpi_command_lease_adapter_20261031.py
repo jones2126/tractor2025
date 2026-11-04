@@ -40,6 +40,7 @@ class RpiLeaseStatus:
     accepted_count: int
     rejected_count: int
     reject_reason: int
+    estop_latched: bool = False
 
 
 def parse_rpi_ctl_line(line: str) -> RpiLeaseStatus:
@@ -50,7 +51,7 @@ def parse_rpi_ctl_line(line: str) -> RpiLeaseStatus:
         source_time_ms = int(fields[1], 10)
         values = dict(field.split("=", 1) for field in fields[3:])
         required = {"m", "f", "u", "l", "a", "ss", "s", "ok", "rj", "rr"}
-        if set(values) != required:
+        if set(values) not in (required, required | {"e"}):
             raise ValueError("RPI_CTL fields do not match the expected schema")
         status = RpiLeaseStatus(
             source_time_ms=source_time_ms,
@@ -64,10 +65,16 @@ def parse_rpi_ctl_line(line: str) -> RpiLeaseStatus:
             accepted_count=int(values["ok"], 10),
             rejected_count=int(values["rj"], 10),
             reject_reason=int(values["rr"], 10),
+            estop_latched=bool(int(values.get("e", "0"), 10)),
         )
     except (KeyError, TypeError, ValueError) as exc:
         raise ValueError("invalid RPI_CTL telemetry value") from exc
-    for boolean_value in (values["f"], values["u"], values["l"]):
+    for boolean_value in (
+        values["f"],
+        values["u"],
+        values["l"],
+        values.get("e", "0"),
+    ):
         if boolean_value not in {"0", "1"}:
             raise ValueError("RPI_CTL boolean fields must be 0 or 1")
     for value in (
@@ -140,6 +147,34 @@ class RpiCommandLeaseAdapter:
     def send_auto(self, speed_mps: float, steering: float) -> bytes:
         return self._send_motion(RpiCommandMode.AUTO_MPS, speed_mps, steering)
 
+    def send_estop(self) -> bytes:
+        """Latch the Teensy engine-stop relay; no Pause claim is required."""
+        with self._lock:
+            self._claim_acknowledged = False
+            return self._write(
+                RpiCommand(
+                    self.session,
+                    self._next_sequence(),
+                    RpiCommandMode.ESTOP,
+                    0.0,
+                    0.0,
+                )
+            )
+
+    def send_reset_pause(self) -> bytes:
+        """Clear the software E-stop while retaining zero Pause output."""
+        with self._lock:
+            self._claim_acknowledged = False
+            command = RpiCommand(
+                self.session,
+                self._next_sequence(),
+                RpiCommandMode.RESET_PAUSE,
+                0.0,
+                0.0,
+            )
+            self._last_pause_sequence = command.sequence
+            return self._write(command)
+
     def _send_motion(
         self, mode: RpiCommandMode, drive: float, steering: float
     ) -> bytes:
@@ -166,9 +201,13 @@ class RpiCommandLeaseAdapter:
             if (
                 self._last_pause_sequence is not None
                 and status.sequence == self._last_pause_sequence
-                and status.mode == RpiCommandMode.PAUSE
+                and status.mode in (
+                    RpiCommandMode.PAUSE,
+                    RpiCommandMode.RESET_PAUSE,
+                )
                 and status.arrival_fresh
                 and status.lease_usable
+                and not status.estop_latched
             ):
                 self._claim_acknowledged = True
             return self._claim_acknowledged

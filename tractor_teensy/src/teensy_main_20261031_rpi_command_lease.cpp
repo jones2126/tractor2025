@@ -29,7 +29,9 @@
   This candidate is not selected by platformio.ini and is not field approved.
 *********************************************************************/
 
+#ifndef TRACTOR_FIRMWARE_ID
 #define TRACTOR_FIRMWARE_ID "teensy_main_20261031_rpi_command_lease_v2"
+#endif
 #define TRACTOR_TOP_LEVEL_LOOP loop_20260914_frozen_reference
 #include "teensy_main_20260914.cpp"
 #undef TRACTOR_TOP_LEVEL_LOOP
@@ -39,6 +41,10 @@ enum RpiCommandMode : byte {
     RPI_MODE_PAUSE = 0,
     RPI_MODE_MANUAL_PERCENT = 1,
     RPI_MODE_AUTO_MPS = 2,
+#ifdef TRACTOR_RPI_COMMAND_LEASE_V3
+    RPI_MODE_ESTOP = 3,
+    RPI_MODE_RESET_PAUSE = 4,
+#endif
 };
 
 enum RpiRejectReason : byte {
@@ -67,6 +73,9 @@ static bool rpiLeaseExpiredLatched = false;
 static unsigned long rpiAcceptedCount = 0;
 static unsigned long rpiRejectedCount = 0;
 static byte rpiLastRejectReason = RPI_REJECT_NONE;
+#ifdef TRACTOR_RPI_COMMAND_LEASE_V3
+static bool rpiSoftwareEstopLatched = false;
+#endif
 
 
 static uint16_t rpiCrc16Ccitt(const char* data, size_t length) {
@@ -194,7 +203,12 @@ static bool acceptRpiCommandLine(char* line) {
     float parsedSteering = 0.0f;
     if (!parseUint32Token(fields[0], &parsedSession) ||
         !parseUint32Token(fields[1], &parsedSequence) ||
-        strlen(fields[2]) != 1 || fields[2][0] < '0' || fields[2][0] > '2' ||
+        strlen(fields[2]) != 1 || fields[2][0] < '0' ||
+#ifdef TRACTOR_RPI_COMMAND_LEASE_V3
+        fields[2][0] > '4' ||
+#else
+        fields[2][0] > '2' ||
+#endif
         !parseFiniteFloatToken(fields[3], &parsedDrive) ||
         !parseFiniteFloatToken(fields[4], &parsedSteering)) {
         rejectRpiCommand(RPI_REJECT_FORMAT);
@@ -207,6 +221,10 @@ static bool acceptRpiCommandLine(char* line) {
     }
     if ((parsedMode == RPI_MODE_PAUSE &&
          (parsedDrive != 0.0f || parsedSteering != 0.0f)) ||
+#ifdef TRACTOR_RPI_COMMAND_LEASE_V3
+        ((parsedMode == RPI_MODE_ESTOP || parsedMode == RPI_MODE_RESET_PAUSE) &&
+         (parsedDrive != 0.0f || parsedSteering != 0.0f)) ||
+#endif
         (parsedMode == RPI_MODE_MANUAL_PERCENT &&
          (parsedDrive < -100.0f || parsedDrive > 100.0f)) ||
         (parsedMode == RPI_MODE_AUTO_MPS &&
@@ -216,7 +234,11 @@ static bool acceptRpiCommandLine(char* line) {
     }
 
     const bool sessionChanged = !rpiSessionSeen || parsedSession != rpiSession;
-    if (sessionChanged && parsedMode != RPI_MODE_PAUSE) {
+    if (sessionChanged && parsedMode != RPI_MODE_PAUSE
+#ifdef TRACTOR_RPI_COMMAND_LEASE_V3
+        && parsedMode != RPI_MODE_ESTOP
+#endif
+    ) {
         rejectRpiCommand(RPI_REJECT_SESSION);
         return true;
     }
@@ -235,11 +257,24 @@ static bool acceptRpiCommandLine(char* line) {
     rpiSteeringCommand = parsedSteering;
     rpiCommandTimestamp = millis();
     rpiCommandSelected = true;
-    if (rpiCommandMode == RPI_MODE_PAUSE) rpiLeaseExpiredLatched = false;
+    if (rpiCommandMode == RPI_MODE_PAUSE
+#ifdef TRACTOR_RPI_COMMAND_LEASE_V3
+        || rpiCommandMode == RPI_MODE_RESET_PAUSE
+#endif
+    ) rpiLeaseExpiredLatched = false;
+#ifdef TRACTOR_RPI_COMMAND_LEASE_V3
+    if (rpiCommandMode == RPI_MODE_ESTOP) rpiSoftwareEstopLatched = true;
+    if (rpiCommandMode == RPI_MODE_RESET_PAUSE) rpiSoftwareEstopLatched = false;
+#endif
     rpiAcceptedCount++;
     rpiLastRejectReason = RPI_REJECT_NONE;
 
-    if (rpiCommandMode == RPI_MODE_PAUSE) {
+    if (rpiCommandMode == RPI_MODE_PAUSE
+#ifdef TRACTOR_RPI_COMMAND_LEASE_V3
+        || rpiCommandMode == RPI_MODE_ESTOP ||
+           rpiCommandMode == RPI_MODE_RESET_PAUSE
+#endif
+    ) {
         cmdVel.linear_x = 0.0f;
         cmdVel.angular_z = 0.0f;
         cmdVel.received = false;
@@ -321,7 +356,26 @@ static void publishRpiCommandLeaseStatus(bool arrivalFresh, bool leaseUsable) {
     const unsigned long age = rpiCommandSelected
         ? currentMillis - rpiCommandTimestamp
         : 999999UL;
-    char buffer[160];
+    char buffer[176];
+#ifdef TRACTOR_RPI_COMMAND_LEASE_V3
+    snprintf(
+        buffer,
+        sizeof(buffer),
+        "1,%lu,RPI_CTL,m=%u,f=%d,u=%d,l=%d,a=%lu,ss=%lu,s=%lu,ok=%lu,rj=%lu,rr=%u,e=%d",
+        currentMillis,
+        (unsigned int)rpiCommandMode,
+        arrivalFresh ? 1 : 0,
+        leaseUsable ? 1 : 0,
+        rpiLeaseExpiredLatched ? 1 : 0,
+        age,
+        (unsigned long)rpiSession,
+        (unsigned long)rpiSequence,
+        rpiAcceptedCount,
+        rpiRejectedCount,
+        (unsigned int)rpiLastRejectReason,
+        rpiSoftwareEstopLatched ? 1 : 0
+    );
+#else
     snprintf(
         buffer,
         sizeof(buffer),
@@ -338,6 +392,7 @@ static void publishRpiCommandLeaseStatus(bool arrivalFresh, bool leaseUsable) {
         rpiRejectedCount,
         (unsigned int)rpiLastRejectReason
     );
+#endif
     Serial.println(buffer);
     lastStatusPrint = currentMillis;
 }
@@ -346,8 +401,11 @@ static void publishRpiCommandLeaseStatus(bool arrivalFresh, bool leaseUsable) {
 extern "C" void loop() {
     currentMillis = millis();
 
-    // Existing local e-stop relay authority remains first.
+    // Existing local e-stop relay authority remains first. The v3 wrapper
+    // combines it below with the authenticated RPi software E-stop latch.
+#ifndef TRACTOR_RPI_COMMAND_LEASE_V3
     estopCheck();
+#endif
 
     // Only the generic RPi frame and non-motion GPS status are active here.
     parseRpiCommandLeaseSerial();
@@ -366,14 +424,23 @@ extern "C" void loop() {
     const bool arrivalFresh = rpiCommandSelected &&
         currentMillis - rpiCommandTimestamp <= RPI_COMMAND_LEASE_MS;
     if (rpiCommandSelected && !arrivalFresh) rpiLeaseExpiredLatched = true;
-    const bool leaseUsable = arrivalFresh && !rpiLeaseExpiredLatched;
+    const bool leaseUsable = arrivalFresh && !rpiLeaseExpiredLatched
+#ifdef TRACTOR_RPI_COMMAND_LEASE_V3
+        && !rpiSoftwareEstopLatched
+#endif
+        ;
 
     if (rpiCommandSelected) {
         // RPi control does not require an NRF link, matching the proven direct
         // phone-control behavior.
         radioStats.signalGood = true;
 
-        if (!leaseUsable || rpiCommandMode == RPI_MODE_PAUSE) {
+        if (!leaseUsable || rpiCommandMode == RPI_MODE_PAUSE
+#ifdef TRACTOR_RPI_COMMAND_LEASE_V3
+            || rpiCommandMode == RPI_MODE_ESTOP ||
+               rpiCommandMode == RPI_MODE_RESET_PAUSE
+#endif
+        ) {
             radioData.control_mode = 2;
             wifiDriveCommand = true;
             wifiDrivePercent = 0.0f;
@@ -410,6 +477,18 @@ extern "C" void loop() {
             );
         }
     }
+
+#ifdef TRACTOR_RPI_COMMAND_LEASE_V3
+    // Preserve the installed physical/legacy E-stop input and add the phone
+    // E-stop latch. Neither command freshness nor Auto policy can override it.
+    if (currentMillis - lastEstopCheckRun >= estopCheckInterval) {
+        digitalWrite(
+            ESTOP_RELAY_PIN,
+            (radioData.estop || rpiSoftwareEstopLatched) ? LOW : HIGH
+        );
+        lastEstopCheckRun = currentMillis;
+    }
+#endif
 
     controlTransmission();
     controlSteering();

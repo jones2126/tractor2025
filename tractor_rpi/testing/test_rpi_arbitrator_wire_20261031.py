@@ -13,6 +13,36 @@ ROUTE = "a" * 64
 
 
 class RpiArbitratorWireTests(unittest.TestCase):
+    def test_estop_and_guarded_reset_are_explicit_zero_output_intents(self):
+        common = {
+            "schema": 1,
+            "kind": "phone_intent",
+            "producer_session": "server-1",
+            "operator_link_fresh": True,
+            "manual_drive_percent": 0,
+            "manual_steering": 0,
+        }
+        estop = parse_phone_intent(
+            {
+                **common,
+                "intent_sequence": 1,
+                "requested_mode": "estop",
+                "wire_mode": "estop",
+            },
+            received_monotonic_s=1.0,
+        )
+        reset = parse_phone_intent(
+            {
+                **common,
+                "intent_sequence": 2,
+                "requested_mode": "pause",
+                "wire_mode": "reset_pause",
+            },
+            received_monotonic_s=2.0,
+        )
+        self.assertEqual(RpiCommandMode.ESTOP, estop.requested_mode)
+        self.assertEqual(RpiCommandMode.RESET_PAUSE, reset.requested_mode)
+
     def test_phone_intent_keeps_auto_while_link_is_explicitly_stale(self):
         sample = parse_phone_intent({
             "schema": 1,

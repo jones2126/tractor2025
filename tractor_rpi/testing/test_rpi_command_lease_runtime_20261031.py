@@ -65,6 +65,24 @@ class RpiCommandLeaseRuntimeTests(unittest.TestCase):
         adapter = RpiCommandLeaseAdapter(sink, session=42)
         return sink, adapter, RpiCommandLeaseRuntime(adapter)
 
+    def test_estop_and_reset_do_not_wait_for_motion_claim(self):
+        _, _, runtime = self.make_runtime()
+        estop = runtime.tick(
+            now_monotonic_s=0.0,
+            inputs=inputs(0.0, requested_mode=RpiCommandMode.ESTOP),
+        )
+        self.assertFalse(estop.waiting_for_pause_ack)
+        self.assertEqual(RpiCommandMode.ESTOP, decode_frame(estop.frame_sent).mode)
+        reset = runtime.tick(
+            now_monotonic_s=0.1,
+            inputs=inputs(0.1, requested_mode=RpiCommandMode.RESET_PAUSE),
+        )
+        self.assertFalse(reset.waiting_for_pause_ack)
+        self.assertEqual(
+            RpiCommandMode.RESET_PAUSE,
+            decode_frame(reset.frame_sent).mode,
+        )
+
     def test_auto_first_sends_pause_claim_then_waits_for_ack(self):
         _, _, runtime = self.make_runtime()
         first = runtime.tick(now_monotonic_s=0.0, inputs=inputs(0.0))

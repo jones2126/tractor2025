@@ -107,10 +107,14 @@ class RpiCommandLeaseRuntime:
         )
 
         frame = None
-        if decision.mode == RpiCommandMode.PAUSE:
+        if decision.mode in (
+            RpiCommandMode.PAUSE,
+            RpiCommandMode.ESTOP,
+            RpiCommandMode.RESET_PAUSE,
+        ):
             due = (
                 self._last_send_s is None
-                or self._last_effective_mode != RpiCommandMode.PAUSE
+                or self._last_effective_mode != decision.mode
                 or now_monotonic_s - self._last_send_s >= self.pause_retry_s
             )
             if due:
@@ -135,9 +139,15 @@ class RpiCommandLeaseRuntime:
         if frame is not None:
             self._last_send_s = now_monotonic_s
             self._last_effective_mode = (
-                RpiCommandMode.PAUSE
-                if decision.mode == RpiCommandMode.PAUSE
-                or not self.adapter.claim_acknowledged
+                decision.mode
+                if decision.mode
+                in (
+                    RpiCommandMode.PAUSE,
+                    RpiCommandMode.ESTOP,
+                    RpiCommandMode.RESET_PAUSE,
+                )
+                else RpiCommandMode.PAUSE
+                if not self.adapter.claim_acknowledged
                 else decision.mode
             )
 
@@ -145,7 +155,12 @@ class RpiCommandLeaseRuntime:
             decision=decision,
             frame_sent=frame,
             waiting_for_pause_ack=(
-                decision.mode != RpiCommandMode.PAUSE
+                decision.mode
+                not in (
+                    RpiCommandMode.PAUSE,
+                    RpiCommandMode.ESTOP,
+                    RpiCommandMode.RESET_PAUSE,
+                )
                 and not self.adapter.claim_acknowledged
             ),
             scheduler_fault_latched=self._scheduler_fault_reason is not None,

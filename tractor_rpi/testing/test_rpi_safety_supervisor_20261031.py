@@ -57,6 +57,25 @@ class FakeSerial:
 
 
 class RpiSafetySupervisorTests(unittest.TestCase):
+    def test_estop_overrides_latched_fault_and_reset_remains_pause(self):
+        supervisor = RpiSafetySupervisor()
+        fault = supervisor.evaluate(inputs(health=healthy(rtk_fixed=False)))
+        self.assertEqual(SupervisorState.PAUSE_LATCHED, fault.state)
+
+        estop = supervisor.evaluate(
+            inputs(requested_mode=RpiCommandMode.ESTOP)
+        )
+        self.assertEqual(SupervisorState.ESTOP_LATCHED, estop.state)
+        self.assertEqual(RpiCommandMode.ESTOP, estop.mode)
+        self.assertEqual((0.0, 0.0), (estop.drive, estop.steering))
+
+        reset = supervisor.evaluate(
+            inputs(requested_mode=RpiCommandMode.RESET_PAUSE)
+        )
+        self.assertEqual(SupervisorState.PAUSE, reset.state)
+        self.assertEqual(RpiCommandMode.RESET_PAUSE, reset.mode)
+        self.assertEqual((0.0, 0.0), (reset.drive, reset.steering))
+
     def test_pause_is_always_zero(self):
         supervisor = RpiSafetySupervisor()
         result = supervisor.evaluate(inputs(requested_mode=RpiCommandMode.PAUSE))

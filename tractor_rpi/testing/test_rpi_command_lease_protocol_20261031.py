@@ -14,11 +14,54 @@ from tractor_rpi.rpi_command_lease_protocol_20261031 import (
 
 
 class RpiCommandLeaseProtocolTests(unittest.TestCase):
+    def test_estop_is_zero_only_and_can_claim_a_new_session(self):
+        receiver = CommandLeaseReference()
+        estop = encode_frame(
+            RpiCommand(99, 1, RpiCommandMode.ESTOP, 0.0, 0.0)
+        )
+        self.assertTrue(receiver.accept(estop, now_ms=10))
+        decision = receiver.decide(now_ms=20)
+        self.assertEqual(RpiCommandMode.ESTOP, decision.command.mode)
+        self.assertFalse(decision.lease_fresh)
+        self.assertIn("E-stop", decision.reason)
+
+        with self.assertRaises(ValueError):
+            encode_frame(RpiCommand(99, 2, RpiCommandMode.ESTOP, 1.0, 0.0))
+
+    def test_guarded_reset_stays_in_pause(self):
+        receiver = CommandLeaseReference()
+        self.assertTrue(
+            receiver.accept(
+                encode_frame(RpiCommand(7, 1, RpiCommandMode.PAUSE, 0.0, 0.0)),
+                now_ms=0,
+            )
+        )
+        self.assertTrue(
+            receiver.accept(
+                encode_frame(RpiCommand(7, 2, RpiCommandMode.ESTOP, 0.0, 0.0)),
+                now_ms=10,
+            )
+        )
+        self.assertTrue(
+            receiver.accept(
+                encode_frame(
+                    RpiCommand(7, 3, RpiCommandMode.RESET_PAUSE, 0.0, 0.0)
+                ),
+                now_ms=20,
+            )
+        )
+        decision = receiver.decide(now_ms=30)
+        self.assertEqual(RpiCommandMode.PAUSE, decision.command.mode)
+        self.assertTrue(decision.lease_fresh)
+        self.assertIn("remain in Pause", decision.reason)
+
     def test_all_modes_round_trip(self):
         commands = (
             RpiCommand(42, 1, RpiCommandMode.PAUSE, 0.0, 0.0),
             RpiCommand(42, 2, RpiCommandMode.MANUAL_PERCENT, -25.0, 0.5),
             RpiCommand(42, 3, RpiCommandMode.AUTO_MPS, 1.0, -0.25),
+            RpiCommand(42, 4, RpiCommandMode.ESTOP, 0.0, 0.0),
+            RpiCommand(42, 5, RpiCommandMode.RESET_PAUSE, 0.0, 0.0),
         )
         for command in commands:
             with self.subTest(mode=command.mode):

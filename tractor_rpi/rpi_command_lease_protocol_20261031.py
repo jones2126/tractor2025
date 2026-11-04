@@ -22,6 +22,8 @@ class RpiCommandMode(IntEnum):
     PAUSE = 0
     MANUAL_PERCENT = 1
     AUTO_MPS = 2
+    ESTOP = 3
+    RESET_PAUSE = 4
 
 
 @dataclass(frozen=True)
@@ -62,9 +64,15 @@ def _validate(command: RpiCommand) -> None:
         raise ValueError("drive and steering must be finite")
     if not -1.0 <= command.steering <= 1.0:
         raise ValueError("steering must be within -1..1")
-    if command.mode == RpiCommandMode.PAUSE:
+    if command.mode in (
+        RpiCommandMode.PAUSE,
+        RpiCommandMode.ESTOP,
+        RpiCommandMode.RESET_PAUSE,
+    ):
         if command.drive != 0.0 or command.steering != 0.0:
-            raise ValueError("Pause must carry zero drive and zero steering")
+            raise ValueError(
+                "Pause, E-stop, and reset-Pause must carry zero drive and zero steering"
+            )
     elif command.mode == RpiCommandMode.MANUAL_PERCENT:
         if not -100.0 <= command.drive <= 100.0:
             raise ValueError("Manual drive must be within -100..100 percent")
@@ -154,13 +162,13 @@ class CommandLeaseReference:
         except (TypeError, ValueError):
             return False
         if self._last_command is None or command.session != self._last_command.session:
-            if command.mode != RpiCommandMode.PAUSE:
+            if command.mode not in (RpiCommandMode.PAUSE, RpiCommandMode.ESTOP):
                 return False
         elif not sequence_is_newer(command.sequence, self._last_command.sequence):
             return False
         self._last_command = command
         self._last_accepted_ms = now_ms
-        if command.mode == RpiCommandMode.PAUSE:
+        if command.mode in (RpiCommandMode.PAUSE, RpiCommandMode.RESET_PAUSE):
             self._lease_expired_latched = False
         return True
 
@@ -202,5 +210,19 @@ class CommandLeaseReference:
                 False,
                 age_ms,
                 "RPi command lease expiry latched; fresh Pause rearm required",
+            )
+        if self._last_command.mode == RpiCommandMode.ESTOP:
+            return LeaseDecision(
+                self._last_command,
+                False,
+                age_ms,
+                "RPi software E-stop latched",
+            )
+        if self._last_command.mode == RpiCommandMode.RESET_PAUSE:
+            return LeaseDecision(
+                self._pause(session, sequence),
+                True,
+                age_ms,
+                "guarded E-stop reset; remain in Pause",
             )
         return LeaseDecision(self._last_command, True, age_ms, "RPi command lease fresh")

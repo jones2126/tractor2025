@@ -31,6 +31,7 @@ class SupervisorState(str, Enum):
     AUTO = "AUTO"
     COMMUNICATIONS_DEGRADED = "COMMUNICATIONS_DEGRADED"
     PAUSE_LATCHED = "PAUSE_LATCHED"
+    ESTOP_LATCHED = "ESTOP_LATCHED"
 
 
 @dataclass(frozen=True)
@@ -121,6 +122,27 @@ class RpiSafetySupervisor:
         )
 
     def evaluate(self, inputs: SupervisorInputs) -> SupervisorDecision:
+        # E-stop always wins, including over an existing software Pause latch.
+        if inputs.requested_mode == RpiCommandMode.ESTOP:
+            return SupervisorDecision(
+                SupervisorState.ESTOP_LATCHED,
+                RpiCommandMode.ESTOP,
+                0.0,
+                0.0,
+                "operator requested E-stop",
+                None,
+            )
+        # The phone server emits RESET_PAUSE only after its guarded reset
+        # gesture. This clears the Teensy relay but never grants motion.
+        if inputs.requested_mode == RpiCommandMode.RESET_PAUSE:
+            return SupervisorDecision(
+                SupervisorState.PAUSE,
+                RpiCommandMode.RESET_PAUSE,
+                0.0,
+                0.0,
+                "guarded E-stop reset; remain in Pause",
+                None,
+            )
         if self._pause_latched_reason:
             return self._pause(
                 SupervisorState.PAUSE_LATCHED,
@@ -236,4 +258,8 @@ def transmit_decision_once(
         return adapter.send_manual(decision.drive, decision.steering)
     if decision.mode == RpiCommandMode.AUTO_MPS:
         return adapter.send_auto(decision.drive, decision.steering)
+    if decision.mode == RpiCommandMode.ESTOP:
+        return adapter.send_estop()
+    if decision.mode == RpiCommandMode.RESET_PAUSE:
+        return adapter.send_reset_pause()
     raise RuntimeError("unsupported supervisor decision mode")

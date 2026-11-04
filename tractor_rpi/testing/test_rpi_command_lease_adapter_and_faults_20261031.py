@@ -42,6 +42,18 @@ def status_line(
 
 
 class RpiCommandLeaseAdapterTests(unittest.TestCase):
+    def test_estop_and_guarded_reset_frames_are_zero_output(self):
+        sink = FakeSerial()
+        adapter = RpiCommandLeaseAdapter(sink, session=123)
+        estop = decode_frame(adapter.send_estop())
+        self.assertEqual(RpiCommandMode.ESTOP, estop.mode)
+        self.assertEqual(0.0, estop.drive)
+        self.assertEqual(0.0, estop.steering)
+        reset = decode_frame(adapter.send_reset_pause())
+        self.assertEqual(RpiCommandMode.RESET_PAUSE, reset.mode)
+        self.assertEqual(0.0, reset.drive)
+        self.assertEqual(0.0, reset.steering)
+
     def test_motion_is_blocked_until_matching_pause_claim_ack(self):
         sink = FakeSerial()
         adapter = RpiCommandLeaseAdapter(sink, session=42)

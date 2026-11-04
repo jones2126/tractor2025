@@ -63,11 +63,18 @@ def parse_phone_intent(
         "pause": RpiCommandMode.PAUSE,
         "manual": RpiCommandMode.MANUAL_PERCENT,
         "auto": RpiCommandMode.AUTO_MPS,
+        "estop": RpiCommandMode.ESTOP,
     }
-    try:
-        mode = modes[str(data["requested_mode"]).lower()]
-    except (KeyError, ValueError) as exc:
-        raise ValueError("requested_mode must be pause, manual, or auto") from exc
+    wire_mode = str(data.get("wire_mode", "")).lower()
+    if wire_mode == "reset_pause":
+        mode = RpiCommandMode.RESET_PAUSE
+    else:
+        try:
+            mode = modes[str(data["requested_mode"]).lower()]
+        except (KeyError, ValueError) as exc:
+            raise ValueError(
+                "requested_mode must be pause, manual, auto, or estop"
+            ) from exc
     session = str(data.get("producer_session", ""))
     if not session or len(session) > 100:
         raise ValueError("producer_session is required")
