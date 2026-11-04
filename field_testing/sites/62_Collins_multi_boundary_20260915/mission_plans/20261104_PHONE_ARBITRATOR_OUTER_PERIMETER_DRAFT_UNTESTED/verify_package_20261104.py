@@ -50,6 +50,14 @@ def main() -> None:
     require("--arbitrator-proposal-only" in launcher, "Pure Pursuit is not proposal-only")
     require("--port 16004" in launcher, "unused proposal destination missing")
     require("WantedBy=" not in bridge_unit + phone_unit, "candidate services must not boot")
+    require(
+        bridge_unit.count("WorkingDirectory=/home/al/tractor2025-rpi-lease") == 1,
+        "bridge must use the exact candidate worktree",
+    )
+    require(
+        "/home/al/tractor2025-rpi-lease/tractor_rpi/testing/webrtc/" in phone_unit,
+        "phone service must use the exact candidate worktree",
+    )
     require("Conflicts=teensy-bridge.service" in bridge_unit, "serial-owner conflict missing")
     require("Requires=tractor-rpi-arbitrator.service" in phone_unit, "phone/arbitrator ordering missing")
 
