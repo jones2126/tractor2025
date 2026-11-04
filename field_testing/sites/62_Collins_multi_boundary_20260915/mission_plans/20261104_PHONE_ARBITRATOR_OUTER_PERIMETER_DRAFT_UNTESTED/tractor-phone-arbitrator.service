@@ -1,0 +1,30 @@
+[Unit]
+Description=Tractor01 GL-router phone control feeding RPi arbitrator
+After=network-online.target tractor-rpi-arbitrator.service
+Wants=network-online.target
+Requires=tractor-rpi-arbitrator.service
+Conflicts=tractor-wifi-control.service tractor-wifi-direct-mission.service tractor-wifi-recovery.service
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=al
+WorkingDirectory=/home/al/tractor2025
+Environment=PYTHONUNBUFFERED=1
+Environment=TRACTOR_ARBITRATOR_EXPECTED_FIRMWARE=teensy_main_20261104_rpi_command_lease_v3
+RuntimeDirectory=tractor-phone-control
+RuntimeDirectoryMode=0700
+ExecStartPre=/usr/bin/test -r /home/al/.config/tractor-wifi-control/tls/server.crt
+ExecStartPre=/usr/bin/test -r /home/al/.config/tractor-wifi-control/tls/server.key
+ExecStartPre=/usr/sbin/ip -4 address show dev eth0 to 192.168.8.20/32
+ExecStart=/usr/bin/python3 -u /home/al/tractor2025/tractor_rpi/testing/webrtc/wifi_rpi_arbitrator_control_20261104.py --host 192.168.8.20 --port 8765 --tls-cert /home/al/.config/tractor-wifi-control/tls/server.crt --tls-key /home/al/.config/tractor-wifi-control/tls/server.key --operator-key-file /home/al/.config/tractor-wifi-control/operator.key --authority-policy onboard-router-mission --ownership-lock /run/tractor-phone-control/ownership.lock --diagnostics-status-file /run/tractor-phone-control/diagnostics.json --log-dir /home/al/field_logs/phone_arbitrator_production
+Restart=on-failure
+RestartSec=2
+KillSignal=SIGINT
+TimeoutStopSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=tractor-phone-arbitrator
+
+[Install]
+# No boot target. Installation and activation require separate approval.

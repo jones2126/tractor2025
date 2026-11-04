@@ -45,6 +45,22 @@ class ArbitratorWifiState(base.WifiPrimaryState):
             reason,
             phone_mode=phone_mode,
         )
+        self.emit_arbitrator_intent(
+            drive_percent,
+            steering_percent,
+            sequence,
+            reason,
+            phone_mode=phone_mode,
+        )
+
+    def emit_arbitrator_intent(
+        self,
+        drive_percent: float,
+        steering_percent: float,
+        sequence: int,
+        reason: str,
+        phone_mode: str | None = None,
+    ) -> None:
         now = self.clock()
         # A separate lock avoids re-entering the base state lock when this is
         # called from one of its safety transitions.

@@ -1,0 +1,26 @@
+[Unit]
+Description=Tractor01 RPi safety arbitrator (separately authorized)
+After=network-online.target
+Wants=network-online.target
+Conflicts=teensy-bridge.service
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=al
+WorkingDirectory=/home/al/tractor2025
+Environment=PYTHONUNBUFFERED=1
+Environment=TRACTOR_EXPECTED_ROUTE_SHA256=b47660b4c74d5e26ca5d9448f069fd7193c068cf62e3c0b62d5c083d9aed4d64
+Environment=TRACTOR_MOTION_AUTHORIZATION=RUN_DIRECT_OUTER_PERIMETER_BLADES_OFF
+Environment=TRACTOR_COMMUNICATIONS_DEGRADED=30S_30M
+ExecStart=/usr/bin/python3 -u -m tractor_rpi.teensy_serial_bridge_rpi_arbitrator_20261104
+Restart=on-failure
+RestartSec=2
+KillSignal=SIGINT
+TimeoutStopSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=tractor-rpi-arbitrator
+
+[Install]
+# No boot target. Installation and activation require separate approval.
