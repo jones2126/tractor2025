@@ -54,6 +54,12 @@ def good_arbitrator():
 
 
 class ProductionDashboardTests(unittest.TestCase):
+    def test_dashboard_uses_authoritative_phone_safety_feed(self):
+        self.assertIn("arb.phone_link_fresh===true", production.dashboard.HTML)
+        self.assertIn("productionSafetyReady", production.dashboard.HTML)
+        self.assertIn("arbPresent?browserStableMs", production.dashboard.HTML)
+        self.assertIn("d.current_exact_reason", production.dashboard.MESSAGES_HTML)
+
     def test_exact_safe_pause_state_can_start_controller(self):
         self.assertEqual(
             (True, ""),

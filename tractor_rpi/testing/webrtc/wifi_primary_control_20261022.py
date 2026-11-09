@@ -1497,6 +1497,11 @@ class WifiPrimaryState(base.FieldState):
         if path is None:
             return
         snapshot = self.snapshot()
+        arbitrator = snapshot.get("rpi_arbitrator", {})
+        guard = arbitrator.get("guard") or {}
+        degraded_enabled = bool(
+            arbitrator.get("communications_degraded_preauthorized", False)
+        )
         record = {
             "schema": 1,
             "updated_epoch_ms": round(time.time() * 1000),
@@ -1515,11 +1520,22 @@ class WifiPrimaryState(base.FieldState):
             "client_events_deduplicated": self.client_events_deduplicated,
             "zerotier_transport": self.zerotier_transport,
             "ntfy": snapshot.get("ntfy"),
+            "current_safety_decision": arbitrator.get("joined_decision"),
+            "current_exact_reason": arbitrator.get("exact_reason"),
+            "actual_serial_output": arbitrator.get("actual_serial_output"),
             "communications_degraded": {
-                "enabled": False,
-                "state": "DISABLED_PENDING_STATIONARY_APPROVAL",
+                "enabled": degraded_enabled,
+                "state": (
+                    arbitrator.get("joined_decision")
+                    if degraded_enabled
+                    else "DISABLED_PENDING_STATIONARY_APPROVAL"
+                ),
                 "maximum_seconds": 30,
                 "maximum_distance_m": 30,
+                "incident_id": guard.get("incident_id"),
+                "elapsed_seconds": guard.get("elapsed_seconds"),
+                "distance_m": guard.get("distance_m"),
+                "distance_source": arbitrator.get("distance_envelope_source"),
             },
         }
         path.parent.mkdir(parents=True, exist_ok=True)

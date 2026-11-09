@@ -256,6 +256,34 @@ class WifiPrimaryTests(unittest.TestCase):
             state.close()
             temporary.cleanup()
 
+    def test_dashboard_diagnostics_uses_authoritative_degraded_state(self):
+        temporary, state = self.make_state()
+        try:
+            state.diagnostics_status_path = Path(temporary.name) / "diagnostics.json"
+            state.bridge["rpi_arbitrator"] = {
+                "communications_degraded_preauthorized": True,
+                "joined_decision": "PAUSE",
+                "exact_reason": "operator requested Pause",
+                "actual_serial_output": "PAUSE",
+                "distance_envelope_source": "ROUTE_PROGRESS_ONLY",
+                "guard": None,
+            }
+            state.publish_diagnostics()
+            record = json.loads(
+                state.diagnostics_status_path.read_text(encoding="utf-8")
+            )
+            self.assertTrue(record["communications_degraded"]["enabled"])
+            self.assertEqual("PAUSE", record["communications_degraded"]["state"])
+            self.assertEqual(
+                "ROUTE_PROGRESS_ONLY",
+                record["communications_degraded"]["distance_source"],
+            )
+            self.assertEqual("operator requested Pause", record["current_exact_reason"])
+        finally:
+            state.running = False
+            state.close()
+            temporary.cleanup()
+
     def test_phone_flight_recorder_is_diagnostic_only(self):
         temporary, state = self.make_state()
         try:
