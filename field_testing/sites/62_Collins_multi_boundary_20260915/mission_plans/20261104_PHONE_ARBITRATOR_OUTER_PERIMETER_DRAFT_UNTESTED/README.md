@@ -1,4 +1,4 @@
-# Phone-controlled outer-perimeter production package — boot-test revision
+# Phone-controlled outer-perimeter production package — field authorized
 
 This package is the first motion-capable integration of the phone control page,
 Pure Pursuit proposals, the bounded communications-degraded guard, the RPi
@@ -9,7 +9,7 @@ Its current approval state is:
 - installation of inactive service definitions is approved;
 - v3 Teensy flashing and engine-off commissioning are approved;
 - production boot activation is approved after the motor-off Manual test;
-- field motion is not approved; and
+- the exact 1.00 m/s blades-off perimeter mission is field approved; and
 - the production services replace the incompatible legacy boot services.
 
 The phone replaces the retired NRF handheld for Manual, Auto, Pause, and
@@ -32,7 +32,7 @@ python3 field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/202
 bash field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20261104_PHONE_ARBITRATOR_OUTER_PERIMETER_DRAFT_UNTESTED/run_software_tests_20261104.sh
 ```
 
-The approved motor-off test covers the v3 E-stop/reset behavior and
-motion-capable bridge while the engine and blades remain off, the rear
-transmission lever remains OUT, and the wheels remain chocked. It is not
-approval to start the engine or move.
+The motor-off Manual test, production reboot, local-only notification test,
+and Manual repositioning to the reviewed start have passed. Field motion is
+authorized only through `mission_dashboard_production_20261109.py`, with the
+blades off and direct supervision maintained for the entire perimeter run.

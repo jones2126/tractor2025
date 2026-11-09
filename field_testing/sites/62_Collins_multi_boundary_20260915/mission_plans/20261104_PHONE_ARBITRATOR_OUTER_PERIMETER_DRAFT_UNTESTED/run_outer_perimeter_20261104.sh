@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-APPROVED_FOR_FIELD=false
+APPROVED_FOR_FIELD=true
 HERE="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-REPO="${TRACTOR_REPO:-/home/al/tractor2025}"
+REPO="${TRACTOR_REPO:-$(cd "${HERE}/../../../../.." && pwd)}"
 SOURCE="${HERE}/../20260928_outer_perimeter_field_test"
 MISSION="${SOURCE}/generated/62_Collins_outer_perimeter_field_test_1mps_20260928.txt"
 AUDIT="${SOURCE}/generated/62_Collins_outer_perimeter_field_test_1mps_20260928_audit.csv"
 VERIFY="${HERE}/verify_package_20261104.py"
-PREFLIGHT="${REPO}/tractor_rpi/testing/mission_preflight_20261002.py"
+PREFLIGHT="${REPO}/tractor_rpi/testing/mission_preflight_phone_control_20261109.py"
 CONTROLLER="${REPO}/tractor_rpi/pure-pursuit/pure_pursuit_arbitrator_feed_20261031.py"
 LOGGER="${REPO}/tractor_rpi/field_test_logger_20260828.py"
 EXPECTED_FIRMWARE="teensy_main_20261104_rpi_command_lease_v3"
-CONFIRMATION="RUN PHONE ARBITRATOR OUTER PERIMETER BLADES OFF"
+CONFIRMATION="RUN PHONE OUTER PERIMETER BLADES OFF"
 
 dashboard_mode=false
 verify_only=false
@@ -51,7 +51,7 @@ else
     [[ "${response}" == "${CONFIRMATION}" ]] || { echo "Aborted."; exit 1; }
 fi
 
-log_dir="/home/al/field_logs/20261104_phone_arbitrator_outer_perimeter"
+log_dir="/home/al/field_logs/20261109_phone_outer_perimeter"
 mkdir -p "${log_dir}"
 field_log="${log_dir}/outer_perimeter_$(date '+%Y%m%d_%H%M%S').csv"
 logger_pid=""

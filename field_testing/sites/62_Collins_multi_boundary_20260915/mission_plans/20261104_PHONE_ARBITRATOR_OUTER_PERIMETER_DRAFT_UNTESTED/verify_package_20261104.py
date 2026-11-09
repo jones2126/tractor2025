@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail-closed verifier for the disabled phone-arbitrator package."""
+"""Fail-closed verifier for the approved phone-controlled field package."""
 
 from __future__ import annotations
 
@@ -40,7 +40,10 @@ def main() -> None:
         package["approved_for_production_boot_activation"] is True,
         "production boot activation approval missing",
     )
-    require(package["approved_for_motion"] is False, "motion gate must be false")
+    require(package["approved_for_motion"] is True, "field-motion approval missing")
+    require(package["production_reboot_test_passed"] is True, "production reboot evidence missing")
+    require(package["motor_off_manual_test_passed"] is True, "Manual steering evidence missing")
+    require(package["manual_repositioning_passed"] is True, "start-position evidence missing")
     require(package["blades_required_off"] is True, "blades-off gate missing")
     require(normalized_hash(ROUTE) == EXPECTED_ROUTE, "reviewed route hash mismatch")
     require(package["route_sha256"] == EXPECTED_ROUTE, "package route hash mismatch")
@@ -52,6 +55,8 @@ def main() -> None:
     installer = (HERE / "install_candidate_20261104.sh").read_text(encoding="utf-8")
     boot_installer = (HERE / "install_production_boot_20261109.sh").read_text(encoding="utf-8")
     activator = (HERE / "activate_candidate_motor_off_20261104.sh").read_text(encoding="utf-8")
+    production_dashboard = (HERE / "mission_dashboard_production_20261109.py").read_text(encoding="utf-8")
+    production_preflight = (REPO / "tractor_rpi/testing/mission_preflight_phone_control_20261109.py").read_text(encoding="utf-8")
     bridge_unit = (HERE / "tractor-rpi-arbitrator.service").read_text(encoding="utf-8")
     phone_unit = (HERE / "tractor-phone-arbitrator.service").read_text(encoding="utf-8")
 
@@ -59,7 +64,35 @@ def main() -> None:
     require("phone_replaces_nrf_mode_switch=True" in bridge, "phone mode authority missing")
     require("UDP 6004" in phone and "do not call" in phone, "legacy phone output is not isolated")
     require("teensy_main_20261104_rpi_command_lease_v3" in firmware, "v3 firmware identity missing")
-    require("APPROVED_FOR_FIELD=false" in launcher, "field launcher must remain disabled")
+    require("APPROVED_FOR_FIELD=true" in launcher, "field launcher approval missing")
+    require(
+        "mission_preflight_phone_control_20261109.py" in launcher,
+        "production phone-control preflight missing",
+    )
+    require(
+        "RUN PHONE OUTER PERIMETER BLADES OFF" in launcher,
+        "exact field confirmation missing",
+    )
+    require(
+        'dashboard.EXPECTED_CONFIRMATION = "RUN PHONE OUTER PERIMETER BLADES OFF"'
+        in production_dashboard,
+        "dashboard confirmation does not match launcher",
+    )
+    for required in (
+        "actual_serial_output",
+        "phone_link_fresh",
+        "scheduler_fault_latched",
+        "additional_local_faults",
+        "communications_degraded_preauthorized",
+        "ROUTE_PROGRESS_ONLY",
+    ):
+        require(required in production_dashboard, f"dashboard safety gate missing: {required}")
+    for service in (
+        "rtcm-server.service",
+        "tractor-rpi-arbitrator.service",
+        "tractor-phone-arbitrator.service",
+    ):
+        require(service in production_preflight, f"production preflight service missing: {service}")
     require("APPROVED_FOR_INSTALL=true" in installer, "installer approval missing")
     require("systemctl enable" not in installer, "installer must not boot-enable services")
     require(
@@ -120,8 +153,9 @@ def main() -> None:
     print("      Exact outer-perimeter route; phone-only operator modes; v3 E-stop relay support.")
     print("      Pure Pursuit is proposal-only; one RPi arbitrator owns Teensy commands.")
     print("INSTALL, FLASH, CANDIDATE SERVICE START, AND MOTOR-OFF COMMISSIONING AUTHORIZED.")
-    print("PRODUCTION BOOT ACTIVATION AUTHORIZED; REBOOT TEST REQUIRED.")
-    print("ENGINE START AND PHYSICAL MOTION ARE NOT AUTHORIZED.")
+    print("PRODUCTION BOOT ACTIVATION AUTHORIZED; REBOOT TEST PASSED.")
+    print("FIELD MOTION AUTHORIZED: exact outer perimeter, 1.00 m/s, blades off.")
+    print("Start through mission_dashboard_production_20261109.py only.")
 
 
 if __name__ == "__main__":
