@@ -14,6 +14,7 @@ from pathlib import Path
 import runpy
 import socket
 import sys
+import time
 
 
 SAFETY_OPTION = "--arbitrator-safety-port"
@@ -50,7 +51,12 @@ class SafetyDuplicatingSocket:
         self._telemetry_port = telemetry_port
         self._safety_port = safety_port
         self._route_sha256 = route_sha256
-        self._sequence = 0
+        # The RPi safety supervisor can remain running while Pure Pursuit is
+        # restarted.  Use the system monotonic clock as the process's starting
+        # sequence so a new producer cannot restart at 1 and be mistaken for a
+        # replay of an earlier process.  Per-message increments below retain
+        # duplicate and out-of-order detection within the process.
+        self._sequence = time.monotonic_ns()
 
     def sendto(self, data, address):
         result = self._socket.sendto(data, address)

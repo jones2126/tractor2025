@@ -70,12 +70,13 @@ class RpiArbitratorProducerTests(unittest.TestCase):
 
     def test_pure_pursuit_duplicator_preserves_dashboard_and_adds_route(self):
         sink = FakeSocket()
-        wrapper = self.pp_module.SafetyDuplicatingSocket(
-            sink,
-            telemetry_port=6012,
-            safety_port=6015,
-            route_sha256="a" * 64,
-        )
+        with mock.patch.object(self.pp_module.time, "monotonic_ns", return_value=1000):
+            wrapper = self.pp_module.SafetyDuplicatingSocket(
+                sink,
+                telemetry_port=6012,
+                safety_port=6015,
+                route_sha256="a" * 64,
+            )
         original = {
             "controller_state": "RUNNING",
             "speed_cmd_mps": "1.0",
@@ -93,7 +94,43 @@ class RpiArbitratorProducerTests(unittest.TestCase):
         safety = json.loads(sink.sent[1][0])
         self.assertEqual("pure_pursuit_safety", safety["kind"])
         self.assertEqual("a" * 64, safety["route_sha256"])
-        self.assertEqual(1, safety["safety_sequence"])
+        self.assertEqual(1001, safety["safety_sequence"])
+
+    def test_restarted_pure_pursuit_sequence_advances_past_prior_process(self):
+        original = {
+            "controller_state": "RUNNING",
+            "gps_age_s": "0.05",
+            "fix_quality": "RTK Fixed",
+            "head_valid": True,
+            "heading_carrier": "fixed",
+            "heading_accuracy_deg": "0.2",
+            "path_progress_m": "10.0",
+            "cross_track_err_m": "0.2",
+        }
+
+        first_sink = FakeSocket()
+        with mock.patch.object(self.pp_module.time, "monotonic_ns", return_value=1000):
+            first = self.pp_module.SafetyDuplicatingSocket(
+                first_sink,
+                telemetry_port=6012,
+                safety_port=6015,
+                route_sha256="a" * 64,
+            )
+        first.sendto(json.dumps(original).encode(), ("127.0.0.1", 6012))
+        first_sequence = json.loads(first_sink.sent[-1][0])["safety_sequence"]
+
+        restarted_sink = FakeSocket()
+        with mock.patch.object(self.pp_module.time, "monotonic_ns", return_value=2000):
+            restarted = self.pp_module.SafetyDuplicatingSocket(
+                restarted_sink,
+                telemetry_port=6012,
+                safety_port=6015,
+                route_sha256="a" * 64,
+            )
+        restarted.sendto(json.dumps(original).encode(), ("127.0.0.1", 6012))
+        restarted_sequence = json.loads(restarted_sink.sent[-1][0])["safety_sequence"]
+
+        self.assertGreater(restarted_sequence, first_sequence)
 
     def test_incomplete_startup_row_is_not_sent_as_safety_record(self):
         sink = FakeSocket()
