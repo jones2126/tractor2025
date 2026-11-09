@@ -23,4 +23,4 @@ StandardError=journal
 SyslogIdentifier=tractor-rpi-arbitrator
 
 [Install]
-# No boot target. Installation and activation require separate approval.
+WantedBy=multi-user.target

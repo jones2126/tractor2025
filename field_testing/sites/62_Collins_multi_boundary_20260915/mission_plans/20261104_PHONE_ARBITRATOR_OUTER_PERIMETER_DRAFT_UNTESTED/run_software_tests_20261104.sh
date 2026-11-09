@@ -12,6 +12,7 @@ python3 -m unittest \
   tractor_rpi.testing.test_rpi_arbitrator_producers_20261031 \
   tractor_rpi.testing.test_rpi_arbitrator_motor_off_consumer_20261031 \
   tractor_rpi.testing.test_rpi_arbitrator_production_bridge_20261104 \
+  tractor_rpi.testing.test_wifi_primary_control_20261022 \
   tractor_rpi.testing.test_wifi_rpi_arbitrator_control_20261104 \
   tractor_rpi.testing.test_teensy_rpi_command_lease_v3_source_20261104 \
   tractor_rpi.testing.test_rpi_full_arbitrator_fault_simulation_20261031

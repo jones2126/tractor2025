@@ -407,6 +407,8 @@ class ConnectivityMonitor:
         zerotier_check: Any = None,
         notifier: Any = None,
         clock: Any = None,
+        zerotier_notices: bool = True,
+        local_network_description: str = "the tractor's local router",
     ) -> None:
         self.state = state
         self.topic = topic
@@ -423,6 +425,8 @@ class ConnectivityMonitor:
         self.zerotier_check = zerotier_check or self.probe_zerotier
         self.notifier = notifier or post_ntfy
         self.clock = clock or time.monotonic
+        self.zerotier_notices = zerotier_notices
+        self.local_network_description = local_network_description
         self.started_at = self.clock()
         self.local_notice_sent = False
         self.delayed_notice_sent = False
@@ -483,8 +487,8 @@ class ConnectivityMonitor:
                 "local",
                 now,
                 "Tractor01 local control ready",
-                "Connect the phone to the tractor's local router, then open "
-                "this temporary Wi-Fi control link. Tractor control starts in Pause.\n\n"
+                f"Connect the phone to {self.local_network_description}, then open "
+                "this local control link. Tractor control starts in Pause.\n\n"
                 f"{self.local_url}",
                 self.local_url,
                 "tractor,wifi",
@@ -511,7 +515,9 @@ class ConnectivityMonitor:
             recovered = self.ever_zerotier_ready
             self.zerotier_ready = True
             self.ever_zerotier_ready = True
-            self.pending_zerotier_notice = "recovered" if recovered else "ready"
+            self.pending_zerotier_notice = (
+                "recovered" if recovered else "ready"
+            ) if self.zerotier_notices else None
             self.next_attempt["zerotier"] = 0.0
             self.log("zerotier_ready", recovered=recovered, checks=self.successes)
         elif self.zerotier_ready and self.failures >= self.stable_checks:
@@ -542,6 +548,8 @@ class ConnectivityMonitor:
                 self.log("zerotier_notice_sent", recovered=recovered)
 
         if (
+            self.zerotier_notices
+            and
             not self.ever_zerotier_ready
             and now - self.started_at >= self.initial_window_s
             and not self.delayed_notice_sent
@@ -1564,6 +1572,22 @@ def main() -> None:
     )
     parser.add_argument("--no-ntfy", action="store_true")
     parser.add_argument(
+        "--local-control-ntfy-only",
+        action="store_true",
+        help=(
+            "send the local-router control link but suppress ZeroTier ready, "
+            "recovered, and delayed notices"
+        ),
+    )
+    parser.add_argument(
+        "--local-network-description",
+        default=os.environ.get(
+            "TRACTOR_LOCAL_NETWORK_DESCRIPTION",
+            "the tractor's local router",
+        ),
+        help="operator-facing Wi-Fi/router description included in local ntfy notices",
+    )
+    parser.add_argument(
         "--ntfy-topic",
         default=os.environ.get("TRACTOR_NTFY_TOPIC", base.DEFAULT_NTFY_TOPIC),
     )
@@ -1673,6 +1697,8 @@ def main() -> None:
             peer_port=args.zerotier_peer_port,
             initial_window_s=args.zerotier_initial_window,
             poll_s=args.network_poll_seconds,
+            zerotier_notices=not args.local_control_ntfy_only,
+            local_network_description=args.local_network_description,
         )
         threading.Thread(target=connectivity.run, daemon=True).start()
     print("Wi-Fi-primary tractor01 control")
@@ -1685,6 +1711,8 @@ def main() -> None:
     if not selected_policy.recovery_only:
         print(f"{zero_label}: {zero}")
     print(f"Local control: {local}")
+    if args.local_control_ntfy_only:
+        print("ntfy: local-router control link only; ZeroTier notices suppressed")
     print(f"Control clients allowed: {control_network}")
     print(
         f"Authority policy: {selected_policy.name}; "

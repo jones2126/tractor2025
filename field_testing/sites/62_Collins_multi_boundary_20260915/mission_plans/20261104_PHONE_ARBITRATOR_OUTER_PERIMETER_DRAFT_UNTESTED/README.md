@@ -8,12 +8,18 @@ Its current approval state is:
 
 - installation of inactive service definitions is approved;
 - v3 Teensy flashing and engine-off commissioning are approved;
+- production boot is prepared but remains separately gated;
 - field motion is not approved; and
 - neither service has a boot target.
 
 The phone replaces the retired NRF handheld for Manual, Auto, Pause, and
 E-stop. The large red tractor E-stop still grounds the ignition independently.
 The rear transmission lever remains a separate mechanical movement barrier.
+
+For the prepared production startup, the phone connects to the GL router
+(gateway `192.168.8.1`) and ntfy opens the Tractor01 local-control server at
+`https://192.168.8.20:8765/`. ZeroTier remains available for remote status but
+is not sent as the handheld control link.
 
 The exact reviewed outer-perimeter route remains unchanged: 3,462 waypoints,
 689.949 m, 1.00 m/s, clockwise, with LF-normalized SHA-256

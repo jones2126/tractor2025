@@ -607,7 +607,7 @@ class WifiPrimaryTests(unittest.TestCase):
         zero_iter = iter(zerotier_results)
 
         def notify(topic, title, message, click_url, tags):
-            notices.append((title, click_url))
+            notices.append((title, click_url, message))
             return True
 
         monitor = primary.ConnectivityMonitor(
@@ -656,6 +656,52 @@ class WifiPrimaryTests(unittest.TestCase):
             self.assertEqual([], notices)
             monitor.step(6)
             self.assertEqual("Tractor01 ZeroTier status available", notices[0][0])
+        finally:
+            state.running = False
+            state.close()
+            temporary.cleanup()
+
+    def test_local_control_only_suppresses_all_zerotier_notices(self):
+        notices = []
+        temporary, state = self.make_state()
+
+        def notify(topic, title, message, click_url, tags):
+            notices.append((title, click_url, message))
+            return True
+
+        monitor = primary.ConnectivityMonitor(
+            state,
+            "test-topic",
+            "https://192.168.8.20:8765/?key=test",
+            "https://192.168.193.76:8765/?key=test",
+            False,
+            initial_window_s=90,
+            stable_checks=3,
+            local_check=lambda: True,
+            zerotier_check=lambda: (True, "reachable"),
+            notifier=notify,
+            clock=lambda: 0.0,
+            zerotier_notices=False,
+            local_network_description="Wi-Fi GL-SFT1200-9f4 (router 192.168.8.1)",
+        )
+        try:
+            monitor.step(0)
+            monitor.step(45)
+            monitor.step(90)
+            monitor.step(93)
+            self.assertEqual(
+                [
+                    (
+                        "Tractor01 local control ready",
+                        "https://192.168.8.20:8765/?key=test",
+                    )
+                ],
+                [(title, click_url) for title, click_url, _ in notices],
+            )
+            self.assertIn("GL-SFT1200-9f4", notices[0][2])
+            self.assertIn("192.168.8.1", notices[0][2])
+            self.assertTrue(monitor.zerotier_ready)
+            self.assertIsNone(monitor.pending_zerotier_notice)
         finally:
             state.running = False
             state.close()

@@ -35,6 +35,11 @@ def main() -> None:
         package["approved_for_motor_off_commissioning"] is True,
         "motor-off commissioning approval missing",
     )
+    require(package["production_boot_prepared"] is True, "production boot is not prepared")
+    require(
+        package["approved_for_production_boot_activation"] is False,
+        "production boot activation must remain separately gated",
+    )
     require(package["approved_for_motion"] is False, "motion gate must be false")
     require(package["blades_required_off"] is True, "blades-off gate missing")
     require(normalized_hash(ROUTE) == EXPECTED_ROUTE, "reviewed route hash mismatch")
@@ -45,6 +50,7 @@ def main() -> None:
     firmware = (REPO / "tractor_teensy/src/teensy_main_20261104_rpi_command_lease.cpp").read_text(encoding="utf-8")
     launcher = (HERE / "run_outer_perimeter_20261104.sh").read_text(encoding="utf-8")
     installer = (HERE / "install_candidate_20261104.sh").read_text(encoding="utf-8")
+    boot_installer = (HERE / "install_production_boot_20261109.sh").read_text(encoding="utf-8")
     activator = (HERE / "activate_candidate_motor_off_20261104.sh").read_text(encoding="utf-8")
     bridge_unit = (HERE / "tractor-rpi-arbitrator.service").read_text(encoding="utf-8")
     phone_unit = (HERE / "tractor-phone-arbitrator.service").read_text(encoding="utf-8")
@@ -71,7 +77,34 @@ def main() -> None:
     require("pgrep -f '[p]ure_pursuit'" in activator, "Pure Pursuit exclusion missing")
     require("--arbitrator-proposal-only" in launcher, "Pure Pursuit is not proposal-only")
     require("--port 16004" in launcher, "unused proposal destination missing")
-    require("WantedBy=" not in bridge_unit + phone_unit, "candidate services must not boot")
+    require(
+        bridge_unit.count("WantedBy=multi-user.target") == 1,
+        "arbitrator boot target missing",
+    )
+    require(
+        phone_unit.count("WantedBy=multi-user.target") == 1,
+        "phone-service boot target missing",
+    )
+    require(
+        "--local-control-ntfy-only" in phone_unit,
+        "phone service must suppress ZeroTier startup notices",
+    )
+    require(
+        "GL-SFT1200-9f4 (router 192.168.8.1)" in phone_unit,
+        "operator-facing GL-router startup instructions are missing",
+    )
+    require(
+        "APPROVED_FOR_PRODUCTION_BOOT_ACTIVATION=false" in boot_installer,
+        "production boot installer must remain separately gated",
+    )
+    require(
+        "systemctl disable tractor-wifi-control.service teensy-bridge.service" in boot_installer,
+        "legacy boot services are not explicitly disabled",
+    )
+    require(
+        "systemctl enable tractor-rpi-arbitrator.service tractor-phone-arbitrator.service" in boot_installer,
+        "V3 boot services are not explicitly enabled",
+    )
     require(
         bridge_unit.count("WorkingDirectory=/home/al/tractor2025-rpi-lease") == 1,
         "bridge must use the exact candidate worktree",
@@ -87,6 +120,7 @@ def main() -> None:
     print("      Exact outer-perimeter route; phone-only operator modes; v3 E-stop relay support.")
     print("      Pure Pursuit is proposal-only; one RPi arbitrator owns Teensy commands.")
     print("INSTALL, FLASH, CANDIDATE SERVICE START, AND MOTOR-OFF COMMISSIONING AUTHORIZED.")
+    print("PRODUCTION BOOT IS PREPARED BUT NOT YET AUTHORIZED.")
     print("ENGINE START AND PHYSICAL MOTION ARE NOT AUTHORIZED.")
 
 

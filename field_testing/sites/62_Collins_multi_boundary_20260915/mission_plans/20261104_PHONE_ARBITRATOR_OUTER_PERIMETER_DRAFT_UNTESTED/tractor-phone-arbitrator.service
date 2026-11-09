@@ -17,7 +17,7 @@ RuntimeDirectoryMode=0700
 ExecStartPre=/usr/bin/test -r /home/al/.config/tractor-wifi-control/tls/server.crt
 ExecStartPre=/usr/bin/test -r /home/al/.config/tractor-wifi-control/tls/server.key
 ExecStartPre=/usr/sbin/ip -4 address show dev eth0 to 192.168.8.20/32
-ExecStart=/usr/bin/python3 -u /home/al/tractor2025-rpi-lease/tractor_rpi/testing/webrtc/wifi_rpi_arbitrator_control_20261104.py --host 192.168.8.20 --port 8765 --tls-cert /home/al/.config/tractor-wifi-control/tls/server.crt --tls-key /home/al/.config/tractor-wifi-control/tls/server.key --operator-key-file /home/al/.config/tractor-wifi-control/operator.key --authority-policy onboard-router-mission --ownership-lock /run/tractor-phone-control/ownership.lock --diagnostics-status-file /run/tractor-phone-control/diagnostics.json --log-dir /home/al/field_logs/phone_arbitrator_production
+ExecStart=/usr/bin/python3 -u /home/al/tractor2025-rpi-lease/tractor_rpi/testing/webrtc/wifi_rpi_arbitrator_control_20261104.py --host 192.168.8.20 --port 8765 --tls-cert /home/al/.config/tractor-wifi-control/tls/server.crt --tls-key /home/al/.config/tractor-wifi-control/tls/server.key --operator-key-file /home/al/.config/tractor-wifi-control/operator.key --authority-policy onboard-router-mission --ownership-lock /run/tractor-phone-control/ownership.lock --diagnostics-status-file /run/tractor-phone-control/diagnostics.json --log-dir /home/al/field_logs/phone_arbitrator_production --local-control-ntfy-only --local-network-description "Wi-Fi GL-SFT1200-9f4 (router 192.168.8.1)"
 Restart=on-failure
 RestartSec=2
 KillSignal=SIGINT
@@ -27,4 +27,4 @@ StandardError=journal
 SyslogIdentifier=tractor-phone-arbitrator
 
 [Install]
-# No boot target. Installation and activation require separate approval.
+WantedBy=multi-user.target
