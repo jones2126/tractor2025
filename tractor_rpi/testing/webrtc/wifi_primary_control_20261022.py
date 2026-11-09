@@ -1332,6 +1332,7 @@ class WifiPrimaryState(base.FieldState):
         bridge, _ = self.bridge_snapshot()
         result["system"] = bridge.get("system", {})
         result["wifi_control"] = bridge.get("wifi_control", {})
+        result["rpi_arbitrator"] = bridge.get("rpi_arbitrator", {})
         result["wifi_primary_ready"] = self.bridge_ready()
         result["expected_firmware"] = EXPECTED_FIRMWARE
         result["authority_path"] = self.authority_policy.name

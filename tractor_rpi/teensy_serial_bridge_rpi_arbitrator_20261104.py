@@ -21,8 +21,12 @@ import time
 from typing import Any
 
 from tractor_rpi.rpi_arbitrator_inputs_20261031 import RpiArbitratorInputCollector
+from tractor_rpi.rpi_command_lease_protocol_20261031 import RpiCommandMode
 from tractor_rpi.rpi_command_lease_runtime_20261031 import RpiCommandLeaseRuntime
-from tractor_rpi.rpi_safety_supervisor_20261031 import RpiSafetySupervisor
+from tractor_rpi.rpi_safety_supervisor_20261031 import (
+    RpiSafetySupervisor,
+    SupervisorState,
+)
 from tractor_rpi.teensy_serial_bridge_rpi_arbitrator_motor_off_20261031 import (
     ArbitratorFeedReceiver,
     TeensySerialBridge as MotorOffBridge,
@@ -36,6 +40,35 @@ from tractor_rpi.teensy_serial_bridge_rpi_lease_pause_20261031 import (
 
 EXPECTED_FIRMWARE = "teensy_main_20261104_rpi_command_lease_v3"
 MOTION_GATE = "RUN_DIRECT_OUTER_PERIMETER_BLADES_OFF"
+
+
+def stopped_phone_pause_reset_ready(inputs, status, sample, latest_data) -> bool:
+    """Allow latch recovery only from a fresh, healthy, zero-output Pause."""
+    if (
+        inputs.requested_mode != RpiCommandMode.PAUSE
+        or not inputs.phone_link_fresh
+        or status is None
+        or sample is None
+    ):
+        return False
+    if (
+        status.mode != RpiCommandMode.PAUSE
+        or not status.arrival_fresh
+        or not status.lease_usable
+        or status.expiry_latched
+        or status.estop_latched
+        or not sample.steering_control_healthy
+        or not sample.transmission_control_healthy
+    ):
+        return False
+    steer = latest_data.get("STEER", {})
+    trans = latest_data.get("TRANS", {})
+    try:
+        return float(steer.get("p", 0.0)) == 0.0 and float(
+            trans.get("dc", 0.0)
+        ) == 0.0
+    except (TypeError, ValueError):
+        return False
 
 
 def require_production_environment() -> tuple[str, bool]:
@@ -71,6 +104,7 @@ class TeensySerialBridge(MotorOffBridge):
         self.degraded_preauthorized = degraded
         self._decision_lock = threading.Lock()
         self._latest_result = None
+        self._pause_reset_armed = True
 
     def command_lease_thread(self):
         base.base.logger.info("RPi safety-arbitrator scheduler started")
@@ -86,11 +120,27 @@ class TeensySerialBridge(MotorOffBridge):
                     inputs = self.arbitrator_feeds.collector.build(
                         now_monotonic_s=now
                     )
+                    if inputs.requested_mode != RpiCommandMode.PAUSE:
+                        self._pause_reset_armed = True
+                    if self._pause_reset_armed and stopped_phone_pause_reset_ready(
+                        inputs, status, sample, self.latest_data
+                    ):
+                        self.runtime.reset_after_stopped_pause(
+                            physical_pause_active=True,
+                            stopped=True,
+                            operator_acknowledged=True,
+                        )
+                        self._pause_reset_armed = False
+                        base.base.logger.info(
+                            "Guarded stopped-Pause latch reset completed"
+                        )
                     result = self.runtime.tick(
                         now_monotonic_s=now,
                         inputs=inputs,
                         status=status,
                     )
+                    if result.decision.state == SupervisorState.PAUSE_LATCHED:
+                        self._pause_reset_armed = True
                 with self._decision_lock:
                     self._latest_result = result
                 if result.frame_sent is not None:

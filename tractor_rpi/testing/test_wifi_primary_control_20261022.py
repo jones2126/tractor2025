@@ -219,6 +219,25 @@ class WifiPrimaryTests(unittest.TestCase):
             state.close()
             temporary.cleanup()
 
+    def test_state_endpoint_includes_authoritative_arbitrator_output(self):
+        temporary, state = self.make_state()
+        try:
+            state.bridge["rpi_arbitrator"] = {
+                "actual_serial_output": "PAUSE",
+                "exact_reason": "startup health latch",
+            }
+            snapshot = state.snapshot()
+            self.assertEqual(
+                "PAUSE", snapshot["rpi_arbitrator"]["actual_serial_output"]
+            )
+            self.assertEqual(
+                "startup health latch", snapshot["rpi_arbitrator"]["exact_reason"]
+            )
+        finally:
+            state.running = False
+            state.close()
+            temporary.cleanup()
+
     def test_dashboard_diagnostics_file_is_atomic_and_contains_no_session_secret(self):
         temporary, state = self.make_state()
         try:
