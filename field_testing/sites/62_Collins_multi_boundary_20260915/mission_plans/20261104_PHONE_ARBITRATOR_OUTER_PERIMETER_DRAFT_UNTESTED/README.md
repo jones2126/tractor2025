@@ -1,4 +1,4 @@
-# Phone-arbitrator outer-perimeter production package — disabled draft
+# Phone-controlled outer-perimeter production package — boot-test revision
 
 This package is the first motion-capable integration of the phone control page,
 Pure Pursuit proposals, the bounded communications-degraded guard, the RPi
@@ -8,9 +8,9 @@ Its current approval state is:
 
 - installation of inactive service definitions is approved;
 - v3 Teensy flashing and engine-off commissioning are approved;
-- production boot is prepared but remains separately gated;
+- production boot activation is approved after the motor-off Manual test;
 - field motion is not approved; and
-- neither service has a boot target.
+- the production services replace the incompatible legacy boot services.
 
 The phone replaces the retired NRF handheld for Manual, Auto, Pause, and
 E-stop. The large red tractor E-stop still grounds the ignition independently.

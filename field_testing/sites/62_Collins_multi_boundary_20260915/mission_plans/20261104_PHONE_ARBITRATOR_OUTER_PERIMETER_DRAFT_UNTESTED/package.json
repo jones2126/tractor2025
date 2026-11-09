@@ -6,7 +6,7 @@
   "approved_for_candidate_service_start": true,
   "approved_for_motor_off_commissioning": true,
   "production_boot_prepared": true,
-  "approved_for_production_boot_activation": false,
+  "approved_for_production_boot_activation": true,
   "approved_for_motion": false,
   "blades_required_off": true,
   "route_sha256": "b47660b4c74d5e26ca5d9448f069fd7193c068cf62e3c0b62d5c083d9aed4d64",

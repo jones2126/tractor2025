@@ -37,8 +37,8 @@ def main() -> None:
     )
     require(package["production_boot_prepared"] is True, "production boot is not prepared")
     require(
-        package["approved_for_production_boot_activation"] is False,
-        "production boot activation must remain separately gated",
+        package["approved_for_production_boot_activation"] is True,
+        "production boot activation approval missing",
     )
     require(package["approved_for_motion"] is False, "motion gate must be false")
     require(package["blades_required_off"] is True, "blades-off gate missing")
@@ -94,8 +94,8 @@ def main() -> None:
         "operator-facing GL-router startup instructions are missing",
     )
     require(
-        "APPROVED_FOR_PRODUCTION_BOOT_ACTIVATION=false" in boot_installer,
-        "production boot installer must remain separately gated",
+        "APPROVED_FOR_PRODUCTION_BOOT_ACTIVATION=true" in boot_installer,
+        "production boot installer approval missing",
     )
     require(
         "systemctl disable tractor-wifi-control.service teensy-bridge.service" in boot_installer,
@@ -120,7 +120,7 @@ def main() -> None:
     print("      Exact outer-perimeter route; phone-only operator modes; v3 E-stop relay support.")
     print("      Pure Pursuit is proposal-only; one RPi arbitrator owns Teensy commands.")
     print("INSTALL, FLASH, CANDIDATE SERVICE START, AND MOTOR-OFF COMMISSIONING AUTHORIZED.")
-    print("PRODUCTION BOOT IS PREPARED BUT NOT YET AUTHORIZED.")
+    print("PRODUCTION BOOT ACTIVATION AUTHORIZED; REBOOT TEST REQUIRED.")
     print("ENGINE START AND PHYSICAL MOTION ARE NOT AUTHORIZED.")
 
 

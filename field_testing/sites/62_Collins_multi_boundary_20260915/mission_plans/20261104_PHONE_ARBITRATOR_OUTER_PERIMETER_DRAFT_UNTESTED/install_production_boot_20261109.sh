@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# This prepared installer is intentionally fail-closed until the operator gives
-# a separate approval after the boot and notification tests are reviewed.
-APPROVED_FOR_PRODUCTION_BOOT_ACTIVATION=false
+# Operator approved production boot activation after the motor-off Manual,
+# guarded Pause recovery, and local-only notification tests passed.
+APPROVED_FOR_PRODUCTION_BOOT_ACTIVATION=true
 HERE="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
 python3 "${HERE}/verify_package_20261104.py"
