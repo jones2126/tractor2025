@@ -41,6 +41,9 @@
     <button id="next" type="button">Next</button>
     <label>Playback <select id="rate"><option value="1">1 step</option><option value="5" selected>5 steps</option><option value="20">20 steps</option></select></label>
     <label>Map <select id="view"><option value="all">Full mission</option><option value="40">40 m around tractor</option><option value="15">15 m around tractor</option></select></label>
+    <button id="zoomOut" type="button" title="Zoom out on the path">Zoom out</button>
+    <button id="zoomReset" type="button" title="Reset map zoom">100%</button>
+    <button id="zoomIn" type="button" title="Zoom in around the tractor">Zoom in</button>
   </div>
   <div class="controls"><label for="step">Timeline</label><input id="step" type="range" min="0" value="0"><output id="position"></output></div>
   <div class="controls"><button id="previousEvent" type="button">Previous event</button><button id="nextEvent" type="button">Next event</button><input id="eventSearch" type="search" placeholder="Search events: RTK, heading, radio loss, Manual…" aria-label="Search recorded events"><select id="events" aria-label="Jump to a recorded event"></select></div>
@@ -58,6 +61,7 @@ const map=document.getElementById('map'), speed=document.getElementById('speed')
 const m=map.getContext('2d'), v=speed.getContext('2d');
 const step=document.getElementById('step'), pos=document.getElementById('position');
 const view=document.getElementById('view'), rate=document.getElementById('rate'), facts=document.getElementById('facts');
+const zoomOut=document.getElementById('zoomOut'),zoomReset=document.getElementById('zoomReset'),zoomIn=document.getElementById('zoomIn');
 const eventMenu=document.getElementById('events'), play=document.getElementById('play');
 const eventSearch=document.getElementById('eventSearch');
 const esc=x=>String(x??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -70,10 +74,11 @@ let visibleEvents=events;
 function fillEvents(){const query=eventSearch.value.trim().toLowerCase();visibleEvents=events.filter(e=>`${e.category||''} ${e.label}`.toLowerCase().includes(query));eventMenu.replaceChildren(new Option(`Jump to event (${visibleEvents.length} of ${events.length})`,''));for(const e of visibleEvents){const s=samples[e.sample];const time=new Date(s.t*1000).toLocaleTimeString('en-US',{hour12:false,timeZone:'America/New_York'});eventMenu.add(new Option(`${time} · ${e.label}`,String(e.sample)));}}
 fillEvents();
 let timer=null;
+let zoomFactor=1;
 const trail=D.trail||samples.filter(s=>s.x!=null&&s.y!=null).map(s=>[s.x,s.y]);
 const coords=mission.concat(trail);
 const allBounds={minX:Math.min(...coords.map(p=>p[0]))-4,maxX:Math.max(...coords.map(p=>p[0]))+4,minY:Math.min(...coords.map(p=>p[1]))-4,maxY:Math.max(...coords.map(p=>p[1]))+4};
-function viewport(s){const z=view.value;if(z==='all'||s.x==null)return allBounds;const r=Number(z)/2;return {minX:s.x-r,maxX:s.x+r,minY:s.y-r,maxY:s.y+r};}
+function viewport(s){const z=view.value;let base;if(z==='all'||s.x==null){base=allBounds}else{const r=Number(z)/2;base={minX:s.x-r,maxX:s.x+r,minY:s.y-r,maxY:s.y+r}}if(zoomFactor===1)return base;const cx=s.x??(base.minX+base.maxX)/2,cy=s.y??(base.minY+base.maxY)/2,rx=(base.maxX-base.minX)/(2*zoomFactor),ry=(base.maxY-base.minY)/(2*zoomFactor);return {minX:cx-rx,maxX:cx+rx,minY:cy-ry,maxY:cy+ry};}
 function transform(bounds,w,h){const dx=Math.max(.001,bounds.maxX-bounds.minX),dy=Math.max(.001,bounds.maxY-bounds.minY),scale=Math.min((w-52)/dx,(h-52)/dy),cx=(bounds.maxX+bounds.minX)/2,cy=(bounds.maxY+bounds.minY)/2;return {x:a=>w/2+(a-cx)*scale,y:b=>h/2-(b-cy)*scale,scale};}
 function linePath(ctx,points,T,color,width){ctx.beginPath();let begun=false;for(const p of points){if(p[0]==null||p[1]==null){begun=false;continue}const x=T.x(p[0]),y=T.y(p[1]);if(!begun){ctx.moveTo(x,y);begun=true}else ctx.lineTo(x,y)}ctx.strokeStyle=color;ctx.lineWidth=width;ctx.stroke();}
 function circle(ctx,x,y,r,color){ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();}
@@ -85,7 +90,7 @@ function drawMap(i){const s=samples[i],T=transform(viewport(s),map.width,map.hei
   linePath(m,trail.slice(0,trailEnd+1),T,'#3bd7ab',2.2);
   if(s.x!=null&&s.y!=null){const px=T.x(s.x),py=T.y(s.y);if(s.targetX!=null&&s.targetY!=null){m.beginPath();m.moveTo(px,py);m.lineTo(T.x(s.targetX),T.y(s.targetY));m.strokeStyle='#ef6681';m.lineWidth=1.5;m.stroke();circle(m,T.x(s.targetX),T.y(s.targetY),4,'#ef6681');}
     circle(m,px,py,6,s.driving?'#ffd166':'#ff9367');if(s.heading!=null){const h=(90-s.heading)*Math.PI/180;m.beginPath();m.moveTo(px,py);m.lineTo(px+23*Math.cos(h),py-23*Math.sin(h));m.strokeStyle='#ffd166';m.lineWidth=3;m.stroke();}}
-  m.fillStyle='#e4edf3';m.font='15px system-ui';m.fillText(view.value==='all'?'Full mission':`${view.value} m local view`,15,25);
+  m.fillStyle='#e4edf3';m.font='15px system-ui';const viewLabel=view.value==='all'?'Full mission':`${view.value} m local view`;m.fillText(`${viewLabel} · zoom ${Math.round(zoomFactor*100)}%`,15,25);
   if(!s.driving){m.fillStyle='#ffb073';m.fillText('WAIT / STOPPED',15,48);}
 }
 function drawSpeed(i){v.clearRect(0,0,speed.width,speed.height);v.fillStyle='#17232d';v.fillRect(0,0,speed.width,speed.height);const start=samples[0].t,end=samples.at(-1).t,px=t=>30+(t-start)/Math.max(1,end-start)*940,py=y=>135-Math.min(1.5,Math.max(0,y))*75;
@@ -104,7 +109,10 @@ function drawFacts(i){const s=samples[i],time=new Date(s.t*1000).toLocaleString(
 ];facts.innerHTML=f.map(x=>fact(...x)).join('');}
 function draw(){const i=Number(step.value);pos.value=`${i+1} / ${samples.length}`;drawMap(i);drawSpeed(i);drawFacts(i);}
 function jump(i){step.value=Math.max(0,Math.min(samples.length-1,i));draw();}
+function setZoom(next){zoomFactor=Math.max(.5,Math.min(16,next));zoomReset.textContent=`${Math.round(zoomFactor*100)}%`;draw();}
 step.addEventListener('input',draw);view.addEventListener('change',draw);eventSearch.addEventListener('input',fillEvents);eventMenu.addEventListener('change',()=>{if(eventMenu.value)jump(Number(eventMenu.value));});
+zoomIn.onclick=()=>setZoom(zoomFactor*1.35);zoomOut.onclick=()=>setZoom(zoomFactor/1.35);zoomReset.onclick=()=>setZoom(1);
+map.addEventListener('wheel',event=>{event.preventDefault();setZoom(event.deltaY<0?zoomFactor*1.18:zoomFactor/1.18);},{passive:false});
 document.getElementById('prev').onclick=()=>jump(Number(step.value)-1);document.getElementById('next').onclick=()=>jump(Number(step.value)+1);
 document.getElementById('previousEvent').onclick=()=>{const i=Number(step.value),e=[...visibleEvents].reverse().find(x=>x.sample<i);if(e)jump(e.sample);};
 document.getElementById('nextEvent').onclick=()=>{const i=Number(step.value),e=visibleEvents.find(x=>x.sample>i);if(e)jump(e.sample);};
