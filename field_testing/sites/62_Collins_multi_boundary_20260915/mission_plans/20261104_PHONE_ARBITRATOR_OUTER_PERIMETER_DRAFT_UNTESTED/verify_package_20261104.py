@@ -50,7 +50,7 @@ def main() -> None:
 
     bridge = (REPO / "tractor_rpi/teensy_serial_bridge_rpi_arbitrator_20261104.py").read_text(encoding="utf-8")
     phone = (REPO / "tractor_rpi/testing/webrtc/wifi_rpi_arbitrator_control_20261104.py").read_text(encoding="utf-8")
-    firmware = (REPO / "tractor_teensy/src/teensy_main_20261104_rpi_command_lease.cpp").read_text(encoding="utf-8")
+    firmware = (REPO / "tractor_teensy/src/teensy_main_20261110.cpp").read_text(encoding="utf-8")
     launcher = (HERE / "run_outer_perimeter_20261104.sh").read_text(encoding="utf-8")
     installer = (HERE / "install_candidate_20261104.sh").read_text(encoding="utf-8")
     boot_installer = (HERE / "install_production_boot_20261109.sh").read_text(encoding="utf-8")
@@ -63,7 +63,7 @@ def main() -> None:
     require("MOTION_GATE = \"RUN_DIRECT_OUTER_PERIMETER_BLADES_OFF\"" in bridge, "bridge motion gate missing")
     require("phone_replaces_nrf_mode_switch=True" in bridge, "phone mode authority missing")
     require("UDP 6004" in phone and "do not call" in phone, "legacy phone output is not isolated")
-    require("teensy_main_20261104_rpi_command_lease_v3" in firmware, "v3 firmware identity missing")
+    require("teensy_main_20261110_rpi_command_lease_v5" in firmware, "v5 firmware identity missing")
     require("APPROVED_FOR_FIELD=true" in launcher, "field launcher approval missing")
     require(
         "mission_preflight_phone_control_20261109.py" in launcher,
@@ -136,21 +136,21 @@ def main() -> None:
     )
     require(
         "systemctl enable tractor-rpi-arbitrator.service tractor-phone-arbitrator.service" in boot_installer,
-        "V3 boot services are not explicitly enabled",
+        "v5 boot services are not explicitly enabled",
     )
     require(
-        bridge_unit.count("WorkingDirectory=/home/al/tractor2025-rpi-lease") == 1,
-        "bridge must use the exact candidate worktree",
+        bridge_unit.count("WorkingDirectory=/home/al/tractor2025") == 1,
+        "bridge must use the canonical repository checkout",
     )
     require(
-        "/home/al/tractor2025-rpi-lease/tractor_rpi/testing/webrtc/" in phone_unit,
-        "phone service must use the exact candidate worktree",
+        "/home/al/tractor2025/tractor_rpi/testing/webrtc/" in phone_unit,
+        "phone service must use the canonical repository checkout",
     )
     require("Conflicts=teensy-bridge.service" in bridge_unit, "serial-owner conflict missing")
     require("Requires=tractor-rpi-arbitrator.service" in phone_unit, "phone/arbitrator ordering missing")
 
     print("PASS: motion-capable phone-arbitrator package verified.")
-    print("      Exact outer-perimeter route; phone-only operator modes; v3 E-stop relay support.")
+    print("      Exact outer-perimeter route; phone-only operator modes; v5 E-stop relay support.")
     print("      Pure Pursuit is proposal-only; one RPi arbitrator owns Teensy commands.")
     print("INSTALL, FLASH, CANDIDATE SERVICE START, AND MOTOR-OFF COMMISSIONING AUTHORIZED.")
     print("PRODUCTION BOOT ACTIVATION AUTHORIZED; REBOOT TEST PASSED.")

@@ -13,7 +13,7 @@
   "manual_repositioning_passed": true,
   "blades_required_off": true,
   "route_sha256": "b47660b4c74d5e26ca5d9448f069fd7193c068cf62e3c0b62d5c083d9aed4d64",
-  "expected_firmware": "teensy_main_20261104_rpi_command_lease_v3",
+  "expected_firmware": "teensy_main_20261110_rpi_command_lease_v5",
   "phone_network": "192.168.8.0/24",
   "phone_server": "192.168.8.20:8765",
   "phone_router_gateway": "192.168.8.1",

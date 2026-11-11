@@ -24,6 +24,6 @@ systemctl disable tractor-wifi-control.service teensy-bridge.service \
     >/dev/null 2>&1 || true
 systemctl enable tractor-rpi-arbitrator.service tractor-phone-arbitrator.service
 
-echo "PASS: V3 arbitrator and local GL-router phone service are selected for boot."
+echo "PASS: consolidated v5 arbitrator and local GL-router phone service are selected for boot."
 echo "The running services were not restarted by this installer."
 echo "Engine start and physical motion remain separately gated."

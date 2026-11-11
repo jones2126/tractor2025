@@ -11,7 +11,7 @@ VERIFY="${HERE}/verify_package_20261104.py"
 PREFLIGHT="${REPO}/tractor_rpi/testing/mission_preflight_phone_control_20261109.py"
 CONTROLLER="${REPO}/tractor_rpi/pure-pursuit/pure_pursuit_arbitrator_feed_20261031.py"
 LOGGER="${REPO}/tractor_rpi/field_test_logger_20260828.py"
-EXPECTED_FIRMWARE="teensy_main_20261104_rpi_command_lease_v3"
+EXPECTED_FIRMWARE="teensy_main_20261110_rpi_command_lease_v5"
 CONFIRMATION="RUN PHONE OUTER PERIMETER BLADES OFF"
 
 dashboard_mode=false

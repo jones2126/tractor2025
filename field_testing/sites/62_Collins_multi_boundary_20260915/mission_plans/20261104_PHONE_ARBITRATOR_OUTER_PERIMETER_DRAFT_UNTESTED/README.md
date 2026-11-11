@@ -2,12 +2,12 @@
 
 This package is the first motion-capable integration of the phone control page,
 Pure Pursuit proposals, the bounded communications-degraded guard, the RPi
-command lease, and the Teensy v3 phone E-stop relay behavior.
+command lease, and the consolidated Teensy v5 phone E-stop relay behavior.
 
 Its current approval state is:
 
 - installation of inactive service definitions is approved;
-- v3 Teensy flashing and engine-off commissioning are approved;
+- consolidated v5 Teensy flashing and engine-off commissioning are approved;
 - production boot activation is approved after the motor-off Manual test;
 - the exact 1.00 m/s blades-off perimeter mission is field approved; and
 - the production services replace the incompatible legacy boot services.

@@ -8,7 +8,7 @@ StartLimitIntervalSec=0
 [Service]
 Type=simple
 User=al
-WorkingDirectory=/home/al/tractor2025-rpi-lease
+WorkingDirectory=/home/al/tractor2025
 Environment=PYTHONUNBUFFERED=1
 Environment=TRACTOR_EXPECTED_ROUTE_SHA256=b47660b4c74d5e26ca5d9448f069fd7193c068cf62e3c0b62d5c083d9aed4d64
 Environment=TRACTOR_MOTION_AUTHORIZATION=RUN_DIRECT_OUTER_PERIMETER_BLADES_OFF
