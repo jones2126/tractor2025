@@ -6,6 +6,11 @@ Start Codex from this directory: `/home/al/repos/tractor2025/`
 The robot's onboard Pi pulls from GitHub; hardware scripts in `tractor_rpi/`
 run there, not here.)
 
+For any live Tractor01 field work, read
+`field_testing/TRACTOR01_CURRENT_FIELD_CONTEXT.md` before suggesting commands.
+That file contains the current production paths, service owners, dashboard
+semantics, preflight command, and operator-confirmed live-system automation.
+
 ## Who I Am
 Al — hobbyist robotics developer. Not a professional software engineer.
 Walk me through processes step by step when needed.
