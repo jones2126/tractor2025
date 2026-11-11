@@ -74,9 +74,9 @@ float steer_kd = 0.0;
 
 // Tractor steering calibration. These are permanent source values; change
 // them here and rebuild if the physical steering calibration changes.
-const int STEER_POT_RIGHT  = 197;
-const int STEER_POT_CENTER = 447;
-const int STEER_POT_LEFT   = 815;
+const int STEER_POT_RIGHT  = 191;
+const int STEER_POT_CENTER = 525;
+const int STEER_POT_LEFT   = 885;
 
 // Historical raw range retained only for stationary steering-fault recovery.
 const int RECOVERY_STEER_RIGHT  = 1;    // RC joystick pushed hard right
@@ -1261,9 +1261,12 @@ extern "C" void setup() {
     digitalWrite(ESTOP_RELAY_PIN, HIGH);
 
     publishSystemIdentity();
-    Serial.println(
-        "1,0,SYS,steer_cal,right=191,center=525,left=885,"
-        "hard_right=171,hard_left=905"
+    Serial.printf(
+        "1,0,SYS,steer_cal,right=%d,center=%d,left=%d,"
+        "hard_right=171,hard_left=905\n",
+        STEER_POT_RIGHT,
+        STEER_POT_CENTER,
+        STEER_POT_LEFT
     );
     Serial.println("1,0,SYS,command_authority=rpi_lease,nrf24=retired");
     Serial.flush();
