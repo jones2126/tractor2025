@@ -365,6 +365,21 @@ ssh al@192.168.193.88 "sudo shutdown now"
 
 ### E — Data collection and analysis
 
+- [ ] Reconfirm that GitHub, the permanent Windows checkout at
+  `C:\Repos\tractor2025`, and Tractor01 at `/home/al/tractor2025` are all on
+  `main`, at the same commit, with clean working trees after the November 11
+  replay commit and branch cleanup.
+- [ ] Run the November 9 replay tooling against the complete November 11
+  evidence archive. Produce the replay, report, and interruption CSV that
+  records the start, recovery, and duration of every RTK-Fix, heading-validity,
+  heading-carrier, heading-accuracy, corridor, and other safety interruption.
+- [ ] Prepare a standalone Markdown prompt to review a proposed Pure Pursuit
+  RTK-loss policy that would command at most `0.3 m/s` instead of immediately
+  pausing when RTK Fixed is lost. The prompt must require a safety-boundary and
+  failure-mode review, define qualifying and disqualifying conditions, preserve
+  immediate local watchdog/e-stop authority, and keep implementation and field
+  authorization as later separate approvals. Do not implement this policy as
+  part of preparing the prompt.
 - [x] Capture RELPOSNED flags, carrier, baseline, heading accuracy, frame
   counters/timestamps, and per-receiver satellite/C/N0 diagnostics.
 - [x] Resolve historical `jrk_current` as position feedback and add explicit
