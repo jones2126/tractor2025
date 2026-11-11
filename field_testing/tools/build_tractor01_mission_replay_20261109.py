@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the November 9 phone-controlled outer-perimeter replay and report."""
+"""Build a phone-controlled outer-perimeter replay and evidence report."""
 
 from __future__ import annotations
 
@@ -34,6 +34,13 @@ DEFAULT_EVIDENCE = (
     / "20261109_phone_outer_perimeter_collection"
 )
 DEFAULT_OUTPUT = SITE / "analysis" / "20261109_phone_outer_perimeter_replay"
+DEFAULT_MISSION_PATH = (
+    SITE / "mission_plans" / "20260928_outer_perimeter_field_test" / "generated"
+    / "62_Collins_outer_perimeter_field_test_1mps_20260928.txt"
+)
+DEFAULT_AUDIT_PATH = DEFAULT_MISSION_PATH.with_name(
+    "62_Collins_outer_perimeter_field_test_1mps_20260928_audit.csv"
+)
 TEMPLATE = Path(__file__).with_name("tractor-mission-replay-template.html")
 SHARED_BUILDER = Path(__file__).with_name("build_tractor_mission_replays_20260919.py")
 THIS_FILE = Path(__file__).resolve()
@@ -43,6 +50,20 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--evidence-root", type=Path, default=DEFAULT_EVIDENCE)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument("--mission-csv", type=Path)
+    parser.add_argument("--pursuit-csv", type=Path)
+    parser.add_argument("--phone-jsonl", type=Path)
+    parser.add_argument("--mission-path", type=Path)
+    parser.add_argument("--audit-path", type=Path)
+    parser.add_argument("--run-id", default="20261109_phone_outer_perimeter")
+    parser.add_argument(
+        "--title",
+        default="November 9, 2026 · Phone-controlled outer-perimeter mission · HISTORICAL REPLAY",
+    )
+    parser.add_argument(
+        "--report-title",
+        default="November 9, 2026 outer-perimeter mission analysis",
+    )
     return parser.parse_args()
 
 
@@ -245,6 +266,63 @@ def failure_duration_s(pursuit, trigger_time, category, trigger):
     return round(end_time - pursuit[start]["_timestamp"], 3)
 
 
+def condition_loss_episodes(pursuit):
+    """Return each continuous raw safety-threshold breach once.
+
+    Conditions are independent and may overlap; this is intentional so an RTK
+    and heading failure during the same interval remain separately auditable.
+    """
+    conditions = [
+        ("rtk_fix", lambda row: row.get("fix_quality", "").strip() != "RTK Fixed", "fix_quality"),
+        ("heading_valid", lambda row: not boolean(row.get("head_valid")), "head_valid"),
+        ("heading_carrier", lambda row: row.get("heading_carrier", "").strip().lower() != "fixed", "heading_carrier"),
+        ("heading_accuracy", lambda row: numeric(row.get("heading_accuracy_deg"), math.inf) > 1.0, "heading_accuracy_deg"),
+        ("gps_feed", lambda row: "stale or no GPS" in row.get("wait_reason", ""), "wait_reason"),
+        ("supervisor_corridor", lambda row: numeric(row.get("cross_track_err_m"), -math.inf) > 2.0, "cross_track_err_m"),
+    ]
+    first_driving = next((index for index, row in enumerate(pursuit) if boolean(row.get("driving"))), None)
+    if first_driving is None:
+        return []
+    rows = pursuit[first_driving:]
+    results = []
+    for condition, breached, value_field in conditions:
+        active = None
+        for row in rows:
+            if breached(row):
+                if active is None:
+                    active = {"start": row, "end": row}
+                else:
+                    active["end"] = row
+            elif active is not None:
+                start, end = active["start"], active["end"]
+                results.append({
+                    "condition": condition,
+                    "start_timestamp_utc": dt.datetime.fromtimestamp(start["_timestamp"], dt.timezone.utc).isoformat(),
+                    "recovery_timestamp_utc": dt.datetime.fromtimestamp(row["_timestamp"], dt.timezone.utc).isoformat(),
+                    "duration_s": round(row["_timestamp"] - start["_timestamp"], 3),
+                    "start_route_waypoint": start.get("waypoint_idx", ""),
+                    "end_route_waypoint": end.get("waypoint_idx", ""),
+                    "start_value": start.get(value_field, ""),
+                    "end_value": end.get(value_field, ""),
+                    "recovered": True,
+                })
+                active = None
+        if active is not None:
+            start, end = active["start"], active["end"]
+            results.append({
+                "condition": condition,
+                "start_timestamp_utc": dt.datetime.fromtimestamp(start["_timestamp"], dt.timezone.utc).isoformat(),
+                "recovery_timestamp_utc": "",
+                "duration_s": round(end["_timestamp"] - start["_timestamp"], 3),
+                "start_route_waypoint": start.get("waypoint_idx", ""),
+                "end_route_waypoint": end.get("waypoint_idx", ""),
+                "start_value": start.get(value_field, ""),
+                "end_value": end.get(value_field, ""),
+                "recovered": False,
+            })
+    return sorted(results, key=lambda row: (row["start_timestamp_utc"], row["condition"]))
+
+
 def interruption_timeline(samples, pause_transitions, pursuit):
     """Group all mode cycling between two AUTO/AUTO states into one interruption.
 
@@ -428,6 +506,8 @@ def build_payload(
     audit_path,
     phone_records,
     evidence_sources,
+    title,
+    run_id,
 ):
     mission, lat0, lon0, sx, sy = load_mission(mission_path)
     with audit_path.open(newline="", encoding="utf-8-sig") as handle:
@@ -488,8 +568,8 @@ def build_payload(
 
     sources = [*evidence_sources, TEMPLATE, SHARED_BUILDER, THIS_FILE]
     return {
-        "title": "November 9, 2026 · Phone-controlled outer-perimeter mission · HISTORICAL REPLAY",
-        "run": "20261109_phone_outer_perimeter",
+        "title": title,
+        "run": run_id,
         "mission": mission,
         "trail": trail,
         "samples": samples,
@@ -596,15 +676,130 @@ def write_report(output, pursuit, field_rows, phone_records, episodes, pauses, s
     (output / "REPORT.md").write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
 
 
+def describe(values):
+    """Return compact duration statistics, or an explicit no-data result."""
+    values = [numeric(value) for value in values]
+    values = [value for value in values if value is not None]
+    if not values:
+        return "no measured durations"
+    return (
+        f"total **{sum(values):.3f} s**, median **{statistics.median(values):.3f} s**, "
+        f"maximum **{max(values):.3f} s**"
+    )
+
+
+def write_data_driven_report(
+    output,
+    report_title,
+    pursuit,
+    field_rows,
+    phone_records,
+    episodes,
+    pauses,
+    interruptions,
+    condition_episodes,
+    source_paths,
+):
+    """Write a factual report without run-specific causal conclusions."""
+    mission_phone_records = [
+        row for row in phone_records
+        if pursuit[0]["_timestamp"] <= row["_timestamp"] <= pursuit[-1]["_timestamp"]
+    ]
+    phone = phone_summary(mission_phone_records)
+    categories = Counter(item["trigger_category"] for item in interruptions)
+    max_progress = max(numeric(row.get("path_progress_m"), 0.0) for row in pursuit)
+    max_waypoint = max(int(numeric(row.get("waypoint_idx"), 0)) for row in pursuit)
+    cross_tracks = [numeric(row.get("cross_track_err_m")) for row in pursuit]
+    cross_tracks = [value for value in cross_tracks if value is not None]
+    voltage_rows = [
+        (row.get("time", ""), numeric(row.get("jrk_vin_voltage_mV")))
+        for _, row in field_rows
+        if boolean(row.get("jrk_vin_voltage_valid"))
+        and numeric(row.get("jrk_vin_voltage_mV")) is not None
+    ]
+    lines = [
+        f"# {report_title}",
+        "",
+        "**DRAFT - UNTESTED IN THE FIELD**",
+        "",
+        "This is a historical reconstruction of recorded evidence. It does not authorize field motion or change any controller behavior.",
+        "",
+        "## Recorded mission extent",
+        "",
+        f"- Pure Pursuit rows: **{len(pursuit):,}**.",
+        f"- Mission telemetry rows: **{len(field_rows):,}**.",
+        f"- Maximum route progress: **{max_progress:.3f} m**.",
+        f"- Maximum waypoint index: **{max_waypoint}**.",
+        f"- Maximum recorded cross-track error: **{max(cross_tracks):.3f} m**." if cross_tracks else "- Cross-track error: **not recorded**.",
+        "",
+        "## Grouped interruptions",
+        "",
+        f"- Complete or recording-ended interruptions: **{len(interruptions)}**.",
+        f"- Whole interruption/re-arm time: {describe(row['duration_s'] for row in interruptions)}.",
+        f"- Underlying breached-condition episodes: **{len(condition_episodes)}** (independent conditions can overlap).",
+    ]
+    for category, count in sorted(categories.items()):
+        lines.append(f"- `{category}`: **{count}** interruption(s).")
+    lines.extend([
+        "",
+        "The detailed start time, trigger, waypoint, total interruption duration, Pause latches, and re-arm attempts are in `safety_pause_timeline.csv`. Each distinct raw RTK, heading, GPS-feed, and corridor threshold breach and its duration is in `safety_condition_loss_episodes.csv`. Individual low-level Pause transitions remain in `pause_transition_details.csv`.",
+        "",
+        "## Supporting observations",
+        "",
+        f"- Raw GPS/heading safety episodes detected: **{len(episodes)}**.",
+        f"- Individual output transitions into Pause: **{len(pauses)}**.",
+        f"- Phone freshness expiration events: **{phone['event_counts']['phone_freshness_expired']}**.",
+    ])
+    if phone["gaps"]:
+        lines.append(
+            f"- Accepted-command gaps: median **{statistics.median(phone['gaps']):.1f} ms**, "
+            f"p95 **{percentile(phone['gaps'], .95):.1f} ms**, maximum **{max(phone['gaps']):.1f} ms**."
+        )
+    else:
+        lines.append("- Accepted-command gaps: **no values recorded**.")
+    if phone["rtts"]:
+        lines.append(
+            f"- Client-reported RTT: median **{statistics.median(phone['rtts']):.1f} ms**, "
+            f"p95 **{percentile(phone['rtts'], .95):.1f} ms**, maximum **{max(phone['rtts']):.1f} ms**."
+        )
+    else:
+        lines.append("- Client-reported RTT: **no values recorded**.")
+    condition_counts = Counter(row["condition"] for row in condition_episodes)
+    for condition, count in sorted(condition_counts.items()):
+        durations = [row["duration_s"] for row in condition_episodes if row["condition"] == condition]
+        lines.append(f"- `{condition}` breaches: **{count}**; {describe(durations)}.")
+    if voltage_rows:
+        minimum = min(voltage_rows, key=lambda item: item[1])
+        maximum = max(voltage_rows, key=lambda item: item[1])
+        final = voltage_rows[-1]
+        lines.extend([
+            f"- JRK supply voltage minimum: **{minimum[1] / 1000:.3f} V** at `{minimum[0]}`.",
+            f"- JRK supply voltage maximum: **{maximum[1] / 1000:.3f} V** at `{maximum[0]}`.",
+            f"- JRK supply voltage final valid sample: **{final[1] / 1000:.3f} V** at `{final[0]}`.",
+        ])
+    lines.extend([
+        "",
+        "## Interpretation boundary",
+        "",
+        "The interruption categories are reconstructed by synchronizing the mission, Pure Pursuit, and phone-control logs. A category is evidence of the recorded gate that was breached; it is not by itself proof of the physical root cause. Any proposed safety-policy change requires separate design review and staged testing.",
+        "",
+        "## Source integrity",
+        "",
+    ])
+    for path in source_paths:
+        lines.append(f"- `{path.name}` — SHA-256 `{digest(path)}`")
+    (output / "REPORT.md").write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
+
+
 def main():
     args = parse_args()
     root = args.evidence_root.resolve()
     output = args.output_dir.resolve()
-    mission_csv = root / "mission" / "outer_perimeter_20261109_154324.csv"
-    pursuit_csv = root / "pursuit" / "pursuit_log_20261109_154326.csv"
-    phone_jsonl = root / "phone" / "wifi_primary_control_20261109_154125.jsonl"
-    mission_path = root / "package" / "62_Collins_outer_perimeter_field_test_1mps_20260928.txt"
-    audit_path = root / "package" / "62_Collins_outer_perimeter_field_test_1mps_20260928_audit.csv"
+    mission_csv = (args.mission_csv or root / "mission" / "outer_perimeter_20261109_154324.csv").resolve()
+    pursuit_csv = (args.pursuit_csv or root / "pursuit" / "pursuit_log_20261109_154326.csv").resolve()
+    phone_jsonl = (args.phone_jsonl or root / "phone" / "wifi_primary_control_20261109_154125.jsonl").resolve()
+    mission_path = (args.mission_path or root / "package" / DEFAULT_MISSION_PATH.name).resolve()
+    audit_path = (args.audit_path or root / "package" / DEFAULT_AUDIT_PATH.name).resolve()
     for path in (mission_csv, pursuit_csv, phone_jsonl, mission_path, audit_path, TEMPLATE):
         if not path.is_file():
             raise FileNotFoundError(path)
@@ -623,31 +818,59 @@ def main():
         audit_path,
         phone_records,
         sources,
+        args.title,
+        args.run_id,
     )
     interruptions = interruption_timeline(payload["samples"], pauses, pursuit)
+    condition_episodes = condition_loss_episodes(pursuit)
 
     output.mkdir(parents=True, exist_ok=True)
     encoded = json.dumps(payload, separators=(",", ":"), allow_nan=False).replace("<", "\\u003c")
     page = TEMPLATE.read_text(encoding="utf-8").replace("__DATA__", encoded)
-    replay = output / "replay_20261109_phone_outer_perimeter.html"
+    replay = output / f"replay_{args.run_id}.html"
     replay.write_text(page, encoding="utf-8", newline="\n")
 
     timeline_path = output / "safety_pause_timeline.csv"
     with timeline_path.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=list(interruptions[0]))
+        fieldnames = list(interruptions[0]) if interruptions else [
+            "interruption_id", "pause_start_timestamp_utc", "duration_s",
+            "trigger_category", "trigger", "failure_duration_s", "result",
+        ]
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(interruptions)
 
     detail_path = output / "pause_transition_details.csv"
     with detail_path.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=list(pauses[0]))
+        fieldnames = list(pauses[0]) if pauses else [
+            "timestamp", "elapsed_s", "requested_mode", "category", "cause",
+        ]
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(pauses)
 
-    write_report(output, pursuit, field_rows, phone_records, episodes, pauses, sources)
+    condition_path = output / "safety_condition_loss_episodes.csv"
+    with condition_path.open("w", newline="", encoding="utf-8") as handle:
+        fieldnames = list(condition_episodes[0]) if condition_episodes else [
+            "condition", "start_timestamp_utc", "recovery_timestamp_utc",
+            "duration_s", "start_route_waypoint", "end_route_waypoint",
+            "start_value", "end_value", "recovered",
+        ]
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(condition_episodes)
+
+    if args.run_id == "20261109_phone_outer_perimeter":
+        write_report(output, pursuit, field_rows, phone_records, episodes, pauses, sources)
+    else:
+        write_data_driven_report(
+            output, args.report_title, pursuit, field_rows, phone_records,
+            episodes, pauses, interruptions, condition_episodes, sources,
+        )
     (output / "README.md").write_text(
-        "# November 9 mission replay\n\n"
-        "Open `replay_20261109_phone_outer_perimeter.html` in a modern browser. "
+        f"# {args.report_title}\n\n"
+        "**DRAFT - UNTESTED IN THE FIELD**\n\n"
+        f"Open `{replay.name}` in a modern browser. "
         "It is self-contained and makes no network requests.\n\n"
         "`safety_pause_timeline.csv` groups each complete interruption from the "
         "first non-AUTO/AUTO replay sample through the first restored AUTO/AUTO "
@@ -658,15 +881,20 @@ def main():
         "the continuous breached condition from its first bad raw 20 Hz Pure Pursuit "
         "row through the first recovered row; it is blank for an operator-selected "
         "Pause. This is distinct from the longer interruption/re-arming `duration_s`.\n\n"
-        "Rebuild from the repository root with:\n\n"
-        "```bash\npython3 field_testing/tools/build_tractor01_mission_replay_20261109.py "
-        "--evidence-root /path/to/20261109_phone_outer_perimeter_collection\n```\n",
+        "`safety_condition_loss_episodes.csv` records every continuous raw RTK, "
+        "heading, GPS-feed, and supervisor-corridor threshold breach exactly once. "
+        "Independent conditions may overlap in time.\n\n"
+        "Rebuild from the repository root with the builder's explicit source "
+        "arguments. The evidence filenames and hashes are recorded in `REPORT.md`; "
+        "run `python3 field_testing/tools/build_tractor01_mission_replay_20261109.py "
+        "--help` for the complete argument list.\n",
         encoding="utf-8",
         newline="\n",
     )
     print(f"{replay} | {len(payload['samples'])} samples | {len(payload['events'])} events | {replay.stat().st_size:,} bytes")
     print(f"{timeline_path} | {len(interruptions)} grouped mission interruptions")
     print(f"{detail_path} | {len(pauses)} individual Pause transitions")
+    print(f"{condition_path} | {len(condition_episodes)} raw condition-loss episodes")
     print(output / "REPORT.md")
 
 

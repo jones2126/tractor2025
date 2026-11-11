@@ -1,0 +1,23 @@
+[Unit]
+Description=Tractor01 continuous JRK supply-voltage logger
+Documentation=https://github.com/jones2126/tractor2025
+After=tractor-rpi-arbitrator.service
+
+[Service]
+Type=simple
+User=al
+WorkingDirectory=/home/al/tractor2025
+StateDirectory=tractor-battery
+ExecStart=/usr/bin/python3 -u -m tractor_rpi.battery_voltage_logger_20261111 --output-dir /var/lib/tractor-battery --interval-seconds 10 --retention-days 90
+Restart=on-failure
+RestartSec=2
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=tractor-battery-logger
+
+[Install]
+WantedBy=multi-user.target

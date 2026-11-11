@@ -1,0 +1,22 @@
+timestamp,elapsed_s,requested_mode,category,cause,waypoint_idx,path_progress_m,cross_track_m,fix_quality,heading_carrier,heading_accuracy_deg,actual_speed_mps
+2026-11-11T19:16:41.459000+00:00,212.24,AUTO,pure_pursuit_safety,RTK fix dropped below RTK Fixed,10,2.076,,RTK Float,fixed,0.54188,0.863
+2026-11-11T19:17:35.863000+00:00,266.64,AUTO,pure_pursuit_safety,heading validity lost,191,38.017,,RTK Fixed,fixed,0.0,0.921
+2026-11-11T19:19:07.065000+00:00,357.84,AUTO,pure_pursuit_safety,heading carrier was not fixed,636,126.888,,RTK Fixed,float,0.5684300000000001,1.183
+2026-11-11T19:19:31.864000+00:00,382.64,AUTO,pure_pursuit_safety,heading carrier was not fixed,731,145.871,,RTK Fixed,float,0.62311,0.916
+2026-11-11T19:19:49.056000+00:00,399.83,AUTO,pure_pursuit_safety,RTK fix dropped below RTK Fixed,759,151.459,,RTK Float,fixed,0.53083,1.076
+2026-11-11T19:21:11.867000+00:00,482.65,AUTO,pure_pursuit_safety,heading carrier was not fixed,1120,223.623,,RTK Fixed,float,0.5274300000000001,1.0
+2026-11-11T19:21:25.453000+00:00,496.23,AUTO,pure_pursuit_safety,RTK fix dropped below RTK Fixed,1139,227.442,,RTK Float,fixed,0.55211,0.964
+2026-11-11T19:22:45.863000+00:00,576.64,AUTO,pure_pursuit_safety,heading validity lost,1335,266.730,,RTK Fixed,fixed,0.0,1.056
+2026-11-11T19:24:35.189000+00:00,685.97,AUTO,pure_pursuit_safety,RTK fix dropped below RTK Fixed,1858,371.221,,RTK Fixed,fixed,0.5227700000000001,1.059
+2026-11-11T19:24:54.211000+00:00,704.99,AUTO,supervisor_corridor,cross-track 2.165 m exceeded supervisor 2.0 m limit,1917,380.857,2.1647,RTK Fixed,fixed,0.5458700000000001,0.876
+2026-11-11T19:25:16.991000+00:00,727.77,AUTO,supervisor_corridor,cross-track 3.065 m exceeded supervisor 2.0 m limit,1917,380.857,3.0650,RTK Fixed,fixed,0.54712,0.09
+2026-11-11T19:25:43.063000+00:00,753.84,AUTO,supervisor_corridor,cross-track 3.014 m exceeded supervisor 2.0 m limit,1917,380.857,3.0142,RTK Fixed,fixed,0.54063,0.134
+2026-11-11T19:26:22.495000+00:00,793.27,AUTO,supervisor_corridor,cross-track 2.904 m exceeded supervisor 2.0 m limit,1917,380.857,2.9035,RTK Fixed,fixed,0.5409900000000001,0.166
+2026-11-11T19:26:42.792000+00:00,813.57,AUTO,supervisor_corridor,cross-track 2.903 m exceeded supervisor 2.0 m limit,1917,380.857,2.9028,RTK Fixed,fixed,0.5449900000000001,0.155
+2026-11-11T19:27:14.415000+00:00,845.19,AUTO,supervisor_corridor,cross-track 2.096 m exceeded supervisor 2.0 m limit,1917,380.857,2.0962,RTK Fixed,fixed,0.52785,1.036
+2026-11-11T19:27:50.266000+00:00,881.04,AUTO,supervisor_corridor,cross-track 2.943 m exceeded supervisor 2.0 m limit,1917,380.857,2.9428,RTK Fixed,fixed,0.5335300000000001,0.008
+2026-11-11T19:27:59.512000+00:00,890.29,AUTO,supervisor_corridor,cross-track 3.267 m exceeded supervisor 2.0 m limit,1917,380.857,3.2671,RTK Fixed,fixed,0.53878,0.303
+2026-11-11T19:28:17.901000+00:00,908.68,PAUSE,operator,operator selected Pause,1917,380.857,3.4465,RTK Fixed,fixed,0.53583,0.015
+2026-11-11T19:28:28.107000+00:00,918.89,AUTO,supervisor_corridor,cross-track 3.699 m exceeded supervisor 2.0 m limit,1917,380.857,3.6987,RTK Fixed,fixed,0.5294500000000001,0.234
+2026-11-11T19:28:44.707000+00:00,935.49,PAUSE,operator,operator selected Pause,1917,380.857,3.6727,RTK Fixed,fixed,0.53793,0.003
+2026-11-11T19:31:00.269000+00:00,1071.05,PAUSE,operator,operator selected Pause,1905,380.857,,RTK Float,fixed,0.5111600000000001,0.007

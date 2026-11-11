@@ -369,11 +369,11 @@ ssh al@192.168.193.88 "sudo shutdown now"
   `C:\Repos\tractor2025`, and Tractor01 at `/home/al/tractor2025` are all on
   `main`, at the same commit, with clean working trees after the November 11
   replay commit and branch cleanup.
-- [ ] Run the November 9 replay tooling against the complete November 11
+- [x] Run the November 9 replay tooling against the complete November 11
   evidence archive. Produce the replay, report, and interruption CSV that
   records the start, recovery, and duration of every RTK-Fix, heading-validity,
   heading-carrier, heading-accuracy, corridor, and other safety interruption.
-- [ ] Prepare a standalone Markdown prompt to review a proposed Pure Pursuit
+- [x] Prepare a standalone Markdown prompt to review a proposed Pure Pursuit
   RTK-loss policy that would command at most `0.3 m/s` instead of immediately
   pausing when RTK Fixed is lost. The prompt must require a safety-boundary and
   failure-mode review, define qualifying and disqualifying conditions, preserve
@@ -386,6 +386,13 @@ ssh al@192.168.193.88 "sudo shutdown now"
   and enough service/session context to distinguish boot, engine-running,
   parked, and charger-connected periods; use bounded rotation/retention and do
   not add blocking work to a safety-critical control loop.
+  - A read-only, independent 10-second logger, service unit, 90-day retention,
+    tests, and installation guide were prepared on 2026-11-11 but remain
+    **DRAFT - UNTESTED IN THE FIELD** and are not installed on Tractor01.
+  - Voltage can distinguish charging-source-present from no charging source,
+    but cannot by itself distinguish the engine alternator from a battery
+    charger. Select or add an explicit engine/charger context source before
+    closing this task.
 - [x] Capture RELPOSNED flags, carrier, baseline, heading accuracy, frame
   counters/timestamps, and per-receiver satellite/C/N0 diagnostics.
 - [x] Resolve historical `jrk_current` as position feedback and add explicit

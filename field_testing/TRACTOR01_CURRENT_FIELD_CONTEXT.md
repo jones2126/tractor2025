@@ -152,3 +152,22 @@ blade authorization as separate decisions.
 
 These stationary commissioning observations do not themselves authorize a
 mission or physical movement.
+
+## November 11 outer-perimeter rerun and shutdown
+
+- The production phone-controlled outer-perimeter mission was run with the
+  cleaned Teensy firmware and stopped at approximately 380.857 m route
+  progress / waypoint 1917.
+- The complete evidence archive was copied to Windows and verified at SHA-256
+  `5c101e8bdf5adb11e2aa4ae4e132440a70020712708868ebd9879fee18a491b4`.
+- The historical replay is under
+  `field_testing/sites/62_Collins_multi_boundary_20260915/analysis/20261111_phone_outer_perimeter_replay/`.
+  It records 18 grouped interruptions and 22 distinct raw threshold-breach
+  episodes. See `REPORT.md` and `safety_condition_loss_episodes.csv` there.
+- Immediately before shutdown, Tractor01, GitHub, and the Windows checkout were
+  clean on `main` at `e4c7f73`. Tractor01 was then shut down.
+- Repository work prepared after shutdown has not been pulled to Tractor01.
+  Reconfirm commit identity and a clean tree before the next field session.
+- The continuous battery-voltage logger is a repository candidate only. It is
+  **DRAFT - UNTESTED IN THE FIELD**, has not been installed, and has not changed
+  any Tractor01 service.
