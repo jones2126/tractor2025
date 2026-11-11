@@ -50,7 +50,7 @@ class ProductionBridgeTests(unittest.TestCase):
         self.assertTrue(receiver.collector.phone_replaces_nrf_mode_switch)
         self.assertTrue(receiver.collector.degraded_preauthorized)
         self.assertEqual(
-            "teensy_main_20261110_rpi_command_lease_v4", EXPECTED_FIRMWARE
+            "teensy_main_20261110_rpi_command_lease_v5", EXPECTED_FIRMWARE
         )
 
     def test_stopped_phone_pause_can_clear_startup_latch(self):

@@ -172,6 +172,8 @@ class LoggerFieldTests(unittest.TestCase):
             {
                 "system": {"firmware": "teensy_main_20260908_1p8_test"},
                 "transmission": {
+                    "vin_voltage_mV": 12480,
+                    "vin_voltage_valid": 1,
                     "motor_current_mA": 1425,
                     "peak_motor_current_mA": 2085,
                     "motor_current_valid": 1,
@@ -182,6 +184,8 @@ class LoggerFieldTests(unittest.TestCase):
 
         self.assertNotIn("numSV", row)
         self.assertEqual(row["teensy_firmware"], "teensy_main_20260908_1p8_test")
+        self.assertEqual(row["jrk_vin_voltage_mV"], 12480)
+        self.assertEqual(row["jrk_vin_voltage_valid"], 1)
         self.assertEqual(row["jrk_motor_current_mA"], 1425)
         self.assertEqual(row["jrk_peak_motor_current_mA"], 2085)
         self.assertEqual(row["jrk_motor_current_valid"], 1)
@@ -200,6 +204,8 @@ class JrkCurrentTelemetryTests(unittest.TestCase):
         now = time.time()
         bridge.latest_data = {
             "TRANS": {
+                "jvin": 12480,
+                "jvv": 1,
                 "jma": 1425,
                 "jmp": 2085,
                 "jmv": 1,
@@ -217,6 +223,8 @@ class JrkCurrentTelemetryTests(unittest.TestCase):
         bridge.current_gps_status = "UNKNOWN"
 
         transmission = bridge.create_broadcast_message()["transmission"]
+        self.assertEqual(transmission["vin_voltage_mV"], 12480)
+        self.assertEqual(transmission["vin_voltage_valid"], 1)
         self.assertEqual(transmission["motor_current_mA"], 1425)
         self.assertEqual(transmission["peak_motor_current_mA"], 2085)
         self.assertEqual(transmission["motor_current_valid"], 1)

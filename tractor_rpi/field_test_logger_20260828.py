@@ -97,6 +97,8 @@ CSV_COLUMNS = [
     "jrk_integral",               # JRK PID integral accumulator
     "jrk_duty_cycle_target",      # signed desired motor duty (-600..600 nominal)
     "jrk_duty_cycle",             # signed applied motor duty (-600..600)
+    "jrk_vin_voltage_mV",         # voltage measured at the JRK VIN pin
+    "jrk_vin_voltage_valid",      # 1 when the latest VIN read succeeded
     "jrk_motor_current_mA",        # JRK G2 measured motor current
     "jrk_peak_motor_current_mA",   # peak 10 Hz sample since last TRANS message
     "jrk_motor_current_valid",     # 1 when the latest current read succeeded
@@ -357,6 +359,8 @@ def build_row(start_time: float) -> dict:
         "jrk_integral":            trans.get('integral', ''),
         "jrk_duty_cycle_target":   trans.get('duty_cycle_target', ''),
         "jrk_duty_cycle":          trans.get('duty_cycle', ''),
+        "jrk_vin_voltage_mV":      trans.get('vin_voltage_mV', ''),
+        "jrk_vin_voltage_valid":   trans.get('vin_voltage_valid', ''),
         "jrk_motor_current_mA":     trans.get('motor_current_mA', ''),
         "jrk_peak_motor_current_mA": trans.get('peak_motor_current_mA', ''),
         "jrk_motor_current_valid":  trans.get('motor_current_valid', ''),

@@ -22,8 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define TRACTOR_FIRMWARE_ID "teensy_main_20261110_rpi_command_lease_v4"
-#define TRACTOR_RPI_COMMAND_LEASE_V3 1
+#define TRACTOR_FIRMWARE_ID "teensy_main_20261110_rpi_command_lease_v5"
 
 // JRK controller
 #define JRK_BAUD 9600
@@ -73,20 +72,11 @@ float steer_kp = 1.0;
 float steer_ki = 0.0;
 float steer_kd = 0.0;
 
-// Tractor steering calibration. Dated wrapper builds can override these
-// compile-time values without duplicating this full known-good source.
-#ifndef STEER_POT_RIGHT_CAL
-#define STEER_POT_RIGHT_CAL 197
-#endif
-#ifndef STEER_POT_CENTER_CAL
-#define STEER_POT_CENTER_CAL 447
-#endif
-#ifndef STEER_POT_LEFT_CAL
-#define STEER_POT_LEFT_CAL 815
-#endif
-const int STEER_POT_RIGHT  = STEER_POT_RIGHT_CAL;
-const int STEER_POT_CENTER = STEER_POT_CENTER_CAL;
-const int STEER_POT_LEFT   = STEER_POT_LEFT_CAL;
+// Tractor steering calibration. These are permanent source values; change
+// them here and rebuild if the physical steering calibration changes.
+const int STEER_POT_RIGHT  = 197;
+const int STEER_POT_CENTER = 447;
+const int STEER_POT_LEFT   = 815;
 
 // Historical raw range retained only for stationary steering-fault recovery.
 const int RECOVERY_STEER_RIGHT  = 1;    // RC joystick pushed hard right
@@ -169,6 +159,8 @@ float percentDriveValue = 0.0f;
 uint16_t jrkMotorCurrentMa = 0;
 uint16_t jrkPeakCurrentMaSincePrint = 0;
 bool jrkMotorCurrentValid = false;
+uint16_t jrkVinVoltageMv = 0;
+bool jrkVinVoltageValid = false;
 
 #define TEXT_LOG_INTERVAL 2000UL
 static unsigned long lastTextLog = 0;
@@ -203,15 +195,6 @@ unsigned long cmd_vel_count = 0;
 unsigned long last_cmd_vel_time = 0;
 const unsigned long CMD_VEL_TIMEOUT = 500;
 
-// GPS status tracking (received from bridge via serial)
-struct GpsStatus {
-    byte status = 1;                    // 0=unset, 1=noNMEA, 2=noRTK, 3=RTK Fix
-    unsigned long last_update = 0;
-    unsigned long messages_received = 0;
-    unsigned long last_log = 0;
-} gpsStatus;
-
-
 // -------------------------------------------------------------------
 // Serial processing rate limiting
 unsigned long lastSerialProcessTime = 0;
@@ -228,45 +211,18 @@ struct SerialStats {
 unsigned long lastTransLogPrint = 0;
 const unsigned long transLogInterval = 5000;   // 0.2 Hz
 
-// CSV Logging Toggle (if you enable this now you will have to update the teensy serial bridge 
-// to know what to do with 'log' statements)  (set to 0 at 3:42pm on 11/28/25)
-#define CSV_LOG_ENABLED 0
-
 // -------------------------------------------------------------------
 
 void safeTextLog(const char* msg) {
+    // Low-priority human-readable diagnostics share one two-second throttle.
+    // If any caller printed recently, this call is intentionally discarded so
+    // optional text cannot crowd out STEER, TRANS, and RPI_CTL telemetry.
+    // Serial.flush() waits for bytes to leave the Teensy; it does not prove
+    // that the RPi received, parsed, or saved the message.
     if (currentMillis - lastTextLog < TEXT_LOG_INTERVAL) return;
     Serial.println(msg);
-    Serial.flush();                 // guarantee delivery
+    Serial.flush();
     lastTextLog = currentMillis;
-}
-
-void updateGpsStatus(byte newStatus) {
-    gpsStatus.status = newStatus;
-    gpsStatus.last_update = currentMillis;  // Use currentMillis for consistency
-    gpsStatus.messages_received++;
-    
-    // Log status changes immediately (not just every 10s)
-    static byte lastLoggedStatus = 0;
-    if (newStatus != lastLoggedStatus) {
-        char buf[64];
-        snprintf(buf, sizeof(buf), "1,%lu,GPS_UPDATE,st=%d->%d,cnt=%lu",
-                 currentMillis, lastLoggedStatus, newStatus,
-                 gpsStatus.messages_received);
-        Serial.println(buf);
-        lastLoggedStatus = newStatus;
-    }
-    
-    // Periodic log (every 10s)
-    if (currentMillis - gpsStatus.last_log >= 10000) {
-        char buf[64];
-        snprintf(buf, sizeof(buf), "1,%lu,GPS,st=%d,age=%lu,cnt=%lu",
-                 currentMillis, gpsStatus.status,
-                 currentMillis - gpsStatus.last_update,
-                 gpsStatus.messages_received);
-        Serial.println(buf);  // Changed from safeTextLog to Serial.println
-        gpsStatus.last_log = currentMillis;
-    }
 }
 
 bool readJrkVariables(uint8_t offset, uint8_t length, uint8_t *buffer) {
@@ -857,13 +813,20 @@ void controlTransmission() {
         lastJrkFeedbackRead = currentMillis;
     }
 
-    // Read the JRK G2 motor-current variable at each 10 Hz transmission cycle.
-    // Preserve the peak between 5 Hz TRANS telemetry messages so a short
-    // actuator movement is less likely to be missed by the field logger.
-    uint8_t currentBytes[2];
-    jrkMotorCurrentValid = readJrkVariables(0x19, sizeof(currentBytes), currentBytes);
+    // Read JRK VIN (0x17, mV) and motor current (0x19, mA) in one consistent
+    // snapshot at each 10 Hz transmission cycle. Preserve the current peak
+    // between 5 Hz TRANS messages so short movement is less likely to be lost.
+    uint8_t powerBytes[4];
+    const bool powerReadValid = readJrkVariables(
+        0x17, sizeof(powerBytes), powerBytes
+    );
+    jrkVinVoltageValid = powerReadValid;
+    jrkMotorCurrentValid = powerReadValid;
+    if (powerReadValid) {
+        jrkVinVoltageMv = readU16LE(powerBytes);
+        jrkMotorCurrentMa = readU16LE(powerBytes + 2);
+    }
     if (jrkMotorCurrentValid) {
-        jrkMotorCurrentMa = readU16LE(currentBytes);
         if (jrkMotorCurrentMa > jrkPeakCurrentMaSincePrint) {
             jrkPeakCurrentMaSincePrint = jrkMotorCurrentMa;
         }
@@ -880,7 +843,7 @@ void controlTransmission() {
             buf,
             sizeof(buf),
             "1,%lu,TRANS,m=%d,b=%d,tgt=%u,cur=%u,at=%u,sfb=%u,"
-            "it=%d,dtt=%d,dc=%d,jma=%u,jmp=%u,jmv=%d,"
+            "it=%d,dtt=%d,dc=%d,jvin=%u,jvv=%d,jma=%u,jmp=%u,jmv=%d,"
             "eh=%u,eo=%u,jq=%lu,jv=%d,jl=%u,"
             "jto=%lu,jdb=%lu,x=%.3f,pct=%d,pc=%.1f,ca=%lu",
             currentMillis,
@@ -893,6 +856,8 @@ void controlTransmission() {
             jrkDiagnostics.integral,
             jrkDiagnostics.dutyCycleTarget,
             jrkDiagnostics.dutyCycle,
+            jrkVinVoltageMv,
+            jrkVinVoltageValid ? 1 : 0,
             jrkMotorCurrentMa,
             jrkPeakCurrentMaSincePrint,
             jrkMotorCurrentValid ? 1 : 0,
@@ -941,24 +906,6 @@ void controlTransmission() {
         lastTransLogPrint = currentMillis;
     }
 
-    // Optional direct CSV output; reuse cached JRK feedback.
-    #if CSV_LOG_ENABLED
-        char csvBuf[128];
-
-        snprintf(
-            csvBuf,
-            sizeof(csvBuf),
-            "log,%lu,%u,%u,%d,%u",
-            currentMillis,
-            currentTransmissionOutput,
-            requestedTarget,
-            bucket,
-            currentTransmissionOutput
-        );
-
-        Serial.println(csvBuf);
-    #endif
-
     lastTransmissionControlRun = currentMillis;
 }
 
@@ -982,10 +929,8 @@ enum RpiCommandMode : byte {
     RPI_MODE_PAUSE = 0,
     RPI_MODE_MANUAL_PERCENT = 1,
     RPI_MODE_AUTO_MPS = 2,
-#ifdef TRACTOR_RPI_COMMAND_LEASE_V3
     RPI_MODE_ESTOP = 3,
     RPI_MODE_RESET_PAUSE = 4,
-#endif
 };
 
 enum RpiRejectReason : byte {
@@ -1014,9 +959,7 @@ static bool rpiLeaseExpiredLatched = false;
 static unsigned long rpiAcceptedCount = 0;
 static unsigned long rpiRejectedCount = 0;
 static byte rpiLastRejectReason = RPI_REJECT_NONE;
-#ifdef TRACTOR_RPI_COMMAND_LEASE_V3
 static bool rpiSoftwareEstopLatched = false;
-#endif
 
 
 static uint16_t rpiCrc16Ccitt(const char* data, size_t length) {
@@ -1145,11 +1088,7 @@ static bool acceptRpiCommandLine(char* line) {
     if (!parseUint32Token(fields[0], &parsedSession) ||
         !parseUint32Token(fields[1], &parsedSequence) ||
         strlen(fields[2]) != 1 || fields[2][0] < '0' ||
-#ifdef TRACTOR_RPI_COMMAND_LEASE_V3
         fields[2][0] > '4' ||
-#else
-        fields[2][0] > '2' ||
-#endif
         !parseFiniteFloatToken(fields[3], &parsedDrive) ||
         !parseFiniteFloatToken(fields[4], &parsedSteering)) {
         rejectRpiCommand(RPI_REJECT_FORMAT);
@@ -1162,10 +1101,8 @@ static bool acceptRpiCommandLine(char* line) {
     }
     if ((parsedMode == RPI_MODE_PAUSE &&
          (parsedDrive != 0.0f || parsedSteering != 0.0f)) ||
-#ifdef TRACTOR_RPI_COMMAND_LEASE_V3
         ((parsedMode == RPI_MODE_ESTOP || parsedMode == RPI_MODE_RESET_PAUSE) &&
          (parsedDrive != 0.0f || parsedSteering != 0.0f)) ||
-#endif
         (parsedMode == RPI_MODE_MANUAL_PERCENT &&
          (parsedDrive < -100.0f || parsedDrive > 100.0f)) ||
         (parsedMode == RPI_MODE_AUTO_MPS &&
@@ -1175,11 +1112,8 @@ static bool acceptRpiCommandLine(char* line) {
     }
 
     const bool sessionChanged = !rpiSessionSeen || parsedSession != rpiSession;
-    if (sessionChanged && parsedMode != RPI_MODE_PAUSE
-#ifdef TRACTOR_RPI_COMMAND_LEASE_V3
-        && parsedMode != RPI_MODE_ESTOP
-#endif
-    ) {
+    if (sessionChanged && parsedMode != RPI_MODE_PAUSE &&
+        parsedMode != RPI_MODE_ESTOP) {
         rejectRpiCommand(RPI_REJECT_SESSION);
         return true;
     }
@@ -1198,24 +1132,18 @@ static bool acceptRpiCommandLine(char* line) {
     rpiSteeringCommand = parsedSteering;
     rpiCommandTimestamp = millis();
     rpiCommandSelected = true;
-    if (rpiCommandMode == RPI_MODE_PAUSE
-#ifdef TRACTOR_RPI_COMMAND_LEASE_V3
-        || rpiCommandMode == RPI_MODE_RESET_PAUSE
-#endif
-    ) rpiLeaseExpiredLatched = false;
-#ifdef TRACTOR_RPI_COMMAND_LEASE_V3
+    if (rpiCommandMode == RPI_MODE_PAUSE ||
+        rpiCommandMode == RPI_MODE_RESET_PAUSE) {
+        rpiLeaseExpiredLatched = false;
+    }
     if (rpiCommandMode == RPI_MODE_ESTOP) rpiSoftwareEstopLatched = true;
     if (rpiCommandMode == RPI_MODE_RESET_PAUSE) rpiSoftwareEstopLatched = false;
-#endif
     rpiAcceptedCount++;
     rpiLastRejectReason = RPI_REJECT_NONE;
 
-    if (rpiCommandMode == RPI_MODE_PAUSE
-#ifdef TRACTOR_RPI_COMMAND_LEASE_V3
-        || rpiCommandMode == RPI_MODE_ESTOP ||
-           rpiCommandMode == RPI_MODE_RESET_PAUSE
-#endif
-    ) {
+    if (rpiCommandMode == RPI_MODE_PAUSE ||
+        rpiCommandMode == RPI_MODE_ESTOP ||
+        rpiCommandMode == RPI_MODE_RESET_PAUSE) {
         cmdVel.linear_x = 0.0f;
         cmdVel.angular_z = 0.0f;
         cmdVel.received = false;
@@ -1256,18 +1184,9 @@ static void parseRpiCommandLeaseSerial() {
             if (index > 0) {
                 if (acceptRpiCommandLine(buffer)) {
                     if (rpiLastRejectReason == RPI_REJECT_NONE) messagesSinceRate++;
-                } else if (index >= 4 && memcmp(buffer, "GPS,", 4) == 0) {
-                    int status = -1;
-                    char trailing = '\0';
-                    if (sscanf(buffer + 4, "%d%c", &status, &trailing) == 1 &&
-                        status >= 0 && status <= 3) {
-                        updateGpsStatus((byte)status);
-                    } else {
-                        rejectRpiCommand(RPI_REJECT_RANGE);
-                    }
                 } else {
-                    // Legacy CMD and WIFI motion frames are intentionally not
-                    // authority inputs in this opt-in firmware.
+                    // Only RPICMD frames are accepted. GPS remains an RPi
+                    // responsibility; legacy CMD/WIFI/GPS frames are rejected.
                     rejectRpiCommand(RPI_REJECT_UNSUPPORTED);
                 }
             }
@@ -1298,7 +1217,6 @@ static void publishRpiCommandLeaseStatus(bool arrivalFresh, bool leaseUsable) {
         ? currentMillis - rpiCommandTimestamp
         : 999999UL;
     char buffer[176];
-#ifdef TRACTOR_RPI_COMMAND_LEASE_V3
     snprintf(
         buffer,
         sizeof(buffer),
@@ -1316,24 +1234,6 @@ static void publishRpiCommandLeaseStatus(bool arrivalFresh, bool leaseUsable) {
         (unsigned int)rpiLastRejectReason,
         rpiSoftwareEstopLatched ? 1 : 0
     );
-#else
-    snprintf(
-        buffer,
-        sizeof(buffer),
-        "1,%lu,RPI_CTL,m=%u,f=%d,u=%d,l=%d,a=%lu,ss=%lu,s=%lu,ok=%lu,rj=%lu,rr=%u",
-        currentMillis,
-        (unsigned int)rpiCommandMode,
-        arrivalFresh ? 1 : 0,
-        leaseUsable ? 1 : 0,
-        rpiLeaseExpiredLatched ? 1 : 0,
-        age,
-        (unsigned long)rpiSession,
-        (unsigned long)rpiSequence,
-        rpiAcceptedCount,
-        rpiRejectedCount,
-        (unsigned int)rpiLastRejectReason
-    );
-#endif
     Serial.println(buffer);
     lastStatusPrint = currentMillis;
 }

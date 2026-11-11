@@ -2,7 +2,7 @@
 """Telemetry compatibility layer for the RPi-command-lease firmware.
 
 The inherited 20260728 parser remains the stable implementation for STEER,
-TRANS, JRK, SYS, and GPS records. NRF24 RADIO/RADIO_INPUTS records were retired
+TRANS, JRK, SYS, and RPi-side GPS records. NRF24 RADIO/RADIO_INPUTS records were retired
 from Tractor01 firmware on 2026-11-10, so this layer removes the obsolete radio
 object and raw handheld field from UDP 6003 broadcasts.
 """

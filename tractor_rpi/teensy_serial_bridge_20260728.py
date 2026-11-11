@@ -191,8 +191,6 @@ class TeensySerialBridge:
 
     def gps_listener_thread(self):
         logger.info("GPS listener started")
-        last_gps_sent_time = 0                        # NEW
-        GPS_SEND_INTERVAL = 1.0  # seconds - resend periodically so Teensy's 5s timeout never trips  # NEW
         while self.running:
             try:
                 ready = select.select([self.gps_sock], [], [], 0.1)
@@ -205,16 +203,6 @@ class TeensySerialBridge:
                         logger.info(f"GPS: {self.current_gps_status} → {status}")
                     self.current_gps_status = status
 
-                now = time.time()                                          # NEW
-                if now - last_gps_sent_time >= GPS_SEND_INTERVAL:          # NEW
-                    try:                                                   # NEW
-                        if self.ser and self.ser.out_waiting < 256:        # NEW
-                            command = f"GPS,{self.current_gps_status}\n"   # NEW
-                            self.ser.write(command.encode('utf-8'))       # NEW
-                            self.ser.flush()                               # NEW
-                            last_gps_sent_time = now                       # NEW
-                    except Exception as e:                                 # NEW
-                        logger.error(f"Failed to send GPS status to Teensy: {e}")  # NEW
             except:
                 pass
             time.sleep(0.05)
@@ -460,6 +448,8 @@ class TeensySerialBridge:
                 'integral': d.get('it', 0),
                 'duty_cycle_target': d.get('dtt', 0),
                 'duty_cycle': d.get('dc', 0),
+                'vin_voltage_mV': d.get('jvin'),
+                'vin_voltage_valid': int(d.get('jvv', 0)),
                 'motor_current_mA': d.get('jma'),
                 'peak_motor_current_mA': d.get('jmp'),
                 'motor_current_valid': int(d.get('jmv', 0)),

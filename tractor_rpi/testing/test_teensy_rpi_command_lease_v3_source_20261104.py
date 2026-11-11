@@ -16,8 +16,12 @@ class TeensyV3SourceTests(unittest.TestCase):
         cls.config = CONFIG.read_text(encoding="utf-8")
 
     def test_consolidated_source_is_the_only_selected_firmware(self):
-        self.assertIn("TRACTOR_RPI_COMMAND_LEASE_V3", self.firmware)
-        self.assertIn("teensy_main_20261110_rpi_command_lease_v4", self.firmware)
+        self.assertNotIn("#ifdef", self.firmware)
+        self.assertNotIn("#ifndef", self.firmware)
+        self.assertNotIn("#else", self.firmware)
+        self.assertNotIn("#if ", self.firmware)
+        self.assertNotIn("#endif", self.firmware)
+        self.assertIn("teensy_main_20261110_rpi_command_lease_v5", self.firmware)
         self.assertIn("+<teensy_main_20261110.cpp>", self.config)
         self.assertNotIn("RF24", self.config)
         self.assertNotIn("#include <SPI.h>", self.firmware)
@@ -49,6 +53,18 @@ class TeensyV3SourceTests(unittest.TestCase):
         self.assertIn("if (!commandAuthorityReady)", self.firmware)
         self.assertNotIn("handleRadio()", self.firmware)
         self.assertNotIn("radio.begin()", self.firmware)
+
+    def test_permanent_calibration_and_rpi_owned_gps(self):
+        self.assertIn("const int STEER_POT_RIGHT  = 197;", self.firmware)
+        self.assertIn("const int STEER_POT_CENTER = 447;", self.firmware)
+        self.assertIn("const int STEER_POT_LEFT   = 815;", self.firmware)
+        self.assertNotIn("GpsStatus", self.firmware)
+        self.assertNotIn('memcmp(buffer, "GPS,"', self.firmware)
+
+    def test_jrk_vin_is_read_with_current_and_reported(self):
+        self.assertIn("0x17, sizeof(powerBytes), powerBytes", self.firmware)
+        self.assertIn("jrkVinVoltageMv = readU16LE(powerBytes);", self.firmware)
+        self.assertIn("jvin=%u,jvv=%d", self.firmware)
 
 
 if __name__ == "__main__":
