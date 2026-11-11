@@ -14,16 +14,16 @@ HARDWARE CHANGES:
 - Added inversion flag support for dim-on-low hardware
 
 Input Data:
-1. Port 6003: Teensy and NRF24 Status (from teensy_serial_bridge.py)
+1. Port 6003: Teensy and RPi command-lease status
 2. Port 6002: GPS/RTK state (from rtcm_server.py)
 
 Data Published:
 1. I2C statements to PCA9685 to control LED light tower
 
 LED Status Meanings:
-- RED: Critical error (no radio signal, no GPS, system fault)
+- RED: Critical error (unhealthy command lease, no GPS, system fault)
 - YELLOW: Warning (degraded GPS, low signal quality)
-- GREEN: All systems good (RTK fix, good radio signal)
+- GREEN: All systems good (RTK fix, healthy RPi command lease)
 - BLUE: Auto mode active
 """
 
@@ -52,7 +52,7 @@ logging.basicConfig(
 logger = logging.getLogger('LEDController')
 
 # Configuration
-UDP_PORT_TEENSY = 6003  # Teensy/NRF24 status
+UDP_PORT_TEENSY = 6003  # Teensy/RPi command-lease status
 UDP_PORT_GPS = 6002     # GPS/RTK status
 PCA9685_ADDRESS = 0x40  # Default I2C address for PCA9685
 
@@ -332,25 +332,32 @@ class LEDStatusController:
             return leds
         
         # Extract status
-        radio_good = self.teensy_status.get('radio', {}).get('signal', 'UNKNOWN') == 'GOOD' if self.teensy_status else False
+        lease = self.teensy_status.get('rpi_command_lease', {}) if self.teensy_status else {}
+        lease_status = lease.get('teensy_status', {})
+        command_link_good = bool(
+            lease.get('pause_session_accepted') or (
+                lease_status.get('arrival_fresh') and
+                not lease_status.get('expiry_latched')
+            )
+        )
         gps_rtk = self.gps_status.get('fix_quality', '') in ['RTK Fixed', 'RTK Float'] if self.gps_status else False
         trans_mode = self.teensy_status.get('transmission', {}).get('mode', 0) if self.teensy_status else 0
         teensy_heartbeat = self.stats['teensy_msgs'] > 10  # Proxy for heartbeat
         
-        # No radio (rows 1.3 or 2.1.3: GPS+Teensy but no link)
-        if not radio_good:
+        # Missing or stale RPi command lease.
+        if not command_link_good:
             if gps_rtk and teensy_heartbeat:
-                # Row 2.1.3: GPS incoming + Teensy heartbeat, no radio
+                # GPS and Teensy heartbeat are present, but command lease is not healthy.
                 leds['red'] = get_blink(LED_BRIGHT, 1, 'red')  # 1Hz
                 leds['yellow'] = get_blink(LED_BRIGHT, 1, 'yellow')  # 1Hz
                 leds['blue'] = get_fade(LED_BRIGHT, 'blue')  # Slow fade
             else:
-                # Row 1.3: No radio, no GPS
+                # Neither a healthy command lease nor GPS is present.
                 leds['yellow'] = get_fade(LED_BRIGHT, 'yellow')
             return leds
         
-        # Good radio base (row 2.2: NRF24 link good)
-        leds['blue'] = get_fade(LED_BRIGHT, 'blue')  # Slow fade for radio connection
+        # Healthy command-lease base state.
+        leds['blue'] = get_fade(LED_BRIGHT, 'blue')
         if gps_rtk:
             leds['green'] = get_blink(LED_BRIGHT, 1, 'green')  # 1Hz blink for RTK achieved
         else:
@@ -401,9 +408,9 @@ class LEDStatusController:
         
         # Print current system status
         if self.teensy_status:
-            radio = self.teensy_status.get('radio', {})
+            lease = self.teensy_status.get('rpi_command_lease', {})
             trans = self.teensy_status.get('transmission', {})
-            logger.info(f"Teensy - Radio: {radio.get('signal', 'N/A')}, "
+            logger.info(f"Teensy - Lease accepted: {lease.get('pause_session_accepted', False)}, "
                        f"Mode: {trans.get('mode', 'N/A')}")
         
         if self.gps_status:

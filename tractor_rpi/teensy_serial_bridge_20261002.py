@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Telemetry-only successor to teensy_serial_bridge_20260728.py.
+"""Telemetry compatibility layer for the RPi-command-lease firmware.
 
-Adds the four handheld raw values from tractor Teensy RADIO_INPUTS records to
-the existing UDP 6003 radio object. All serial command, safety notification,
-and source-synchronized broadcast behavior remains inherited unchanged.
+The inherited 20260728 parser remains the stable implementation for STEER,
+TRANS, JRK, SYS, and GPS records. NRF24 RADIO/RADIO_INPUTS records were retired
+from Tractor01 firmware on 2026-11-10, so this layer removes the obsolete radio
+object and raw handheld field from UDP 6003 broadcasts.
 """
 
 from __future__ import annotations
@@ -22,21 +23,9 @@ import teensy_serial_bridge_20260728 as base
 class TeensySerialBridge(base.TeensySerialBridge):
     def create_broadcast_message(self):
         message = super().create_broadcast_message()
-        inputs = self.latest_data.get("RADIO_INPUTS")
-        if inputs:
-            radio = message.setdefault("radio", {})
-            radio.update(
-                {
-                    "handheld_steering_raw": inputs.get("s"),
-                    "handheld_additional_raw": inputs.get("t"),
-                    "handheld_transmission_raw": inputs.get("x"),
-                    "handheld_pot4_raw": inputs.get("p4"),
-                    "handheld_inputs_signal_good": int(inputs.get("sg", 0)),
-                    "handheld_inputs_radio_age_ms": inputs.get("a"),
-                    "handheld_inputs_age": base.time.time()
-                    - inputs.get("last_update", base.time.time()),
-                }
-            )
+        message.pop("radio", None)
+        message.get("transmission", {}).pop("radio_transmission_raw", None)
+        message.setdefault("system", {})["command_authority"] = "rpi_command_lease"
         return message
 
 

@@ -38,7 +38,7 @@ from tractor_rpi.teensy_serial_bridge_rpi_lease_pause_20261031 import (
 )
 
 
-EXPECTED_FIRMWARE = "teensy_main_20261104_rpi_command_lease_v3"
+EXPECTED_FIRMWARE = "teensy_main_20261110_rpi_command_lease_v4"
 MOTION_GATE = "RUN_DIRECT_OUTER_PERIMETER_BLADES_OFF"
 
 

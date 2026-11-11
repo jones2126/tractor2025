@@ -17,12 +17,12 @@ Full documentation: `obsidian_vault/00-project-overview.md`
 ### Hardware Summary
 | Component | Details |
 |-----------|---------|
-| Low-level controller | Teensy 4.1 — steering PID, transmission, NRF24 radio, e-stop |
+| Low-level controller | Teensy 4.1 — steering PID, transmission, RPi command lease, e-stop relay |
 | Primary compute | Raspberry Pi 5 — navigation, GPS, teleoperation |
 | Steering | IBT-2 H-bridge, PID (kp=1.0, ki=0.0, kd=0.0), pot feedback A9 |
 | Transmission | Pololu JRK G2 21v3 linear actuator, 10-bucket system, neutral=2985 |
 | GPS | 2× ArduSimple ZED-F9P RTK, 10 Hz fix rate; JSON republished on UDP 6002 at 20 Hz |
-| Radio | NRF24L01, 14-byte struct at 10 Hz, channel 76, 250KBPS |
+| Retired hardware | NRF24 is no longer physically used on Tractor01; do not add it to the production build |
 | Camera | OAK-D stereo (WebRTC teleoperation) — DepthAI must stay at 2.30.0.0 |
 | LED tower | PCA9685 via I2C, channels 8–12 |
 
@@ -32,12 +32,14 @@ Full documentation: `obsidian_vault/00-project-overview.md`
 - Serial bridge: `460800 baud` USB (`/dev/teensy`)
 - Reachable from the dev NAS over ZeroTier (`192.168.193.x` network).
 
-### Radio Modes
+### RPi Command Modes
 | Mode | Value | Behavior |
 |------|-------|----------|
 | Pause | 0 | Transmission neutral, steering hold |
-| Manual | 1 | Direct RC pot control — switch UP on handheld |
-| Auto | 2 | cmd_vel from navigation stack |
+| Manual | 1 | Signed drive percent and normalized steering from the RPi arbitrator |
+| Auto | 2 | Calibrated m/s and normalized steering from the RPi arbitrator |
+| E-stop | 3 | Latches the Teensy software e-stop relay output |
+| Reset Pause | 4 | Clears the software e-stop only as a zero Pause command |
 
 ### UDP Ports
 | Port | Content |
@@ -49,7 +51,8 @@ Full documentation: `obsidian_vault/00-project-overview.md`
 ### Current Firmware
 | Board | File |
 |-------|------|
-| Tractor Teensy 4.1 | `tractor_teensy/src/teensy_main_20260908_1p8_test.cpp` (selected optional 1.2/1.5/1.8 m/s Ring 13 test build; not yet flashed) |
+| Tractor Teensy 4.1 (commissioned on hardware) | `teensy_main_20261104_rpi_command_lease_v3` at revision `78d15c81`; exact upload evidence is retained in the cleanup report |
+| Tractor Teensy 4.1 (review build, not flashed) | `tractor_teensy/src/teensy_main_20261110.cpp` selected by `tractor_teensy/platformio.ini` |
 | Handheld RC (Teensy 3.2) | `radiocontrol_nrf24radio/src/Rccntrl_rf24_20260517.cpp` |
 
 ### Active Development Focus (as of 2026-05-20)
@@ -81,7 +84,8 @@ tractor2025/
 │   ├── 05-future-ideas/         ← deferred work (IBT-2 Gen2, etc.)
 │   └── attachments/             ← all images
 ├── tractor_teensy/              ← Teensy 4.1 firmware (PlatformIO)
-│   └── src/teensy_main_20260728.cpp
+│   ├── platformio.ini             ← canonical software build configuration
+│   └── src/teensy_main_20261110.cpp
 ├── radiocontrol_nrf24radio/     ← Handheld RC unit firmware (Teensy 3.2)
 ├── tractor_rpi/                 ← RPi 5 scripts and testing utilities
 │   ├── f9p/                     ← dual F9P RTK scripts

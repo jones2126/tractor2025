@@ -56,7 +56,7 @@ class CenteredInputTests(unittest.TestCase):
 
 
 class CenteredInputBridgeTests(unittest.TestCase):
-    def test_bridge_forwards_all_four_handheld_values(self):
+    def test_bridge_retires_handheld_radio_telemetry(self):
         bridge = bridge_module.TeensySerialBridge.__new__(
             bridge_module.TeensySerialBridge
         )
@@ -85,13 +85,14 @@ class CenteredInputBridgeTests(unittest.TestCase):
         bridge.cmd_vel_echo_count = 0
         bridge.current_gps_status = "UNKNOWN"
 
-        radio = bridge.create_broadcast_message()["radio"]
-        self.assertEqual(radio["handheld_steering_raw"], 501)
-        self.assertEqual(radio["handheld_additional_raw"], 502)
-        self.assertEqual(radio["handheld_transmission_raw"], 503)
-        self.assertEqual(radio["handheld_pot4_raw"], 504)
-        self.assertEqual(radio["handheld_inputs_signal_good"], 1)
-        self.assertLess(radio["handheld_inputs_age"], 1.0)
+        message = bridge.create_broadcast_message()
+        self.assertNotIn("radio", message)
+        self.assertNotIn(
+            "radio_transmission_raw", message.get("transmission", {})
+        )
+        self.assertEqual(
+            "rpi_command_lease", message["system"]["command_authority"]
+        )
 
 
 if __name__ == "__main__":

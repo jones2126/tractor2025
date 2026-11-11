@@ -107,10 +107,9 @@ CSV_COLUMNS = [
     "jrk_read_latency_ms",        # blocking JRK diagnostic read duration
     "jrk_timeouts",               # cumulative JRK read timeouts
     "jrk_discarded_bytes",        # cumulative stale bytes discarded before reads
-    "radio_transmission_raw",     # handheld transmission potentiometer value
     "trans_cmd_vel_mps",          # speed value most recently received by Teensy
     "trans_cmd_vel_age_ms",       # Teensy age of current speed command
-    "trans_mode",         # 0=auto 1=manual 2=pause 9=radio loss
+    "trans_mode",         # 0=motion 1=fault recovery 2=pause 9=no authority
     # --- Steering ---
     "steer_setpoint",     # pot counts commanded
     "steer_current",      # pot counts actual
@@ -189,9 +188,6 @@ CSV_COLUMNS = [
     "router_wifi_ssid",         # NEW 20260710: SSID GL router is connected to
     "router_wifi_rssi_dbm",     # NEW 20260710: GL router upstream signal dBm
     "router_wifi_signal_label", # NEW 20260710: "strong"/"medium"/"weak"
-    # --- Radio ---
-    "radio_signal",       # "GOOD" / "UNKNOWN"
-    "ack_rate",           # ACK packets/sec
     # --- Notes ---
     "notes",              # empty; fill in post-processing if needed
 ]
@@ -345,7 +341,6 @@ def build_row(start_time: float) -> dict:
 
     steer = status.get('steering', {})
     trans = status.get('transmission', {})
-    radio = status.get('radio', {})
     system = status.get('system', {})
 
     row = {
@@ -372,7 +367,6 @@ def build_row(start_time: float) -> dict:
         "jrk_read_latency_ms":     trans.get('jrk_read_latency_ms', ''),
         "jrk_timeouts":            trans.get('jrk_timeouts', ''),
         "jrk_discarded_bytes":     trans.get('jrk_discarded_bytes', ''),
-        "radio_transmission_raw":  trans.get('radio_transmission_raw', ''),
         "trans_cmd_vel_mps":       trans.get('cmd_vel_mps', ''),
         "trans_cmd_vel_age_ms":    trans.get('cmd_vel_age_ms', ''),
         "trans_mode":    trans.get('mode', ''),
@@ -458,10 +452,6 @@ def build_row(start_time: float) -> dict:
         "router_wifi_rssi_dbm":     router_wifi.get('wifi_rssi_dbm', ''),
         "router_wifi_signal_label": router_wifi.get('wifi_signal_label', ''),
 
-        # Radio
-        "radio_signal":  radio.get('signal', ''),
-        "ack_rate":      radio.get('ack_rate', ''),
-
         "notes": '',
     }
     return row
@@ -516,12 +506,11 @@ def run_logger(output_path: str):
                     fix   = row.get('fix_quality', 'N/A')
                     speed = row.get('speed_mps', 'N/A')
                     bkt   = row.get('bucket', 'N/A')
-                    sig   = row.get('radio_signal', 'N/A')
                     # CHANGED 20260622: show GPS-only vs full mode
                     mode_str = "GPS-only" if time.time() - last_6003_time > GPS_ONLY_TIMEOUT else "full"
                     print(f"  [{row['elapsed_sec']:7.1f}s]  rows={row_count:5d}  "
                           f"fix={fix:<12}  speed={speed} m/s  "
-                          f"bucket={bkt}  radio={sig}  mode={mode_str}")
+                          f"bucket={bkt}  mode={mode_str}")
 
                     last_print = now
 

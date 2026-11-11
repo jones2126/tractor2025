@@ -15,9 +15,9 @@ class ArbitratorOnlyPhoneTests(unittest.TestCase):
             10.0, -20.0, 7, "test", phone_mode="manual"
         )
 
-    def test_expected_firmware_is_v3(self):
+    def test_expected_firmware_is_consolidated_v4(self):
         self.assertEqual(
-            "teensy_main_20261104_rpi_command_lease_v3",
+            "teensy_main_20261110_rpi_command_lease_v4",
             module.EXPECTED_FIRMWARE,
         )
 

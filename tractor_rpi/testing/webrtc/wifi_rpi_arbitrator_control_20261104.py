@@ -18,7 +18,7 @@ if str(HERE) not in sys.path:
 import wifi_rpi_arbitrator_control_20261031 as earlier
 
 
-EXPECTED_FIRMWARE = "teensy_main_20261104_rpi_command_lease_v3"
+EXPECTED_FIRMWARE = "teensy_main_20261110_rpi_command_lease_v4"
 
 
 class ArbitratorOnlyWifiState(earlier.ArbitratorWifiState):
