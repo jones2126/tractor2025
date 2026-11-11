@@ -570,7 +570,7 @@ def discover_lan_addresses(preferred_client_ip=PREFERRED_LAN_CLIENT_IP):
 
 
 def notify_dashboard_url(dashboard_url):
-    """Send the preferred temporary operator URL to the configured ntfy topic."""
+    """Send the temporary operator URL to the configured ntfy topic."""
     message = (
         "Open the Tractor01 mission dashboard. Keep the handheld available; "
         "this temporary link includes the operator key.\n\n"
@@ -590,7 +590,7 @@ def notify_dashboard_url(dashboard_url):
         with urllib_request.urlopen(request, timeout=5) as response:
             if not 200 <= response.status < 300:
                 raise RuntimeError(f"ntfy returned HTTP {response.status}")
-        print(f"ntfy: preferred dashboard link sent to {NTFY_TOPIC_URL}")
+        print(f"ntfy: dashboard link sent to {NTFY_TOPIC_URL}")
     except (urllib_error.URLError, OSError, RuntimeError) as exc:
         print(f"WARNING: could not send dashboard link to ntfy: {exc}")
 
@@ -616,13 +616,13 @@ def main():
     print("Tractor01 mission dashboard")
     print(f"ZeroTier: {zerotier_url}")
     if lan_urls:
-        print(f"Local (preferred): {lan_urls[0]}")
+        print(f"Local:             {lan_urls[0]}")
         for local_url in lan_urls[1:]:
             print(f"Local (other):     {local_url}")
     else:
         print("WARNING: no tractor LAN address was discovered")
     print(f"Hostname: http://raspberrypi:{args.port}/?key={token}")
-    notify_dashboard_url(lan_urls[0] if lan_urls else zerotier_url)
+    notify_dashboard_url(zerotier_url)
     print("Keep this terminal open. Press Ctrl+C to close the dashboard safely.")
     try:
         server.serve_forever()
