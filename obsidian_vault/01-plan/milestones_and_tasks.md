@@ -365,7 +365,7 @@ ssh al@192.168.193.88 "sudo shutdown now"
 
 ### E — Data collection and analysis
 
-- [ ] Reconfirm that GitHub, the permanent Windows checkout at
+- [x] Reconfirm that GitHub, the permanent Windows checkout at
   `C:\Repos\tractor2025`, and Tractor01 at `/home/al/tractor2025` are all on
   `main`, at the same commit, with clean working trees after the November 11
   replay commit and branch cleanup.
@@ -380,6 +380,12 @@ ssh al@192.168.193.88 "sudo shutdown now"
   immediate local watchdog/e-stop authority, and keep implementation and field
   authorization as later separate approvals. Do not implement this policy as
   part of preparing the prompt.
+- [ ] Persistently log the JRK/Teensy tractor-battery supply voltage whenever
+  the production Raspberry Pi and Teensy services are running, whether or not a
+  mission or dashboard is active. Record timestamp, millivolts, read-validity,
+  and enough service/session context to distinguish boot, engine-running,
+  parked, and charger-connected periods; use bounded rotation/retention and do
+  not add blocking work to a safety-critical control loop.
 - [x] Capture RELPOSNED flags, carrier, baseline, heading accuracy, frame
   counters/timestamps, and per-receiver satellite/C/N0 diagnostics.
 - [x] Resolve historical `jrk_current` as position feedback and add explicit
