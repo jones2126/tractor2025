@@ -143,6 +143,141 @@ stationary validation are explicitly approved and completed.
 
 ---
 
+## Latest Tools for Developing Missions
+
+Use the most recent applicable workflow, but do not select a script merely
+because its filename has the newest date. Mission builders are often frozen to
+one site, source dataset, route, or approval checkpoint.
+
+### Current coverage-planning workflow
+
+The current reusable workflow starts with traceable source-data approval, not
+with waypoint generation:
+
+1. Read the [coverage-planning handoff](field_testing/sites/62_Collins_multi_boundary_20260915/planning/20261020_coverage_planning_handoff/README.md)
+   and its linked lineage/approval requirements.
+2. Use the [Coverage Dataset Verifier](field_testing/tools/coverage_dataset_verifier/README.md)
+   to inspect source evidence and record source decisions. Its append-only
+   SHA-256 approval ledger is the first gate; it does not create a mission.
+3. Use [`build_62_collins_staged_coverage_20261019.py`](field_testing/tools/build_62_collins_staged_coverage_20261019.py)
+   only for the implemented Stage 0 reconciliation. Later cells, stripes,
+   turns, waypoint generation, and launch integration remain blocked until the
+   preceding owner-review gates are complete.
+4. Use [`MULTI_BOUNDARY_TO_WEB_MISSION_WORKFLOW.md`](field_testing/MULTI_BOUNDARY_TO_WEB_MISSION_WORKFLOW.md)
+   and [`SITE_COVERAGE_MISSION_WORKFLOW_20260724.md`](tractor_rpi/pure-pursuit/mission_planning/SITE_COVERAGE_MISSION_WORKFLOW_20260724.md)
+   as process/reference guides. Their older example commands and runtime names
+   must be reconciled with the current production stack before use.
+
+For 62 Collins, the [site inventory](field_testing/sites/62_Collins_multi_boundary_20260915/site_inventory/README.md)
+is the geometry/lineage starting point. Preserve raw captures, extracted
+segments, inventory revisions, and approval records; never hand-edit a final
+mission in a way that breaks regeneration or provenance.
+
+### Building and reviewing a specific mission package
+
+- Put each mission in a self-contained `mission_plans/<dated_name>/` package
+  with the builder, generated waypoint file, matching waypoint-audit CSV,
+  machine-readable validation/report, review visualization, verifier,
+  launcher, dashboard integration, README, and pinned hashes.
+- Use the builders under [`field_testing/tools/`](field_testing/tools/) and the
+  prior site packages as reviewed implementations, not as generic inputs. For
+  example, [`build_62_collins_consolidated_perimeter_mission_20260929.py`](field_testing/tools/build_62_collins_consolidated_perimeter_mission_20260929.py)
+  is specific to that consolidated-perimeter package.
+- Keep generated candidates labeled **REVIEW ONLY** or
+  **DRAFT - UNTESTED IN THE FIELD** until the route image, geometry, audit,
+  limitations, verifier, and exact launch package receive the required
+  approvals. Building a route never authorizes field motion.
+- The currently exercised outer-perimeter runtime is the frozen
+  [2026-11-04 phone-arbitrator package](field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20261104_PHONE_ARBITRATOR_OUTER_PERIMETER_DRAFT_UNTESTED/README.md).
+  Do not silently substitute a new route or controller into that package.
+
+---
+
+## Tools for Gathering End-of-Mission Telemetry
+
+The logger and runtime producers are part of the evidence chain:
+
+| Evidence | Producer / normal location | What it establishes |
+|---|---|---|
+| Synchronized mission CSV | [`field_test_logger_20260828.py`](tractor_rpi/field_test_logger_20260828.py), mission-specific directory under `/home/al/field_logs/` | UDP 6003 controller/Teensy/JRK state plus UDP 6009 GPS/heading state, including JRK VIN telemetry |
+| Pure Pursuit CSV | Current controller, normally `/home/al/repos/field-testing-data/pursuit_log_*.csv` | Route index, pose, target, tracking, GPS/heading health, proposal, and controller decisions |
+| Authoritative phone/server JSONL | `tractor-phone-arbitrator.service`, under its configured `/home/al/field_logs/` directory | Accepted phone requests, mode/session changes, and server-side timing |
+| Phone flight-recorder JSONL | Uploaded by the phone-control page beside the server log | Client-observed scheduler, request, acknowledgement, timeout, and network events; diagnostic rather than motion authority |
+| Pi power/resource CSV | Installed `pilog.timer`, `/var/log/pilog/` | 5 V input, throttling flags, load, ARM frequency, and CPU temperature; not 12 V battery voltage |
+| Runtime snapshot | `/run/tractor-phone-control/diagnostics.json` | Latest phone-arbitrator diagnostics at collection time |
+| Service/network/repository state | `systemctl`, `journalctl`, `ip`, `zerotier-cli`, and Git read-only commands | Exact processes, current-boot events, network paths, commit, and working-tree state |
+
+After a mission, keep the tractor stopped, engine off, blades disengaged, and
+handheld in Pause. Stop the foreground dashboard/controller normally, then
+copy evidence without modifying the source logs. Record the mission start time
+and exact file paths before using time-based searches.
+
+The most complete repository collector example is
+[`collect_master_manual_phone_run_20261006.sh`](field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20261006_master_manual_phone_rerun_field_test/collect_master_manual_phone_run_20261006.sh).
+It demonstrates staged copying, Pi logs, diagnostics, an internal manifest, a
+compressed archive, and an archive checksum. It is a historical template with
+old mission paths and old service names; **do not run it unchanged for the
+current production stack**. A new mission package should include an adapted
+collector that targets `rtcm-server.service`,
+`tractor-rpi-arbitrator.service`, and `tractor-phone-arbitrator.service` and
+the package's exact log locations.
+
+Every completed collection must contain, when available:
+
+- mission, pursuit, phone-server, phone-flight-recorder, recovery, and Pi logs;
+- dashboard/controller diagnostics, current-boot service journals and status,
+  network state, repository SHA/status, collection metadata, and the exact
+  mission/audit files or their hashes;
+- a relative-path SHA-256 manifest created after collection; and
+- a `.tgz` archive plus a separate SHA-256 file, both copied off Tractor01 and
+  independently verified before any cleanup.
+
+Never delete or truncate the original Tractor01 evidence merely because an
+archive was created. Cleanup requires a verified second copy and explicit
+scope. The independent battery logger is not yet a source until its prepared
+but uninstalled status above changes through field validation.
+
+---
+
+## Tools for Analyzing End-of-Mission Telemetry
+
+Use preserved copies for analysis and keep generated results separate from raw
+evidence. The preferred current outer-perimeter replay tool is
+[`build_tractor01_mission_replay_20261109.py`](field_testing/tools/build_tractor01_mission_replay_20261109.py).
+Pass explicit `--evidence-root`, mission CSV, pursuit CSV, phone JSONL, mission
+path, audit path, run ID, and output directory for a new run; do not rely on its
+November 9 defaults. It produces:
+
+- a self-contained historical replay HTML;
+- `REPORT.md` with source filenames and SHA-256 hashes;
+- `safety_pause_timeline.csv`, grouping complete motion interruptions;
+- `pause_transition_details.csv`, retaining individual low-level Pause
+  transitions; and
+- `safety_condition_loss_episodes.csv`, measuring each continuous raw RTK,
+  heading, GPS-feed, or corridor threshold breach and its duration.
+
+The [November 11 analysis README](field_testing/sites/62_Collins_multi_boundary_20260915/analysis/20261111_phone_outer_perimeter_replay/README.md)
+is the current example of these outputs and explains their different duration
+semantics. Replay sample numbers and route waypoint numbers are not the same.
+Overlapping condition-loss episodes must not be summed as independent stopped
+time.
+
+Shared replay support lives in
+[`build_tractor_mission_replays_20260919.py`](field_testing/tools/build_tractor_mission_replays_20260919.py),
+[`build_tractor01_mission_replay_20260923.py`](field_testing/tools/build_tractor01_mission_replay_20260923.py),
+and [`tractor-mission-replay-template.html`](field_testing/tools/tractor-mission-replay-template.html).
+Use focused analyzers only for the dataset named in the script/documentation;
+older dated analyzers are preserved for reproducibility, not automatically the
+best tool for a new run.
+
+[`build_rtk_slow_crawl_counterfactual_20261110.py`](field_testing/tools/build_rtk_slow_crawl_counterfactual_20261110.py)
+is a bounded historical what-if tool, not a reconstruction, controller change,
+or motion authorization. Counterfactual outputs and any policy inferred from
+them remain **DRAFT - UNTESTED IN THE FIELD** until separately implemented,
+reviewed, and field validated.
+
+---
+
 ## Durable Operational and Evidence Rules
 
 ### Field-command discipline
