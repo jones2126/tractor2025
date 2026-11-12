@@ -110,7 +110,7 @@ yet have pulled the newest `main` commit.
 | Service/process | Repository program or unit | Role |
 |---|---|---|
 | `rtcm-server.service` | [`tractor_rpi/setup/rtcm-server-tractor01.service`](tractor_rpi/setup/rtcm-server-tractor01.service), [`tractor_rpi/rtcm_server_20260828.py`](tractor_rpi/rtcm_server_20260828.py) | Owns both F9P serial devices, receives base corrections, decodes position/heading, and publishes the dedicated GPS feeds. Its `ExecStartPre` runs [`configure_dual_f9p_5hz_profile_20260923.py`](tractor_rpi/testing/configure_dual_f9p_5hz_profile_20260923.py) with `--heading-startup` and requires independent RAM readback. |
-| `tractor-rpi-arbitrator.service` | [`tractor-rpi-arbitrator.service`](field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20261104_PHONE_ARBITRATOR_OUTER_PERIMETER_DRAFT_UNTESTED/tractor-rpi-arbitrator.service), [`teensy_serial_bridge_rpi_arbitrator_20261104.py`](tractor_rpi/teensy_serial_bridge_rpi_arbitrator_20261104.py) | Sole production owner of `/dev/teensy`; joins phone intent, Pure Pursuit proposal, local health, route/corridor limits, and the command lease before emitting serial motion frames. Broadcasts combined status on UDP 6003. Its separately bounded phone-only `COMMUNICATIONS_DEGRADED` envelope is 30 seconds / 30 m and cannot override a failed local-health check. |
+| `tractor-rpi-arbitrator.service` | [`tractor-rpi-arbitrator.service`](field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20261104_PHONE_ARBITRATOR_OUTER_PERIMETER_DRAFT_UNTESTED/tractor-rpi-arbitrator.service), [`teensy_serial_bridge_rpi_arbitrator_20261104.py`](tractor_rpi/teensy_serial_bridge_rpi_arbitrator_20261104.py) | **Functional replacement for the retired standalone Teensy bridge.** It is the sole production owner of `/dev/teensy`: it reads and parses Teensy telemetry, sends the final RPi command-lease frames, joins phone intent, Pure Pursuit proposals, local health, and route/corridor limits, then broadcasts the combined status on UDP 6003. Its separately bounded phone-only `COMMUNICATIONS_DEGRADED` envelope is 30 seconds / 30 m and cannot override a failed local-health check. |
 | `tractor-phone-arbitrator.service` | [`tractor-phone-arbitrator.service`](field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20261104_PHONE_ARBITRATOR_OUTER_PERIMETER_DRAFT_UNTESTED/tractor-phone-arbitrator.service), [`wifi_rpi_arbitrator_control_20261104.py`](tractor_rpi/testing/webrtc/wifi_rpi_arbitrator_control_20261104.py) | Serves authenticated TLS phone control at `https://192.168.8.20:8765`, owns operator sessions, logs authoritative accepted commands, publishes diagnostics, sends phone intent on UDP 6014, and creates non-authoritative ntfy notices. It never sends legacy UDP 6004 motion commands. |
 | `zerotier-one.service` | OS package, not repository-owned | Provides maintenance/SSH, RTK-base reachability, log transfer, and the mission-dashboard path. It is not the primary real-time phone-control authority. |
 | `pilog.timer` / `pilog.service` | Installed Tractor01 automation; source not yet found in `main` | Approximately two-minute Pi power/resource log under `/var/log/pilog`: 5 V rail, `get_throttled`, load, ARM MHz, and temperature. Do not confuse its 5 V measurement with the 12 V JRK VIN telemetry. |
@@ -140,6 +140,134 @@ are a **DRAFT - UNTESTED IN THE FIELD** candidate for independent 10-second
 JRK VIN logging. They were not installed before Tractor01 shut down on
 2026-11-11. Do not describe them as a running service until installation and a
 stationary validation are explicitly approved and completed.
+
+---
+
+## RPi–Teensy Safety Boundary and Data Flow
+
+### What replaced the retired Teensy bridge
+
+The running replacement is
+[`teensy_serial_bridge_rpi_arbitrator_20261104.py`](tractor_rpi/teensy_serial_bridge_rpi_arbitrator_20261104.py),
+started by `tractor-rpi-arbitrator.service`. It combines two roles in one
+process:
+
+1. **Bidirectional Teensy bridge:** exclusively owns `/dev/teensy` at 460800
+   baud, parses Teensy `STEER`, `TRANS`, `RPI_CTL`, and `SYS` rows, and
+   republishes the combined status on UDP 6003.
+2. **RPi safety arbitrator:** receives authenticated phone intent on UDP 6014
+   and the Pure Pursuit proposal/health feed on UDP 6015, joins those with
+   returned Teensy health, chooses the one allowed output, and sends it to the
+   Teensy.
+
+The implementation deliberately inherits proven parsing and telemetry code
+through this chain:
+
+`teensy_serial_bridge_rpi_arbitrator_20261104.py` →
+`teensy_serial_bridge_rpi_arbitrator_motor_off_20261031.py` →
+`teensy_serial_bridge_rpi_lease_pause_20261031.py` →
+`teensy_serial_bridge_20261002.py` →
+`teensy_serial_bridge_20260728.py`.
+
+This inheritance does **not** mean the old `teensy-bridge.service` is running.
+The 20260728 file is retained as a parser/UDP compatibility base inside the
+new process. The production service conflicts with the old service so exactly
+one process owns the serial device.
+
+### Actual RPi-to-Teensy command
+
+The RPi sends one CRC-protected ASCII command type:
+
+```text
+RPICMD,<session>,<sequence>,<mode>,<drive>,<steering>*<CRC16>\n
+```
+
+It contains only:
+
+- a random RPi session ID and monotonically advancing uint32 sequence;
+- mode: Pause, Manual-percent, Auto-m/s, software E-stop, or reset-Pause;
+- drive: signed percent in Manual, calibrated m/s in Auto, otherwise zero;
+- normalized steering from `-1.0` right through `+1.0` left; and
+- CRC-16/CCITT-FALSE integrity protection.
+
+The frame does **not** contain a wall-clock timestamp, a selectable lease
+duration, the supervisor state, or the textual stop reason. The Teensy measures
+freshness from local arrival time with its fixed 500 ms lease. The full joined
+state and exact reason remain RPi diagnostics in the UDP 6003
+`rpi_arbitrator` object.
+
+A newly started RPi session must first claim the Teensy with Pause (or may send
+E-stop). The RPi adapter blocks Manual/Auto until matching `RPI_CTL` telemetry
+acknowledges that Pause session and sequence as fresh and usable. Motion frames
+are normally sent at 10 Hz. Pause/E-stop/reset-Pause frames are retried every
+250 ms while required.
+
+### RPi supervisor responsibilities and Pause triggers
+
+The RPi owns mission-level interpretation. It validates and joins phone,
+navigation, route, and returned low-level health before it decides which
+generic command the Teensy may receive.
+
+The current RPi supervisor selects or latches Pause for:
+
+- operator Pause; invalid/non-finite input; an input sequence fault; or an RPi
+  command-scheduler gap greater than 250 ms;
+- stale Teensy status, an unhealthy Teensy lease/watchdog, a latched steering
+  fault, invalid JRK diagnostics, or active JRK halting errors;
+- Manual phone intent older than 500 ms or Manual drive/steering outside the
+  permitted ranges;
+- Auto requested while the mission controller is not `RUNNING`;
+- Pure Pursuit command or health telemetry older than 500 ms;
+- GPS age over 1.0 second, RTK quality below `RTK Fixed`, invalid heading,
+  heading carrier not fixed, or heading accuracy worse than 1.0 degree;
+- a mission route hash mismatch/missing route, the encoded 2.0 m route-corridor
+  check failing, or an Auto speed outside `0..1.8 m/s`; and
+- any other joined local-health failure.
+
+Phone freshness is the one deliberately bounded exception in an already
+running Auto mission. When the production package explicitly preauthorizes
+`COMMUNICATIONS_DEGRADED`, a stale phone link may continue for at most 30
+seconds and 30 m while **all** local health checks above remain good. Manual
+does not use that exception. Reconnection does not reset the incident budget;
+a stopped operator-acknowledged Pause is required.
+
+The phone E-stop request always wins. It makes the RPi send the zero-output
+E-stop mode, which latches the Teensy software E-stop and grounds the engine
+stop circuit through the Teensy relay. Reset-Pause can clear that software
+latch only while retaining zero output; it never grants motion.
+
+### Teensy responsibilities and independent local triggers
+
+The Teensy is the deterministic low-level controller. It does not interpret
+GPS, RTK, heading, route geometry, phone timing, or Pure Pursuit state. It:
+
+- accepts only the `RPICMD` schema; verifies CRC, field count, finite/range
+  limits, session claim, and forward sequence order;
+- rejects a new session that begins with Manual/Auto, duplicate or old
+  sequences, malformed frames, unsupported legacy commands, and out-of-range
+  commands;
+- measures command age locally and, if no valid command arrives within 500 ms,
+  latches lease expiry, commands JRK neutral, and applies Pause steering
+  behavior until a fresh Pause re-arms the lease;
+- maps the already-authorized drive/steering values to the JRK transmission
+  target and steering PID;
+- owns the steering-response watchdog: when PID output is at least 150 PWM,
+  absolute steering error is at least 25 pot counts, and commanded motion does
+  not move the pot at least 5 counts in the correct direction within 750 ms,
+  it latches a steering fault, removes steering drive, and immediately commands
+  transmission neutral;
+- polls and reports JRK target/feedback, validity, errors, voltage, and current;
+  the RPi currently uses diagnostic validity and halting errors as joined Pause
+  triggers; and
+- owns the software E-stop relay state and publishes low-level status back to
+  the RPi.
+
+The large red tractor E-stop and rear mechanical transmission release are
+independent hardware barriers outside this software protocol. In current
+production code, the compatibility field named `physical_pause_released` is
+derived from the authenticated phone mode because the old NRF mode switch is
+retired; it is not evidence of a separate physical Pause input read by the
+Teensy.
 
 ---
 
