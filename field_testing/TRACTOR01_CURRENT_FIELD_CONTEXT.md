@@ -201,3 +201,20 @@ existing field logger concurrently. It logs under `/home/al/field_logs/imu/`
 with per-run calibration, raw/scaled samples, GPS source/arrival ages, relative
 yaw and once-anchored compass comparison, exact commit metadata and SHA-256
 checksums. Stopping the logger does not send Pause or stop the tractor.
+
+## November 16 boot regression — repair prepared, NOT installed
+
+Two inspected boots started the disabled legacy `teensy-bridge.service` while
+both enabled production arbitrators remained inactive. The enabled installed
+`tractor-startup-preflight.service` still requires the retired bridge, and its
+October wrapper waits for retired `tractor-wifi-control.service` and selects
+obsolete preflight/firmware defaults. See the evidence/report under
+`field_testing/sites/62_Collins_multi_boundary_20260915/analysis/20261116_legacy_bridge_boot_investigation/`.
+
+The repository startup unit is now a prepared migration to the production
+arbitrators and `run_startup_phone_preflight_20261116.sh`. The separate candidate
+installer and approval/validation procedure are documented in
+`tractor_rpi/setup/STARTUP_REPAIR_20261116.md`. The installed Pi units have NOT
+been changed by this preparation. Do not infer healthy services from repository
+synchronization or enablement. Installation, service activation/reboot,
+stationary validation and movement remain separate approvals.

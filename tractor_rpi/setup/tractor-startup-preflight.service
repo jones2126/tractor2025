@@ -2,17 +2,17 @@
 Description=Tractor01 automatic non-motion startup preflight
 Documentation=https://github.com/jones2126/tractor2025
 Wants=network-online.target
-Requires=rtcm-server.service teensy-bridge.service
-After=network-online.target zerotier-one.service rtcm-server.service teensy-bridge.service tractor-wifi-control.service
+Requires=rtcm-server.service tractor-rpi-arbitrator.service tractor-phone-arbitrator.service
+After=network-online.target zerotier-one.service rtcm-server.service tractor-rpi-arbitrator.service tractor-phone-arbitrator.service
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/bash /home/al/tractor2025/tractor_rpi/testing/run_startup_mission_preflight_20261026.sh
+ExecStart=/usr/bin/bash /home/al/tractor2025/tractor_rpi/testing/run_startup_phone_preflight_20261116.sh
 TimeoutStartSec=480
 RemainAfterExit=yes
 Restart=on-failure
 RestartSec=30
-RestartPreventExitStatus=1
+RestartPreventExitStatus=1 2
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=tractor-startup-preflight

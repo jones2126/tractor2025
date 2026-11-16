@@ -1,0 +1,65 @@
+2026-11-16T15:04:46-05:00
+8b7b5cab-1d22-47de-b784-bc594d4920e8
+ 15:04:46 up 3 min,  3 users,  load average: 1.28, 0.88, 0.37
+1b03abda76625d5c7214d87fad6bdbd4071534bf
+## main...origin/main
+Result=success
+ExecMainStatus=0
+Id=teensy-bridge.service
+ActiveState=active
+SubState=running
+UnitFileState=disabled
+ActiveEnterTimestampMonotonic=44577479
+
+Result=success
+ExecMainStatus=0
+Id=tractor-startup-preflight.service
+ActiveState=activating
+SubState=start
+UnitFileState=enabled
+ActiveEnterTimestampMonotonic=0
+
+Result=success
+ExecMainStatus=0
+Id=tractor-rpi-arbitrator.service
+ActiveState=inactive
+SubState=dead
+UnitFileState=enabled
+ActiveEnterTimestampMonotonic=0
+
+Result=success
+ExecMainStatus=0
+Id=tractor-phone-arbitrator.service
+ActiveState=inactive
+SubState=dead
+UnitFileState=enabled
+ActiveEnterTimestampMonotonic=0
+
+Result=success
+ExecMainStatus=0
+Id=rtcm-server.service
+ActiveState=active
+SubState=running
+UnitFileState=enabled
+ActiveEnterTimestampMonotonic=32550310
+[   31.096274] raspberrypi systemd[1]: Started teensy-bridge.service - Teensy Serial Bridge.
+[   31.737029] raspberrypi systemd[1]: teensy-bridge.service: Deactivated successfully.
+[   36.444313] raspberrypi systemd[1]: teensy-bridge.service: Scheduled restart job, restart counter is at 1.
+[   36.453409] raspberrypi systemd[1]: Started teensy-bridge.service - Teensy Serial Bridge.
+[   36.571300] raspberrypi systemd[1]: teensy-bridge.service: Deactivated successfully.
+[   37.903873] raspberrypi systemd[1]: Starting tractor-startup-preflight.service - Tractor01 automatic non-motion startup preflight...
+[   41.694411] raspberrypi systemd[1]: teensy-bridge.service: Scheduled restart job, restart counter is at 2.
+[   41.696985] raspberrypi systemd[1]: tractor-startup-preflight.service: Main process exited, code=killed, status=15/TERM
+[   44.565122] raspberrypi systemd[1]: tractor-startup-preflight.service: Failed with result 'signal'.
+[   44.565610] raspberrypi systemd[1]: Stopped tractor-startup-preflight.service - Tractor01 automatic non-motion startup preflight.
+[   44.580392] raspberrypi systemd[1]: Started teensy-bridge.service - Teensy Serial Bridge.
+[   44.588031] raspberrypi systemd[1]: Starting tractor-startup-preflight.service - Tractor01 automatic non-motion startup preflight...
+Nov 16 15:01:09 raspberrypi systemd[1]: Starting tractor-startup-preflight.service - Tractor01 automatic non-motion startup preflight...
+Nov 16 15:01:09 raspberrypi tractor-startup-preflight[1324]: Waiting for the qualified Tractor01 network path and ntfy reachability.
+Nov 16 15:01:13 raspberrypi systemd[1]: tractor-startup-preflight.service: Main process exited, code=killed, status=15/TERM
+Nov 16 15:01:16 raspberrypi systemd[1]: tractor-startup-preflight.service: Failed with result 'signal'.
+Nov 16 15:01:16 raspberrypi systemd[1]: Stopped tractor-startup-preflight.service - Tractor01 automatic non-motion startup preflight.
+Nov 16 15:01:16 raspberrypi systemd[1]: Starting tractor-startup-preflight.service - Tractor01 automatic non-motion startup preflight...
+Nov 16 15:01:16 raspberrypi tractor-startup-preflight[1841]: Waiting for the qualified Tractor01 network path and ntfy reachability.
+/dev/ttyACM0:       
+  1837   1837 /usr/bin/python3 /home/al/tractor2025/tractor_rpi/teensy_serial_bridge_20261002.py

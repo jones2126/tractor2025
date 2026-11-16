@@ -1,0 +1,168 @@
+2026-11-16T14:58:39-05:00
+f848bc54-967a-41c7-b949-264d7ee7a4bc
+3820.85 14018.05
+1b03abda76625d5c7214d87fad6bdbd4071534bf
+disabled
+enabled
+enabled
+enabled
+disabled
+Result=success
+Id=teensy-bridge.service
+Requires=system.slice sysinit.target -.mount
+Wants=
+Conflicts=shutdown.target
+ActiveState=active
+SubState=running
+UnitFileState=disabled
+ActiveEnterTimestampMonotonic=1866634395
+InactiveEnterTimestampMonotonic=1861507816
+
+Result=success
+Id=tractor-startup-preflight.service
+Requires=teensy-bridge.service rtcm-server.service sysinit.target system.slice
+Wants=network-online.target
+Conflicts=shutdown.target
+ActiveState=inactive
+SubState=dead
+UnitFileState=enabled
+ActiveEnterTimestampMonotonic=0
+InactiveEnterTimestampMonotonic=0
+
+Result=success
+Id=tractor-rpi-arbitrator.service
+Requires=system.slice sysinit.target -.mount
+Wants=network-online.target
+Conflicts=teensy-bridge.service shutdown.target
+ActiveState=inactive
+SubState=dead
+UnitFileState=enabled
+ActiveEnterTimestampMonotonic=0
+InactiveEnterTimestampMonotonic=0
+
+Result=success
+Id=tractor-phone-arbitrator.service
+Requires=system.slice sysinit.target tractor-rpi-arbitrator.service -.mount
+Wants=network-online.target
+Conflicts=tractor-wifi-direct-mission.service shutdown.target tractor-wifi-control.service tractor-wifi-recovery.service
+ActiveState=inactive
+SubState=dead
+UnitFileState=enabled
+ActiveEnterTimestampMonotonic=0
+InactiveEnterTimestampMonotonic=0
+# /etc/systemd/system/tractor-startup-preflight.service
+[Unit]
+Description=Tractor01 automatic non-motion startup preflight
+Documentation=https://github.com/jones2126/tractor2025
+Wants=network-online.target
+Requires=rtcm-server.service teensy-bridge.service
+After=network-online.target zerotier-one.service rtcm-server.service teensy-bridge.service tractor-wifi-control.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/bash /home/al/tractor2025/tractor_rpi/testing/run_startup_mission_preflight_20261026.sh
+TimeoutStartSec=180
+RemainAfterExit=yes
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=tractor-startup-preflight
+
+[Install]
+WantedBy=multi-user.target
+
+# /etc/systemd/system/teensy-bridge.service
+[Unit]
+Description=Teensy Serial Bridge
+Documentation=https://github.com/jones2126/tractor2025
+After=network.target 
+#After=network.target rtcm-server.service
+#Wants=rtcm-server.service
+
+[Service]
+Type=simple
+User=al
+WorkingDirectory=/home/al/tractor2025/tractor_rpi
+ExecStart=/usr/bin/python3 -u /home/al/tractor2025/tractor_rpi/teensy_serial_bridge_20260709.py
+Restart=always
+RestartSec=5
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=teensy-bridge
+
+# Resource limits (optional)
+# MemoryLimit=256M
+# CPUQuota=50%
+
+[Install]
+WantedBy=multi-user.target
+
+# /etc/systemd/system/teensy-bridge.service.d/tractor2025.conf
+[Service]
+ExecStart=
+ExecStart=/usr/bin/python3 /home/al/tractor2025/tractor_rpi/teensy_serial_bridge_20261002.py
+WorkingDirectory=/home/al/tractor2025/tractor_rpi
+
+# /etc/systemd/system/tractor-rpi-arbitrator.service
+[Unit]
+Description=Tractor01 RPi safety arbitrator (separately authorized)
+After=network-online.target
+Wants=network-online.target
+Conflicts=teensy-bridge.service
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=al
+WorkingDirectory=/home/al/tractor2025
+Environment=PYTHONUNBUFFERED=1
+Environment=TRACTOR_EXPECTED_ROUTE_SHA256=b47660b4c74d5e26ca5d9448f069fd7193c068cf62e3c0b62d5c083d9aed4d64
+Environment=TRACTOR_MOTION_AUTHORIZATION=RUN_DIRECT_OUTER_PERIMETER_BLADES_OFF
+Environment=TRACTOR_COMMUNICATIONS_DEGRADED=30S_30M
+ExecStart=/usr/bin/python3 -u -m tractor_rpi.teensy_serial_bridge_rpi_arbitrator_20261104
+Restart=on-failure
+RestartSec=2
+KillSignal=SIGINT
+TimeoutStopSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=tractor-rpi-arbitrator
+
+[Install]
+WantedBy=multi-user.target
+[   24.409178] raspberrypi systemd[1]: Started teensy-bridge.service - Teensy Serial Bridge.
+[   25.631945] raspberrypi systemd[1]: teensy-bridge.service: Deactivated successfully.
+[   26.002995] raspberrypi systemd[1]: Dependency failed for tractor-startup-preflight.service - Tractor01 automatic non-motion startup preflight.
+[   26.003109] raspberrypi systemd[1]: tractor-startup-preflight.service: Job tractor-startup-preflight.service/start failed with result 'dependency'.
+[   30.006615] raspberrypi systemd[1]: teensy-bridge.service: Scheduled restart job, restart counter is at 1.
+[   30.016373] raspberrypi systemd[1]: Started teensy-bridge.service - Teensy Serial Bridge.
+[   30.133089] raspberrypi systemd[1]: teensy-bridge.service: Deactivated successfully.
+[   35.190984] raspberrypi systemd[1]: teensy-bridge.service: Scheduled restart job, restart counter is at 2.
+[   35.202800] raspberrypi systemd[1]: Started teensy-bridge.service - Teensy Serial Bridge.
+[ 1866.623986] raspberrypi systemd[1]: teensy-bridge.service: Scheduled restart job, restart counter is at 1.
+[ 1866.634445] raspberrypi systemd[1]: Started teensy-bridge.service - Teensy Serial Bridge.
+2026-11-16T14:26:00-05:00 raspberrypi teensy-bridge[12694]: 2026-11-16 14:25:59,731 - INFO - Serial connected to /dev/teensy
+2026-11-16T14:26:00-05:00 raspberrypi teensy-bridge[12694]: 2026-11-16 14:25:59,731 - ERROR - Fatal error: [Errno 99] Cannot assign requested address
+2026-11-16T14:26:00-05:00 raspberrypi teensy-bridge[12694]: Traceback (most recent call last):
+2026-11-16T14:26:00-05:00 raspberrypi teensy-bridge[12694]:   File "/home/al/tractor2025/tractor_rpi/teensy_serial_bridge_20261002.py", line 34, in main
+2026-11-16T14:26:00-05:00 raspberrypi teensy-bridge[12694]:     bridge = TeensySerialBridge()
+2026-11-16T14:26:00-05:00 raspberrypi teensy-bridge[12694]:              ^^^^^^^^^^^^^^^^^^^^
+2026-11-16T14:26:00-05:00 raspberrypi teensy-bridge[12694]:   File "/home/al/tractor2025/tractor_rpi/teensy_serial_bridge_20260728.py", line 93, in __init__
+2026-11-16T14:26:00-05:00 raspberrypi teensy-bridge[12694]:     self.setup()
+2026-11-16T14:26:00-05:00 raspberrypi teensy-bridge[12694]:   File "/home/al/tractor2025/tractor_rpi/teensy_serial_bridge_20260728.py", line 170, in setup
+2026-11-16T14:26:00-05:00 raspberrypi teensy-bridge[12694]:     self.status_sock = self.create_broadcast_socket()
+2026-11-16T14:26:00-05:00 raspberrypi teensy-bridge[12694]:                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-11-16T14:26:00-05:00 raspberrypi teensy-bridge[12694]:   File "/home/al/tractor2025/tractor_rpi/teensy_serial_bridge_20260728.py", line 163, in create_broadcast_socket
+2026-11-16T14:26:00-05:00 raspberrypi teensy-bridge[12694]: OSError: [Errno 99] Cannot assign requested address
+2026-11-16T14:26:05-05:00 raspberrypi systemd[1]: teensy-bridge.service: Scheduled restart job, restart counter is at 1.
+2026-11-16T14:26:05-05:00 raspberrypi systemd[1]: Started teensy-bridge.service - Teensy Serial Bridge.
+2026-11-16T14:26:05-05:00 raspberrypi teensy-bridge[13199]: 2026-11-16 14:26:05,105 - INFO - Serial connected to /dev/teensy
+2026-11-16T14:26:05-05:00 raspberrypi teensy-bridge[13199]: 2026-11-16 14:26:05,105 - INFO - Teensy Serial Bridge starting...
+2026-11-16T14:26:05-05:00 raspberrypi teensy-bridge[13199]: 2026-11-16 14:26:05,105 - INFO - GPS listener started
+2026-11-16T14:26:05-05:00 raspberrypi teensy-bridge[13199]: 2026-11-16 14:26:05,106 - INFO - Command listener started
+2026-11-16T14:26:05-05:00 raspberrypi teensy-bridge[13199]: 2026-11-16 14:26:05,106 - INFO - Steering-fault notifications enabled: rpi-tractor01-jones2126
+2026-11-16T14:26:05-05:00 raspberrypi teensy-bridge[13199]: 2026-11-16 14:26:05,118 - INFO - GPS: 1 → 3
+lrwxrwxrwx 1 root root 52 Nov  9 14:44 /etc/systemd/system/multi-user.target.wants/tractor-phone-arbitrator.service -> /etc/systemd/system/tractor-phone-arbitrator.service
+lrwxrwxrwx 1 root root 50 Nov  9 14:44 /etc/systemd/system/multi-user.target.wants/tractor-rpi-arbitrator.service -> /etc/systemd/system/tractor-rpi-arbitrator.service
+lrwxrwxrwx 1 root root 53 Oct 26 11:01 /etc/systemd/system/multi-user.target.wants/tractor-startup-preflight.service -> /etc/systemd/system/tractor-startup-preflight.service
