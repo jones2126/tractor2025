@@ -188,3 +188,16 @@ GitHub to Tractor01 with this revision. No service restart, installation, or
 live stationary collection validation is included. Automatic evidence collection
 remains DRAFT - UNTESTED IN THE FIELD; verify collection manually until a
 separately approved stationary validation succeeds.
+
+## ISM330DHCX observation logger — prepared 2026-11-16
+
+`tractor_rpi/testing/imu/ism330dhcx_field_logger_20261116.py` and its adjacent
+README provide a standalone foreground IMU/GNSS recording experiment. It is
+**DRAFT - UNTESTED IN THE FIELD** pending separately approved stationary sensor
+validation, then manual-drive approval. It changes no production control code,
+serial ownership, services, or watchdogs. The logger configures only the IMU on
+I2C bus 1 at 0x6b and exclusively receives localhost GPS UDP 6009; do not run the
+existing field logger concurrently. It logs under `/home/al/field_logs/imu/`
+with per-run calibration, raw/scaled samples, GPS source/arrival ages, relative
+yaw and once-anchored compass comparison, exact commit metadata and SHA-256
+checksums. Stopping the logger does not send Pause or stop the tractor.
