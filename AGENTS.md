@@ -340,15 +340,21 @@ handheld in Pause. Stop the foreground dashboard/controller normally, then
 copy evidence without modifying the source logs. Record the mission start time
 and exact file paths before using time-based searches.
 
-The most complete repository collector example is
-[`collect_master_manual_phone_run_20261006.sh`](field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20261006_master_manual_phone_rerun_field_test/collect_master_manual_phone_run_20261006.sh).
-It demonstrates staged copying, Pi logs, diagnostics, an internal manifest, a
-compressed archive, and an archive checksum. It is a historical template with
-old mission paths and old service names; **do not run it unchanged for the
-current production stack**. A new mission package should include an adapted
-collector that targets `rtcm-server.service`,
-`tractor-rpi-arbitrator.service`, and `tractor-phone-arbitrator.service` and
-the package's exact log locations.
+[`collect_tractor01_run_evidence_20261114.py`](field_testing/tools/collect_tractor01_run_evidence_20261114.py)
+is the prepared current collector. It consumes a JSON run manifest containing
+the exact field CSV, Pure Pursuit CSV, dashboard transcript, route, audit,
+start time, firmware identity, and repository path. It targets the current
+production services, includes applicable `/var/log/pilog` evidence, verifies
+an internal manifest, and creates and verifies a `.tgz` plus `.tgz.sha256`.
+The outer-perimeter launcher is wired to call it after stopping its logger.
+This path is being synchronized to Tractor01 with the 2026-11-16 revision but
+remains **UNVALIDATED ON TRACTOR01**. Do not describe automatic collection as
+validated until it passes a separately approved stationary RPi validation.
+
+The historical
+[`collect_master_manual_phone_run_20261006.sh`](field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20261006_master_manual_phone_rerun_field_test/collect_master_manual_phone_run_20261006.sh)
+remains useful for lineage, but it has old mission paths and retired service
+names and must not be run unchanged.
 
 Every completed collection must contain, when available:
 

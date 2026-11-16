@@ -36,3 +36,27 @@ The motor-off Manual test, production reboot, local-only notification test,
 and Manual repositioning to the reviewed start have passed. Field motion is
 authorized only through `mission_dashboard_production_20261109.py`, with the
 blades off and direct supervision maintained for the entire perimeter run.
+
+## Prepared automatic post-run evidence collection
+
+The launcher now prepares one run ID and exact paths for the synchronized field
+CSV, Pure Pursuit CSV, dashboard transcript, and JSON run manifest. On normal
+completion or dashboard `Ctrl+C`, its exit handler first stops the field logger
+and then invokes
+[`collect_tractor01_run_evidence_20261114.py`](../../../../tools/collect_tractor01_run_evidence_20261114.py).
+The dashboard waits for that handler to finish and prints either
+`EVIDENCE COLLECTION PASSED` with the `.tgz` and `.tgz.sha256` paths, or a
+prominent failure that requires manual collection before shutdown.
+
+The collector is non-destructive. It retains the source logs, copies the exact
+run files, current phone/recovery evidence, current production service and
+network diagnostics, repository state, runtime phone diagnostics, and the
+applicable `/var/log/pilog` files. It verifies an internal `SHA256SUMS`, creates
+the compressed archive, reopens the archive for validation, and writes and
+checks the external SHA-256 value.
+
+This automatic path is being synchronized to Tractor01 with the 2026-11-16
+revision but remains **UNVALIDATED ON TRACTOR01** until exercised in a
+separately approved stationary test. Copying the archive
+and checksum off Tractor01 and independently verifying the downloaded archive
+remain manual operator steps.

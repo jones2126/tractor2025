@@ -55,9 +55,9 @@ class TeensyV3SourceTests(unittest.TestCase):
         self.assertNotIn("radio.begin()", self.firmware)
 
     def test_permanent_calibration_and_rpi_owned_gps(self):
-        self.assertIn("const int STEER_POT_RIGHT  = 197;", self.firmware)
-        self.assertIn("const int STEER_POT_CENTER = 447;", self.firmware)
-        self.assertIn("const int STEER_POT_LEFT   = 815;", self.firmware)
+        self.assertIn("const int STEER_POT_RIGHT  = 191;", self.firmware)
+        self.assertIn("const int STEER_POT_CENTER = 525;", self.firmware)
+        self.assertIn("const int STEER_POT_LEFT   = 885;", self.firmware)
         self.assertNotIn("GpsStatus", self.firmware)
         self.assertNotIn('memcmp(buffer, "GPS,"', self.firmware)
 

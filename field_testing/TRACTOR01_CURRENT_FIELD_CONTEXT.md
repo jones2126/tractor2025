@@ -1,6 +1,6 @@
 # Tractor01 current field context
 
-Last updated: 2026-11-11
+Last updated: 2026-11-16
 
 This is durable operational context for assistants helping Al with Tractor01.
 Read it before proposing field commands. It records established facts and
@@ -171,3 +171,20 @@ mission or physical movement.
 - The continuous battery-voltage logger is a repository candidate only. It is
   **DRAFT - UNTESTED IN THE FIELD**, has not been installed, and has not changed
   any Tractor01 service.
+
+## Prepared post-run collection change — not deployed
+
+Local Windows work prepared on 2026-11-14 adds a general post-run evidence
+collector and connects it to the outer-perimeter launcher's exit handler. The
+candidate assigns the field and Pure Pursuit CSVs one shared run timestamp,
+records their exact paths in a JSON run manifest, stops the logger before
+collection, and creates an internally and externally hashed archive that
+includes applicable `/var/log/pilog` evidence. The dashboard waits for the
+collector and displays a clear pass or failure result.
+
+On 2026-11-16, the prepared change passed 133 software tests, 10 arbitrator
+fault simulations, and package verification. It is being synchronized through
+GitHub to Tractor01 with this revision. No service restart, installation, or
+live stationary collection validation is included. Automatic evidence collection
+remains DRAFT - UNTESTED IN THE FIELD; verify collection manually until a
+separately approved stationary validation succeeds.

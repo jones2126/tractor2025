@@ -1,81 +1,29 @@
 # Tractor2025 milestones and tasks
 
-> [!note] How this list is organized
+> How this list is organized
 > **Current priorities** is the short working queue. **Next field test** is the
-> checklist for the next outing. Sections **A–G** are the canonical backlog by
+> checklist for the next outing. Sections **A–G** are the backlog by
 > subsystem. The command-rich startup and shutdown runbooks remain here for
 > field use.
 >
-> Last workflow review: **2026-09-23**
+> Last workflow review: **2026-11-12**
 
 ## Current priorities
 
-1. **Map and score the completed September 23 master mission and manual
-   stripes.** Combine them with the earlier recorded runs, locate missed and
-   duplicate coverage, overlay safety/recovery events, and replan the next
-   coverage paths from measured results.
-2. **Investigate repeated NRF24 losses.** Compare the same route with the
-   garden electric fence energized and de-energized; inspect radio power,
-   grounding, antennas, connectors, ACK rate, and spatial clustering.
-3. **Make heading startup deterministic.** Add an idempotent Heading-F9P
-   readback/guarded-repair step and make `rtcm-server` recover when the USB
-   device appears after service startup instead of latching a fatal state.
-4. **Make long-duration dashboard voice observable and resilient.** Add phone
-   Wake Lock, client/voice heartbeat, speech start/end/error logging, and a
-   stalled-speech watchdog.
-5. **Prototype supervised low-speed phone/Wi-Fi manual control** with dead-man,
-   authentication, bounded commands, and explicit stop behavior. Treat it as
-   an experiment, not an NRF24 replacement, until latency/loss tests pass.
-6. **Complete field hardware and infrastructure follow-up:** permanently mount
-   the Cub Cadet EFI ignition module, automate RTK-base ZeroTier recovery after
-   internet returns, and begin repeatable fuel/engine-runtime recording.
-7. Retain the current master's conservative **1.63 m** planning radius. Use
-   **1.20 m** only as a future candidate after supervised AUTO validation at
-   0.5 m/s.
-
-## Next field test — coverage, radio, and recovery validation
-
-### Objective
-
-Validate revised coverage geometry and collect controlled evidence for radio
-loss and recovery behavior. Keep the test blades-off and closely supervised.
-Do not combine a new coverage path, new radio-control method, and new steering
-geometry in the same first run; change one risk-bearing variable at a time.
-
-### Prerequisites
-
-- Complete the coverage and event overlays from the September 23 logs.
-- Define cross-track and recovery acceptance limits before generating a new
-  mission.
-- Verify Heading-F9P targeted settings rather than assuming a physical antenna
-  fault or blindly applying a factory reset.
-- Confirm the dashboard voice/client heartbeat remains live for a bench test
-  longer than the approximately 20-minute field failure point.
-- Define the radio A/B route and fence states before driving.
-- Keep the proven strict preflight/basic runtime split unless a separately
-  reviewed test intentionally changes it.
-
-### Success criteria
-
-- Preflight passes with the tractor stationary in Pause and the targeted
-  heading configuration is recorded.
-- Every radio loss, GPS/heading stop, recovery, and operator intervention can
-  be matched to telemetry and location.
-- The phone dashboard records client heartbeat and speech success/error state
-  throughout the run.
-- Cross-track median/RMS/p95/max stay within the limits defined before the run.
-- Revised coverage reduces known missed areas without creating unsafe joins or
-  excessive overlap.
-
-### Stop conditions
-
-Select handheld Pause immediately for unexpected route selection, steering,
-speed, obstacle proximity, or recovery behavior. Use the e-stop when necessary.
-Do not continue merely to finish the mission.
+1. **Implement 'continue at 0.3 m/s' approach.** RTK loss and heading 'blips' are
+    typically < 3 seconds. Instead of pausing when events occur I want to move ahead
+    at a slow speed.
+2. **Test Sparkfun IMU.** Connect the Sparkfun IMU and figure out how to injest the
+    data to use during prime navigation data outages.
+3. **Build Jupyter Noteboook for Mission Planning.** Translate the old mission
+    planning notebook.
 
 ---
 
 ## Field start-up runbook
+### Before Leaving for the field
+- [ ] Charge phone and wireless headphones.
+
 
 ### RTK base and network
 
@@ -83,8 +31,6 @@ Do not continue merely to finish the mission.
   minutes for `TractorField` to appear.
 - [ ] Connect the field laptop to `TractorField` and confirm the RTK base,
   laptop, and tractor on the [GL.iNet router page](http://192.168.10.1/webpages/index.html#/login).
-- [ ] Treat the completed 24-hour base survey as the authoritative survey work.
-  Do **not** start another survey during routine field startup.
 - [ ] Confirm `rtcm_server.service` is active on the base and verify current
   RTCM output. Investigate any unexpected coordinate/configuration change
   before driving.
@@ -122,12 +68,11 @@ growing.
 
 ### Tractor inspection and software revision
 
-- [ ] Walk the route and remove new obstacles. Inspect antennas, connectors,
-  tires, steering linkage, and visible fluid leaks.
-- [ ] Keep the mower deck disengaged and keep people and animals clear.
-- [ ] Turn on the handheld, select **Pause**, and confirm radio connectivity.
-- [ ] Power tractor01 while it remains in Pause. Keep the e-stop accessible.
-- [ ] Confirm LED1 is green and review LED4/RTK status.
+- [ ] Checks: Route obstacles; Antenna connections; Fuel; Tires; Oil.
+- [ ] Confirm transmission lever is pulled out.
+- [ ] Power tractor01.
+- [ ] Confirm phone is on GL Router network; Open URL from ntfy notice.
+- [ ] Confirm handheld is in **Pause** mode and telemetry is updating.
 - [ ] Confirm the deployed revision:
 
   ```bash
@@ -142,7 +87,7 @@ growing.
   cd /home/al/tractor2025 && git pull --ff-only origin main && git rev-parse --short HEAD && git status --short
   ```
 
-### Mission preflight
+### Mission preflight (required before movement)
 
 Connect to tractor01:
 
@@ -150,24 +95,21 @@ Connect to tractor01:
 ssh al@192.168.193.76
 ```
 
-If ZeroTier is unavailable but the laptop is connected to the tractor's local
-network, use:
-
-```powershell
-ssh al@192.168.1.151
-```
-
 Run preflight with the tractor stationary in Pause:
 
 ```bash
-cd /home/al/tractor2025 && sudo python3 tractor_rpi/testing/mission_preflight_20260804.py --expected-firmware teensy_main_20260914
+
+cd /home/al/tractor2025 && sudo python3 tractor_rpi/testing/mission_preflight_phone_control_20261109.py --expected-firmware teensy_main_20261110_rpi_command_lease_v5
+
 ```
 
 For a more visible field-console run, the following is the complete one-line
 version retained from the earlier runbook:
 
 ```bash
-echo "===== TRACTOR PREFLIGHT START ====="; echo "Computer: $(hostname)"; echo "Starting directory: $(pwd)"; sleep 2; cd /home/al/tractor2025 || { echo "FAIL: Could not open /home/al/tractor2025"; sleep 10; exit 1; }; echo "PASS: Repository opened"; echo "Current directory: $(pwd)"; sleep 2; test -f tractor_rpi/testing/mission_preflight_20260804.py || { echo "FAIL: Pre-flight script not found"; find tractor_rpi -iname '*preflight*' -print; sleep 10; exit 1; }; echo "PASS: Pre-flight script found"; ls -l tractor_rpi/testing/mission_preflight_20260804.py; sleep 2; echo "Running mission pre-flight..."; sudo python3 tractor_rpi/testing/mission_preflight_20260804.py --expected-firmware teensy_main_20260914; RESULT=$?; echo "===== PREFLIGHT FINISHED ====="; echo "Pre-flight exit code: $RESULT"; if [ "$RESULT" -eq 0 ]; then echo "PASS: Mission pre-flight passed"; else echo "FAIL: Do not select Auto"; fi; sleep 10
+
+echo "===== TRACTOR PREFLIGHT START ====="; echo "Computer: $(hostname)"; echo "Starting directory: $(pwd)"; sleep 2; cd /home/al/tractor2025 || { echo "FAIL: Could not open /home/al/tractor2025"; sleep 10; exit 1; }; echo "PASS: Repository opened"; echo "Current directory: $(pwd)"; sleep 2; test -f tractor_rpi/testing/mission_preflight_phone_control_20261109.py || { echo "FAIL: Pre-flight script not found"; find tractor_rpi/testing -iname '*preflight*' -print; sleep 10; exit 1; }; echo "PASS: Pre-flight script found"; ls -l tractor_rpi/testing/mission_preflight_phone_control_20261109.py; sleep 2; echo "Running mission pre-flight..."; sudo python3 tractor_rpi/testing/mission_preflight_phone_control_20261109.py --expected-firmware teensy_main_20261110_rpi_command_lease_v5; RESULT=$?; echo "===== PREFLIGHT FINISHED ====="; echo "Pre-flight exit code: $RESULT"; if [ "$RESULT" -eq 0 ]; then echo "PASS: Mission pre-flight passed—confirm the report ended with MISSION PREFLIGHT PASS"; else echo "FAIL: Do not select Auto"; fi; sleep 10; exit "$RESULT"
+
 ```
 
 Continue only after `MISSION PREFLIGHT PASS`. The check includes services,
@@ -175,55 +117,52 @@ devices, RTCM corrections, RTK position, RELPOSNED rate/flags, heading quality,
 Heading-F9P USB NMEA output, stationary ground speed, Teensy modes, steering,
 JRK diagnostics, firmware identity, and motor-current telemetry.
 
-The expected NMEA result is:
+If the Heading F9P is configured correctly, there will be no NMEA messages present, only heading messages.  You want this message:
 
 ```text
 [PASS] Heading USB NMEA output  none detected during sample
 ```
 
-If the NMEA counter is absent after updating tractor01, restart the service:
-
-```bash
-sudo systemctl restart rtcm-server.service
-```
+If heading-startup proof or the NMEA check is missing, remain stationary in Pause and diagnose using the canonical preflight and current-boot journal. Do not restart a healthy service merely to rediscover its configuration.
 
 Confirm the tractor services and inspect recent RTCM-server messages:
 
 ```bash
-systemctl is-active rtcm-server.service teensy-bridge.service && journalctl -u rtcm-server.service --since '5 minutes ago' --no-pager | tail -40
+systemctl is-active rtcm-server.service tractor-rpi-arbitrator.service tractor-phone-arbitrator.service && journalctl -u rtcm-server.service --since '5 minutes ago' --no-pager | tail -40
 ```
 
 ### Dashboard and mission start
 
-- [ ] Open the dashboard URL on a phone connected through the field network or
-  ZeroTier. Turn up media volume and press **START VOICE GUIDANCE**. In Manual,
-  drive toward the announced clock direction. Inside 1.50 m, follow the spoken
-  heading correction; stop and select Pause when the dashboard reports ready.
-- [ ] Start the dashboard from the field/development computer:
+Current production outer-perimeter mission as of 20261113:
 
-  ```powershell
-  ssh -t -i "$env:USERPROFILE\.ssh\id_ed25519_tractor01" al@192.168.193.76 "cd /home/al/tractor2025 && sudo -v && python3 tractor_rpi/pure-pursuit/mission_dashboard_master_manual_field_20260920.py"
-  ```
+From field laptop Windows PowerShell: ssh -t -i "$env:USERPROFILE\.ssh\id_ed25519_tractor01" al@192.168.193.76 "cd /home/al/tractor2025 && python3 field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20261104_PHONE_ARBITRATOR_OUTER_PERIMETER_DRAFT_UNTESTED/mission_dashboard_production_20261109.py"
 
-- [ ] Open the printed `http://192.168.193.76:8088/?key=...` URL.
+Previous mission specific scripts that would need updating:
+A. For Over the Road Test: In PuTTY, run: cd /home/al/tractor2025; bash field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20261023_AREA-OVER-ROAD_DRAFT_UNTESTED/start_area_over_road_field_dashboard_20261024.sh
+
+B. For full 9/15 path: In PuTTY, run: cd /home/al/tractor2025; sudo -v; python3 field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20261006_master_manual_phone_rerun_field_test/mission_dashboard_master_manual_phone_20261006.py
+
+- [ ] Open the ZeroTier dashboard URL `http://192.168.193.76:8088/?key=...` on the field laptop connected to SSID
+  TractorField.
 - [ ] Verify that the dashboard identifies the intended reviewed mission and
-  shows live GPS, heading, steering, transmission, and radio data. Update this
-  command when a newly reviewed coverage launcher replaces the current
-  master/manual launcher.
-- [ ] Keep the handheld in Pause and select **START MISSION**. The launcher
-  reruns preflight and validates the reviewed mission, start position, and
-  heading.
-- [ ] Select AUTO only after the controller is live and the route is clear.
-- [ ] If dashboard **PAUSE** was used, first select handheld Pause, press
-  **CLEAR PAUSE**, confirm the dashboard shows handheld Pause, and only then
-  return to AUTO. A Manual-to-AUTO cycle does not clear dashboard Pause.
+  shows live GPS, heading, steering, transmission, and radio data.
+- [ ] Confirm handheld in pause and transmission lever is disengaged. Disconnect battery charger and make final visual inspection.
+- [ ] Turn up media volume and press **START VOICE GUIDANCE**.  Using wireless headphones is suggested.
+- [ ] Depress brake safety button and start tractor
+- [ ] Put the handheld in In Manual; Confirm steering control operates front wheels.
+- [ ] Since the tractor is at a slight angle, move speed control to ~ +40% to prevent tractor from rolling back
+- [ ] Engage transmission and remove wheel block
+- [ ] Drive toward the announced clock direction. Inside 1.50 stop and select Pause when directed.
+- [ ] Disengage the transmission using the rear lever; Return to the dashboard and select START MISSION
+- [ ] Press Open Messages to see the launcher starting preflight tests again.  Watch for PASS and any FAIL messages.
+- [ ] If dashboard shows, GUARDED AUTO, return to the tractor
+- [ ] Engage transmission, move to a safe spot and Select AUTO.
 
 ---
 
 ## Field shut-down and data preservation
 
-- [ ] Stop the mission normally and allow the field and pursuit loggers to
-  close cleanly.
+- [ ] Stop the mission normally and wait for shutdown and evidence collection to finish. Until stationary validation of the new collector is complete, verify collection manually before shutdown.
 - [ ] Record the site, field-log filename, pursuit-log filename, and run start
   time shown in the filenames.
 - [ ] While tractor01 remains powered, confirm both files exist, have non-zero
@@ -284,6 +223,16 @@ ssh al@192.168.193.88 "sudo shutdown now"
   method for every comparable run.
 - [ ] Investigate the historical target-table error observed on 2026-07-22 if
   it remains reproducible in current code.
+  To do list
+- Go back to the Jupyter notebook for mission building
+- Test connecting the Sparkfun IMU to an RPi
+- Update the start up and shutdown steps based on current actual workflow and the telemetry gathering scripts
+-  mount the Cub Cadet EFI ignition module
+- Re-mount the brake pushbutton near the ignition module
+- Add a log for the hour meter and gas used - maybe make it a part of the shutdown process
+- Consider tracking speed and transmission PWM during the mission and updating the cross reference table during the mission
+- Order and install grass bagger for Cub Cadet
+- Order and install AG tires for Cub Cadet
 
 ### B — GPS, RTK, and heading
 

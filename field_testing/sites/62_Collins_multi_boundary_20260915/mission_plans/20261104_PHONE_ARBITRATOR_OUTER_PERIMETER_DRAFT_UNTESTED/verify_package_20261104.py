@@ -52,6 +52,9 @@ def main() -> None:
     phone = (REPO / "tractor_rpi/testing/webrtc/wifi_rpi_arbitrator_control_20261104.py").read_text(encoding="utf-8")
     firmware = (REPO / "tractor_teensy/src/teensy_main_20261110.cpp").read_text(encoding="utf-8")
     launcher = (HERE / "run_outer_perimeter_20261104.sh").read_text(encoding="utf-8")
+    collector = (
+        REPO / "field_testing/tools/collect_tractor01_run_evidence_20261114.py"
+    ).read_text(encoding="utf-8")
     installer = (HERE / "install_candidate_20261104.sh").read_text(encoding="utf-8")
     boot_installer = (HERE / "install_production_boot_20261109.sh").read_text(encoding="utf-8")
     activator = (HERE / "activate_candidate_motor_off_20261104.sh").read_text(encoding="utf-8")
@@ -110,6 +113,21 @@ def main() -> None:
     require("pgrep -f '[p]ure_pursuit'" in activator, "Pure Pursuit exclusion missing")
     require("--arbitrator-proposal-only" in launcher, "Pure Pursuit is not proposal-only")
     require("--port 16004" in launcher, "unused proposal destination missing")
+    require("--pursuit-log" in launcher, "exact Pursuit log path is not pinned")
+    require(
+        "collect_tractor01_run_evidence_20261114.py" in launcher,
+        "automatic post-run evidence collector is missing",
+    )
+    for required in (
+        "rtcm-server.service",
+        "tractor-rpi-arbitrator.service",
+        "tractor-phone-arbitrator.service",
+        "/var/log/pilog",
+        "SHA256SUMS",
+        "EVIDENCE COLLECTION PASSED",
+        "EVIDENCE COLLECTION FAILED",
+    ):
+        require(required in collector, f"evidence collector requirement missing: {required}")
     require(
         bridge_unit.count("WantedBy=multi-user.target") == 1,
         "arbitrator boot target missing",

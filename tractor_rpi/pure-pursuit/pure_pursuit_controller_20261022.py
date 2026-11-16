@@ -164,16 +164,22 @@ class PursuitLogger:
     """Writes one CSV row per control cycle (20 Hz) capturing all pure pursuit
     internal state for post-mission analysis.
 
-    Output: ~/repos/field-testing-data/pursuit_log_YYYYMMDD_HHMMSS.csv
+    Default output: ~/repos/field-testing-data/pursuit_log_YYYYMMDD_HHMMSS.csv
+    A mission launcher may instead supply one exact output path so its field
+    and Pursuit logs share a traceable run identifier.
     Row 1: column names. Row 2: descriptions. Row 3+: data.
     At 20 Hz a 3-minute mission produces ~3600 data rows (~300 KB).
     Flushes every write so data survives a crash or power loss.
     """
 
-    def __init__(self, log_dir=LOG_DIR):
-        os.makedirs(log_dir, exist_ok=True)
-        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.path = os.path.join(log_dir, f"pursuit_log_{ts}.csv")
+    def __init__(self, log_dir=LOG_DIR, output_path=None):
+        if output_path:
+            self.path = os.path.abspath(os.path.expanduser(output_path))
+            os.makedirs(os.path.dirname(self.path), exist_ok=True)
+        else:
+            os.makedirs(log_dir, exist_ok=True)
+            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+            self.path = os.path.join(log_dir, f"pursuit_log_{ts}.csv")
         self._f = open(self.path, 'w', newline='')
         self._writer = csv.DictWriter(self._f, fieldnames=CSV_FIELDNAMES)
         self._writer.writeheader()
@@ -1303,6 +1309,9 @@ def main():
                               'a Manual/Pause-to-AUTO acknowledgement cycle'))
     parser.add_argument('--no-pursuit-log', action='store_true',
                         help='Disable per-cycle CSV logging (on by default in live mode)')
+    parser.add_argument('--pursuit-log',
+                        help=('Write the live-mode Pursuit CSV to this exact path. '
+                              'This is mutually exclusive with --no-pursuit-log.'))
     parser.add_argument('--control-port', type=int, default=0,
                         help='Local UDP port for dashboard Pause/Resume commands')
     parser.add_argument('--telemetry-port', type=int, default=0,
@@ -1312,6 +1321,8 @@ def main():
                               'AUTO status; refuses UDP 6004 and requires a separate safety '
                               'arbitrator to authorize any actuator output'))
     args = parser.parse_args()
+    if args.no_pursuit_log and args.pursuit_log:
+        parser.error('--pursuit-log cannot be combined with --no-pursuit-log')
     if args.resume_stable_seconds < 0.0:
         parser.error('--resume-stable-seconds must be zero or greater')
     try:
@@ -1369,7 +1380,7 @@ def main():
             else HandheldStatusReceiver(port=args.status_port)
         )
         if not args.no_pursuit_log:
-            logger = PursuitLogger()
+            logger = PursuitLogger(output_path=args.pursuit_log)
         if args.control_port:
             control_receiver = MissionControlReceiver(args.control_port)
 

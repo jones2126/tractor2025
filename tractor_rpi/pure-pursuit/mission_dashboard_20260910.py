@@ -354,14 +354,32 @@ def send_udp(port, payload, repeats=1):
 
 def process_output(state, process):
     assert process.stdout is not None
-    for line in process.stdout:
-        with state.lock: state.output.append(line.rstrip())
+    transcript = None
+    try:
+        for line in process.stdout:
+            clean_line = line.rstrip()
+            if clean_line.startswith("RUN_TRANSCRIPT: ") and transcript is None:
+                candidate = Path(clean_line.removeprefix("RUN_TRANSCRIPT: ")).resolve()
+                allowed_root = Path("/home/al/field_logs").resolve()
+                if candidate.is_relative_to(allowed_root) and candidate.parent.is_dir():
+                    transcript = candidate.open("a", encoding="utf-8", buffering=1)
+            if transcript is not None:
+                transcript.write(clean_line + "\n")
+            with state.lock: state.output.append(clean_line)
+    finally:
+        if transcript is not None:
+            transcript.close()
 
 
 def process_waiter(state, process):
     code = process.wait()
     with state.lock:
-        state.process_state = "COMPLETED" if code == 0 else "FAILED"
+        if code == 0:
+            state.process_state = "COMPLETED"
+        elif code == 130:
+            state.process_state = "STOPPED"
+        else:
+            state.process_state = "FAILED"
         state.output.append(f"Mission launcher exited with status {code}.")
         state.process = None
 
@@ -635,6 +653,11 @@ def main():
             except RuntimeError: pass
             try: os.killpg(process.pid, signal.SIGINT)
             except (OSError, ProcessLookupError): pass
+            print("Waiting for mission shutdown and evidence collection to finish...")
+            try:
+                process.wait()
+            except KeyboardInterrupt:
+                print("Evidence collection wait interrupted; verify collection manually.")
         server.server_close()
 
 

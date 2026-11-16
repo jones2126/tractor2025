@@ -1,0 +1,97 @@
+# Consolidate the Tractor01 preflight scripts
+
+Work in the permanent `tractor2025` checkout and read `AGENTS.md` plus `field_testing/TRACTOR01_CURRENT_FIELD_CONTEXT.md` first.
+
+## Objective
+
+Consolidate these three layered preflight scripts into one maintainable, canonical, preferably undated Tractor01 production preflight:
+
+- `tractor_rpi/testing/mission_preflight_20260804.py`
+- `tractor_rpi/testing/mission_preflight_20261002.py`
+- `tractor_rpi/testing/mission_preflight_phone_control_20261109.py`
+
+The consolidation must preserve all current production checks, warning behavior, command-line options, exit status, diagnostics, and fail-closed behavior. Do not weaken, remove, or silently change a safety gate.
+
+## Scope and safety restrictions
+
+- Begin with inspection and a detailed proposed plan only.
+- Do not access hardware, move the tractor, flash firmware, restart or modify services, or run tests that require Tractor01 hardware.
+- Do not modify frozen historical mission packages during the inspection phase.
+- Do not implement anything until I provide Approval A.
+- Preserve my unrelated working-tree changes.
+- GitHub `main` remains the source of truth.
+
+## Phase A — inspection and plan
+
+1. Explain the current import and execution chain:
+   - the August script supplies the main implementation;
+   - the October script imports and monkey-patches the August implementation;
+   - the November phone-control script imports the October profile, replaces the service list, and calls the August `main()` through that chain.
+
+2. Inventory every check contributed by each file. Explicitly account for:
+   - required services;
+   - device presence;
+   - RTCM stream;
+   - GPS and stationary-speed checks;
+   - RELPOSNED rate and flags;
+   - Heading USB NMEA-disabled check;
+   - heading validity, carrier, baseline, accuracy, and satellites-used thresholds;
+   - Heading-F9P startup configuration/readback proof;
+   - Ethernet, GL-router, direct-Wi-Fi exclusion, and ZeroTier route checks;
+   - Teensy telemetry freshness;
+   - safe Pause output;
+   - steering health;
+   - JRK validity, active errors, neutral target, voltage/current telemetry where applicable;
+   - exact firmware identity;
+   - PASS, WARN, and FAIL output behavior;
+   - automatic diagnostic output after GPS/heading failures.
+
+3. Search the entire repository for every caller and reference to all three scripts, including:
+   - current production mission launchers;
+   - historical mission launchers;
+   - dashboard Start Mission paths;
+   - systemd units and startup-preflight automation;
+   - tests;
+   - README files, field context, AGENTS.md, and Obsidian runbooks.
+
+4. Distinguish:
+   - current production callers that must migrate;
+   - historical/frozen packages that should remain unchanged for provenance;
+   - obsolete callers that should be retired;
+   - any compatibility wrappers that may temporarily be required.
+
+5. Propose a stable, dated filename and module design. Avoid monkey-patching one dated module from another.
+
+6. Provide a migration table showing every existing caller, its present preflight entry point, firmware expectation, service architecture, and proposed disposition.
+
+7. Identify any output wording that is technically correct but confusing, such as:
+   - `Heading USB NMEA output — none detected during sample`; Consider changing this to, 'F9P heading configuration appears correct'
+   
+   Propose clearer wording without changing the underlying check. Treat wording changes separately from functional changes.
+
+8. The goal is script consolidation avoiding include statement complexity.  You may review tests and propose additional tests proving parity with the current production behavior, but do not change the existing tests.  You may streamling and make more consistent tests for success, warnings, failures, CLI parsing, service selection, firmware mismatch, and exit status, but again, the primary goal is streamlining existing functionality.
+
+9. Report risks, unanswered questions, and an exact implementation plan, then stop for Approval A.
+
+## Phase B — only after Approval A
+
+After approval:
+
+- implement the single canonical preflight without weakening any check;
+- update current production callers to use it;
+- add or update focused offline tests;
+- preserve historical packages unless their migration is explicitly approved;
+- move and / or remove obsolete wrappers only after repository-wide reference checks prove they are no longer needed;
+- update current documentation in the script and agents.md for consistency.
+- run offline tests and syntax checks only;
+- provide a complete diff and migration report before committing;
+- Github synchronization with Tractor01 will be done at the next field testing.
+
+## Acceptance criteria
+
+- One clear canonical production preflight implementation.
+- No dated import/monkey-patch chain in the production execution path.
+- All existing production checks retained and traceable.
+- Current dashboard and manual preflight use the same implementation if possible.
+- All relevant offline tests pass.
+- Ensure GitHub and local repo are in synch in preparation for the next field testing day.
