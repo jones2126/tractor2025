@@ -8,8 +8,12 @@ void setup() {
 
 void loop() {
   digitalWrite(LED_BUILTIN, HIGH);
-  if (Serial) Serial.println("# LEFT_ENCODER_BLINK_20261118 LED=ON");
-  delay(500);
+  if (Serial) Serial.println("# LEFT_ENCODER_BLINK_DOUBLE_20261118");
+  delay(100);
   digitalWrite(LED_BUILTIN, LOW);
-  delay(500);
+  delay(100);
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(100);
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(1700);
 }

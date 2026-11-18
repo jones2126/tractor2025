@@ -1,4 +1,4 @@
-"""Linux-only, physically targeted Teensy 3.2 upload; no automatic soft reboot."""
+"""Linux left Teensy upload; button mode or explicit isolated-board soft reboot."""
 import argparse
 import hashlib
 from pathlib import Path
@@ -39,11 +39,28 @@ def bootloader_ready(devices, expected_path):
     return True
 
 
+def require_only_left_teensy(devices):
+    path = target_path(devices)
+    pjrc = [d for d in devices if d["vendor"] == "16c0"]
+    if len(pjrc) != 1 or pjrc[0]["serial"] != LEFT_SERIAL:
+        raise RuntimeError("Automatic reboot requires the left encoder to be the ONLY connected Teensy; keep the control 4.1 disconnected")
+    return path
+
+
+def loader_command(uploader, firmware, soft_reboot=False):
+    flags = ["--mcu=mk20dx256", "-v"]
+    if soft_reboot:
+        flags.extend(["-s", "-w"])
+    return [str(uploader), *flags, str(firmware)]
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--uploader", type=Path, required=True)
     parser.add_argument("--port", type=Path, required=True)
     parser.add_argument("--firmware", type=Path, required=True)
+    parser.add_argument("--soft-reboot", action="store_true",
+                        help="No-button upload only when the left encoder is the sole connected Teensy")
     args = parser.parse_args(argv)
     if not sys.platform.startswith("linux"):
         parser.error("Build on any supported host; guarded upload runs on Tractor01 Linux only")
@@ -60,6 +77,10 @@ def main(argv=None):
     path = target_path(usb_inventory())
     print("Verified left encoder", LEFT_SERIAL, "at USB location", path, flush=True)
     print("Firmware SHA256:", hashlib.sha256(args.firmware.read_bytes()).hexdigest(), flush=True)
+    if args.soft_reboot:
+        require_only_left_teensy(usb_inventory())
+        print("Automatic reboot test: verified ONLY left encoder connected. Do NOT press Program.", flush=True)
+        return subprocess.run(loader_command(args.uploader, args.firmware, soft_reboot=True), timeout=30).returncode
     print("Keep tractor stopped, engine off, phone Pause. Press ONLY the LEFT ENCODER Teensy Program button now (within 90 seconds).", flush=True)
     deadline = time.monotonic() + 90
     while not bootloader_ready(usb_inventory(), path):
@@ -67,7 +88,7 @@ def main(argv=None):
             raise TimeoutError("No matching left-encoder programming device; nothing uploaded")
         time.sleep(.2)
     # No -s, teensy_reboot, generic port discovery or automatic controller reset.
-    command = [str(args.uploader), "--mcu=mk20dx256", "-v", str(args.firmware)]
+    command = loader_command(args.uploader, args.firmware)
     return subprocess.run(command, timeout=30).returncode
 
 

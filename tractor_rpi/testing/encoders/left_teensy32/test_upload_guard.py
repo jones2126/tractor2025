@@ -14,6 +14,20 @@ def device(path="1-2.3", product="0483", serial="5879620"):
 
 
 class GuardTests(unittest.TestCase):
+    def test_auto_reboot_refuses_other_connected_teensy(self):
+        with self.assertRaises(RuntimeError):
+            guard.require_only_left_teensy([device(), device("1-2.1", serial="16883790")])
+
+    def test_auto_reboot_accepts_only_left(self):
+        self.assertEqual(guard.require_only_left_teensy([device()]), "1-2.3")
+
+    def test_soft_reboot_flags_only_in_explicit_mode(self):
+        self.assertNotIn("-s", guard.loader_command("loader", "image.hex"))
+        command = guard.loader_command("loader", "image.hex", soft_reboot=True)
+        self.assertIn("-s", command)
+        self.assertIn("-w", command)
+        self.assertIn("--mcu=mk20dx256", command)
+
     def test_correct_left_identity_selected(self):
         self.assertEqual(guard.target_path([device(), device("1-2.1", serial="16883790")]), "1-2.3")
 
