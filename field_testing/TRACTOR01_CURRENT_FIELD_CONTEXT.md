@@ -292,8 +292,9 @@ with the new boot recorder. No new controller, firmware or motion policy is incl
 
 The new position service repeatedly exited after five seconds with no left encoder
 serial data, causing unwanted GPS reconfiguration on each automatic restart. The
-recorder and right encoder/IMU were active; whole-service restart behavior still
-needs correction/review. Al stopped startup-preflight, position, phone and bridge
+recorder and right encoder/IMU were active. A follow-up source correction reports
+silence as stale encoder health while keeping GNSS acquisition running; it is not
+yet pulled/validated on Tractor01. Al stopped startup-preflight, position, phone and bridge
 services and physically disconnected the main Teensy 4.1 (serial 16883790).
 Recorder was left running. Do not restart the control stack or reboot until the
 left encoder firmware is restored, output verified and main controller reconnected.
@@ -304,7 +305,14 @@ without moving cables; resolve identity, never assume a fixed ttyACM index.
 Al built and uploaded Blink with the left Program button, then successfully
 uploaded changed double-flash Blink WITHOUT a button press while the 4.1 remained
 disconnected. This establishes upload from responsive Blink, not firmware loss or
-recovery from hung I2C code. Encoder source restoration is still pending.
+recovery from hung I2C code. Al then successfully uploaded the actual left-encoder
+source without a button press and supplied five seconds of valid ENC,L data at
+10 Hz with no ERR lines. Raw parked jitter was approximately +/-4 ticks per 100 ms.
+The follow-up startup check permits bounded jitter (8 ticks per 100 ms, scaled by
+actual sample interval), while still requiring fresh valid wheels, stationary GNSS,
+Pause/neutral and the established IMU checks. All raw ticks remain recorded;
+there is no wheel-distance calibration or motion-authority change. 247 software
+regressions passed; live validation of these two producer corrections is pending.
 
 Project `tractor_rpi/testing/encoders/left_teensy32/` contains preserved left
 encoder source and separate Blink environments. Automatic upload refuses any

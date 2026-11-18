@@ -171,10 +171,12 @@ class PositionApp:
         device = self.devices[side]
         buffer = bytearray()
         last = time.monotonic()
+        stale_reported = False
         while not self.stop.is_set():
             block = device.read(max(1, min(512, device.in_waiting)))
             if block:
                 last = time.monotonic()
+                stale_reported = False
                 buffer.extend(block)
             if len(buffer) > 2048:
                 raise RuntimeError('Encoder framing overflow')
@@ -186,8 +188,10 @@ class PositionApp:
                 except (ValueError, UnicodeDecodeError) as exc:
                     kind, data = ('parse_error', dict(error=str(exc), raw=line.decode('ascii', errors='replace')))
                 self.emit_sensor('encoders', event(side, kind, data))
-            if time.monotonic() - last > 5:
-                raise RuntimeError(f'Encoder {side} has produced no serial data for 5 seconds')
+            if time.monotonic() - last > 5 and not stale_reported:
+                self.emit_sensor('encoders', event(side, 'stale', dict(error='No serial data for 5 seconds')))
+                self.recorder.emit('console', f'Encoder {side} is silent; readiness remains failed, GPS acquisition continues')
+                stale_reported = True
 
     def forward_rtcm_corrections(self):
         total = 0
@@ -323,6 +327,19 @@ def load_scales(path):
     return (scales, hashlib.sha256(path.read_bytes()).hexdigest())
 
 
+def encoder_stationary(wheel):
+    """Startup-only noise allowance, not distance calibration or motion authority.
+
+    Nov 18 parked capture showed +/-4 raw ticks per 100 ms. Use a bounded
+    allowance of 8 ticks per 100 ms, scaled by the actual device interval.
+    Fresh valid streams, GNSS stillness, Pause/neutral and IMU checks also apply.
+    """
+    interval = wheel.get("last_interval_ms")
+    ticks = wheel.get("last_ticks")
+    return bool(wheel.get("valid") and interval is not None and 0 < interval <= 500 and
+                ticks is not None and abs(ticks) <= 80 * interval / 1000)
+
+
 class BootPositionApp(PositionApp):
     """Calibration requires fresh stationary evidence; readers never block on IPC."""
 
@@ -377,7 +394,7 @@ class BootPositionApp(PositionApp):
                          isinstance(self.model.gps.get("speed_mps"), (float, int)) and
                          0 <= self.model.gps["speed_mps"] <= .05 and
                          all(w["fresh"] and w["valid"] for w in quality["encoders"].values()) and
-                         all(w["last_ticks"] == 0 for w in self.model.wheels.values()))
+                         all(encoder_stationary(w) for w in self.model.wheels.values()))
                 if self.model.bias is None:
                     if not still:
                         self.still_since = None

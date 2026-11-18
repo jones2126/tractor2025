@@ -277,6 +277,35 @@ class EvidenceTests(unittest.TestCase):
 
 
 class SensorTests(unittest.TestCase):
+    def test_stationary_tick_jitter_is_bounded_and_interval_scaled(self):
+        for ticks in (-4, 0, 4, -8, 8):
+            self.assertTrue(producer.encoder_stationary(dict(valid=True, last_ticks=ticks, last_interval_ms=100)))
+        for wheel in (dict(valid=True, last_ticks=9, last_interval_ms=100),
+                      dict(valid=True, last_ticks=8, last_interval_ms=50),
+                      dict(valid=False, last_ticks=0, last_interval_ms=100),
+                      dict(valid=True, last_ticks=0, last_interval_ms=0)):
+            self.assertFalse(producer.encoder_stationary(wheel))
+
+    def test_silent_encoder_marks_stale_without_stopping_gps(self):
+        class Stop:
+            calls = 0
+            def is_set(self):
+                self.calls += 1
+                return self.calls > 3
+        class Device:
+            in_waiting = 0
+            def read(self, _):
+                return b""
+        memory = MemoryRecorder()
+        app = producer.PositionApp({"L": Device()}, None, memory, Stop())
+        with patch.object(producer.time, "monotonic", side_effect=range(0, 100, 6)):
+            app.read_encoder("L")
+        self.assertIsNone(app.fault)
+        items = list(app.queues["encoders"].queue)
+        self.assertEqual([item["kind"] for item in items], ["stale"])
+        app.model.apply_encoder(items[0])
+        self.assertFalse(app.model.wheels["L"]["valid"])
+
     def test_boot_calibrates_only_with_stationary_evidence(self):
         memory = MemoryRecorder()
         app = producer.BootPositionApp({}, None, memory, threading.Event(), boot_calibration=True)
@@ -287,7 +316,9 @@ class SensorTests(unittest.TestCase):
                 app.model.gps["speed_mps"] = 0.
             if i % 10 == 0:
                 for side in ("L", "R"):
-                    app.model.apply_encoder(enc(side, t, ticks=0))
+                    # Replay the observed parked encoder jitter rather than
+                    # unrealistically requiring exact zero from both magnets.
+                    app.model.apply_encoder(enc(side, t, ticks=4 if i % 20 else -4))
             status = dict(received_mono=t, payload=dict(steering=dict(state="PAUSE", pwm=0),
                           transmission=dict(target=2836, actual_target=2836)))
             app.pending.extend([sample("readiness", "status", [status], t),

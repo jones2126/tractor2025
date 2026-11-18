@@ -104,7 +104,7 @@ class PoseModel:
         self.calibration_id=calibration_id
         self.wheels={side:dict(last=None,device_ms=None,valid=False,continuous=False,
                               pending=0.,provisional_total_m=0.,samples=0,discontinuities=0,
-                              last_ticks=None,suppress_next=False,pending_samples=0,error_mono=-math.inf) for side in ("L","R")}
+                              last_ticks=None,last_interval_ms=None,suppress_next=False,pending_samples=0,error_mono=-math.inf) for side in ("L","R")}
 
     def gps_quality(self, now):
         age=lambda key: now-self.gps_times[key] if key in self.gps_times else None
@@ -227,7 +227,7 @@ class PoseModel:
         side=event["source"];wheel=self.wheels[side]
         data,kind,mono=event["data"],event["kind"],event["mono"]
         if kind!="sample":
-            if kind in ("err","warn","parse_error"):
+            if kind in ("err","warn","parse_error","stale"):
                 wheel.update(valid=False,continuous=False,pending=0.,pending_samples=0,suppress_next=True,error_mono=mono)
                 wheel["discontinuities"]+=1
             self.log("events",dict(event="encoder_"+kind,side=side,mono=mono,data=data))
@@ -246,7 +246,8 @@ class PoseModel:
         elif wheel["last"] is not None:
             wheel["discontinuities"]+=1
             wheel.update(pending=0.,pending_samples=0,continuous=False,error_mono=mono)
-        wheel.update(last=mono,device_ms=ms,valid=contiguous,suppress_next=False,last_ticks=data["delta_ticks"])
+        wheel.update(last=mono,device_ms=ms,valid=contiguous,suppress_next=False,
+                     last_ticks=data["delta_ticks"],last_interval_ms=device_delta)
         wheel["samples"]+=1
         quality=self.gps_quality(mono)
         if contiguous and quality["position_healthy"] and self.position_anchor is not None and self.position_anchor>=wheel["error_mono"]:
