@@ -1,6 +1,6 @@
 # Tractor01 current field context
 
-Last updated: 2026-11-16
+Last updated: 2026-11-17
 
 This is durable operational context for assistants helping Al with Tractor01.
 Read it before proposing field commands. It records established facts and
@@ -189,12 +189,12 @@ live stationary collection validation is included. Automatic evidence collection
 remains DRAFT - UNTESTED IN THE FIELD; verify collection manually until a
 separately approved stationary validation succeeds.
 
-## ISM330DHCX observation logger — prepared 2026-11-16
+## ISM330DHCX observation logger — manual capture completed November 17
 
 `tractor_rpi/testing/imu/ism330dhcx_field_logger_20261116.py` and its adjacent
 README provide a standalone foreground IMU/GNSS recording experiment. It is
-**DRAFT - UNTESTED IN THE FIELD** pending separately approved stationary sensor
-validation, then manual-drive approval. It changes no production control code,
+an observation-only logger, separately stationary-tested and manually exercised
+as recorded below. It changes no production control code,
 serial ownership, services, or watchdogs. The logger configures only the IMU on
 I2C bus 1 at 0x6b and exclusively receives localhost GPS UDP 6009; do not run the
 existing field logger concurrently. It logs under `/home/al/field_logs/imu/`
@@ -202,7 +202,18 @@ with per-run calibration, raw/scaled samples, GPS source/arrival ages, relative
 yaw and once-anchored compass comparison, exact commit metadata and SHA-256
 checksums. Stopping the logger does not send Pause or stop the tractor.
 
-## November 16 boot regression — repair prepared, NOT installed
+The original observation logger passed stationary validation on November 16 and
+recorded the approved November 17 manual run. Capture:
+`/home/al/field_logs/imu/imu_20261117T161449_639816Z`, 154,769 rows, logger commit
+`d18cc6088916460aaeb7bc244f662a9aad66868e`. All original hashes and the independent
+Windows copy were verified. Raw originals remain on Tractor01; local raw copies
+under site `runs/20261117_imu_manual/` remain git-ignored. Replay and analysis are
+in `analysis/20261117_imu_manual_replay/` and `analysis/20261117_imu_manual_analysis/`.
+Those results validate only that observation experiment, not navigation fusion
+or a degraded-motion policy. The newly prepared combined producer below is a
+different, field-untested program.
+
+## November 16 boot regression — repaired and reboot checked
 
 Two inspected boots started the disabled legacy `teensy-bridge.service` while
 both enabled production arbitrators remained inactive. The enabled installed
@@ -211,10 +222,39 @@ October wrapper waits for retired `tractor-wifi-control.service` and selects
 obsolete preflight/firmware defaults. See the evidence/report under
 `field_testing/sites/62_Collins_multi_boundary_20260915/analysis/20261116_legacy_bridge_boot_investigation/`.
 
-The repository startup unit is now a prepared migration to the production
-arbitrators and `run_startup_phone_preflight_20261116.sh`. The separate candidate
-installer and approval/validation procedure are documented in
-`tractor_rpi/setup/STARTUP_REPAIR_20261116.md`. The installed Pi units have NOT
-been changed by this preparation. Do not infer healthy services from repository
-synchronization or enablement. Installation, service activation/reboot,
-stationary validation and movement remain separate approvals.
+Al approved and installed the repair on November 16. Backup:
+`/var/backups/tractor-startup-repair-20261116T201755Z`. The legacy bridge is now
+masked/inactive. A reboot verified both production arbitrators active and the
+RPi arbitrator as sole `/dev/teensy` owner. The migrated startup preflight uses
+`run_startup_phone_preflight_20261116.sh`; it initially failed GPS convergence
+checks rather than falsely passing. Al supplied a complete canonical preflight
+PASS on November 17 with RTK Fixed, fixed/valid heading, baseline 1.0509 m,
+actual Pause, zero steering PWM, neutral 2836 and exact v5 firmware. Do not
+unmask the old bridge. Preserve the existing heading ExecStartPre/readback hook.
+Do not infer a later boot's health from this record; verify current-boot state.
+
+## November 17 combined pose-producer candidate — NOT installed
+
+`tractor_rpi/calc-publish-position-20261117.py` is prepared for a separately
+approved November 18 stationary check and manual data-flow run. Windows and
+GitHub are synchronized at the end of preparation; Tractor01 is deliberately
+NOT pulled or changed on November 17. Read
+`tractor_rpi/setup/CALC_PUBLISH_POSITION_20261117.md` before proposing deployment.
+
+The candidate uses the agreed background readers/main-loop ingestion split,
+retains raw GNSS on the same localhost UDP 6002/6009/6010/6013 at 20 Hz, omits Pi
+Wi-Fi polling, and records IMU, encoder and non-authoritative shadow-pose evidence
+under `/home/al/field_logs/position/`. Raw position/fix/heading fields are never
+replaced by the experiment. Wheel signs are operator-confirmed, but scales and
+the approximately 7% left/right difference remain unverified. USB serial IDs
+are used instead of assuming ttyACM numbers or unapplied udev aliases.
+
+The optional service drop-in is only a prepared field-test override of the
+existing `rtcm-server.service`, under `/run/systemd/system` for the current boot
+only. It preserves the heading startup hook, requires engine-off stationary
+calibration and disables automatic restart. Reboot clears the override; close
+and verify evidence before ending the field session. It has NOT been installed.
+Do not run both GPS owners
+or two IMU acquisition programs concurrently. Installation, restart, stationary
+validation, manual movement and blades remain separate approvals. No 3 m/30 s
+continuation policy or safety watchdog change is included.

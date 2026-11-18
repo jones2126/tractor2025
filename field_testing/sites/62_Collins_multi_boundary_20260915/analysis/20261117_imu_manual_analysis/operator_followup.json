@@ -1,0 +1,12 @@
+{
+  "source": "Al's follow-up in this chat after reviewing the November 17 replay",
+  "run_id": "imu_20261117T161449_639816Z",
+  "reported_sequence": [
+    {"maneuver": "first square-ish path", "direction": "CW", "drive_percent_approximate": 84},
+    {"maneuver": "backed up to move closer to the path before beginning the second square", "exact_time": "not supplied"},
+    {"maneuver": "second square-ish path", "direction": "CCW", "drive_percent_reported": 100},
+    {"maneuver": "hard left", "purpose": "measure steering capability for future path planning"},
+    {"maneuver": "hard right", "purpose": "measure steering capability for future path planning"}
+  ],
+  "measurement_limits": "Drive percentages, directions and steering intent are operator reports. This IMU/GNSS capture contains no accepted phone commands, steering potentiometer positions, measured full-lock status, or actuator authority telemetry. Analysis phase timestamps are inferred from the path and angular data."
+}

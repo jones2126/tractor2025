@@ -1,0 +1,26 @@
+{
+  "source_manifest": "All three original capture hashes verified by builder",
+  "integrity_tests": "7 Python tests passed",
+  "javascript_controls": {
+    "status": "PASS",
+    "playbackSamples": 14468,
+    "events": 37,
+    "controls": [
+      "step",
+      "event search",
+      "event jump",
+      "map zoom",
+      "local view",
+      "chart window",
+      "chart seek",
+      "end/restart",
+      "play/pause"
+    ],
+    "canvasCalls": {
+      "strokes": 35913,
+      "text": 1023
+    }
+  },
+  "visual_review": "Not performed: in-app browser security policy blocks local file URLs. No alternate browser surface was used.",
+  "tractor_changes": "None; built from preserved Windows evidence only."
+}

@@ -1,0 +1,4 @@
+start,end,duration_s,estimated_signed_speed_mps,status
+11:25:53,11:25:57,3.992794090175039,-0.2089042416452316,Inferred from position chord against chassis heading; no transmission log
+11:25:58,11:26:26,28.211215744510127,-0.23073791260823118,Inferred from position chord against chassis heading; no transmission log
+11:31:46,11:32:12,26.197317759200814,-0.2708608353818366,Inferred from position chord against chassis heading; no transmission log

@@ -1,0 +1,46 @@
+[
+  {
+    "path": "C:\\Repos\\tractor2025\\field_testing\\sites\\62_Collins_multi_boundary_20260915\\runs\\20261117_imu_manual\\imu_20261117T161449_639816Z\\samples.csv",
+    "sha256": "5F2185F48F40996A3D3D5A5B6DADF4A822E01153DB70C151780AC3CE5817CDEB"
+  },
+  {
+    "path": "C:\\Repos\\tractor2025\\field_testing\\sites\\62_Collins_multi_boundary_20260915\\runs\\20261117_imu_manual\\imu_20261117T161449_639816Z\\gnss.jsonl",
+    "sha256": "C4926B40F2147C2F5D34517E25A09F5FCC13537EC06E076B93DBBE3461829EB5"
+  },
+  {
+    "path": "C:\\Repos\\tractor2025\\field_testing\\sites\\62_Collins_multi_boundary_20260915\\runs\\20261117_imu_manual\\imu_20261117T161449_639816Z\\metadata.json",
+    "sha256": "4F6A205367D8CDF02FA76E85A8C88ABD80191FB3450DD6410875A402A5504BE9"
+  },
+  {
+    "path": "C:\\Repos\\tractor2025\\field_testing\\sites\\62_Collins_multi_boundary_20260915\\runs\\20261117_imu_manual\\imu_20261117T161449_639816Z\\SHA256SUMS",
+    "sha256": "16C4AE53F8DAAD8540A4CA038D15923936CCD725EDAE6502B220DCA5B9C71BAF"
+  },
+  {
+    "path": "C:\\Repos\\tractor2025\\field_testing\\sites\\62_Collins_multi_boundary_20260915\\runs\\20261117_imu_manual\\operator_notes.json",
+    "sha256": "D3795C00D1D1213D62A7F2A490755949228714F63C758DC79F0B651A2646F520"
+  },
+  {
+    "path": "C:\\Repos\\tractor2025\\field_testing\\sites\\62_Collins_multi_boundary_20260915\\analysis\\20261117_imu_manual_analysis\\operator_followup.json",
+    "sha256": "AE7EBE7F89A0AE6EDC8B6740216B71C30557788E3D02181E60191E2BE200C2A6"
+  },
+  {
+    "path": "C:\\Repos\\tractor2025\\field_testing\\tools\\analyze_tractor01_imu_manual_20261117.py",
+    "sha256": "60C91CF76BF7B7A051EAF958AC858176FEFF63B95E9FD9C0D4C0BEA1D97FFF7D"
+  },
+  {
+    "path": "C:\\Repos\\tractor2025\\field_testing\\tools\\build_tractor01_imu_replay_20261117.py",
+    "sha256": "8F0EF88EF99F1E632A407241F627FCDDB6FD769E6B3FF97E03C7886E044CCC4C"
+  },
+  {
+    "path": "C:\\Repos\\tractor2025\\field_testing\\tools\\build_tractor_mission_replays_20260919.py",
+    "sha256": "108F2EA19FEBA28D11C19D37E7485DA535C13E06321E37161CB4BB3C05334D93"
+  },
+  {
+    "path": "C:\\Repos\\tractor2025\\tractor_rpi\\testing\\test_imu_manual_analysis_20261117.py",
+    "sha256": "8527339FA1ADB96ADB3B9AC52C10FCD558B8C015A52EAFF046159BDAB773CF7F"
+  },
+  {
+    "path": "C:\\Repos\\tractor2025\\tractor_rpi\\pure-pursuit\\mission_planning\\SITE_COVERAGE_MISSION_WORKFLOW_20260724.md",
+    "sha256": "9A82AB553E6ED6DE11B921CB7B1BF9BD44941C1641DF94B0FF0BF35EF220980E"
+  }
+]

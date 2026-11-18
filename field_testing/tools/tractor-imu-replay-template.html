@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tractor01 · IMU / GPS historical replay</title>
+<style>
+__SHARED_STYLE__
+/* Extends the current offline mission replay; shared geometry injected below. */
+body{padding:20px}main{max-width:1540px}h1{font-size:1.65rem}.badge{font-size:.72rem}
+.subtitle{max-width:1050px;line-height:1.5}.controls{gap:8px}button,select{font-size:.88rem}button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid #3bd7ab;outline-offset:3px}
+.layout{grid-template-columns:minmax(0,1.6fr) minmax(330px,1fr);align-items:start}.facts{font-size:.9rem}.fact{min-height:38px}.fact b{font-variant-numeric:tabular-nums}#map{aspect-ratio:1000/580}
+.panel{background:#1b2a34;border:1px solid #435766;border-radius:6px;padding:10px;margin-top:12px}.panel h2{font-size:.93rem;margin:0 0 6px}.panel p{font-size:.78rem;margin:4px 0 0}
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}.chart{width:100%;aspect-ratio:1000/235;cursor:crosshair}.chart.large{aspect-ratio:1000/180}.full{grid-column:1/-1}
+.readout{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0}.pill{border:1px solid #546b7a;background:#1b2a34;border-radius:99px;padding:6px 11px;font-size:.85rem}.muted{color:#a5b8c5}.good{color:#3bd7ab}.warn{color:#ffd166}.bad{color:#ff8294}#events{max-width:600px;flex:1}#position{min-width:250px;font-variant-numeric:tabular-nums;font-size:.88rem}.legend{gap:12px}.legend i{height:4px}
+details{margin:15px 0;color:#adbdc8;font-size:.85rem;line-height:1.6}summary{cursor:pointer;color:#edf3f7}#source{max-height:200px;overflow:auto;font-family:ui-monospace,monospace;font-size:.73rem}.notice{border-left:3px solid #ffd166;padding-left:12px}.key{font-size:.78rem;color:#a5b8c5}.toggle{font-size:.85rem}#health{aspect-ratio:1000/160}.chartLegend{font-size:.78rem;display:flex;gap:15px;flex-wrap:wrap;color:#baceDA}.chartLegend span::before{content:' ';display:inline-block;width:15px;height:3px;margin-right:5px;background:var(--c);vertical-align:middle}
+@media(max-width:1000px){.layout{grid-template-columns:1fr}.charts{grid-template-columns:1fr}.fact{min-height:32px}#map{aspect-ratio:1000/650}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style></head><body><main>
+<div class="badge">HISTORICAL REPLAY · OBSERVATION ONLY</div>
+<h1 id="title">Manual IMU / GPS replay</h1>
+<p class="subtitle">Recorded path, GPS health and inertial measurements on one timeline. Runs entirely offline. IMU headings are experimental comparisons; no fused heading, planned route or motion authority is implied.</p>
+<div class="readout" id="summary"></div>
+<div class="controls"><button id="prev">Previous</button><button id="play">Play</button><button id="next">Next</button>
+<label>Speed <select id="rate"><option value="1">1× real time</option><option value="5">5×</option><option value="20" selected>20×</option><option value="60">60×</option></select></label>
+<label>Map <select id="view"><option value="all">Full recorded path</option><option value="40">40 m around tractor</option><option value="15">15 m around tractor</option></select></label>
+<button id="zoomOut" title="Zoom out">−</button><button id="zoomReset">100%</button><button id="zoomIn" title="Zoom in">+</button>
+<label>Charts <select id="window"><option value="all">Whole recording</option><option value="120">2 minutes around cursor</option><option value="30">30 seconds around cursor</option></select></label></div>
+<div class="controls"><label for="step">Timeline</label><input id="step" type="range" min="0" value="0" step="1" aria-label="Replay time"><output id="position"></output></div>
+<div class="controls"><button id="previousEvent">Previous event</button><button id="nextEvent">Next event</button><input id="eventSearch" type="search" placeholder="Find: engine, gap, position, heading, baseline…" aria-label="Search recorded events"><select id="events" aria-label="Jump to event"></select></div>
+<div class="legend"><span><i style="background:#3bd7ab"></i>GPS checks pass</span><span><i style="background:#ff8294"></i>Position below RTK Fixed</span><span><i style="background:#ffd166"></i>Heading / baseline issue</span><span><i style="background:#b3a8e0"></i>GPS packet stale / missing</span><span><i style="background:#e9f3fa"></i>F9P heading</span><span><i style="background:#74c6ff"></i>IMU compass comparison</span></div>
+<div class="layout"><div><canvas id="map" width="1000" height="580" aria-label="Recorded GPS path on a local east north grid"></canvas><p class="key">North is up · east is right · metres from capture origin · scroll to zoom · coordinates are unsmoothed GPS observations</p></div><div><div class="facts" id="facts"></div><p class="key notice" id="qualityNote"></p></div></div>
+<div class="charts">
+<section class="panel full"><h2>GPS health through time</h2><canvas class="chart" id="health" width="1000" height="160" aria-label="GPS packet freshness position fix heading and baseline health timeline"></canvas><p>Green = passes the displayed check · red = failed / missing. Health episodes can overlap and do not represent stopped time.</p></section>
+<section class="panel"><h2>Compass heading · degrees clockwise from north</h2><div class="chartLegend"><span style="--c:#e9f3fa">F9P reported</span><span style="--c:#74c6ff">IMU once anchored per segment</span></div><canvas class="chart" id="heading" width="1000" height="235"></canvas><p>Lines break at north (0/360°) and at IMU resets. F9P values are reported observations; consult health validity.</p></section>
+<section class="panel"><h2>IMU − F9P compass disagreement · degrees</h2><canvas class="chart" id="error" width="1000" height="235"></canvas><p>Wrapped to [−180, 180). Blank when logger GPS checks failed; not an independent absolute accuracy measurement.</p></section>
+<section class="panel"><h2>Bias-corrected gyro · degrees / second</h2><div class="chartLegend"><span style="--c:#3bd7ab">Z · positive left / CCW expected</span><span style="--c:#74c6ff">X</span><span style="--c:#ff9fb3">Y</span></div><canvas class="chart" id="gyro" width="1000" height="235"></canvas><p>Shaded min/max envelopes retain the range of all raw samples in each playback bin. Bias is fixed from engine-off startup.</p></section>
+<section class="panel"><h2>Acceleration · g, including gravity</h2><div class="chartLegend"><span style="--c:#3bd7ab">X · forward</span><span style="--c:#74c6ff">Y · left</span><span style="--c:#ff9fb3">Z · up</span></div><canvas class="chart" id="accel" width="1000" height="235"></canvas><p>Per-bin min/max envelopes include vibration peaks; these channels have not had gravity removed.</p></section>
+<section class="panel"><h2>Relative yaw · degrees, counterclockwise positive</h2><canvas class="chart" id="yaw" width="1000" height="235"></canvas><p>Unwrapped within each numbered segment. A reset starts at zero; do not subtract across segments or call final yaw whole-run drift.</p></section>
+<section class="panel"><h2>GPS-reported ground speed · metres / second</h2><canvas class="chart" id="speedChart" width="1000" height="235"></canvas><p>No command or motor state was recorded by this logger. Speed is a GPS observation, not proof of motion authority.</p></section>
+</div>
+<p class="key">Charts share the cursor. Click any chart to seek; use arrow keys to step and Space to play/pause. Amber bands mark operator-reported event minutes (seconds unknown); dotted purple lines mark yaw resets.</p>
+<details><summary>Evidence, calibration and interpretation limits</summary><div id="calibration"></div><ul><li>GPS path is not smoothed; a bad fix can produce a jump. Local grid projection follows the current mission replay.</li><li>Playback point values are the final raw row in approximately 100 ms bins. Phase, segment and health transitions preserve additional points. Gyro and acceleration ranges retain raw bin extrema; see the source CSV for full-rate analysis.</li><li>Host time measures read intervals, not hardware sample time. Missed IMU intervals are not reconstructed. Initial calibration has no corrected gyro/yaw.</li><li>Green health requires fresh packets, RTK Fixed position, valid/fixed/fresh heading within 1° accuracy, and baseline 0.80–1.30 m. This includes more than the logger’s displayed GPS=valid test.</li><li>General GPS timestamp is not a dedicated position timestamp; exact position age is unavailable.</li><li>Engine events have minute precision. Engine-on is not equivalent to moving. No control-state or safety-stop reconstruction is attempted.</li></ul><div id="source" class="provenance"></div></details>
+</main><script>
+'use strict';
+const D=__DATA__;
+const samples=D.samples,events=D.events;
+const $=id=>document.getElementById(id),map=$('map'),m=map.getContext('2d'),step=$('step'),view=$('view'),rate=$('rate'),play=$('play'),facts=$('facts'),eventMenu=$('events'),eventSearch=$('eventSearch'),zoomReset=$('zoomReset');
+const esc=x=>String(x??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=(x,n=2)=>x==null?'—':Number(x).toFixed(n);
+const localTime=epoch=>new Date(epoch*1000).toLocaleTimeString('en-US',{timeZone:'America/New_York',hour12:false});
+const colors={good:'#3bd7ab',position:'#ff8294',heading:'#ffd166',stale:'#b3a8e0'},duration=samples.at(-1).t;
+let zoomFactor=1,visibleEvents=events,playing=false,playTarget=0,lastFrame=null,lastPaint=0;
+const coords=samples.filter(s=>s.x!=null&&s.y!=null).map(s=>[s.x,s.y]);
+const allBounds={minX:Math.min(...coords.map(p=>p[0]))-4,maxX:Math.max(...coords.map(p=>p[0]))+4,minY:Math.min(...coords.map(p=>p[1]))-4,maxY:Math.max(...coords.map(p=>p[1]))+4};
+__SHARED_GEOMETRY__
+// viewport, transform, linePath and circle above are taken directly from the
+// current tractor-mission-replay-template.html; the IMU adapter does not alter it.
+$('title').textContent=D.title;
+$('summary').innerHTML=[`${(duration/60).toFixed(1)} min`,`${D.summary.rawRows.toLocaleString()} raw rows`,`${D.metadata.yaw_segments} yaw segments`,`Commit ${D.metadata.commit.slice(0,7)}`].map(x=>`<span class="pill">${esc(x)}</span>`).join('');
+step.max=samples.length-1;
+$('calibration').textContent=`Startup bias X/Y/Z: ${D.metadata.calibration.bias_dps.map(x=>x.toFixed(5)).join(' / ')} °/s. Startup gyro standard deviation: ${D.metadata.calibration.stddev_dps.map(x=>x.toFixed(5)).join(' / ')} °/s. Median host interval: ${(D.summary.median_dt_s*1000).toFixed(3)} ms. Corrected integration and one-time GNSS anchoring are the recorded logger outputs.`;
+$('source').textContent='Verified source files and builder lineage (SHA-256):\n'+D.source.map(x=>`${x.name}: ${x.sha256}`).join('\n');
+function indexAt(t){let lo=0,hi=samples.length-1;while(lo<hi){const mid=Math.ceil((lo+hi)/2);if(samples[mid].t<=t)lo=mid;else hi=mid-1}return lo;}
+function chartBounds(){const width=$('window').value;if(width==='all')return [0,duration];const span=Number(width),center=samples[Number(step.value)].t;let start=Math.max(0,center-span/2),end=Math.min(duration,start+span);start=Math.max(0,end-span);return [start,end];}
+function fillEvents(){const query=eventSearch.value.trim().toLowerCase();visibleEvents=events.filter(e=>`${e.category} ${e.label}`.toLowerCase().includes(query));eventMenu.replaceChildren(new Option(`Jump to event (${visibleEvents.length} of ${events.length})`,''));for(const e of visibleEvents){const s=samples[e.sample];eventMenu.add(new Option(`${localTime(s.epoch)} · ${e.label}`,String(e.sample)));}}
+function drawMap(i){const s=samples[i],T=transform(viewport(s),map.width,map.height);m.fillStyle='#17232d';m.fillRect(0,0,map.width,map.height);const bounds=viewport(s),spacing=(bounds.maxX-bounds.minX)>100?20:(bounds.maxX-bounds.minX)>30?10:5;
+  m.strokeStyle='#29404d';m.lineWidth=1;m.font='12px system-ui';m.fillStyle='#819dab';
+  for(let x=Math.ceil(bounds.minX/spacing)*spacing;x<=bounds.maxX;x+=spacing){const px=T.x(x);m.beginPath();m.moveTo(px,0);m.lineTo(px,map.height);m.stroke();m.fillText(`${Math.round(x)} E`,px+3,map.height-10);}
+  for(let y=Math.ceil(bounds.minY/spacing)*spacing;y<=bounds.maxY;y+=spacing){const py=T.y(y);m.beginPath();m.moveTo(0,py);m.lineTo(map.width,py);m.stroke();m.fillText(`${Math.round(y)} N`,5,py-4);}
+  linePath(m,coords,T,'#344752',1.1);
+  for(let q=1;q<=i;q++){const a=samples[q-1],b=samples[q];if(a.x==null||b.x==null||b.t-a.t>1)continue;m.beginPath();m.moveTo(T.x(a.x),T.y(a.y));m.lineTo(T.x(b.x),T.y(b.y));m.strokeStyle=colors[b.health.code];m.lineWidth=2;m.stroke();}
+  if(s.x!=null&&s.y!=null){const x=T.x(s.x),y=T.y(s.y);circle(m,x,y,8,colors[s.health.code]);
+    for(const [heading,color,width] of [[s.heading,'#e9f3fa',3],[s.compass,'#74c6ff',2]]){if(heading==null)continue;const angle=(90-heading)*Math.PI/180;m.beginPath();m.moveTo(x,y);m.lineTo(x+29*Math.cos(angle),y-29*Math.sin(angle));m.strokeStyle=color;m.lineWidth=width;m.stroke();}}
+  m.fillStyle='#edf3f7';m.font='14px system-ui';m.fillText('N ↑  ·  recorded GPS positions',15,22);m.fillText(`${view.value==='all'?'Full path':`${view.value} m local view`} · zoom ${Math.round(zoomFactor*100)}%`,15,43);
+}
+function fact(label,value,wide=false){return `<div class="fact${wide?' wide':''}"><span>${esc(label)}</span><b>${esc(value)}</b></div>`;}
+function drawFacts(i){const s=samples[i];facts.innerHTML=[['Time · Eastern',localTime(s.epoch)],['Elapsed',`${fmt(s.t,1)} s`],['Recorded sample',s.raw.toLocaleString()],['Recording phase',s.phase],['Position fix',s.fix],['Heading flag / carrier',`${s.headValid?'valid':'INVALID'} / ${s.carrier||'—'}`],['F9P heading',`${fmt(s.heading,2)}°`],['IMU compass comparison',`${fmt(s.compass,2)}°`],['Compass disagreement',`${fmt(s.error,2)}°`],['Relative yaw / segment',`${fmt(s.yaw,2)}° / ${s.segment==null?'—':s.segment}`],['Gyro Z · corrected',`${fmt(s.gz,4)} °/s`],['GPS ground speed',`${fmt(s.speed,3)} m/s`],['Heading accuracy',`${fmt(s.accuracy,3)}°`],['Antenna baseline',`${fmt(s.baseline,4)} m`],['GPS packet / heading age',`${fmt(s.packetAge,3)} / ${fmt(s.headingAge,3)} s`],['Host dt · selected row',`${fmt(s.dt*1000,3)} ms`],['Latitude / longitude',`${fmt(s.lat,8)}, ${fmt(s.lon,8)}`,true]].map(x=>fact(...x)).join('');
+  const label=s.health.issues.length?s.health.issues.join(' · '):'Displayed GPS health checks pass';$('qualityNote').textContent=label+`. Logger GPS usable: ${s.loggerUsable?'yes':'no'}. Experimental IMU data; no control-state inference.`;$('qualityNote').className='key notice '+(s.health.code==='good'?'good':'warn');
+}
+function axis(canvas,label,limits){const ctx=canvas.getContext('2d'),[start,end]=chartBounds(),pad={l:67,r:18,t:27,b:30},w=canvas.width,h=canvas.height;let [min,max]=limits;if(max<=min)max=min+1;const X=t=>pad.l+(t-start)/(end-start)*(w-pad.l-pad.r),Y=y=>h-pad.b-(y-min)/(max-min)*(h-pad.t-pad.b);
+  ctx.fillStyle='#17232d';ctx.fillRect(0,0,w,h);ctx.font='13px system-ui';ctx.fillStyle='#adc1cf';ctx.fillText(label,8,16);ctx.strokeStyle='#304552';ctx.lineWidth=1;
+  for(let q=0;q<=4;q++){const value=min+(max-min)*q/4,y=Y(value);ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(w-pad.r,y);ctx.stroke();ctx.fillText(value.toFixed(Math.abs(max-min)<2?2:1),5,y+4);}
+  for(let q=0;q<=4;q++){const t=start+(end-start)*q/4,x=X(t);ctx.fillText(localTime(D.summary.startEpoch+t),Math.min(w-65,Math.max(pad.l,x-25)),h-8);}
+  for(const e of events.filter(e=>e.category==='operator')){const left=Math.max(start,e.t),right=Math.min(end,e.uncertainUntil);if(left<right){ctx.fillStyle='#ffd16620';ctx.fillRect(X(left),pad.t,X(right)-X(left),h-pad.t-pad.b);}}
+  ctx.setLineDash([3,5]);ctx.strokeStyle='#b3a8e0';for(const gap of D.gaps){if(gap.t<start||gap.t>end)continue;ctx.beginPath();ctx.moveTo(X(gap.t),pad.t);ctx.lineTo(X(gap.t),h-pad.b);ctx.stroke();}ctx.setLineDash([]);
+  return {ctx,start,end,X,Y,pad,w,h,min,max};
+}
+function drawSignal(id,series,options={}){const canvas=$(id),[start,end]=chartBounds(),a=Math.max(0,indexAt(start)-1),b=Math.min(samples.length-1,indexAt(end)+1);let low=Infinity,high=-Infinity;
+  for(let q=a;q<=b;q++)for(const spec of series){const s=samples[q],value=s[spec.key];if(value!=null){low=Math.min(low,value);high=Math.max(high,value);}if(options.envelope&&s.range[spec.key]){low=Math.min(low,s.range[spec.key][0]);high=Math.max(high,s.range[spec.key][1]);}}
+  if(!Number.isFinite(low)){low=0;high=1;}const margin=Math.max(.02,(high-low)*.12);const A=axis(canvas,options.label||'',options.limits||[low-margin,high+margin]);const {ctx,X,Y,w,pad}=A;
+  ctx.save();ctx.beginPath();ctx.rect(pad.l,pad.t,w-pad.l-pad.r,A.h-pad.t-pad.b);ctx.clip();
+  for(const spec of series){if(options.envelope){const pixels=new Map();for(let q=a;q<=b;q++){const s=samples[q],range=s.range[spec.key];if(!range)continue;const px=Math.round(X(s.t)),prior=pixels.get(px);pixels.set(px,prior?[Math.min(prior[0],range[0]),Math.max(prior[1],range[1])]:range);}ctx.strokeStyle=spec.color+'66';ctx.lineWidth=1;ctx.beginPath();for(const [x,range] of pixels){ctx.moveTo(x,Y(range[0]));ctx.lineTo(x,Y(range[1]));}ctx.stroke();}
+    ctx.beginPath();let previous=null,lastPixel=-Infinity;for(let q=a;q<=b;q++){const s=samples[q],value=s[spec.key];if(value==null){previous=null;continue;}const pixel=Math.round(X(s.t));const broken=previous&&(s.t-previous.t>.5||(options.segment&&s.segment!==previous.segment)||(options.wrapped&&Math.abs(value-previous[spec.key])>180));if(!previous||broken)ctx.moveTo(X(s.t),Y(value));else if(pixel!==lastPixel||q===b)ctx.lineTo(X(s.t),Y(value));previous=s;lastPixel=pixel;}ctx.strokeStyle=spec.color;ctx.lineWidth=1.7;ctx.stroke();
+  }
+  const cursor=X(samples[Number(step.value)].t);ctx.strokeStyle='#ffffffaa';ctx.lineWidth=1.3;ctx.beginPath();ctx.moveTo(cursor,pad.t);ctx.lineTo(cursor,A.h-pad.b);ctx.stroke();ctx.restore();canvas._span=[A.start,A.end];
+}
+function drawHealth(){const canvas=$('health'),ctx=canvas.getContext('2d'),[start,end]=chartBounds(),X=t=>165+(t-start)/(end-start)*815;ctx.fillStyle='#17232d';ctx.fillRect(0,0,1000,160);ctx.font='13px system-ui';
+  const rows=[['fresh','GPS packet fresh'],['fixed','Position RTK Fixed'],['heading','Heading checks'],['baselineOk','Baseline in range']];
+  rows.forEach(([key,label],j)=>{const y=12+j*31;ctx.fillStyle='#adc1cf';ctx.fillText(label,6,y+16);for(let q=indexAt(start);q<samples.length&&samples[q].t<=end;q++){const s=samples[q],next=samples[q+1];ctx.fillStyle=s.health[key]?'#3bd7ab':'#ff8294';const left=Math.max(start,s.t),right=Math.min(end,next?.t??end);ctx.fillRect(X(left),y,Math.max(1,X(right)-X(left)),20);}});
+  for(const e of events.filter(e=>e.category==='operator')){if(e.t<start||e.t>end)continue;ctx.strokeStyle='#ffd166';ctx.beginPath();ctx.moveTo(X(e.t),3);ctx.lineTo(X(e.t),140);ctx.stroke();}
+  ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(X(samples[Number(step.value)].t),0);ctx.lineTo(X(samples[Number(step.value)].t),140);ctx.stroke();for(let j=0;j<=4;j++){const t=start+(end-start)*j/4;ctx.fillStyle='#adc1cf';ctx.fillText(localTime(D.summary.startEpoch+t),Math.min(935,X(t)-25),156);}canvas._span=[start,end];
+}
+function draw(){const i=Number(step.value),s=samples[i];$('position').value=`${localTime(s.epoch)} Eastern · ${(s.t/60).toFixed(2)} / ${(duration/60).toFixed(2)} min`;drawMap(i);drawFacts(i);drawHealth();drawSignal('heading',[{key:'heading',color:'#e9f3fa'},{key:'compass',color:'#74c6ff'}],{limits:[0,360],wrapped:true,segment:true,label:'degrees'});drawSignal('error',[{key:'error',color:'#74c6ff'}],{segment:true,wrapped:true,label:'degrees'});drawSignal('gyro',[{key:'gx',color:'#74c6ff'},{key:'gy',color:'#ff9fb3'},{key:'gz',color:'#3bd7ab'}],{envelope:true,label:'°/s'});drawSignal('accel',[{key:'ax',color:'#3bd7ab'},{key:'ay',color:'#74c6ff'},{key:'az',color:'#ff9fb3'}],{envelope:true,label:'g'});drawSignal('yaw',[{key:'yaw',color:'#74c6ff'}],{segment:true,label:'CCW degrees; resets are separate segments'});drawSignal('speedChart',[{key:'speed',color:'#e9f3fa'}],{label:'m/s'});}
+function jump(i){step.value=Math.max(0,Math.min(samples.length-1,i));playTarget=samples[Number(step.value)].t;draw();}
+function stop(){playing=false;play.textContent='Play';lastFrame=null;}
+function animate(now){if(!playing)return;if(lastFrame!==null)playTarget+=Math.min(1,(now-lastFrame)/1000)*Number(rate.value);lastFrame=now;if(now-lastPaint>100){step.value=indexAt(playTarget);draw();lastPaint=now;}if(playTarget>=duration){jump(samples.length-1);stop();return;}requestAnimationFrame(animate);}
+play.onclick=()=>{if(playing){stop();return;}if(Number(step.value)===samples.length-1)jump(0);playing=true;play.textContent='Pause';lastFrame=null;playTarget=samples[Number(step.value)].t;requestAnimationFrame(animate);};
+function setZoom(z){zoomFactor=Math.max(.5,Math.min(16,z));zoomReset.textContent=`${Math.round(zoomFactor*100)}%`;draw();}
+$('zoomIn').onclick=()=>setZoom(zoomFactor*1.35);$('zoomOut').onclick=()=>setZoom(zoomFactor/1.35);zoomReset.onclick=()=>setZoom(1);
+map.addEventListener('wheel',e=>{e.preventDefault();setZoom(e.deltaY<0?zoomFactor*1.18:zoomFactor/1.18);},{passive:false});
+step.oninput=()=>{playTarget=samples[Number(step.value)].t;draw();};view.onchange=draw;$('window').onchange=draw;eventSearch.oninput=fillEvents;eventMenu.onchange=()=>{if(eventMenu.value!=='')jump(Number(eventMenu.value));};
+$('prev').onclick=()=>jump(Number(step.value)-1);$('next').onclick=()=>jump(Number(step.value)+1);$('previousEvent').onclick=()=>{const i=Number(step.value),e=[...visibleEvents].reverse().find(e=>e.sample<i);if(e)jump(e.sample);};$('nextEvent').onclick=()=>{const i=Number(step.value),e=visibleEvents.find(e=>e.sample>i);if(e)jump(e.sample);};
+for(const canvas of document.querySelectorAll('.chart'))canvas.addEventListener('click',e=>{const rect=canvas.getBoundingClientRect(),x=(e.clientX-rect.left)/rect.width*canvas.width,left=canvas.id==='health'?165:67,right=canvas.id==='health'?980:982,ratio=Math.max(0,Math.min(1,(x-left)/(right-left))),span=canvas._span;jump(indexAt(span[0]+ratio*(span[1]-span[0])));});
+document.addEventListener('keydown',e=>{if(['INPUT','SELECT','BUTTON'].includes(document.activeElement.tagName))return;if(e.code==='Space'){e.preventDefault();play.click();}else if(e.code==='ArrowRight'){e.preventDefault();jump(Number(step.value)+1);}else if(e.code==='ArrowLeft'){e.preventDefault();jump(Number(step.value)-1);}});
+fillEvents();draw();
+</script></body></html>

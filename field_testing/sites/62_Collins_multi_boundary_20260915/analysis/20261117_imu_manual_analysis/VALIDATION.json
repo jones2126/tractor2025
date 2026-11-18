@@ -1,0 +1,10 @@
+{
+  "source_hashes": "all verified against source_provenance.json",
+  "raw_rows": 154769,
+  "reintegrated_segments": 3,
+  "turn_sign_matches": 22,
+  "tests": "8 numerical analysis tests and 7 replay integrity tests passed",
+  "figure_review": "Stationary, prediction, phase path and hard-turn figures visually inspected",
+  "operational_changes": "None; no robot access or control changes",
+  "limits": "Single-run exploratory analysis; no planning-radius or navigation-policy authorization"
+}

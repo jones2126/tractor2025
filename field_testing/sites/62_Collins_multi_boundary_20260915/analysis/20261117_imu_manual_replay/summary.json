@@ -1,0 +1,132 @@
+{
+  "summary": {
+    "rawRows": 154769,
+    "playbackSamples": 14468,
+    "binSeconds": 0.1,
+    "duration_s": 1444.526796534,
+    "startEpoch": 1794932090.653442,
+    "median_dt_s": 0.009506030000011378,
+    "max_dt_s": 0.08261314000014863,
+    "origin": [
+      40.48580466666667,
+      -80.33228483333333
+    ],
+    "counts": {
+      "calibration": 1073,
+      "health_good": 147436,
+      "logger_usable": 147436,
+      "gyro_near_full_scale": 0,
+      "accel_near_full_scale": 0,
+      "observation": 153696,
+      "health_heading": 313,
+      "health_position": 7020
+    }
+  },
+  "gaps": [
+    {
+      "t": 339.71175178500005,
+      "utc": "2026-11-17T16:20:30.365176+00:00",
+      "dt_s": 0.08261314000014863,
+      "segment": 1.0
+    },
+    {
+      "t": 572.75158456,
+      "utc": "2026-11-17T16:24:23.405006+00:00",
+      "dt_s": 0.06178028999988783,
+      "segment": 2.0
+    }
+  ],
+  "metadata": {
+    "axes": "X forward, Y left, Z up; positive yaw CCW (expected, verify from data)",
+    "calibration": {
+      "accel_mean_magnitude_g": 1.0230252136703908,
+      "accel_stddev_g": [
+        0.0005412921962875816,
+        0.0005116196717924163,
+        0.0006140503067512603
+      ],
+      "bias_dps": [
+        -0.06112767940354148,
+        -0.5790412395153774,
+        0.07175326188257224
+      ],
+      "samples": 1073,
+      "stddev_dps": [
+        0.04223224763848847,
+        0.03923482051103413,
+        0.03357516022210094
+      ]
+    },
+    "calibration_seconds": 10.0,
+    "commit": "d18cc6088916460aaeb7bc244f662a9aad66868e",
+    "ended_utc": "2026-11-17T16:38:55.187161+00:00",
+    "gnss_final_error": null,
+    "gnss_initial_error": null,
+    "imu": {
+      "accel_g_per_count": 6.1e-05,
+      "accel_range_g": 2,
+      "address": "0x6b",
+      "bus": 1,
+      "ctrl3_c": "0x44",
+      "gyro_dps_per_count": 0.00875,
+      "gyro_range_dps": 250,
+      "odr_hz": 104
+    },
+    "note": "Observation only. Host timestamps; no hardware FIFO. Missed samples cannot be recovered.",
+    "repository": "/home/al/tractor2025",
+    "sample_rows": 154769,
+    "schema": 1,
+    "source_sha256": "501fa760bf4ca5740aec7791787deae7351663d3efab199a193ce4fe842ab8e8",
+    "started_utc": "2026-11-17T16:14:49.640573+00:00",
+    "status": "STOPPED",
+    "working_tree": "",
+    "yaw_policy": "trapezoidal; one GNSS anchor per segment; gaps >50 ms start a new segment",
+    "yaw_segments": 3
+  },
+  "source": [
+    {
+      "name": "samples.csv",
+      "sha256": "5F2185F48F40996A3D3D5A5B6DADF4A822E01153DB70C151780AC3CE5817CDEB"
+    },
+    {
+      "name": "gnss.jsonl",
+      "sha256": "C4926B40F2147C2F5D34517E25A09F5FCC13537EC06E076B93DBBE3461829EB5"
+    },
+    {
+      "name": "metadata.json",
+      "sha256": "4F6A205367D8CDF02FA76E85A8C88ABD80191FB3450DD6410875A402A5504BE9"
+    },
+    {
+      "name": "SHA256SUMS",
+      "sha256": "16C4AE53F8DAAD8540A4CA038D15923936CCD725EDAE6502B220DCA5B9C71BAF"
+    },
+    {
+      "name": "operator_notes.json",
+      "sha256": "D3795C00D1D1213D62A7F2A490755949228714F63C758DC79F0B651A2646F520"
+    },
+    {
+      "name": "build_tractor01_imu_replay_20261117.py",
+      "sha256": "8F0EF88EF99F1E632A407241F627FCDDB6FD769E6B3FF97E03C7886E044CCC4C"
+    },
+    {
+      "name": "tractor-imu-replay-template.html",
+      "sha256": "A8CE72D8270644C81DD4E2B080174920B02C430815683E8398508CDACCE80A69"
+    },
+    {
+      "name": "tractor-mission-replay-template.html",
+      "sha256": "9047B9DC0C665E0FDBBC180A4045810BE094D84B23952135272AF3AB95AF7E82"
+    },
+    {
+      "name": "build_tractor01_mission_replay_20261109.py",
+      "sha256": "6DA42BF53663CB972D9211A9C1BA3CA133ED69BC812B3D9D1F76058E9A830376"
+    },
+    {
+      "name": "build_tractor_mission_replays_20260919.py",
+      "sha256": "108F2EA19FEBA28D11C19D37E7485DA535C13E06321E37161CB4BB3C05334D93"
+    },
+    {
+      "name": "check_imu_replay_ui_20261117.cjs",
+      "sha256": "E79BCE830191AFBF82CE6F09A6FBA81B1918B46EF4AE4AFA712F5252B2198A37"
+    }
+  ]
+}

@@ -21,3 +21,8 @@
 # recorded SHA-256 manifests and replay provenance remain valid across systems.
 field_testing/sites/**/runs/20260918_*/** -text -eol
 field_testing/sites/**/runs/20260923_*/** -text -eol
+
+# Preserve the November 17 checksum-verified derived packages across platforms.
+field_testing/sites/**/analysis/20261117_imu_manual_replay/** -text -eol
+field_testing/sites/**/analysis/20261117_imu_manual_analysis/** -text -eol
+obsidian_vault/**/20261117_pose_producer_review/current_navigation_udp_fields_20261117.csv -text -eol

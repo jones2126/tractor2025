@@ -1,0 +1,18 @@
+{
+  "source": "tractor_rpi\\rtcm_server_20260828.py",
+  "source_sha256": "7679ebbbbdeea7811a06868d97958ffca6db3a8cf7e35ff589b05db327350ba5",
+  "csv": "current_navigation_udp_fields_20261117.csv",
+  "csv_sha256": "883fdca0ee89188532073d1ae2042e6bc8cf2055a89e9233680891148e6c2cc3",
+  "ports": [
+    6002,
+    6009,
+    6010,
+    6013
+  ],
+  "nominal_packet_rate_hz_per_port": 20,
+  "top_level_fields_per_port": 49,
+  "dynamic_child_description_rows_per_port": 1,
+  "csv_data_rows": 200,
+  "verification": "CSV round-trip; complete AST state-key comparison for each port; declared source refresh rate and meaning present for all rows; workbook preview reviewed",
+  "live_state": "Source inspection only; no live configuration or runtime code changed"
+}

@@ -1,0 +1,13 @@
+{
+  "run_id": "imu_20261117T161449_639816Z",
+  "timezone": "America/New_York",
+  "operator_reported_events": [
+    {"event": "engine_started", "local_time": "2026-11-17T11:22:00-05:00", "precision": "minute; seconds unspecified"},
+    {"event": "parked_engine_off", "local_time": "2026-11-17T11:37:00-05:00", "precision": "minute; seconds unspecified"}
+  ],
+  "terminal_date_after_stop": "2026-11-17T11:38:57-05:00",
+  "source_directory": "/home/al/field_logs/imu/imu_20261117T161449_639816Z",
+  "source_host": "al@192.168.193.76",
+  "handling": "Original capture files preserved on Tractor01. This note is separate from the raw run and its original checksum manifest.",
+  "limitations": "Engine-on interval is not an exact movement interval. Actual square/circle sequence has not been confirmed by the operator. Integrated yaw is segmented after timing gaps. No whole-run drift conclusion has been drawn."
+}
