@@ -129,6 +129,18 @@ class ParityTests(unittest.TestCase):
             pose["payload"]["monotonic_s"] = now - 5
             self.assertFalse(all(c.passed for c in new.sensor_recording_checks()))
 
+    def test_observations_arriving_during_queries_are_not_future_dated(self):
+        health = dict(error=None, losses=0, last_write=100., free_bytes=1000, min_free_bytes=100)
+        quality = dict(imu_fresh=True, imu_calibrated=True, encoders={s: dict(valid=True) for s in ("L", "R")})
+        pose = dict(payload=dict(monotonic_s=100.2, pose=dict(quality=quality, heading_anchor_age_s=1)))
+        wheels = [dict(payload=dict(side=s, device_ms=i, monotonic_s=100.1)) for s in ("L", "R") for i in range(5)]
+        def request(message):
+            if message["op"] == "health":
+                return health
+            return dict(records={"imu": [{}] * 100, "encoders": wheels, "pose": [pose]}[message["channel"]])
+        with patch.object(new, "request", side_effect=request), patch.object(new.time, "monotonic", side_effect=[100., 100.3]):
+            self.assertTrue(all(c.passed for c in new.sensor_recording_checks()))
+
     def test_notify_failure_does_not_throw_or_grant_success(self):
         with patch("urllib.request.urlopen", side_effect=OSError()), patch.object(new.time, "sleep"), patch("sys.stdout", new=io.StringIO()):
             self.assertFalse(new.notify("test", "test"))

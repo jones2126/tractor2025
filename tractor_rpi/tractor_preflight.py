@@ -487,9 +487,12 @@ def heading_satellites_used_check(samples: list[tuple[float, dict[str, Any]]]) -
 def sensor_recording_checks():
     try:
         health = request(dict(op="health"))
-        now = time.monotonic()
-        records = {channel: request(dict(op="window", channel=channel, since=now - 5))["records"]
+        window_start = time.monotonic() - 5
+        records = {channel: request(dict(op="window", channel=channel, since=window_start))["records"]
                    for channel in ("imu", "encoders", "pose")}
+        # Records can arrive during the queries. Assess their age AFTER all
+        # responses, not against an earlier time that makes them look future-dated.
+        now = time.monotonic()
         writing = (health["error"] is None and health["losses"] == 0 and
                    health["last_write"] is not None and 0 <= now - health["last_write"] <= 1 and
                    health["free_bytes"] >= health["min_free_bytes"])

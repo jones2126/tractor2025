@@ -319,3 +319,19 @@ encoder source and separate Blink environments. Automatic upload refuses any
 other connected Teensy; keep 4.1 disconnected for `left_encoder_auto` restore.
 No left-encoder calculation, scale, filter or I2C logic was changed. Future
 targeted reboot/USB isolation with both Teensys connected is not implemented.
+
+### Later November 18 stationary preflight
+
+After reconnecting the control Teensy, pulling a5afdf8 and starting the four
+services, Al supplied a report with recorder error=None/losses=0, both encoder
+streams near 10 Hz, but both GNSS solutions Float. A further position-service
+restart did not immediately recover Fixed. A later 60-second preflight showed
+position RTK Fixed, gyro bias calibrated=True, Heading still Float and no heading
+anchor. No field movement is established by these reports.
+
+That later report exposed a preflight timestamp race: freshness was assessed
+against a time saved before fetching the observation windows, so newly arriving
+records could appear future-dated. Source correction assesses age after fetching
+the windows; 34 focused tests passed, including an observation-arrives-during-query
+case. Pulling this preflight-only correction requires no service restart and does
+not resolve the remaining genuine Heading Float/alignment failure.
