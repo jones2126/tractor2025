@@ -14,6 +14,8 @@ using the verified left-board Program button. LED blinking was confirmed.
   This temporarily replaces encoder reporting. It has no sensor/control outputs.
 - `left_blink_auto`: same updated Blink, explicit no-button reboot/upload test.
   Requires left encoder to be the only connected PJRC/Teensy USB device.
+- `left_encoder_auto`: original left encoder source, same isolated-board
+  no-button upload guard; use to restore encoder functionality after Blink.
 - `left_teensy32`: exact firmware appendix from the November 17 handoff, with
   `WHEEL_LEFT` changed from 0 to 1 and explicit Arduino.h for PlatformIO C++.
   No added LED behavior, distance/scale/filter/timing changes or I2C timeout fix.
@@ -52,12 +54,17 @@ Do not press Program in that test. The expected change from the first deployed
 one-second blink is a short double-flash followed by a long pause. The first
 manual Blink upload succeeded with firmware HEX SHA256
 `dd60d29ef7329a4a61a2992979c266c5da398196267eb9925ce5dd71b5cd253a`.
-No-button test is pending operator results. Success establishes automatic upload
+Al confirmed the no-button upload succeeded and the double-flash pattern ran on
+November 18, after overriding the changed Linux port from ttyACM4 to ttyACM0.
+USB cable placement had not changed. Success establishes automatic upload
 from this running USB-responsive Blink; it does not guarantee recovery from hung
 encoder/I2C firmware without pressing Program.
 
 Confirm double-flash and the `LEFT_ENCODER_BLINK_DOUBLE_20261118` diagnostic.
 Then restore encoder functionality using the same command with `-e left_teensy32`.
+Alternatively use `-e left_encoder_auto` with the 4.1 still disconnected for a
+no-button restore from responsive Blink. Supply the current left-encoder port
+with `--upload-port`; Linux ttyACM numbers are not persistent device identities.
 Require actual `ENC,L` or diagnostic `ERR,L` output before restarting the position
 producer. Blink success shows the MCU/flash/LED path, not sensor/I2C health or
 root-cause resolution. Preserve the raw serial capture; do not claim calibration.

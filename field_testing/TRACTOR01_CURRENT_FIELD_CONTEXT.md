@@ -270,13 +270,16 @@ Heading accuracy 0.514 degrees, 29 Heading satellites, actual Pause and neutral
 No replacement producer was installed during that recovery.
 
 Al subsequently approved local implementation of the consolidated startup,
-continuous recorder and preflight design. It is **DRAFT — NOT INSTALLED OR FIELD
-VALIDATED**. Read `tractor_rpi/setup/CONSOLIDATED_STARTUP_REVIEW.md` before proposing
-installation or a manual recording run. Proposed canonical service names are
+continuous recorder and preflight design. Al installed it November 18 with backup
+`/var/backups/tractor-consolidation-20261118T181841Z` and began stationary checks.
+It remains **DRAFT — STATIONARY VALIDATION INCOMPLETE; NOT MOTION VALIDATED**.
+Read `tractor_rpi/setup/CONSOLIDATED_STARTUP_REVIEW.md` before proceeding.
+Installed canonical service names are
 `calc-publish-position.service`, `tractor-teensy-bridge.service` (same existing
 command-selection implementation) and `tractor-telemetry-recorder.service`.
 Old production names would become aliases; the retired `teensy-bridge.service`
-must remain masked. The currently installed stack still uses the old names/code.
+must remain masked. The installer initially stopped phone control through its
+bridge dependency; Al explicitly started it again and confirmed reconnection.
 
 Candidate storage is `/home/al/field_logs/YYYY-MM-DD/telemetry_<UTC>/`; the recorder
 starts at boot, owns UDP 6009, and supplies observations to canonical
@@ -284,3 +287,27 @@ starts at boot, owns UDP 6009, and supplies observations to canonical
 field loggers or use the old UDP-binding preflight concurrently after deployment.
 Frozen mission packages are not yet migrated and must not be launched unchanged
 with the new boot recorder. No new controller, firmware or motion policy is included.
+
+### Left encoder recovery in progress
+
+The new position service repeatedly exited after five seconds with no left encoder
+serial data, causing unwanted GPS reconfiguration on each automatic restart. The
+recorder and right encoder/IMU were active; whole-service restart behavior still
+needs correction/review. Al stopped startup-preflight, position, phone and bridge
+services and physically disconnected the main Teensy 4.1 (serial 16883790).
+Recorder was left running. Do not restart the control stack or reboot until the
+left encoder firmware is restored, output verified and main controller reconnected.
+
+Left board is operator-confirmed Teensy 3.1/3.2, USB serial 5879620, physical USB
+location observed 2-2.3. Its port changed from ttyACM4 to ttyACM0 after programming
+without moving cables; resolve identity, never assume a fixed ttyACM index.
+Al built and uploaded Blink with the left Program button, then successfully
+uploaded changed double-flash Blink WITHOUT a button press while the 4.1 remained
+disconnected. This establishes upload from responsive Blink, not firmware loss or
+recovery from hung I2C code. Encoder source restoration is still pending.
+
+Project `tractor_rpi/testing/encoders/left_teensy32/` contains preserved left
+encoder source and separate Blink environments. Automatic upload refuses any
+other connected Teensy; keep 4.1 disconnected for `left_encoder_auto` restore.
+No left-encoder calculation, scale, filter or I2C logic was changed. Future
+targeted reboot/USB isolation with both Teensys connected is not implemented.
