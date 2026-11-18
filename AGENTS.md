@@ -81,6 +81,11 @@ telemetry including JRK VIN millivolts. Commissioned steering values are right
 `191`, center `525`, and left `885`; JRK neutral is `2836`.
 
 ### Active Development Focus (as of 2026-11-11)
+- November 18 startup/recording/preflight consolidation is a local, uninstalled
+  candidate. See `tractor_rpi/setup/CONSOLIDATED_STARTUP_REVIEW.md` and the current
+  field context before deployment. Proposed boot recorder owns UDP 6009; its new
+  preflight reads local recorder windows, so old private mission loggers and
+  UDP-binding preflights cannot be run alongside it. Frozen packages stay unchanged.
 - Review a bounded 0.3 m/s continuation state for specified short RTK/heading
   degradations; inspection and plan come before implementation.
 - Field-validate the independent continuous JRK VIN logger before installation.

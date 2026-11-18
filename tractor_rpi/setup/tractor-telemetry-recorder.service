@@ -1,0 +1,22 @@
+[Unit]
+Description=Tractor01 continuous raw telemetry recording
+After=local-fs.target
+Before=calc-publish-position.service tractor-startup-preflight.service
+
+[Service]
+Type=simple
+User=al
+WorkingDirectory=/home/al/tractor2025
+RuntimeDirectory=tractor-telemetry
+RuntimeDirectoryMode=0750
+UMask=0027
+ExecStart=/usr/bin/python3 -u -m tractor_rpi.telemetry_recorder
+Restart=on-failure
+RestartSec=3
+KillSignal=SIGINT
+TimeoutStopSec=20
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

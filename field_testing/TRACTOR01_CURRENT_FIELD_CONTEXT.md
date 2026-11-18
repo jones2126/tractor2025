@@ -1,6 +1,6 @@
 # Tractor01 current field context
 
-Last updated: 2026-11-17
+Last updated: 2026-11-18
 
 This is durable operational context for assistants helping Al with Tractor01.
 Read it before proposing field commands. It records established facts and
@@ -258,3 +258,29 @@ Do not run both GPS owners
 or two IMU acquisition programs concurrently. Installation, restart, stationary
 validation, manual movement and blades remain separate approvals. No 3 m/30 s
 continuation policy or safety watchdog change is included.
+
+## November 18 field recovery and consolidation candidate
+
+Al supplied a failed five-minute preflight with RTK position Float and Heading
+Float, fresh corrections and adequate satellites. After one operator-executed
+restart of the existing `rtcm-server.service`, the full preflight passed:
+position RTK Fixed, Heading Fixed in 100% of samples, baseline 1.1472 m,
+Heading accuracy 0.514 degrees, 29 Heading satellites, actual Pause and neutral
+2836. This establishes recovery after restart, not an isolated root cause.
+No replacement producer was installed during that recovery.
+
+Al subsequently approved local implementation of the consolidated startup,
+continuous recorder and preflight design. It is **DRAFT — NOT INSTALLED OR FIELD
+VALIDATED**. Read `tractor_rpi/setup/CONSOLIDATED_STARTUP_REVIEW.md` before proposing
+installation or a manual recording run. Proposed canonical service names are
+`calc-publish-position.service`, `tractor-teensy-bridge.service` (same existing
+command-selection implementation) and `tractor-telemetry-recorder.service`.
+Old production names would become aliases; the retired `teensy-bridge.service`
+must remain masked. The currently installed stack still uses the old names/code.
+
+Candidate storage is `/home/al/field_logs/YYYY-MM-DD/telemetry_<UTC>/`; the recorder
+starts at boot, owns UDP 6009, and supplies observations to canonical
+`tractor_rpi/tractor_preflight.py` through local IPC. Do not start old private
+field loggers or use the old UDP-binding preflight concurrently after deployment.
+Frozen mission packages are not yet migrated and must not be launched unchanged
+with the new boot recorder. No new controller, firmware or motion policy is included.

@@ -1,0 +1,18 @@
+[Unit]
+Description=Tractor01 startup readiness and canonical preflight
+Wants=network-online.target calc-publish-position.service tractor-teensy-bridge.service tractor-phone-arbitrator.service tractor-telemetry-recorder.service
+After=network-online.target calc-publish-position.service tractor-teensy-bridge.service tractor-phone-arbitrator.service tractor-telemetry-recorder.service
+
+[Service]
+Type=oneshot
+User=al
+SupplementaryGroups=systemd-journal
+WorkingDirectory=/home/al/tractor2025
+ExecStart=/usr/bin/python3 -u -m tractor_rpi.tractor_preflight --startup --expected-firmware teensy_main_20261110_rpi_command_lease_v5
+TimeoutStartSec=600
+RemainAfterExit=yes
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
