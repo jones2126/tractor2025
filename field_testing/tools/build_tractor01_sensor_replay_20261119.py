@@ -161,7 +161,7 @@ def build(root, output, start, end):
     page = page.replace('__DATA__',json.dumps(payload,separators=(',',':'),allow_nan=False).replace('<','\\u003c'))
     output.mkdir(parents=True,exist_ok=True)
     (output/'replay_20261119_manual.html').write_text(page,encoding='utf-8',newline='\n')
-    (output/'summary.json').write_text(json.dumps(dict(summary=summary,gaps=gaps,episodes=episodes,source=provenance),indent=2)+'\n',encoding='utf-8')
+    (output/'summary.json').write_text(json.dumps(dict(summary=summary,gaps=gaps,episodes=episodes,source=provenance),indent=2)+'\n',encoding='utf-8',newline='\n')
     report = f'''# November 19 manual sensor replay
 
 Open replay_20261119_manual.html locally; no network or tractor connection required.
