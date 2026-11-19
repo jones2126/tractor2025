@@ -64,3 +64,29 @@ It restores the timer. Legacy CSV originals remain until the archive is copied
 off-Pi and independently verified. Cleanup is then an explicit helper phase with
 the manifest path and independently verified SHA256; it refuses changed files
 and removes only the archived, matching legacy files and empty legacy directory.
+
+## Boot-notice retry correction — prepared, not installed
+
+The storage-only installed version lost the boot notice if its initial curl
+retry window expired before internet access arrived: CSV state suppressed all
+later notice attempts. It also suppressed errors and did not reject HTTP failures.
+
+The correction keeps `.notice-pending` and `.notice-sent` beside the RAM CSV
+state. It retains the initial measured sample/message and retries once on every
+subsequent two-minute timer invocation, with5s connect/10s total timeouts.
+Only successful HTTP2xx acceptance marks sent; DNS/connect/HTTP failures remain
+pending and are logged in the service journal. Midnight does not clear the notice.
+Upgrade during a running boot queues one catch-up report because old delivery
+success cannot be inferred; its label gives the actual sample time, not a claimed
+boot time. Acceptance is not proof of phone delivery; an ambiguous HTTP result
+can cause a retry/duplicate. CSV logging always occurs before the network attempt.
+
+Six isolated checks passed, including repeated network failure, retry after
+midnight, later success/no further attempts, HTTP403/429/503/302 rejection and
+upgrade catch-up. No real notifications were sent by these tests.
+
+Install only this reviewed update, preserving backup and existing CSV/state:
+`sudo python3 tractor_rpi/setup/pilog/migrate_pilog.py --update-notifier`.
+The helper briefly pauses the power timer, refuses an overlapping sample,
+installs only over the reviewed prior source, takes one sample, reports notice
+pending/accepted, and restores the timer. Other services are untouched.

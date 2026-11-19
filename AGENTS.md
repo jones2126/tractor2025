@@ -310,8 +310,21 @@ as root, Nice15, timeout120s. Timer starts about30s after boot and every2min
 thereafter, accuracy10s. CSV fields are `time,uptime_s,ext5v_v,throttled,load1,
 load5,arm_mhz,temp_c`; `vcgencmd` supplies Pi5V/throttling/clock/temperature and
 `/proc` supplies uptime/load. Load is not CPU utilization percent. The first
-sample sends a boot ntfy; `/run/pilog.current` tracks its per-boot file. This
+sample creates a boot power ntfy report including the measured 5 V bus voltage,
+throttling flags, load, clock and temperature; `/run/pilog.current` tracks its CSV. This
 script does not contain the reported repeated runtime alert logic.
+
+Notification reliability fix prepared November 19 (not installed yet): separate
+RAM files `/run/pilog.current.notice-pending` and `.notice-sent` retain the initial
+report and delivery state. One attempt per two-minute sample, connect timeout5s,
+total timeout10s. Only HTTP2xx acceptance creates the sent marker; network/HTTP
+failure stays pending and is retried on later samples, including after midnight.
+CSV capture continues and journal records pending/accepted status. Payload keeps
+its original measured sample time; delayed acceptance is not phone delivery proof.
+An upgrade from the old script has no previous delivery marker, so its first
+invocation queues one catch-up power report labelled with its actual sample time.
+Activate via `sudo python3 tractor_rpi/setup/pilog/migrate_pilog.py --update-notifier`
+after reviewed source synchronization; no control service restart is involved.
 
 Installed November 19 storage-only replacement: `tractor_rpi/setup/pilog/pilog.sh`, with original
 capture, README and isolated checks alongside it. Output is

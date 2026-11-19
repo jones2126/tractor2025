@@ -30,7 +30,7 @@ case "$1" in
  measure_temp) echo "temp=45.0'C";;
 esac
 ''',
-            'curl': '#!/bin/bash\necho notice >> "$NOTICE_LOG"\n',
+            'curl': '#!/bin/bash\necho notice >> "$NOTICE_LOG"\nprintf "%s" "${CURL_STATUS:-200}"\nexit "${CURL_EXIT:-0}"\n',
             'sync': '#!/bin/bash\nexit 0\n',
             'install': '#!/bin/bash\nmkdir -p "${@: -1}"\n',
         }
@@ -61,6 +61,7 @@ esac
         old = self.root/'legacy.csv'
         old.write_text('preserved\n')
         (self.root/'state').write_text(str(old)+'\n')
+        (self.root/'state.notice-sent').write_text('already accepted this boot\n')
         self.run_sample()
         self.assertEqual(old.read_text(), 'preserved\n')
         self.assertTrue(list((self.root/'logs/2026-11-19').glob('*.csv')))
@@ -73,6 +74,44 @@ esac
             rows = next((self.root/'logs'/day).glob('*.csv')).read_text().splitlines()
             self.assertEqual(len(rows), 2)
         self.assertEqual((self.root/'notices').read_text().splitlines(), ['notice'])
+
+    def test_network_failure_retries_later_without_losing_samples(self):
+        self.env['CURL_EXIT'] = '6'
+        self.env['CURL_STATUS'] = '000'
+        self.run_sample()
+        pending = (self.root/'state.notice-pending').read_bytes()
+        self.assertFalse((self.root/'state.notice-sent').exists())
+        self.run_sample('2026-11-20')
+        self.assertEqual((self.root/'state.notice-pending').read_bytes(), pending)
+        self.env['CURL_EXIT'] = '0'
+        self.env['CURL_STATUS'] = '200'
+        self.run_sample('2026-11-20')
+        self.run_sample('2026-11-20')
+        self.assertTrue((self.root/'state.notice-sent').exists())
+        self.assertFalse((self.root/'state.notice-pending').exists())
+        self.assertEqual(len((self.root/'notices').read_text().splitlines()), 3)
+        self.assertEqual(sum(len(p.read_text().splitlines())-1 for p in (self.root/'logs').glob('*/*.csv')), 4)
+
+    def test_non_success_http_remains_pending(self):
+        for code in ('403', '429', '503', '302'):
+            self.env['CURL_STATUS'] = code
+            self.run_sample()
+            self.assertFalse((self.root/'state.notice-sent').exists())
+            self.assertTrue((self.root/'state.notice-pending').exists())
+        self.env['CURL_STATUS'] = '201'
+        self.run_sample()
+        self.assertTrue((self.root/'state.notice-sent').exists())
+
+    def test_upgrade_without_delivery_state_sends_one_labelled_sample(self):
+        old = self.root/'legacy.csv'
+        old.write_text('preserved\n')
+        (self.root/'state').write_text(str(old)+'\n')
+        self.env['CURL_EXIT'] = '6'
+        self.run_sample()
+        body = (self.root/'state.notice-pending').read_text()
+        self.assertIn('Sample recorded at', body)
+        self.assertIn('5V rail: 5.100 V', body)
+        self.assertNotIn('booted at', body)
 
 
 if __name__ == '__main__':

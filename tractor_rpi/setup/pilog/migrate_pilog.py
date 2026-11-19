@@ -36,11 +36,41 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument('--apply', action='store_true')
+    mode.add_argument('--update-notifier', action='store_true')
     mode.add_argument('--remove-archived-logs', type=Path, metavar='MANIFEST')
     parser.add_argument('--verified-off-pi-sha256')
     args = parser.parse_args()
     if os.geteuid() != 0:
         parser.error('Run with sudo in PuTTY; no password is stored by this program')
+    if args.update_notifier:
+        if digest(LIVE) == digest(HERE/'pilog.sh'):
+            print('Reviewed notification update is already installed.')
+            return
+        if digest(LIVE) != '8f81cf60175639d62dc48448bccf2d719cace75c50d83c44a2c121f8f099e562':
+            raise RuntimeError('Installed logger differs from reviewed daily-storage version')
+        subprocess.run(['bash','-n',str(HERE/'pilog.sh')],check=True)
+        timer_active = subprocess.run(['systemctl','is-active','--quiet','pilog.timer']).returncode == 0
+        subprocess.run(['systemctl','stop','pilog.timer'],check=True)
+        try:
+            if subprocess.run(['systemctl','is-active','--quiet','pilog.service']).returncode == 0:
+                raise RuntimeError('A sample is running; retry after it finishes')
+            stamp = dt.datetime.now(dt.timezone.utc).strftime('%Y%m%dT%H%M%SZ')
+            backup = Path('/var/backups')/('pilog-notifier-'+stamp)
+            backup.mkdir()
+            shutil.copy2(LIVE,backup/'pilog.sh')
+            shutil.copyfile(HERE/'pilog.sh',LIVE)
+            LIVE.chmod(0o755)
+            subprocess.run(['systemctl','start','pilog.service'],check=True)
+            if digest(LIVE) != digest(HERE/'pilog.sh'):
+                raise RuntimeError('Installed source verification failed')
+            print('Notification update installed; sample completed. Backup:',backup)
+            state = Path('/run/pilog.current')
+            print('LOG:',state.read_text().strip())
+            print('NOTICE:', 'accepted by ntfy' if Path(str(state)+'.notice-sent').exists() else 'pending for next timer sample')
+        finally:
+            if timer_active:
+                subprocess.run(['systemctl','start','pilog.timer'],check=True)
+        return
     if args.remove_archived_logs:
         manifest = json.loads(args.remove_archived_logs.read_text())
         archive = args.remove_archived_logs.parent / 'pilog_legacy.tgz'

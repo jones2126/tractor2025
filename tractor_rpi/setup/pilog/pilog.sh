@@ -7,6 +7,9 @@ LOGDIR="$LOGROOT/$(date +%F)"
 umask 022
 STATE=${PILOG_STATE:-/run/pilog.current}        # lives in RAM, so it is cleared every boot
 NTFY_URL=${PILOG_NTFY_URL:-https://ntfy.sh/rpi-tractor01-jones2126}
+# These RAM files reset on reboot, independently of the CSV/day rollover.
+PENDING="${STATE}.notice-pending"
+SENT="${STATE}.notice-sent"
 # A root-run power logger must not leave a new daily folder unwritable by al.
 if [ ! -d "$LOGDIR" ]; then
   install -d -o al -g al -m 0750 "$LOGDIR" || exit 1
@@ -43,8 +46,9 @@ printf '%s\n' "$LOGFILE" > "$STATE" || exit 1
 echo "$now,$up,$v,$thr,$l1,$l5,$mhz,$temp" >> "$LOGFILE" || exit 1
 sync "$LOGFILE" || exit 1
 
-# Boot notification (first run after each boot only)
-if [ "$first" = 1 ]; then
+# Keep the first report until ntfy accepts it. Existing CSV state does not
+# imply notification success (including an upgrade during the current boot).
+if [ ! -s "$SENT" ] && [ ! -s "$PENDING" ]; then
   t=$(( thr ))
   uv_now=no;  (( t & 0x1 ))     && uv_now=YES
   uv_boot=no; (( t & 0x10000 )) && uv_boot=YES
@@ -54,14 +58,32 @@ if [ "$first" = 1 ]; then
   prio=default; tags=white_check_mark
   if [ "$uv_now" = YES ] || [ "$uv_boot" = YES ]; then prio=high; tags=warning; fi
 
-  msg="rpi-tractor01 booted at $now
+  msg="rpi-tractor01 boot power report
+Sample recorded at $now (America/New_York)
 5V rail: ${v} V
 Under-voltage: now=$uv_now, since boot=$uv_boot
 Throttled: now=$th_now, since boot=$th_boot (raw $thr)
 Load: $l1  Clock: ${mhz} MHz  Temp: ${temp} C
 Log: $LOGFILE"
 
-  curl -s --retry 5 --retry-delay 5 --retry-all-errors --retry-max-time 60 --max-time 20 \
-    -H "Title: rpi-tractor01 boot" -H "Priority: $prio" -H "Tags: $tags" \
-    -d "$msg" "$NTFY_URL" > /dev/null || true
+  # Preserve the original sample, priority and message for delayed delivery.
+  printf '%s\n%s\n%s\n' "$prio" "$tags" "$msg" > "${PENDING}.tmp" || exit 1
+  mv "${PENDING}.tmp" "$PENDING" || exit 1
+fi
+
+if [ ! -s "$SENT" ] && [ -s "$PENDING" ]; then
+  { IFS= read -r prio; IFS= read -r tags; } < "$PENDING"
+  msg=$(tail -n +3 "$PENDING")
+  # One bounded attempt per timer sample. A network failure or non-2xx HTTP
+  # response leaves the report pending for the next two-minute invocation.
+  if status=$(curl --silent --show-error --fail --connect-timeout 5 --max-time 10 \
+      --output /dev/null --write-out '%{http_code}' \
+      -H "Title: rpi-tractor01 boot" -H "Priority: $prio" -H "Tags: $tags" \
+      -d "$msg" "$NTFY_URL") && [[ "$status" =~ ^2[0-9][0-9]$ ]]; then
+    printf '%s\n' "$now" > "${SENT}.tmp" && mv "${SENT}.tmp" "$SENT" || exit 1
+    rm -f -- "$PENDING"
+    echo "pilog: boot power notice accepted by ntfy (HTTP $status); phone delivery is not confirmed."
+  else
+    echo "pilog: boot power notice pending (HTTP ${status:-unavailable}); retry on next timer sample." >&2
+  fi
 fi

@@ -21,7 +21,7 @@ repository command must either:
 1. begin with `cd /home/al/tractor2025`; or
 2. use an absolute path below `/home/al/tractor2025`.
 
-## Current installed runtime — November 19
+## Current installed runtime â€” November 19
 
 This section supersedes older dated preparation/installation checkpoints below.
 Canonical stationary preflight, engine off, stopped in Pause, blades disengaged:
@@ -94,6 +94,13 @@ Daily-storage replacement installed by Al November19 at13:00 EST. Installed
 new sample: `/home/al/field_logs/2026-11-19/pilog_2026-11-19_130000.csv`,
 5.04108V, throttled0x0, temperature41.7C. Timer remains active.
 Daily rollover uses Eastern dates; files are siblings of sealed telemetry segments.
+Notification correction prepared, not yet installed: independent RAM pending/sent
+markers preserve a boot power report containing Pi5V voltage and sample time.
+Network/HTTP failures retry on subsequent two-minute samples (5s connect/10s total
+attempt); only HTTP2xx acceptance marks sent. Existing installed script has only
+a first-run retry window and can permanently miss its boot notice. See
+`tractor_rpi/setup/pilog/README.md` and `migrate_pilog.py --update-notifier`.
+
 
 Legacy33 CSV files archived at
 `/home/al/field_logs/2026-11-19/pilog_legacy_archive_20261119T180000Z/`.
@@ -180,7 +187,7 @@ mission or physical movement.
   **DRAFT - UNTESTED IN THE FIELD**, has not been installed, and has not changed
   any Tractor01 service.
 
-## Prepared post-run collection change — not deployed
+## Prepared post-run collection change â€” not deployed
 
 Local Windows work prepared on 2026-11-14 adds a general post-run evidence
 collector and connects it to the outer-perimeter launcher's exit handler. The
@@ -202,7 +209,7 @@ separately approved stationary validation succeeds.
 The following entries preserve what was known at each checkpoint. Their temporary
 service states and uninstalled labels do not override the current runtime above.
 
-## ISM330DHCX observation logger — manual capture completed November 17
+## ISM330DHCX observation logger â€” manual capture completed November 17
 
 `tractor_rpi/testing/imu/ism330dhcx_field_logger_20261116.py` and its adjacent
 README provide a standalone foreground IMU/GNSS recording experiment. It is
@@ -226,7 +233,7 @@ Those results validate only that observation experiment, not navigation fusion
 or a degraded-motion policy. The newly prepared combined producer below is a
 different, field-untested program.
 
-## November 16 boot regression — repaired and reboot checked
+## November 16 boot regression â€” repaired and reboot checked
 
 Two inspected boots started the disabled legacy `teensy-bridge.service` while
 both enabled production arbitrators remained inactive. The enabled installed
@@ -246,7 +253,7 @@ actual Pause, zero steering PWM, neutral 2836 and exact v5 firmware. Do not
 unmask the old bridge. Preserve the existing heading ExecStartPre/readback hook.
 Do not infer a later boot's health from this record; verify current-boot state.
 
-## November 17 combined pose-producer candidate — NOT installed
+## November 17 combined pose-producer candidate â€” NOT installed
 
 `tractor_rpi/calc-publish-position-20261117.py` is prepared for a separately
 approved November 18 stationary check and manual data-flow run. Windows and
@@ -285,7 +292,7 @@ No replacement producer was installed during that recovery.
 Al subsequently approved local implementation of the consolidated startup,
 continuous recorder and preflight design. Al installed it November 18 with backup
 `/var/backups/tractor-consolidation-20261118T181841Z` and began stationary checks.
-It remains **DRAFT — STATIONARY VALIDATION INCOMPLETE; NOT MOTION VALIDATED**.
+It remains **DRAFT â€” STATIONARY VALIDATION INCOMPLETE; NOT MOTION VALIDATED**.
 Read `tractor_rpi/setup/CONSOLIDATED_STARTUP_REVIEW.md` before proceeding.
 Installed canonical service names are
 `calc-publish-position.service`, `tractor-teensy-bridge.service` (same existing
@@ -386,7 +393,7 @@ recovery without whole-MCU reset or reflashing. See
 No automatic startup recovery has been implemented. At this checkpoint the
 position producer is still stopped; bridge/phone/recorder were left running.
 
-## November 19 manual sensor run — collected and replayed
+## November 19 manual sensor run â€” collected and replayed
 
 Al recovered the silent left encoder with guarded USB reauthorization, started
 the producer and supplied a full canonical preflight PASS (10:57 EST). He reported

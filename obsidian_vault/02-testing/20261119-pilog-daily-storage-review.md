@@ -54,3 +54,25 @@ Windows copy under ignored site `runs/20261119_pilog_legacy/`; archive and all
 33 original file hashes independently verified. Privileged cleanup was attempted
 but sudo requires the operator password; originals remain until PuTTY cleanup.
 No services related to motion/sensor recording were restarted.
+
+## Notification outage correction prepared
+
+Al reported a missing boot voltage notice and requested the retry correction.
+Review confirmed that CSV state was written before first notification, the old
+curl call suppressed errors and later timer samples never retried. Startup
+network-online ordering does not establish public internet availability. Journal
+success does not prove ntfy acceptance; the actual missed-notice cause is unproven.
+
+Updated source now separates pending/sent RAM markers, preserves the measured
+report and sample timestamp, and attempts once per timer invocation with5s connect
+and10s total timeouts. HTTP2xx plus curl success marks accepted; other outcomes
+stay pending and appear in the journal. Data logging precedes network attempts.
+An upgrade queues one honestly labelled catch-up sample because old delivery
+state is unknown. Server acceptance is not confirmed client delivery; retries
+following ambiguous responses may duplicate a notification.
+
+Six isolated mocked Linux tests passed, including offline logging, midnight
+retry, subsequent success/suppression, HTTP failure classes and upgrade behavior.
+Activation helper `migrate_pilog.py --update-notifier` preserves the old script,
+updates only the reviewed installed version, runs one sample and restores the
+power timer. Pending operator sudo activation; no live code changed in preparation.
