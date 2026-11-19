@@ -45,3 +45,22 @@ so a midboot migration does not send another boot notice.
 
 Isolated Linux checks (mock sensor/date/notice commands; temporary output only):
 `python3 tractor_rpi/setup/pilog/test_pilog.py`.
+
+## Approved migration helper
+
+Al approved installation and archival/removal of historical CSV originals on
+November19. Administrative access needs the operator's PuTTY sudo password;
+noninteractive SSH cannot perform that privileged step. Run from the clean,
+synchronized production checkout:
+
+```bash
+cd /home/al/tractor2025 && sudo python3 tractor_rpi/setup/pilog/migrate_pilog.py --apply
+```
+
+The helper briefly pauses only pilog.timer, refuses overlapping samples, backs up
+the installed script/state, creates and internally verifies a legacy-log archive
+in the daily field folder, installs the replacement and validates one sample.
+It restores the timer. Legacy CSV originals remain until the archive is copied
+off-Pi and independently verified. Cleanup is then an explicit helper phase with
+the manifest path and independently verified SHA256; it refuses changed files
+and removes only the archived, matching legacy files and empty legacy directory.
