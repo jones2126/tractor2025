@@ -1,0 +1,366 @@
+{
+  "summary": {
+    "rawRows": 120742,
+    "playbackSamples": 11308,
+    "duration_s": 1126.838715974,
+    "startEpoch": 1795103833.153124,
+    "median_dt_s": 0.00940832950004733,
+    "max_dt_s": 0.01508636700009447,
+    "counts": {
+      "imu": 161106,
+      "encoders": 27742,
+      "status": 42087,
+      "pose": 29970,
+      "events": 1872,
+      "gnss": 29970
+    },
+    "health_fraction": {
+      "fresh": 0.9998923324112571,
+      "fixed": 0.9772075996753408,
+      "heading": 0.9834191913335874,
+      "baselineOk": 0.9890924450481191
+    },
+    "verified_manifests": {
+      "telemetry_154324_711636Z": "eada8539a209ab0bf1e151513bc14ed38be43261b02b688351ba82ee93eeea4e",
+      "telemetry_155824_744702Z": "dfe6fdb118c5b10bfa46a51ea87fcdc8dbf1cd3ab2c31df03885f37bac77e023",
+      "telemetry_161324_745916Z": "1f5fe4dc7e93bcf9aa63054520d62047ba3da116464a6675a140ec5430f7bbe7"
+    },
+    "origin": [
+      40.485768666666665,
+      -80.3322675
+    ]
+  },
+  "gaps": [
+    {
+      "t": 47.69472817399992,
+      "dt_s": 0.013497306999852299,
+      "segment": 0.0
+    }
+  ],
+  "episodes": [
+    {
+      "condition": "fresh",
+      "start_s": 0.0,
+      "end_s": 0.11848046299974158,
+      "duration_s": 0.11848046299974158
+    },
+    {
+      "condition": "fixed",
+      "start_s": 0.0,
+      "end_s": 3.7664307449999797,
+      "duration_s": 3.7664307449999797
+    },
+    {
+      "condition": "baselineOk",
+      "start_s": 302.00440553199996,
+      "end_s": 302.5264622159998,
+      "duration_s": 0.5220566839998355
+    },
+    {
+      "condition": "fixed",
+      "start_s": 301.10763819899967,
+      "end_s": 302.7129538869999,
+      "duration_s": 1.6053156880002462
+    },
+    {
+      "condition": "heading",
+      "start_s": 301.94789252600003,
+      "end_s": 304.5236176979997,
+      "duration_s": 2.575725171999693
+    },
+    {
+      "condition": "heading",
+      "start_s": 305.5230201539998,
+      "end_s": 306.13869653899974,
+      "duration_s": 0.6156763849999152
+    },
+    {
+      "condition": "baselineOk",
+      "start_s": 305.59681167300005,
+      "end_s": 306.13869653899974,
+      "duration_s": 0.5418848659996911
+    },
+    {
+      "condition": "fixed",
+      "start_s": 304.7016839349999,
+      "end_s": 306.7168855949999,
+      "duration_s": 2.0152016600000024
+    },
+    {
+      "condition": "heading",
+      "start_s": 370.7288051349997,
+      "end_s": 372.1282261890001,
+      "duration_s": 1.3994210540004133
+    },
+    {
+      "condition": "heading",
+      "start_s": 426.14513985999974,
+      "end_s": 427.13456456699987,
+      "duration_s": 0.9894247070001256
+    },
+    {
+      "condition": "heading",
+      "start_s": 484.5403111259998,
+      "end_s": 485.33290696799986,
+      "duration_s": 0.7925958420000825
+    },
+    {
+      "condition": "fixed",
+      "start_s": 661.1104573809998,
+      "end_s": 661.7544743059998,
+      "duration_s": 0.6440169249999599
+    },
+    {
+      "condition": "heading",
+      "start_s": 661.726118821,
+      "end_s": 663.9576388539999,
+      "duration_s": 2.2315200329999243
+    },
+    {
+      "condition": "baselineOk",
+      "start_s": 661.726118821,
+      "end_s": 663.9576388539999,
+      "duration_s": 2.2315200329999243
+    },
+    {
+      "condition": "heading",
+      "start_s": 669.126860846,
+      "end_s": 672.7586323639998,
+      "duration_s": 3.631771517999823
+    },
+    {
+      "condition": "baselineOk",
+      "start_s": 669.202974196,
+      "end_s": 672.7586323639998,
+      "duration_s": 3.555658167999809
+    },
+    {
+      "condition": "fixed",
+      "start_s": 668.2968987419999,
+      "end_s": 673.7482818579997,
+      "duration_s": 5.451383115999761
+    },
+    {
+      "condition": "heading",
+      "start_s": 675.1282583970001,
+      "end_s": 677.3590345469997,
+      "duration_s": 2.230776149999656
+    },
+    {
+      "condition": "baselineOk",
+      "start_s": 675.1282583970001,
+      "end_s": 677.3590345469997,
+      "duration_s": 2.230776149999656
+    },
+    {
+      "condition": "fixed",
+      "start_s": 674.7931112379997,
+      "end_s": 677.7421041969997,
+      "duration_s": 2.948992958999952
+    },
+    {
+      "condition": "baselineOk",
+      "start_s": 683.9203823099997,
+      "end_s": 686.5339277399999,
+      "duration_s": 2.6135454300001584
+    },
+    {
+      "condition": "heading",
+      "start_s": 683.9203823099997,
+      "end_s": 687.5431496329998,
+      "duration_s": 3.622767323000062
+    },
+    {
+      "condition": "fixed",
+      "start_s": 683.5098018099998,
+      "end_s": 689.9214830369997,
+      "duration_s": 6.411681226999917
+    },
+    {
+      "condition": "fixed",
+      "start_s": 858.706399401,
+      "end_s": 860.713644336,
+      "duration_s": 2.007244935000017
+    },
+    {
+      "condition": "heading",
+      "start_s": 861.1324712679998,
+      "end_s": 861.7296384249998,
+      "duration_s": 0.5971671570000581
+    },
+    {
+      "condition": "baselineOk",
+      "start_s": 861.1324712679998,
+      "end_s": 861.7296384249998,
+      "duration_s": 0.5971671570000581
+    },
+    {
+      "condition": "fixed",
+      "start_s": 860.9095474589999,
+      "end_s": 861.73907254,
+      "duration_s": 0.8295250810001562
+    }
+  ],
+  "source": [
+    {
+      "name": "C:/Repos/tractor2025/field_testing/sites/62_Collins_multi_boundary_20260915/runs/20261119_manual/telemetry_154324_711636Z/encoders.jsonl",
+      "sha256": "3db7e722239ff13401913fb3419f76c1ccd8953e8f334d0c074f4e4fba7103b8"
+    },
+    {
+      "name": "C:/Repos/tractor2025/field_testing/sites/62_Collins_multi_boundary_20260915/runs/20261119_manual/telemetry_154324_711636Z/events.jsonl",
+      "sha256": "95fd982710fd25d6c2b1fe50faa1e3cb004fa0f4c179aee5517c5bbb53bf1116"
+    },
+    {
+      "name": "C:/Repos/tractor2025/field_testing/sites/62_Collins_multi_boundary_20260915/runs/20261119_manual/telemetry_154324_711636Z/field.csv",
+      "sha256": "06ace321009bdcaa23749c523ec47ab1d3a5b733a8c9fd7a39751b9b2fb5e87b"
+    },
+    {
+      "name": "C:/Repos/tractor2025/field_testing/sites/62_Collins_multi_boundary_20260915/runs/20261119_manual/telemetry_154324_711636Z/gnss.jsonl",
+      "sha256": "a0494154f3e66d7fda886e7de0f1eb450f0bab7458ac0af53be9b6907d2a80b3"
+    },
+    {
+      "name": "C:/Repos/tractor2025/field_testing/sites/62_Collins_multi_boundary_20260915/runs/20261119_manual/telemetry_154324_711636Z/imu.jsonl",
+      "sha256": "f94f0ac49bbc5f2018df7a2c23ecad8447f94bc4cefc80e7dd80f9e515e92fc3"
+    },
+    {
+      "name": "C:/Repos/tractor2025/field_testing/sites/62_Collins_multi_boundary_20260915/runs/20261119_manual/telemetry_154324_711636Z/metadata.json",
+      "sha256": "2f0a0051b6ce109fe092717b121132281f340e5f542806f64d6ae58569cdb3dd"
+    },
+    {
+      "name": "C:/Repos/tractor2025/field_testing/sites/62_Collins_multi_boundary_20260915/runs/20261119_manual/telemetry_154324_711636Z/pose.jsonl",
+      "sha256": "98e4ef294a401d3f222c4aa3a408f3b3b3cf84c2e17c11ab24bd14d5189a911f"
+    },
+    {
+      "name": "C:/Repos/tractor2025/field_testing/sites/62_Collins_multi_boundary_20260915/runs/20261119_manual/telemetry_154324_711636Z/router.jsonl",
+      "sha256": "a6d0124cab07eb68c2ee7263b27998e0cc8f141bf169678ed97905305cd04195"
+    },
+    {
+      "name": "C:/Repos/tractor2025/field_testing/sites/62_Collins_multi_boundary_20260915/runs/20261119_manual/telemetry_154324_711636Z/SHA256SUMS",
+      "sha256": "eada8539a209ab0bf1e151513bc14ed38be43261b02b688351ba82ee93eeea4e"
+    },
+    {
+      "name": "C:/Repos/tractor2025/field_testing/sites/62_Collins_multi_boundary_20260915/runs/20261119_manual/telemetry_154324_711636Z/status.jsonl",
+      "sha256": "2113ef1b24f635242487def8c739f6a9112597f31f432ce1a7388b4fbb4892c3"
+    },
+    {
+      "name": "C:/Repos/tractor2025/field_testing/sites/62_Collins_multi_boundary_20260915/runs/20261119_manual/telemetry_155824_744702Z/encoders.jsonl",
+      "sha256": "67833e3ae1799c1d2ba9054d14c74443dc4263313120c3f8463a717fc5df6a17"
+    },
+    {
+      "name": "C:/Repos/tractor2025/field_testing/sites/62_Collins_multi_boundary_20260915/runs/20261119_manual/telemetry_155824_744702Z/events.jsonl",
+      "sha256": "052609beb9fe17520b05e2f457bc724cf31093745512ee45a9eaed9bf861eb14"
+    },
+    {
+      "name": "C:/Repos/tractor2025/field_testing/sites/62_Collins_multi_boundary_20260915/runs/20261119_manual/telemetry_155824_744702Z/field.csv",
+      "sha256": "82e5523b4d5ee4c8267fa1b186331c3290a47d388ad3eb840ee95bf2992b780a"
+    },
+    {
+      "name": "C:/Repos/tractor2025/field_testing/sites/62_Collins_multi_boundary_20260915/runs/20261119_manual/telemetry_155824_744702Z/gnss.jsonl",
+      "sha256": "9c6e5bc5ef0d93d708b2bd2bca34da65c009be358a77869eff02b514658fcd76"
+    },
+    {
+      "name": "C:/Repos/tractor2025/field_testing/sites/62_Collins_multi_boundary_20260915/runs/20261119_manual/telemetry_155824_744702Z/imu.jsonl",
+      "sha256": "339c83912736dbce837b47892a0ed16e7c3a1b1cce5d849bc7b042086e9fd3f2"
+    },
+    {
+      "name": "C:/Repos/tractor2025/field_testing/sites/62_Collins_multi_boundary_20260915/runs/20261119_manual/telemetry_155824_744702Z/metadata.json",
+      "sha256": "b4102a1e510806c63a28c8dbed68b9e63a668a8b2ec292cd2ef078495ed85314"
+    },
+    {
+      "name": "C:/Repos/tractor2025/field_testing/sites/62_Collins_multi_boundary_20260915/runs/20261119_manual/telemetry_155824_744702Z/pose.jsonl",
+      "sha256": "8b7aef2ac06ccbe94a9f5d1a6ca98f548a7f6e2ea2e099c7adf71d22770ad530"
+    },
+    {
+      "name": "C:/Repos/tractor2025/field_testing/sites/62_Collins_multi_boundary_20260915/runs/20261119_manual/telemetry_155824_744702Z/router.jsonl",
+      "sha256": "1860ba8a907f6f732b628b41deb469cce931c64e32e3db08fdebf4fcc415931b"
+    },
+    {
+      "name": "C:/Repos/tractor2025/field_testing/sites/62_Collins_multi_boundary_20260915/runs/20261119_manual/telemetry_155824_744702Z/SHA256SUMS",
+      "sha256": "dfe6fdb118c5b10bfa46a51ea87fcdc8dbf1cd3ab2c31df03885f37bac77e023"
+    },
+    {
+      "name": "C:/Repos/tractor2025/field_testing/sites/62_Collins_multi_boundary_20260915/runs/20261119_manual/telemetry_155824_744702Z/status.jsonl",
+      "sha256": "a1b5c30da2ec4b00bf629629dc31ad3f400e56456da6afa353dc947550be19b4"
+    },
+    {
+      "name": "C:/Repos/tractor2025/field_testing/sites/62_Collins_multi_boundary_20260915/runs/20261119_manual/telemetry_161324_745916Z/encoders.jsonl",
+      "sha256": "3f4ee9a80eeb6e4da26230b418e271933cb22d8fc512aba5ca9bdb5dd2d4acc0"
+    },
+    {
+      "name": "C:/Repos/tractor2025/field_testing/sites/62_Collins_multi_boundary_20260915/runs/20261119_manual/telemetry_161324_745916Z/events.jsonl",
+      "sha256": "3442a35d7bfe6545705b9975a0a506a339daeef1b96f052375e8e3899365b8e0"
+    },
+    {
+      "name": "C:/Repos/tractor2025/field_testing/sites/62_Collins_multi_boundary_20260915/runs/20261119_manual/telemetry_161324_745916Z/field.csv",
+      "sha256": "c39bf58c0551fc4538a35d6c8608c0f4d33eb2adc77a248d9030679f5ec88dc7"
+    },
+    {
+      "name": "C:/Repos/tractor2025/field_testing/sites/62_Collins_multi_boundary_20260915/runs/20261119_manual/telemetry_161324_745916Z/gnss.jsonl",
+      "sha256": "164cc04b6f4c20f6bbb9022dff1522bea57ba08810b3caa0f1fbbb72af7fbae6"
+    },
+    {
+      "name": "C:/Repos/tractor2025/field_testing/sites/62_Collins_multi_boundary_20260915/runs/20261119_manual/telemetry_161324_745916Z/imu.jsonl",
+      "sha256": "c918b03f6eda0a0ba9811cde16a95847b6f34b812dce047c1e4c830699fedf1e"
+    },
+    {
+      "name": "C:/Repos/tractor2025/field_testing/sites/62_Collins_multi_boundary_20260915/runs/20261119_manual/telemetry_161324_745916Z/metadata.json",
+      "sha256": "8fd339a756be9a6554717ca27dc5f05f131f691a7a7cb589c27cc851baa4118e"
+    },
+    {
+      "name": "C:/Repos/tractor2025/field_testing/sites/62_Collins_multi_boundary_20260915/runs/20261119_manual/telemetry_161324_745916Z/pose.jsonl",
+      "sha256": "1d5d1f593b506ca72b25738249f13898f3b0ea9c461a1f3090eabe1a441c7056"
+    },
+    {
+      "name": "C:/Repos/tractor2025/field_testing/sites/62_Collins_multi_boundary_20260915/runs/20261119_manual/telemetry_161324_745916Z/router.jsonl",
+      "sha256": "f03e39cfe7392b1fbc89663174448e3689bbaab5fb18c5ee93a0201bfc58dbfb"
+    },
+    {
+      "name": "C:/Repos/tractor2025/field_testing/sites/62_Collins_multi_boundary_20260915/runs/20261119_manual/telemetry_161324_745916Z/SHA256SUMS",
+      "sha256": "1f5fe4dc7e93bcf9aa63054520d62047ba3da116464a6675a140ec5430f7bbe7"
+    },
+    {
+      "name": "C:/Repos/tractor2025/field_testing/sites/62_Collins_multi_boundary_20260915/runs/20261119_manual/telemetry_161324_745916Z/status.jsonl",
+      "sha256": "1c6c5ecc593db08bd71bc69f537ffe43c3919ca97c5546502871ca59d6a53c4a"
+    },
+    {
+      "name": "C:/Repos/tractor2025/field_testing/tools/build_tractor01_sensor_replay_20261119.py",
+      "sha256": "e2f5bc7188900ea8916f3beaa4ab7da96c1f6e88d87c146e7b6e5768f71ed789"
+    },
+    {
+      "name": "C:/Repos/tractor2025/field_testing/tools/tractor-sensor-replay-template.html",
+      "sha256": "587170723665c37bc72c34ed50f49e27a591686350f878c76cd041a5fd3df4c1"
+    },
+    {
+      "name": "C:/Repos/tractor2025/field_testing/tools/build_tractor01_imu_replay_20261117.py",
+      "sha256": "8f0ef88ef99f1e632a407241f627fcddb6fd769e6b3ff97e03c7886e044ccc4c"
+    },
+    {
+      "name": "C:/Repos/tractor2025/field_testing/tools/tractor-mission-replay-template.html",
+      "sha256": "9047b9dc0c665e0fdbbc180a4045810be094d84b23952135272af3ab95af7e82"
+    },
+    {
+      "name": "C:/Repos/tractor2025/field_testing/tools/build_tractor_mission_replays_20260919.py",
+      "sha256": "108f2ea19feba28d11c19d37e7485da535c13e06321e37161cb4bb3c05334d93"
+    },
+    {
+      "name": "C:/Repos/tractor2025/field_testing/tools/check_sensor_replay_ui_20261119.cjs",
+      "sha256": "d069421998ba7a9a7c9d1a510ea86df053636fabce9a02374fe920b4fae586d5"
+    },
+    {
+      "name": "C:/Repos/tractor2025/tractor_rpi/export_telemetry_run.py",
+      "sha256": "6b13c1b0e5f8c0faa72a8e56533f950755cf89501f22f1ab41c2cb6ee9b80fde"
+    },
+    {
+      "name": "C:/Repos/tractor2025/field_testing/sites/62_Collins_multi_boundary_20260915/runs/20261119_manual/preflight_105734_413335.txt",
+      "sha256": "c5ac7be8c6a021f10b7c69622d37e812a891705c81c80271f0f86e9904fd17a4"
+    },
+    {
+      "name": "C:/Repos/tractor2025/field_testing/sites/62_Collins_multi_boundary_20260915/runs/20261119_manual/manual_run_20261119.tgz",
+      "sha256": "eb531f2c0504785f5c034073360533cef2157912524818e82a5b1bb50c0d2d19"
+    },
+    {
+      "name": "C:/Repos/tractor2025/field_testing/sites/62_Collins_multi_boundary_20260915/runs/20261119_manual/manual_run_20261119.tgz.sha256",
+      "sha256": "71d28aa52bebcbb3a1af41eaebc4595a8b24f137406ff1bed66b621e07b3bd2c"
+    }
+  ]
+}

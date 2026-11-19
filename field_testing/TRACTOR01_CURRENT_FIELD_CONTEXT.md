@@ -1,6 +1,6 @@
 # Tractor01 current field context
 
-Last updated: 2026-11-18
+Last updated: 2026-11-19
 
 This is durable operational context for assistants helping Al with Tractor01.
 Read it before proposing field commands. It records established facts and
@@ -21,62 +21,53 @@ repository command must either:
 1. begin with `cd /home/al/tractor2025`; or
 2. use an absolute path below `/home/al/tractor2025`.
 
-The canonical manual phone-arbitrator preflight is therefore:
+## Current installed runtime — November 19
+
+This section supersedes older dated preparation/installation checkpoints below.
+Canonical stationary preflight, engine off, stopped in Pause, blades disengaged:
 
 ```bash
-cd /home/al/tractor2025
-sudo python3 tractor_rpi/testing/mission_preflight_phone_control_20261109.py \
-  --expected-firmware teensy_main_20261110_rpi_command_lease_v5
+cd /home/al/tractor2025 && sudo python3 -m tractor_rpi.tractor_preflight --expected-firmware teensy_main_20261110_rpi_command_lease_v5 --confirm-engine-off --heading-wait-seconds 120
 ```
 
-Require the exact final line:
+Require `MISSION PREFLIGHT PASS`; a FAIL never permits Auto. A PASS does not
+itself authorize movement. Confirm current commit/clean tree before field work.
 
-```text
-MISSION PREFLIGHT PASS
-```
+- Production producer: `calc-publish-position.service`, alias `rtcm-server.service`.
+  Owns F9Ps, IMU, encoders and RTCM forwarding. Its ExecStartPre still writes the
+  Heading moving-base profile to RAM and independently reads back 22 values.
+- Production bridge: `tractor-teensy-bridge.service`, alias
+  `tractor-rpi-arbitrator.service`, sole `/dev/teensy` owner, unchanged v5 command
+  safety selection. Retired `teensy-bridge.service` remains masked.
+- Phone: `tractor-phone-arbitrator.service`, local TLS `https://192.168.8.20:8765`.
+  Depends on bridge alias; stopping bridge can stop phone. Local-control-ready
+  ntfy does not mean full preflight or calibration passed.
+- `tractor-telemetry-recorder.service`: independent boot recorder, sole UDP 6009
+  owner; receives status UDP 6003, router TCP 6005 and native sensor/pose/event IPC.
+  Daily Eastern folders `/home/al/field_logs/YYYY-MM-DD/telemetry_<UTC>/`, 15-minute
+  segments with closed hashes. No separate legacy field or standalone IMU logger.
+- `tractor-startup-preflight.service`: consolidated one-shot readiness/full test,
+  300-second readiness wait, 600-second service timeout. An earlier failed unit
+  state persists after a later successful manual preflight; it is not a live
+  reflection of the last manually run test. Local reports survive ntfy failures.
+- Four raw GNSS copies still publish at about 20 Hz to 6002/6009/6010/6013.
+  Each unicast consumer gets its own port. Experimental pose is IPC-recorded,
+  `valid_for_control=False`; Pure Pursuit still uses raw GNSS, not fused pose.
+- Left Teensy 3.2 serial `5879620`; right encoder serial
+  `F5CB3C7E51514A4E43202020FF142006`; tractor Teensy 4.1 serial `16883790`.
+  Resolve USB identity, not ttyACM index. Left USB cold-boot silence remains an
+  unresolved issue; targeted reauthorization restored output without reflashing.
+- Commissioned steering: right191/centre525/left885; JRK neutral2836; firmware
+  `teensy_main_20261110_rpi_command_lease_v5`.
+- Ethernet192.168.8.20/24 gateway192.168.8.1; maintenance/dashboard via
+  ZeroTier192.168.193.76 (dashboard normally8088). `0.0.0.0` is a listen address,
+  never the address the operator enters. Review dashboard may intentionally show
+  no controller before it is launched.
+- Frozen November4 launcher uses a competing private logger/old preflight and
+  must not run unchanged with the consolidated recorder. No Auto successor yet.
 
-Any FAIL means remain in Pause and do not select Auto.
-
-## Current production control stack
-
-- Canonical Tractor01 checkout: `/home/al/tractor2025`
-- Teensy firmware identity:
-  `teensy_main_20261110_rpi_command_lease_v5`
-- Commissioned steering calibration: right `191`, center `525`, left `885`
-- Production services:
-  - `rtcm-server.service`
-  - `tractor-rpi-arbitrator.service`
-  - `tractor-phone-arbitrator.service`
-- Phone control is local to the onboard GL router at Tractor01 address
-  `192.168.8.20`, port `8765`.
-- Mission-dashboard access is expected over Tractor01 ZeroTier address
-  `192.168.193.76`, normally port `8088`.
-- A dashboard host of `0.0.0.0` is the production default listen setting. It
-  means listen on all Tractor01 IPv4 interfaces; the operator still opens the
-  concrete ZeroTier URL `http://192.168.193.76:8088/?key=...`.
-
-## Heading-F9P initialization and preflight
-
-The installed `rtcm-server.service` owns the Heading-F9P device. Its
-`ExecStartPre` runs:
-
-```text
-configure_dual_f9p_5hz_profile_20260923.py --heading-startup
-```
-
-That hook applies the established moving-base profile in volatile RAM and
-performs an independent readback on each successful service start, including a
-successful start during the current boot. The phone-arbitrator preflight checks
-for the installed hook and successful current-boot proof.
-
-Do not stop or restart `rtcm-server` merely to rediscover facts when the current
-boot already contains successful independent-readback proof and the full
-preflight passes. If proof is missing or preflight reports a Heading startup
-failure, remain stationary in Pause and diagnose before any movement.
-
-Required mission-start invariant remains: stationary in Pause with blades off;
-current-session Heading-F9P write/readback proof; `rtcm-server` active; heading
-reacquired; full `MISSION PREFLIGHT PASS`.
+Read AGENTS.md's startup walkthrough for exact waits/notices/calibration gates.
+Do not restart healthy services just to rediscover current-boot readback proof.
 
 ## Raspberry Pi throttling monitoring
 
@@ -188,6 +179,11 @@ GitHub to Tractor01 with this revision. No service restart, installation, or
 live stationary collection validation is included. Automatic evidence collection
 remains DRAFT - UNTESTED IN THE FIELD; verify collection manually until a
 separately approved stationary validation succeeds.
+
+## Historical checkpoints (dates matter)
+
+The following entries preserve what was known at each checkpoint. Their temporary
+service states and uninstalled labels do not override the current runtime above.
 
 ## ISM330DHCX observation logger — manual capture completed November 17
 
@@ -335,3 +331,57 @@ records could appear future-dated. Source correction assesses age after fetching
 the windows; 34 focused tests passed, including an observation-arrives-during-query
 case. Pulling this preflight-only correction requires no service restart and does
 not resolve the remaining genuine Heading Float/alignment failure.
+
+### Approximately 15:12 November 18: post-reboot full PASS after base restart
+
+Al restarted the external RTK base service, then supplied a full canonical
+preflight PASS saved as
+`/home/al/field_logs/2026-11-18/preflight_151148_057129.txt`.
+Position RTK Fixed; Heading carrier Fixed in 100% of snapshots; baseline 1.2335 m;
+Heading accuracy 0.466 degrees; 31 Heading satellites used; correction age 1.40 s.
+Gyro calibration/alignment and both encoders passed (50 records/5 s each), actual
+Pause/neutral 2836 and commissioned v5 firmware passed. Recorder session
+`723efd1adc3e47048616d5197fb40e07`, current segment
+`/home/al/field_logs/2026-11-18/telemetry_201128_507836Z`, error=None/losses=0,
+approximately 32.8 GB free. Recorder rotates segments automatically; retain the
+whole relevant daily session, not only this last directory.
+
+This establishes eventual post-reboot readiness after intervention, not unattended
+boot reliability. Left encoder had required USB power-cycling after reboot without
+reflashing; its existing firmware resumed output. GNSS recovery followed the base
+restart, but root cause is not isolated. Al reports the tractor remained unmoved;
+the changing reported Fixed baseline remains an analysis question. No manual
+engine start or field movement is established by this PASS alone.
+
+### Second cold-start left-encoder isolation
+
+Al reproduced left-encoder silence after another clean shutdown/ten-second Pi
+power removal with cables left connected. Kernel enumeration was normal: serial
+5879620 at USB 2-2.3 around 4.7 s, ttyACM4 by 8.1 s, producer startup around 30 s.
+No USB disconnect/reset/enumeration error was found in the uploaded boot capture.
+Linux cdc_acm interface unbind/rebind did not restore serial output.
+
+With producer stopped and board still powered, guarded USB-device deauthorization
+and reauthorization (2-2.3/authorized: 0, wait two seconds, 1) DID restore 10 Hz
+ENC,L output. Device clock resumed around 763312 ms rather than zero, supporting
+recovery without whole-MCU reset or reflashing. See
+`obsidian_vault/02-testing/20261118-left-encoder-boot-investigation.md`.
+No automatic startup recovery has been implemented. At this checkpoint the
+position producer is still stopped; bridge/phone/recorder were left running.
+
+## November 19 manual sensor run — collected and replayed
+
+Al recovered the silent left encoder with guarded USB reauthorization, started
+the producer and supplied a full canonical preflight PASS (10:57 EST). He reported
+engine running at 11:01 after two start attempts, then CW/CCW squares and hard
+turns with approximately ten-second pauses; parked/off/Pause around 11:14.
+This establishes one manual capture, not reliable unattended boot or Auto fusion.
+
+Three closed telemetry segments covering preparation and the drive were copied
+to Windows. Archive SHA-256 and all inner manifests independently verified;
+originals remain on Tractor01. Raw copy is ignored under site
+`runs/20261119_manual/`; derived replay is
+`analysis/20261119_manual_sensor_replay/`. See
+`obsidian_vault/02-testing/20261119-manual-imu-gps-encoder-run.md` for provenance,
+operator markers and initial stream-continuity observations. Encoder scale and
+turn-clearance analysis remain pending. No control policy was changed.

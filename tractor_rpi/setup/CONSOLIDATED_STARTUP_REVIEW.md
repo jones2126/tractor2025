@@ -1,6 +1,16 @@
 # Consolidated startup implementation — review before deployment
 
-November 18, 2026. **DRAFT — UNTESTED ON TRACTOR01. NOT INSTALLED.**
+November 18 design/review record; status updated November 19, 2026.
+**INSTALLED November 18; stationary preflight and manual sensor capture exercised
+November 19. Unattended boot reliability and control-pose accuracy remain unvalidated.**
+
+The preparation text below is historical. Al installed the consolidation with
+backup `/var/backups/tractor-consolidation-20261118T181841Z`. Canonical runtime,
+current limitations and startup details are in AGENTS.md and
+`field_testing/TRACTOR01_CURRENT_FIELD_CONTEXT.md`. The four runtime services
+were active in the November 19 audit; installed unit hashes matched repository
+sources (LF-normalized). No additional install/restart is required for the
+November 19 documentation/replay synchronization.
 Al approved local implementation after reviewing the design. No hardware access,
 service installation, firmware changes, engine start or field movement was performed.
 The earlier November 17 one-boot candidate instructions are not the deployment

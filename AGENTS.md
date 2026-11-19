@@ -52,17 +52,26 @@ Full documentation: `obsidian_vault/00-project-overview.md`
 | E-stop | 3 | Latches the Teensy software e-stop relay output |
 | Reset Pause | 4 | Clears the software e-stop only as a zero Pause command |
 
-### UDP Ports
+### UDP ports and duplicate feeds
+
+Ports **6002, 6009, 6010 and 6013 deliberately receive the same raw GNSS JSON
+snapshot at approximately 20 Hz**. Each unicast consumer has its own socket/port;
+sharing a unicast receive socket would make consumers contend for packets rather
+than reliably give every consumer a copy. The recorder captures ONE GNSS feed,
+not four duplicate recordings. These ports still carry raw GNSS, not the
+experimental IMU/encoder pose. Native heading updates are approximately 5 Hz;
+a repeated 20 Hz snapshot is not a new independent heading measurement.
+
 | Port | Content |
 |------|---------|
-| 6002 | GPS/RTK state for the bridge |
+| 6002 | Dedicated 20 Hz raw GNSS copy for the Teensy bridge/safety selection |
 | 6003 | Combined Teensy, command-lease, and RPi-arbitrator status broadcast |
 | 6004 | Legacy `cmd_vel` input; production arbitrator rejects/bypasses it as a motion authority |
-| 6009 | Dedicated 20 Hz GPS feed for the field logger |
-| 6010 | Dedicated 20 Hz navigation feed for Pure Pursuit |
+| 6009 | Dedicated 20 Hz raw GNSS feed; sole current owner is the continuous telemetry recorder |
+| 6010 | Dedicated 20 Hz raw GNSS feed for Pure Pursuit; fused pose has NOT replaced it |
 | 6011 | Mission-dashboard Pause/resume control |
 | 6012 | Pure Pursuit dashboard telemetry |
-| 6013 | Dedicated GPS feed for the mission dashboard |
+| 6013 | Dedicated 20 Hz raw GNSS copy for the mission dashboard |
 | 6014 | Authenticated phone intent to the RPi safety arbitrator |
 | 6015 | Pure Pursuit proposal and health feed to the RPi safety arbitrator |
 
@@ -80,17 +89,23 @@ sequence validation, Pause/Manual/Auto/software-E-stop/guarded-reset modes, and
 telemetry including JRK VIN millivolts. Commissioned steering values are right
 `191`, center `525`, and left `885`; JRK neutral is `2836`.
 
-### Active Development Focus (as of 2026-11-11)
-- November 18 startup/recording/preflight consolidation is a local, uninstalled
-  candidate. See `tractor_rpi/setup/CONSOLIDATED_STARTUP_REVIEW.md` and the current
-  field context before deployment. Proposed boot recorder owns UDP 6009; its new
-  preflight reads local recorder windows, so old private mission loggers and
-  UDP-binding preflights cannot be run alongside it. Frozen packages stay unchanged.
-- Review a bounded 0.3 m/s continuation state for specified short RTK/heading
-  degradations; inspection and plan come before implementation.
-- Field-validate the independent continuous JRK VIN logger before installation.
-- Improve route recovery/corridor guidance and continue evidence-backed replay
-  analysis without weakening immediate local watchdogs.
+### Active development focus — November 19, 2026
+
+- Consolidated producer, bridge and continuous recorder were installed November 18
+  and exercised in a November 19 manual run. Canonical preflight is now
+  `python3 -m tractor_rpi.tractor_preflight`; see the startup section below.
+  This is evidence of manual acquisition, not unattended boot reliability or
+  validation of a fused navigation pose.
+- Analyze the verified November 17 and November 19 runs: wheel signs/scales,
+  IMU heading prediction, source timing, GNSS health, and hard-turn geometry.
+- Prepare a supported pose contract for Pure Pursuit while keeping estimation
+  separate from motion authorization. The current pose remains shadow-only and
+  `valid_for_control=False`; all four GNSS ports retain their raw schema.
+- Proposed GNSS-degraded travel limit is 3 m or 30 s, whichever occurs first,
+  at at most 0.3 m/s, subject to review. At 0.3 m/s, 3 m is 10 s, not 30 s.
+  Do not implement that proposal by extending local freshness/watchdog limits.
+- JRK VIN is now captured with raw status by the continuous recorder. The older
+  independent battery logger remains uninstalled; it is not an additional source.
 - IBT-2 Gen2 wiring remains planned but not implemented.
 
 ### Known Issues
@@ -99,7 +114,17 @@ telemetry including JRK VIN millivolts. Commissioned steering values are right
 3. DepthAI must stay at version `2.30.0.0` (3.0 is incompatible)
 4. IBT-2 overcurrent latch — reset by pulling motor fuse 5 sec; R_EN/L_EN hardwired to 5V currently
 5. Pixel hotspot MAC randomization can cause WiFi failures — clear `802-11-wireless.bssid` if needed.
-6. The installed Pi throttling/5 V `pilog` automation is live-system evidence,
+6. Left encoder Teensy 3.2 USB serial `5879620` repeatedly enumerates after a cold
+   Pi boot but sends no serial rows. Rebinding cdc_acm did not help; targeted USB
+   deauthorization/reauthorization restored output without reflashing or resetting
+   its running device clock. Root cause remains unisolated; no automatic recovery
+   is installed. Firmware loss is not established. Never hardcode ttyACM numbers.
+7. GNSS Float persisted despite fresh corrections and about 31 used satellites.
+   Recovery followed service/base restarts in different trials; no isolated root
+   cause is established. A November 19 move to less perceived multipath coincided
+   with healthy GNSS, but does not prove causation. Do not diagnose by satellite
+   count alone or repeatedly restart healthy services.
+8. The installed Pi throttling/5 V `pilog` automation is live-system evidence,
    but its exact source and installer are not yet represented in GitHub `main`.
 
 ---
@@ -110,32 +135,182 @@ Treat this as the current key-program inventory. Confirm installed unit contents
 against these repository files before changing services because the RPi may not
 yet have pulled the newest `main` commit.
 
-### Boot services and persistent processes
+### Boot services and persistent processes — installed November 18
 
-| Service/process | Repository program or unit | Role |
+| Service | Repository source | Role |
 |---|---|---|
-| `rtcm-server.service` | [`tractor_rpi/setup/rtcm-server-tractor01.service`](tractor_rpi/setup/rtcm-server-tractor01.service), [`tractor_rpi/rtcm_server_20260828.py`](tractor_rpi/rtcm_server_20260828.py) | Owns both F9P serial devices, receives base corrections, decodes position/heading, and publishes the dedicated GPS feeds. Its `ExecStartPre` runs [`configure_dual_f9p_5hz_profile_20260923.py`](tractor_rpi/testing/configure_dual_f9p_5hz_profile_20260923.py) with `--heading-startup` and requires independent RAM readback. |
-| `tractor-rpi-arbitrator.service` | [`tractor-rpi-arbitrator.service`](field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20261104_PHONE_ARBITRATOR_OUTER_PERIMETER_DRAFT_UNTESTED/tractor-rpi-arbitrator.service), [`teensy_serial_bridge_rpi_arbitrator_20261104.py`](tractor_rpi/teensy_serial_bridge_rpi_arbitrator_20261104.py) | **Functional replacement for the retired standalone Teensy bridge.** It is the sole production owner of `/dev/teensy`: it reads and parses Teensy telemetry, sends the final RPi command-lease frames, joins phone intent, Pure Pursuit proposals, local health, and route/corridor limits, then broadcasts the combined status on UDP 6003. Its separately bounded phone-only `COMMUNICATIONS_DEGRADED` envelope is 30 seconds / 30 m and cannot override a failed local-health check. |
-| `tractor-phone-arbitrator.service` | [`tractor-phone-arbitrator.service`](field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20261104_PHONE_ARBITRATOR_OUTER_PERIMETER_DRAFT_UNTESTED/tractor-phone-arbitrator.service), [`wifi_rpi_arbitrator_control_20261104.py`](tractor_rpi/testing/webrtc/wifi_rpi_arbitrator_control_20261104.py) | Serves authenticated TLS phone control at `https://192.168.8.20:8765`, owns operator sessions, logs authoritative accepted commands, publishes diagnostics, sends phone intent on UDP 6014, and creates non-authoritative ntfy notices. It never sends legacy UDP 6004 motion commands. |
-| `zerotier-one.service` | OS package, not repository-owned | Provides maintenance/SSH, RTK-base reachability, log transfer, and the mission-dashboard path. It is not the primary real-time phone-control authority. |
-| `pilog.timer` / `pilog.service` | Installed Tractor01 automation; source not yet found in `main` | Approximately two-minute Pi power/resource log under `/var/log/pilog`: 5 V rail, `get_throttled`, load, ARM MHz, and temperature. Do not confuse its 5 V measurement with the 12 V JRK VIN telemetry. |
+| `calc-publish-position.service` | `tractor_rpi/setup/calc-publish-position.service`; `tractor_rpi/calc_publish_position.py` | Owns both F9Ps, IMU and encoder acquisition; forwards external RTCM; publishes four unchanged raw GNSS copies and records experimental pose via IPC. Alias `rtcm-server.service` refers to this same unit. |
+| `tractor-teensy-bridge.service` | `tractor_rpi/setup/tractor-teensy-bridge.service`; `tractor_rpi/teensy_serial_bridge_rpi_arbitrator_20261104.py` | Sole `/dev/teensy` owner at 460800 baud; unchanged bridge plus RPi safety-selection logic. Alias `tractor-rpi-arbitrator.service` is the same unit. |
+| `tractor-phone-arbitrator.service` | Frozen November 4 package unit; `tractor_rpi/testing/webrtc/wifi_rpi_arbitrator_control_20261104.py` | Local authenticated TLS phone control, accepted-command logs, UDP 6014 intent and best-effort ntfy notices. Depends on bridge through its alias. |
+| `tractor-telemetry-recorder.service` | `tractor_rpi/setup/tractor-telemetry-recorder.service`; `tractor_rpi/telemetry_recorder.py` | Independent continuous boot recorder; owns UDP 6009, listens to status 6003 and router TCP 6005, accepts sensor/event/pose IPC. |
+| `tractor-startup-preflight.service` | `tractor_rpi/setup/tractor-startup-preflight-consolidated.service`; `tractor_rpi/tractor_preflight.py --startup` | One-shot readiness wait, full checks, dated local report and best-effort notices. Does not grant motion or automatically retry a completed failure. |
+| `zerotier-one.service` | OS package | Maintenance, base access and evidence transfer; local router remains primary phone-control path. |
+| `pilog.timer` / `pilog.service` | Installed automation; exact source not traced in Git | Pi 5 V/throttling/resources evidence under `/var/log/pilog`; distinct from JRK VIN. |
 
-The production boot pair conflicts with and replaces the legacy
-`teensy-bridge.service`, `tractor-wifi-control.service`,
-`tractor-wifi-direct-mission.service`, and `tractor-wifi-recovery.service`.
-Those legacy services must remain disabled/inactive. Exactly one process may
-own `/dev/teensy`.
+The retired **`teensy-bridge.service` remains masked**. Do not confuse it with
+`tractor-teensy-bridge.service`. Legacy `tractor-wifi-control.service`,
+`tractor-wifi-direct-mission.service` and `tractor-wifi-recovery.service` stay
+inactive. Exactly one process owns each serial device. Installed consolidation
+backup: `/var/backups/tractor-consolidation-20261118T181841Z`.
 
-### Programs started for a mission
+### Program/module boundaries
 
-| Program | Role |
-|---|---|
-| [`mission_dashboard_production_20261109.py`](field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20261104_PHONE_ARBITRATOR_OUTER_PERIMETER_DRAFT_UNTESTED/mission_dashboard_production_20261109.py) | Production dashboard normally exposed over ZeroTier on port 8088; displays authoritative phone, controller, GPS/heading, route, and actuator state. |
-| [`run_outer_perimeter_20261104.sh`](field_testing/sites/62_Collins_multi_boundary_20260915/mission_plans/20261104_PHONE_ARBITRATOR_OUTER_PERIMETER_DRAFT_UNTESTED/run_outer_perimeter_20261104.sh) | Verifies the frozen package and preflight, starts the field logger, then launches the proposal-only controller for the exact outer-perimeter route. |
-| [`mission_preflight_phone_control_20261109.py`](tractor_rpi/testing/mission_preflight_phone_control_20261109.py) | Canonical non-motion preflight for services, network routes, devices, correction stream, heading profile, telemetry, JRK health, safe Pause state, and exact firmware identity. |
-| [`pure_pursuit_arbitrator_feed_20261031.py`](tractor_rpi/pure-pursuit/pure_pursuit_arbitrator_feed_20261031.py) | Wraps the frozen controller, preserves dashboard telemetry, hashes the exact route, and duplicates proposal/health data to UDP 6015. It does not own the Teensy. |
-| [`pure_pursuit_controller_20261022.py`](tractor_rpi/pure-pursuit/pure_pursuit_controller_20261022.py) | Computes forward-only path tracking proposals and current GPS/heading/reacquisition health. The RPi safety arbitrator remains the final Pi-side motion authority. |
-| [`field_test_logger_20260828.py`](tractor_rpi/field_test_logger_20260828.py) | Records synchronized UDP 6003 Teensy/arbitrator/JRK data and UDP 6009 GPS/heading data, including `jrk_vin_voltage_mV`. It normally runs only during a mission. |
+- `calc_publish_position.py`: background readers for base GPS, heading GPS, IMU,
+  left encoder, right encoder and RTCM forwarding; an additional readiness thread
+  queries recorder windows every 0.5 s. IPC publishing has its own bounded worker.
+  The scheduled 20 Hz main loop calls **`ingest_gps()`**, **`ingest_imu()`**,
+  **`ingest_encoders()`**, `update_pose()`, `assess_pose_quality()`,
+  `publish_navigation_if_due()` and `queue_diagnostics_if_due()`. Queue draining
+  retains native samples and processes them by monotonic source time. RTCM byte
+  forwarding is a separate function/thread so it does not block the pose loop.
+- `position_gnss_protocol.py`: wire decoding; `imu_sensor.py`: sensor scaling/yaw
+  helpers; `position_model.py`: explicit sensor quality/calibration and shadow pose.
+- `telemetry_ipc.py`: bounded Unix socket, sequencing/ACK/deduplication and read-only
+  query windows at `/run/tractor-telemetry/recorder.sock`. It is not a new UDP port.
+- `telemetry_recorder.py`: capture/rotation/recent windows; `field_telemetry_schema.py`:
+  compatible field-CSV mapping; `export_telemetry_run.py`: verify closed manifests
+  and export explicit time windows. Preflight queries recorder data rather than
+  taking UDP 6009 away from the recorder.
+- Pi `get_wifi_info()` was intentionally omitted from the replacement producer.
+  GL-router signal information is a separate recorder input on **TCP 6005**.
+  External base corrections arrive on **TCP 6001**, not UDP.
+
+### High-level system design
+
+```mermaid
+flowchart TD
+    Base[External RTK base] -->|TCP 6001 RTCM| Position[calc-publish-position service]
+    Position -->|Corrections to Base-Link USB| Pair[Base-Link F9P and Heading F9P]
+    Pair -->|Position and relative heading USB| Position
+    IMU[ISM330DHCX I2C bus 1 address 0x6b] --> Position
+    L[Left Teensy 3.2 serial 5879620] --> Position
+    R[Right encoder serial F5CB3C7E51514A4E43202020FF142006] --> Position
+    Position -->|Raw GNSS UDP 6002| Bridge[tractor-teensy-bridge safety selection]
+    Position -->|Raw GNSS UDP 6009| Recorder[Continuous telemetry recorder]
+    Position -->|Raw GNSS UDP 6010| PP[Pure Pursuit proposal controller]
+    Position -->|Raw GNSS UDP 6013| Dashboard[Mission dashboard]
+    Position -->|IMU encoders shadow pose events via Unix IPC| Recorder
+    Router[GL router telemetry] -->|TCP 6005| Recorder
+    Phone[Local TLS phone control] -->|UDP 6014 intent| Bridge
+    PP -->|UDP 6015 proposal and health| Bridge
+    PP -->|UDP 6012| Dashboard
+    Dashboard -->|UDP 6011 Pause or resume request| PP
+    Bridge -->|CRC RPICMD session sequence and lease| Teensy[Tractor Teensy 4.1]
+    Teensy -->|STEER TRANS RPI_CTL SYS| Bridge
+    Bridge -->|UDP 6003 status broadcast| Recorder
+    Bridge -->|UDP 6003 status broadcast| Dashboard
+    Recorder -->|Read-only IPC observations| Preflight[Canonical startup or manual preflight]
+    Preflight -->|Dated report| Logs[Daily field logs outside Git]
+    Recorder --> Logs
+    Preflight -->|Best-effort notices| Ntfy[ntfy]
+    Phone -->|Local-control URL notice| Ntfy
+    Logs --> Replay[Verified offline replay and analysis]
+    Future[Future reviewed supported pose contract] -. Not connected to control yet .-> PP
+```
+
+### Startup sequence, waits, Pause and notices
+
+These are the implemented paths, not a promise that every boot is healthy.
+Engine OFF, tractor stationary, blades disengaged and handheld in Pause are the
+startup procedure. The IMU does not infer engine-off from voltage or vibration.
+
+1. **OS/device/network readiness:** udev supplies GNSS and tractor serial aliases;
+   encoder discovery matches USB serial IDs, never ttyACM numbers. Ethernet must
+   have `192.168.8.20/24`, gateway `192.168.8.1`; ZeroTier supplies the base route.
+   `network-online.target` ordering alone does not prove those paths usable.
+2. **Recorder starts independently after local filesystems.** It creates its Unix
+   socket and daily storage without waiting for RTK, calibration or full preflight.
+   Daily directories are Eastern dates, raw UTC/monotonic timestamps are retained.
+   Segment names contain UTC time; rotate about every 15 minutes and at day change.
+   Channels: `gnss`, `status`, `imu`, `encoders`, `pose`, `router`, `events` JSONL,
+   plus `field.csv`, `metadata.json` and closed-segment `SHA256SUMS`. Low space/write
+   failures report failure; no automatic deletion of evidence. Restart-on-failure
+   delay is 3 s; producer restart-on-failure delay is 5 s.
+3. **Position startup hook:** after network/recorder ordering, the F9P configuration
+   script `testing/configure_dual_f9p_5hz_profile_20260923.py --heading-startup
+   --device-wait-seconds 30` waits for devices, writes the established moving-base
+   Heading profile to volatile RAM, requires ACK and independent 22-value readback,
+   then releases the serial device. Failure prevents producer startup. This hook
+   runs at every successful producer service start, not just once per boot.
+4. **Bridge and phone:** bridge starts after network ordering, claims the Teensy
+   using Pause, and requires matching fresh acknowledgement before Manual/Auto.
+   The phone service requires the bridge alias, readable TLS files and the local
+   Ethernet address. It starts control in Pause. Stopping the bridge can stop the
+   dependent phone service; restarting only the bridge may not restore the phone.
+   Both have 2 s restart-on-failure delays. A phone request is not actual output;
+   local safety selection and the independent 500 ms Teensy lease remain active.
+5. **Local-control ntfy notice:** phone connectivity monitoring checks every 3 s;
+   when a private local address is available it attempts `Tractor01 local control
+   ready` with the local URL (including its existing authentication handling).
+   Failed notification attempts are retried at 15 s intervals. This notice means
+   the local-control path is advertised, NOT that GNSS/calibration/preflight passed.
+   The installed `--local-control-ntfy-only` suppresses ZeroTier-ready/delayed/recovery
+   notices; those exist in the inherited monitor but are not expected here.
+6. **Raw acquisition and calibration:** producer reader threads begin immediately;
+   raw IMU is retained even while waiting. First producer start of a boot assumes
+   the operator followed engine-off startup. A `/run/tractor-position/calibration-started`
+   token survives service restarts and clears on reboot. Later producer restarts
+   need an explicit engine-off preflight confirmation to arm fresh calibration.
+   The producer requires fresh actual Pause, zero steering PWM, JRK requested and
+   actual targets 2836, healthy Fixed stationary position with speed <=0.05 m/s,
+   and both fresh valid quiet encoder streams continuously for **3 s**. Stationary
+   encoder noise allowance is 8 ticks per 100 ms, scaled by device interval; raw
+   ticks are unchanged. Then **1 s settling + 10 s calibration**, at least 800
+   samples with gyro/acceleration noise and magnitude checks. A calibration failure
+   disarms it; no silent moving-engine recalibration. Bias calibration is separate
+   from compass alignment. Healthy position AND heading permit experimental
+   heading anchoring every **5 s**; gyro prediction runs between anchors. This
+   affects shadow pose only, not the four raw GNSS feeds or motion authority.
+7. **Startup preflight readiness wait:** systemd orders the one-shot after network,
+   producer, bridge, phone and recorder start jobs; overall service timeout is
+   **600 s**. `wait_for_readiness()` checks recorder health, services, Heading-hook
+   proof and network paths, then latest pose/calibration, heading-anchor existence,
+   and nonzero GNSS/status/IMU/encoder recording counts. It polls with **3 s pauses**
+   for a default **300 s**. Counts are not proof both encoders are currently fresh;
+   the subsequent full checks test them separately. Once service/network checks
+   pass it sends one `Tractor01 startup sources settling` notice. Timeout logs the
+   missing-readiness condition and STILL proceeds to full checks; it is not a PASS.
+8. **Full preflight and notice:** startup sends `Tractor01 full preflight starting`
+   after the readiness wait returns, even if it timed out. Full checks require
+   devices, RTCM flow, a stable **5 s** GPS/heading window (default wait **60 s**),
+   status/JRK/firmware/Pause and recorder/IMU/both-wheel health. Heading satellite
+   gate: >25 PASS, 24–25 WARNING (currently non-failing), <=23 fail. Requested and actual
+   JRK neutral are 2836. Each encoder needs >=5 distinct device clocks in 5 s,
+   latest age <=0.5 s and valid producer state; zero movement is allowed. The
+   dated report is `/home/al/field_logs/YYYY-MM-DD/preflight_<local time>.txt`.
+   Startup sends `Tractor01 preflight PASS` or `Tractor01 preflight FAILED` with
+   the report location. Each preflight notice has up to **3 attempts**, **5 s**
+   HTTP timeout per attempt, and **2 s** between failed attempts. Notification
+   calls can extend elapsed startup time; delivery is never a health/motion gate.
+9. **After completion:** startup is a one-shot (`RemainAfterExit=yes`), not a
+   continuously reevaluated status. Its earlier failed state may remain after a
+   later manual preflight passes. It does not automatically rerun after plugging
+   a device back in. Pi power-monitor notices are separate live automation whose
+   exact source remains untraced. Inspect local reports/journals if ntfy is delayed.
+
+Canonical stationary manual preflight (engine off, stopped, blades off, Pause):
+
+```bash
+cd /home/al/tractor2025 && sudo python3 -m tractor_rpi.tractor_preflight --expected-firmware teensy_main_20261110_rpi_command_lease_v5 --confirm-engine-off --heading-wait-seconds 120
+```
+
+`--confirm-engine-off` sends confirmation only after safe Pause/stationary checks
+and waits **16 s** for a newly unarmed producer's stillness/settling/calibration;
+it does not reset a valid existing bias. GPS wait is explicitly 120 s above,
+not the 60 s default. Optional `--restart-gps-on-failure --confirm-engine-off`
+permits one stopped recovery attempt and full recheck; default boot does not
+restart GPS in a loop. Never select Auto on FAIL; PASS is not motion permission.
+
+### Mission compatibility boundary
+
+The frozen November 4 launcher/controller/dashboard package is retained for
+provenance. Its launcher starts a private logger and uses an old UDP-binding
+preflight, so **do not run it unchanged with the boot recorder**. A reviewed
+successor must query canonical preflight and export recorder segments instead.
+The controller still consumes raw GNSS on 6010 and proposes commands on 6015;
+no IMU/encoder-supported pose has been connected to it. The old
+`field_test_logger_20260828.py`, standalone IMU logger and old dated preflight
+must not compete with the boot recorder for UDP 6009.
 
 ### Prepared but not installed
 
@@ -154,7 +329,7 @@ stationary validation are explicitly approved and completed.
 
 The running replacement is
 [`teensy_serial_bridge_rpi_arbitrator_20261104.py`](tractor_rpi/teensy_serial_bridge_rpi_arbitrator_20261104.py),
-started by `tractor-rpi-arbitrator.service`. It combines two roles in one
+started by `tractor-teensy-bridge.service` (alias `tractor-rpi-arbitrator.service`). It combines two roles in one
 process:
 
 1. **Bidirectional Teensy bridge:** exclusively owns `/dev/teensy` at 460800
@@ -328,6 +503,11 @@ mission in a way that breaks regeneration or provenance.
 
 ## Tools for Gathering End-of-Mission Telemetry
 
+Current manual acquisition uses the boot recorder described above, not a separate
+mission logger. The older evidence table below describes frozen mission sources;
+do not start those competing loggers on the consolidated runtime. Preserve phone
+and Pi journals in addition to sensor segments where available.
+
 The logger and runtime producers are part of the evidence chain:
 
 | Evidence | Producer / normal location | What it establishes |
@@ -381,7 +561,20 @@ but uninstalled status above changes through field validation.
 ## Tools for Analyzing End-of-Mission Telemetry
 
 Use preserved copies for analysis and keep generated results separate from raw
-evidence. The preferred current outer-perimeter replay tool is
+evidence. For the new segmented November 19 recorder format use
+`field_testing/tools/build_tractor01_sensor_replay_20261119.py`,
+`tractor-sensor-replay-template.html` and
+`check_sensor_replay_ui_20261119.cjs`. Derived package:
+`field_testing/sites/62_Collins_multi_boundary_20260915/analysis/20261119_manual_sensor_replay/`.
+It reuses the November 17 IMU replay/shared mission geometry and adds both wheels,
+recorded steering/manual drive and JRK VIN. It verifies segment checksums/counts,
+uses preceding source samples only, and labels wheel scales provisional.
+The November 17 builder expects standalone CSV capture; do not feed it new JSONL
+segments unchanged. See the dated session summary and next-step handoff:
+`obsidian_vault/02-testing/20261119-startup-sensor-integration-accomplishments.md` and
+`obsidian_vault/02-testing/20261119-pose-integration-next-step-handoff.md`.
+
+For the frozen outer-perimeter format, the preferred replay tool is
 [`build_tractor01_mission_replay_20261109.py`](field_testing/tools/build_tractor01_mission_replay_20261109.py).
 Pass explicit `--evidence-root`, mission CSV, pursuit CSV, phone JSONL, mission
 path, audit path, run ID, and output directory for a new run; do not rely on its
