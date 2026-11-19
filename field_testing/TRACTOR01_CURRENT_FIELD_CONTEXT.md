@@ -89,14 +89,22 @@ It records Pi5V, throttling, load1/load5, ARM MHz, temperature and uptime. The
 captured script sends a boot ntfy only; reported repeated runtime alerts still
 need their own source traced. Load averages do not measure CPU utilization percent.
 
-Original source and a prepared daily-storage replacement are now preserved in
-`tractor_rpi/setup/pilog/`. **Replacement is not installed**: current files still
-use `/var/log/pilog`. Proposed output is a sibling CSV in the same Eastern daily
-folder as raw telemetry: `/home/al/field_logs/YYYY-MM-DD/pilog_<timestamp>.csv`.
-Midnight rolls files, midboot migration preserves one-time boot notification
-semantics, and original logs remain untouched. Source/install approvals remain
-separate. The existing collector default and manual archive selection do not
-implicitly include these future sibling files; supply their paths explicitly.
+Daily-storage replacement installed by Al November19 at13:00 EST. Installed
+`/usr/local/bin/pilog.sh` matches `tractor_rpi/setup/pilog/pilog.sh`. Verified
+new sample: `/home/al/field_logs/2026-11-19/pilog_2026-11-19_130000.csv`,
+5.04108V, throttled0x0, temperature41.7C. Timer remains active.
+Daily rollover uses Eastern dates; files are siblings of sealed telemetry segments.
+
+Legacy33 CSV files archived at
+`/home/al/field_logs/2026-11-19/pilog_legacy_archive_20261119T180000Z/`.
+Archive SHA256 `6bfd5aa1ba6c98d553b17e8d0e2767e5c042bfe1aab1a07e0d0b94079c6cdf2a`;
+archive and every original file hash independently verified on Windows under
+site `runs/20261119_pilog_legacy/` (ignored by Git). Al authorized removing old
+originals after verification; removal needs his PuTTY sudo command because
+noninteractive SSH lacks sudo credentials. Rollback backup retained:
+`/var/backups/pilog-migration-20261119T180000Z`. No control services restarted.
+Frozen collector still defaults to `/var/log/pilog`; provide explicit daily-folder
+paths for new power logs and include the sibling CSV in manual collections.
 
 ## Dashboard interpretation before controller start
 

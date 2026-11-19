@@ -125,9 +125,8 @@ telemetry including JRK VIN millivolts. Commissioned steering values are right
    with healthy GNSS, but does not prove causation. Do not diagnose by satellite
    count alone or repeatedly restart healthy services.
 8. Pi power/CPU logger source was located November 19 at `/usr/local/bin/pilog.sh`.
-   Original and prepared daily-storage replacement are under
-   `tractor_rpi/setup/pilog/`. Existing output remains `/var/log/pilog` until
-   separately approved installation. This script sends a boot ntfy only; the
+   Original capture and installed daily-storage source are under
+   `tractor_rpi/setup/pilog/`. Installed November 19; output is now under `/home/al/field_logs/YYYY-MM-DD/`. This script sends a boot ntfy only; the
    reported repeated runtime alerts remain untraced.
 
 ---
@@ -148,7 +147,7 @@ yet have pulled the newest `main` commit.
 | `tractor-telemetry-recorder.service` | `tractor_rpi/setup/tractor-telemetry-recorder.service`; `tractor_rpi/telemetry_recorder.py` | Independent continuous boot recorder; owns UDP 6009, listens to status 6003 and router TCP 6005, accepts sensor/event/pose IPC. |
 | `tractor-startup-preflight.service` | `tractor_rpi/setup/tractor-startup-preflight-consolidated.service`; `tractor_rpi/tractor_preflight.py --startup` | One-shot readiness wait, full checks, dated local report and best-effort notices. Does not grant motion or automatically retry a completed failure. |
 | `zerotier-one.service` | OS package | Maintenance, base access and evidence transfer; local router remains primary phone-control path. |
-| `pilog.timer` / `pilog.service` | `/usr/local/bin/pilog.sh`; captured source and prepared replacement in `tractor_rpi/setup/pilog/` | Pi 5 V/throttling, load averages, ARM MHz and temperature CSV. Current `/var/log/pilog`; daily-folder migration prepared, not installed. |
+| `pilog.timer` / `pilog.service` | `/usr/local/bin/pilog.sh`; captured source and prepared replacement in `tractor_rpi/setup/pilog/` | Pi 5 V/throttling, load averages, ARM MHz and temperature CSV. Daily `/home/al/field_logs/YYYY-MM-DD/`; legacy logs archived and independently verified. |
 
 The retired **`teensy-bridge.service` remains masked**. Do not confuse it with
 `tractor-teensy-bridge.service`. Legacy `tractor-wifi-control.service`,
@@ -314,14 +313,14 @@ load5,arm_mhz,temp_c`; `vcgencmd` supplies Pi5V/throttling/clock/temperature and
 sample sends a boot ntfy; `/run/pilog.current` tracks its per-boot file. This
 script does not contain the reported repeated runtime alert logic.
 
-Prepared storage-only replacement: `tractor_rpi/setup/pilog/pilog.sh`, with original
-capture, README and isolated checks alongside it. Intended output is
+Installed November 19 storage-only replacement: `tractor_rpi/setup/pilog/pilog.sh`, with original
+capture, README and isolated checks alongside it. Output is
 `/home/al/field_logs/YYYY-MM-DD/pilog_YYYY-MM-DD_HHMMSS.csv`, Eastern date/time,
 next to telemetry segments. It handles midnight and midboot migration without
-repeating boot notices; historical logs remain untouched. **Not installed yet.**
+repeating boot notices; historical logs remain untouched. **Installed and sample verified November 19 at 13:00 EST.**
 Do not append power samples inside sealed/checksummed telemetry segments. The
 frozen collector still defaults to `/var/log/pilog`; new daily files need explicit
-collection paths. Installation and validation are a separate approval step.
+collection paths. Legacy archive and all 33 file hashes were independently verified on Windows; privileged removal is pending the operator cleanup command.
 
 ### Mission compatibility boundary
 
@@ -538,7 +537,7 @@ The logger and runtime producers are part of the evidence chain:
 | Pure Pursuit CSV | Current controller, normally `/home/al/repos/field-testing-data/pursuit_log_*.csv` | Route index, pose, target, tracking, GPS/heading health, proposal, and controller decisions |
 | Authoritative phone/server JSONL | `tractor-phone-arbitrator.service`, under its configured `/home/al/field_logs/` directory | Accepted phone requests, mode/session changes, and server-side timing |
 | Phone flight-recorder JSONL | Uploaded by the phone-control page beside the server log | Client-observed scheduler, request, acknowledgement, timeout, and network events; diagnostic rather than motion authority |
-| Pi power/resource CSV | Installed `pilog.timer`, `/usr/local/bin/pilog.sh`, current `/var/log/pilog/` | 5 V input, throttling flags, load averages, ARM frequency and temperature; not CPU utilization percent or 12 V battery voltage |
+| Pi power/resource CSV | Installed `pilog.timer`, `/usr/local/bin/pilog.sh`, daily `/home/al/field_logs/YYYY-MM-DD/` | 5 V input, throttling flags, load averages, ARM frequency and temperature; not CPU utilization percent or 12 V battery voltage |
 | Runtime snapshot | `/run/tractor-phone-control/diagnostics.json` | Latest phone-arbitrator diagnostics at collection time |
 | Service/network/repository state | `systemctl`, `journalctl`, `ip`, `zerotier-cli`, and Git read-only commands | Exact processes, current-boot events, network paths, commit, and working-tree state |
 

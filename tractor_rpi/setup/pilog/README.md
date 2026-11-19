@@ -2,7 +2,7 @@
 
 November 19, 2026: installed source located at `/usr/local/bin/pilog.sh`.
 `installed_pilog_20261119.sh.txt` preserves its original source. The revised
-`pilog.sh` is prepared for a separately approved installation, not yet deployed.
+`pilog.sh` was installed November19 at13:00 EST and its first sample verified.
 
 Existing timer: `/etc/systemd/system/pilog.timer`, first sample about 30 seconds
 after boot, subsequent samples every 2 minutes, timer accuracy 10 seconds.

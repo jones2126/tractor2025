@@ -1,6 +1,6 @@
 # Pi power/CPU logger: source discovery and daily-storage preparation
 
-November 19, 2026. Prepared replacement; live installation pending approval.
+November 19, 2026. Installed by Al at13:00 EST; historical-log cleanup pending privileged operator command.
 
 Read-only SSH located `pilog.service` and `pilog.timer` under
 `/etc/systemd/system/`. Service runs `/usr/local/bin/pilog.sh` as root, oneshot,
@@ -39,3 +39,18 @@ Collection follow-up: frozen collector defaults to `/var/log/pilog`; use explici
 daily-folder input for future logs, handling both dates for overnight runs. Manual
 archive selections must include the sibling pilog CSV as well as telemetry
 segments. No changes to frozen collectors or sealed raw segments were made.
+
+## Installed and independently verified
+
+Al ran the approved migration. New daily CSV:
+`/home/al/field_logs/2026-11-19/pilog_2026-11-19_130000.csv`.
+First sample:5.04108V, throttling0x0, load1/load5=1.25/1.13, ARM1900MHz,
+temperature41.7C. Installed script matches repository; timer remains active.
+Backup: `/var/backups/pilog-migration-20261119T180000Z`.
+Legacy archive: daily `pilog_legacy_archive_20261119T180000Z/pilog_legacy.tgz`.
+Archive SHA256:
+`6bfd5aa1ba6c98d553b17e8d0e2767e5c042bfe1aab1a07e0d0b94079c6cdf2a`.
+Windows copy under ignored site `runs/20261119_pilog_legacy/`; archive and all
+33 original file hashes independently verified. Privileged cleanup was attempted
+but sudo requires the operator password; originals remain until PuTTY cleanup.
+No services related to motion/sensor recording were restarted.
