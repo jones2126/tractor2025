@@ -124,8 +124,11 @@ telemetry including JRK VIN millivolts. Commissioned steering values are right
    cause is established. A November 19 move to less perceived multipath coincided
    with healthy GNSS, but does not prove causation. Do not diagnose by satellite
    count alone or repeatedly restart healthy services.
-8. The installed Pi throttling/5 V `pilog` automation is live-system evidence,
-   but its exact source and installer are not yet represented in GitHub `main`.
+8. Pi power/CPU logger source was located November 19 at `/usr/local/bin/pilog.sh`.
+   Original and prepared daily-storage replacement are under
+   `tractor_rpi/setup/pilog/`. Existing output remains `/var/log/pilog` until
+   separately approved installation. This script sends a boot ntfy only; the
+   reported repeated runtime alerts remain untraced.
 
 ---
 
@@ -145,7 +148,7 @@ yet have pulled the newest `main` commit.
 | `tractor-telemetry-recorder.service` | `tractor_rpi/setup/tractor-telemetry-recorder.service`; `tractor_rpi/telemetry_recorder.py` | Independent continuous boot recorder; owns UDP 6009, listens to status 6003 and router TCP 6005, accepts sensor/event/pose IPC. |
 | `tractor-startup-preflight.service` | `tractor_rpi/setup/tractor-startup-preflight-consolidated.service`; `tractor_rpi/tractor_preflight.py --startup` | One-shot readiness wait, full checks, dated local report and best-effort notices. Does not grant motion or automatically retry a completed failure. |
 | `zerotier-one.service` | OS package | Maintenance, base access and evidence transfer; local router remains primary phone-control path. |
-| `pilog.timer` / `pilog.service` | Installed automation; exact source not traced in Git | Pi 5 V/throttling/resources evidence under `/var/log/pilog`; distinct from JRK VIN. |
+| `pilog.timer` / `pilog.service` | `/usr/local/bin/pilog.sh`; captured source and prepared replacement in `tractor_rpi/setup/pilog/` | Pi 5 V/throttling, load averages, ARM MHz and temperature CSV. Current `/var/log/pilog`; daily-folder migration prepared, not installed. |
 
 The retired **`teensy-bridge.service` remains masked**. Do not confuse it with
 `tractor-teensy-bridge.service`. Legacy `tractor-wifi-control.service`,
@@ -285,8 +288,8 @@ startup procedure. The IMU does not infer engine-off from voltage or vibration.
 9. **After completion:** startup is a one-shot (`RemainAfterExit=yes`), not a
    continuously reevaluated status. Its earlier failed state may remain after a
    later manual preflight passes. It does not automatically rerun after plugging
-   a device back in. Pi power-monitor notices are separate live automation whose
-   exact source remains untraced. Inspect local reports/journals if ntfy is delayed.
+   a device back in. Pi power-monitor boot notices come from `pilog.sh`; reported repeated
+   runtime alerts remain untraced. Inspect local reports/journals if ntfy is delayed.
 
 Canonical stationary manual preflight (engine off, stopped, blades off, Pause):
 
@@ -300,6 +303,25 @@ it does not reset a valid existing bias. GPS wait is explicitly 120 s above,
 not the 60 s default. Optional `--restart-gps-on-failure --confirm-engine-off`
 permits one stopped recovery attempt and full recheck; default boot does not
 restart GPS in a loop. Never select Auto on FAIL; PASS is not motion permission.
+
+### Pi power and CPU resource logging
+
+Located on Tractor01 November 19: `pilog.service` runs `/usr/local/bin/pilog.sh`
+as root, Nice15, timeout120s. Timer starts about30s after boot and every2min
+thereafter, accuracy10s. CSV fields are `time,uptime_s,ext5v_v,throttled,load1,
+load5,arm_mhz,temp_c`; `vcgencmd` supplies Pi5V/throttling/clock/temperature and
+`/proc` supplies uptime/load. Load is not CPU utilization percent. The first
+sample sends a boot ntfy; `/run/pilog.current` tracks its per-boot file. This
+script does not contain the reported repeated runtime alert logic.
+
+Prepared storage-only replacement: `tractor_rpi/setup/pilog/pilog.sh`, with original
+capture, README and isolated checks alongside it. Intended output is
+`/home/al/field_logs/YYYY-MM-DD/pilog_YYYY-MM-DD_HHMMSS.csv`, Eastern date/time,
+next to telemetry segments. It handles midnight and midboot migration without
+repeating boot notices; historical logs remain untouched. **Not installed yet.**
+Do not append power samples inside sealed/checksummed telemetry segments. The
+frozen collector still defaults to `/var/log/pilog`; new daily files need explicit
+collection paths. Installation and validation are a separate approval step.
 
 ### Mission compatibility boundary
 
@@ -516,7 +538,7 @@ The logger and runtime producers are part of the evidence chain:
 | Pure Pursuit CSV | Current controller, normally `/home/al/repos/field-testing-data/pursuit_log_*.csv` | Route index, pose, target, tracking, GPS/heading health, proposal, and controller decisions |
 | Authoritative phone/server JSONL | `tractor-phone-arbitrator.service`, under its configured `/home/al/field_logs/` directory | Accepted phone requests, mode/session changes, and server-side timing |
 | Phone flight-recorder JSONL | Uploaded by the phone-control page beside the server log | Client-observed scheduler, request, acknowledgement, timeout, and network events; diagnostic rather than motion authority |
-| Pi power/resource CSV | Installed `pilog.timer`, `/var/log/pilog/` | 5 V input, throttling flags, load, ARM frequency, and CPU temperature; not 12 V battery voltage |
+| Pi power/resource CSV | Installed `pilog.timer`, `/usr/local/bin/pilog.sh`, current `/var/log/pilog/` | 5 V input, throttling flags, load averages, ARM frequency and temperature; not CPU utilization percent or 12 V battery voltage |
 | Runtime snapshot | `/run/tractor-phone-control/diagnostics.json` | Latest phone-arbitrator diagnostics at collection time |
 | Service/network/repository state | `systemctl`, `journalctl`, `ip`, `zerotier-cli`, and Git read-only commands | Exact processes, current-boot events, network paths, commit, and working-tree state |
 

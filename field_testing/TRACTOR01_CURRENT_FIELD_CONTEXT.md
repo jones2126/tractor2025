@@ -83,11 +83,20 @@ Do not ask Al to rerun `vcgencmd get_throttled` merely to discover a value he
 has already supplied for the current boot. It remains legitimate as an explicit
 preflight gate or when diagnosing a new power alert.
 
-The exact installed notifier/telemetry implementation was not found in GitHub
-`main` during the 2026-11-11 review. Treat the behavior above as verified
-live-system context, but do not invent a repository service or field name.
-Trace the installed unit/script on Tractor01 before changing or documenting its
-implementation details.
+November19 source discovery: `pilog.service` executes `/usr/local/bin/pilog.sh`
+as root, every2min via `pilog.timer`, first run about30s after boot (accuracy10s).
+It records Pi5V, throttling, load1/load5, ARM MHz, temperature and uptime. The
+captured script sends a boot ntfy only; reported repeated runtime alerts still
+need their own source traced. Load averages do not measure CPU utilization percent.
+
+Original source and a prepared daily-storage replacement are now preserved in
+`tractor_rpi/setup/pilog/`. **Replacement is not installed**: current files still
+use `/var/log/pilog`. Proposed output is a sibling CSV in the same Eastern daily
+folder as raw telemetry: `/home/al/field_logs/YYYY-MM-DD/pilog_<timestamp>.csv`.
+Midnight rolls files, midboot migration preserves one-time boot notification
+semantics, and original logs remain untouched. Source/install approvals remain
+separate. The existing collector default and manual archive selection do not
+implicitly include these future sibling files; supply their paths explicitly.
 
 ## Dashboard interpretation before controller start
 
