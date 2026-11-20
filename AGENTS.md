@@ -594,6 +594,15 @@ but uninstalled status above changes through field validation.
 
 ## Tools for Analyzing End-of-Mission Telemetry
 
+For the next GPS/IMU/encoder integration chat, start with
+`obsidian_vault/02-testing/20261120-pose-fusion-context.md` and its companion
+`20261120-pose-fusion-continuation-prompt.md`. These supersede the November 19
+handoff for continuation. First task is quantitative per-wheel raw ticks versus
+trustworthy RTK Fixed travel, with explicit timing/geometry/sign handling and
+held-out validation, before installing scales or feeding pose to Pure Pursuit.
+The context includes implemented/proposed function-level Mermaid diagrams.
+
+
 Use preserved copies for analysis and keep generated results separate from raw
 evidence. For the new segmented November 19 recorder format use
 `field_testing/tools/build_tractor01_sensor_replay_20261119.py`,

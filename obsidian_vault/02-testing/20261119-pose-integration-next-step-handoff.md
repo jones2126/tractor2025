@@ -2,6 +2,10 @@
 
 November 19,2026. **DRAFT — NOT VALIDATED FOR CONTROL OR DEGRADED MOTION.**
 
+Successor prepared November 20: [detailed pose-fusion context](20261120-pose-fusion-context.md)
+and [continuation prompt](20261120-pose-fusion-continuation-prompt.md). Use those
+for the next chat; this file preserves the earlier checkpoint.
+
 ## Context to retain
 
 Use `C:\Repos\tractor2025` on Windows. GitHub main is the source of truth;
