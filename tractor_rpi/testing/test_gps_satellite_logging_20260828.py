@@ -32,7 +32,7 @@ sys.modules.setdefault(
 
 rtcm_server = load_module(
     "rtcm_server_20260828_test",
-    TRACTOR_RPI / "rtcm_server_20260828.py",
+    TRACTOR_RPI / "archive" / "rtcm_servers" / "rtcm_server_20260828.py",
 )
 heading_analysis = load_module(
     "analyze_heading_f9p_20260828_test",

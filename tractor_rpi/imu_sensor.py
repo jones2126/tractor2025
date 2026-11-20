@@ -1,3 +1,4 @@
+# Production-folder placement reviewed 2026-11-20; runtime logic unchanged.
 """ISM330DHCX acquisition and pure integration helpers."""
 import math
 import statistics

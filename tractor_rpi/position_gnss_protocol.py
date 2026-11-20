@@ -1,3 +1,4 @@
+# Production-folder placement reviewed 2026-11-20; runtime logic unchanged.
 """Reviewed GNSS wire parsing extracted from rtcm_server_20260828.py.
 No device ownership, Wi-Fi polling, threads or hardware access at import.
 The original production file remains unchanged.

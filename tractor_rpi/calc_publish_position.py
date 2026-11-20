@@ -1,3 +1,4 @@
+# Production-folder placement reviewed 2026-11-20; runtime logic unchanged.
 """Boot position/sensor producer; experimental pose never grants control."""
 from __future__ import annotations
 import argparse

@@ -1,0 +1,73 @@
+{
+  "status": "REVIEW ONLY",
+  "reviewed_calibration": false,
+  "valid_for_control": false,
+  "ticks_per_sensor_revolution": 16384,
+  "mechanical_sensor_to_wheel_ratio": null,
+  "reference_point": "recorded GNSS position antenna; rear axle transform unmeasured",
+  "origin_wgs84": [
+    40.485768666666665,
+    -80.3322675
+  ],
+  "fit": "unweighted through-origin distance versus signed ticks; complete maneuver blocks held out",
+  "firmware_forward_sign": {
+    "L": 1,
+    "R": 1
+  },
+  "sensor_sign_already_applied_in_firmware": {
+    "L": -1,
+    "R": 1
+  },
+  "serials": {
+    "L": "5879620",
+    "R": "F5CB3C7E51514A4E43202020FF142006"
+  },
+  "fits": {
+    "L": {
+      "metres_per_tick": 8.834548583095897e-05,
+      "signed_ticks_per_metre": 11319.197473353746,
+      "metres_per_sensor_revolution": 1.4474524398544317,
+      "block_bootstrap_95pct_sensor_rev_m": [
+        1.4277843802732584,
+        1.477151226597584
+      ],
+      "free_intercept_m": -0.9076132452545608,
+      "free_slope_m_per_tick": 9.939157138322118e-05,
+      "train_blocks": 2,
+      "held_out": {
+        "windows": 4,
+        "rmse_m": 0.0772461137375615,
+        "max_abs_m": 0.12850591447460857,
+        "relative_error_pct": [
+          -1.4630107554111567,
+          -0.3606315611681633,
+          1.425727727483883,
+          0.13862358758654358
+        ]
+      }
+    },
+    "R": {
+      "metres_per_tick": 8.824351509087783e-05,
+      "signed_ticks_per_metre": 11332.277493367612,
+      "metres_per_sensor_revolution": 1.4457817512489424,
+      "block_bootstrap_95pct_sensor_rev_m": [
+        1.4255958943849927,
+        1.4763207700059455
+      ],
+      "free_intercept_m": -0.7885580722299712,
+      "free_slope_m_per_tick": 9.782889753161015e-05,
+      "train_blocks": 2,
+      "held_out": {
+        "windows": 4,
+        "rmse_m": 0.11976906114982108,
+        "max_abs_m": 0.22550240082375517,
+        "relative_error_pct": [
+          -2.5672938021959975,
+          -0.7807146898167335,
+          0.0655287234455404,
+          0.5481090218634753
+        ]
+      }
+    }
+  }
+}

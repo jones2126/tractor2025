@@ -1,3 +1,4 @@
+# Production-folder placement reviewed 2026-11-20; runtime logic unchanged.
 """Bounded local telemetry transport; no network ports or hardware ownership."""
 from __future__ import annotations
 

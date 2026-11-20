@@ -1,3 +1,4 @@
+# Production-folder placement reviewed 2026-11-20; runtime logic unchanged.
 """Pure, hardware-free GNSS compatibility state and experimental pose model.
 
 Existing UDP fields always remain GNSS observations. Shadow estimates are never

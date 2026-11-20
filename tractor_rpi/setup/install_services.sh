@@ -1,4 +1,5 @@
 #!/bin/bash
+# Historical installer: placement updated 2026-11-20, not the current consolidated installation workflow.
 # install_services.sh
 # Installation script for tractor robot systemd services
 # 
@@ -41,7 +42,7 @@ fi
 
 # Verify Python scripts exist
 SCRIPTS=(
-    "rtcm_server_20260828.py"
+    "archive/rtcm_servers/rtcm_server_20260828.py"
     "teensy_serial_bridge_20260728.py"
     "led_status_controller.py"
     "testing/configure_dual_f9p_5hz_profile_20260923.py"
@@ -82,7 +83,7 @@ Type=simple
 User=$USER
 WorkingDirectory=$SCRIPT_DIR
 ExecStartPre=$PYTHON_BIN -u $SCRIPT_DIR/testing/configure_dual_f9p_5hz_profile_20260923.py --heading-startup --device-wait-seconds 30
-ExecStart=$PYTHON_BIN -u $SCRIPT_DIR/rtcm_server_20260828.py
+ExecStart=$PYTHON_BIN -u $SCRIPT_DIR/archive/rtcm_servers/rtcm_server_20260828.py
 Restart=always
 RestartSec=5
 

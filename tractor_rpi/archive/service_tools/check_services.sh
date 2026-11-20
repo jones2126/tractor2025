@@ -1,4 +1,5 @@
 #!/bin/bash
+# Archived 2026-11-20: retired service names; not current field guidance.
 # check_services.sh - Check status of all tractor services
 # to run from any directory: /home/al/tractor2025/tractor_rpi/check_services.sh
 

@@ -14,7 +14,7 @@ case "${1:-}" in
 esac
 [[ ${EUID} -eq 0 ]] || { echo "Run this installer with sudo." >&2; exit 1; }
 [[ -f "${SOURCE_UNIT}" ]] || { echo "Missing ${SOURCE_UNIT}" >&2; exit 1; }
-[[ -f "${TRACTOR_REPO}/tractor_rpi/battery_voltage_logger_20261111.py" ]] || {
+[[ -f "${TRACTOR_REPO}/tractor_rpi/testing/battery_voltage/battery_voltage_logger_20261111.py" ]] || {
     echo "Missing battery logger module." >&2; exit 1;
 }
 

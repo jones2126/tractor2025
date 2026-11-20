@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Relocated to tools/ on 2026-11-20; export behavior unchanged.
 """Export a time-bounded field CSV from verified closed telemetry segments."""
 from __future__ import annotations
 

@@ -4,7 +4,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from tractor_rpi.battery_voltage_logger_20261111 import (
+from tractor_rpi.testing.battery_voltage.battery_voltage_logger_20261111 import (
     append_row,
     apply_retention,
     extract_row,

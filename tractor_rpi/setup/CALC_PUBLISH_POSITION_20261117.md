@@ -1,5 +1,7 @@
 # November 17 pose-producer field candidate
 
+> November 20 repository update: this candidate is archived under `tractor_rpi/archive/pose_producer_20261117/`. Commands and deployment status below describe the historical candidate, not current startup. Current entry point is `tractor_rpi.calc_publish_position`; see `../README.md`.
+
 **DRAFT — UNTESTED IN THE FIELD.** Prepared for a separately approved stationary
 data-flow check and manual run on November 18. No installation, restart, firmware
 flash, movement or blade operation is authorized by this file. Tractor01 is not

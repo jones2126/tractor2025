@@ -8,7 +8,7 @@ from __future__ import annotations
 import math
 import statistics
 
-from tractor_rpi import position_gnss_protocol_20261117 as protocol
+from tractor_rpi.archive.pose_producer_20261117 import position_gnss_protocol_20261117 as protocol
 from tractor_rpi.testing.imu.ism330dhcx_field_logger_20261116 import (
     FIELDS as IMU_FIELDS, YawTracker, bias_statistics, finite,
 )

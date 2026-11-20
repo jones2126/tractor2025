@@ -1,0 +1,65 @@
+[
+  {
+    "old_path": "tractor_rpi/calc-publish-position-20261117.py",
+    "original_sha256": "ac4c323531457495c7d8bfeb1fd3e7886845d88cd770bc72bf57d2de66c78725",
+    "new_path": "tractor_rpi/archive/pose_producer_20261117/calc-publish-position-20261117.py",
+    "relocated_sha256": "80ae0080b7697e9ff40e828ac806df737041b4a7be6c1279f580c50687daab79",
+    "bytes_unchanged": false
+  },
+  {
+    "old_path": "tractor_rpi/calc_publish_position_20261117.py",
+    "original_sha256": "82fdaec1645e3b7214a26d3f49ef69b197d6d8bc63f34d790d9d0f509aba827f",
+    "new_path": "tractor_rpi/archive/pose_producer_20261117/calc_publish_position_20261117.py",
+    "relocated_sha256": "91b4fad79f05c8304193749d7471edb15dfac0dd978b03a40bc1c692b0a24a6c",
+    "bytes_unchanged": false
+  },
+  {
+    "old_path": "tractor_rpi/position_model_20261117.py",
+    "original_sha256": "f27e234a77d1cc3f4c7b338bd7722a5e93fbc53a8d619d7fa201b7809844ab0c",
+    "new_path": "tractor_rpi/archive/pose_producer_20261117/position_model_20261117.py",
+    "relocated_sha256": "6ff35039ad73a16059646b6ed8c90eee7bd0b495336cd0d88e75740bb5b5e1a2",
+    "bytes_unchanged": false
+  },
+  {
+    "old_path": "tractor_rpi/position_gnss_protocol_20261117.py",
+    "original_sha256": "47a30307d77ea1170fffa026e0f40e94a20292c425e05710b8d09317e634f5ec",
+    "new_path": "tractor_rpi/archive/pose_producer_20261117/position_gnss_protocol_20261117.py",
+    "relocated_sha256": "47a30307d77ea1170fffa026e0f40e94a20292c425e05710b8d09317e634f5ec",
+    "bytes_unchanged": true
+  },
+  {
+    "old_path": "tractor_rpi/rtcm_server_20260828.py",
+    "original_sha256": "7679ebbbbdeea7811a06868d97958ffca6db3a8cf7e35ff589b05db327350ba5",
+    "new_path": "tractor_rpi/archive/rtcm_servers/rtcm_server_20260828.py",
+    "relocated_sha256": "7679ebbbbdeea7811a06868d97958ffca6db3a8cf7e35ff589b05db327350ba5",
+    "bytes_unchanged": true
+  },
+  {
+    "old_path": "tractor_rpi/rtcm_server_x20d_20260702.py",
+    "original_sha256": "a60021ffe37a0db687cf7bfcca489817767948ac44d513d93614b79be0d6a63a",
+    "new_path": "tractor_rpi/variants/tractor02_x20d/rtcm_server_x20d_20260702.py",
+    "relocated_sha256": "a60021ffe37a0db687cf7bfcca489817767948ac44d513d93614b79be0d6a63a",
+    "bytes_unchanged": true
+  },
+  {
+    "old_path": "tractor_rpi/battery_voltage_logger_20261111.py",
+    "original_sha256": "8771eb05c9a8a5197e7c5e8a8ba0bc2d0c8e97dd3648716577e97138fa5df6e6",
+    "new_path": "tractor_rpi/testing/battery_voltage/battery_voltage_logger_20261111.py",
+    "relocated_sha256": "8771eb05c9a8a5197e7c5e8a8ba0bc2d0c8e97dd3648716577e97138fa5df6e6",
+    "bytes_unchanged": true
+  },
+  {
+    "old_path": "tractor_rpi/check_services.sh",
+    "original_sha256": "d7964d36ac2b528fc448a19ea912ddd4a13f10e90ba46a10dea49dcb1680c8b5",
+    "new_path": "tractor_rpi/archive/service_tools/check_services.sh",
+    "relocated_sha256": "2e0985a54e6af848fcecfd9b625abd5e136a02d4723e67fe42ebb03b728f0777",
+    "bytes_unchanged": false
+  },
+  {
+    "old_path": "tractor_rpi/export_telemetry_run.py",
+    "original_sha256": "6b13c1b0e5f8c0faa72a8e56533f950755cf89501f22f1ab41c2cb6ee9b80fde",
+    "new_path": "tractor_rpi/tools/export_telemetry_run.py",
+    "relocated_sha256": "fea710b1fc3fa227ed74a99ff146464635eb79d29e76b2eec7860a6771430f29",
+    "bytes_unchanged": false
+  }
+]

@@ -1,0 +1,7 @@
+side,mono,utc,reason,detail
+L,2254.108746744,2026-11-19T15:57:13.239276+00:00,first_sample_or_gap_or_device_clock_or_session_or_producer_invalid,
+R,1425.613673581,2026-11-19T15:43:24.744211+00:00,first_sample_or_gap_or_device_clock_or_session_or_producer_invalid,
+R,2254.178829111,2026-11-19T15:57:13.309359+00:00,first_sample_or_gap_or_device_clock_or_session_or_producer_invalid,
+,2254.010711182,2026-11-19T15:57:13.141301+00:00,producer_start,"{""event"": ""producer_start"", ""devices"": {""base"": ""/dev/gps-base-link"", ""heading"": ""/dev/gps-heading"", ""L"": ""/dev/ttyACM4"", ""R"": ""/dev/ttyACM3""}, ""left_serial"": ""5879620"", ""right_serial"": ""F5CB3C7E51514A4E43202020FF142006"", ""scales"": {""L"": null, ""R"": null}, ""calibration_id"": null, ""boot_engine_off_assumed"": false, ""note"": ""Stationarity is measured; engine-off is an operating prerequisite, not detected""}"
+R,2254.076811719,2026-11-19T15:57:13.244006+00:00,encoder_banner,"{""event"": ""encoder_banner"", ""side"": ""R"", ""mono"": 2254.076811719, ""data"": {""raw"": ""# wheel encoder start, side=R""}}"
+,2301.70382215,2026-11-19T15:58:00.858234+00:00,imu_calibration_passed,"{""event"": ""imu_calibration_passed"", ""mono"": 2301.70382215, ""samples"": 1072, ""bias_dps"": [-0.05049207089552239, -0.5724638526119403, 0.06005013992537314], ""stddev_dps"": [0.04285068213552222, 0.03904146102040208, 0.032818931668943264], ""accel_stddev_g"": [0.0005235826214845686, 0.0004917844764615039, 0.0005281495787217246], ""accel_mean_magnitude_g"": 1.0226857835906307}"

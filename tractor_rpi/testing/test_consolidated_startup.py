@@ -1,3 +1,4 @@
+# Import paths reviewed 2026-11-20 after production-folder cleanup.
 """Offline parity, evidence-integrity and startup tests. No Tractor01 access."""
 import ast
 import copy
@@ -22,7 +23,7 @@ from tractor_rpi import telemetry_ipc as ipc
 from tractor_rpi import position_model as model
 from tractor_rpi import calc_publish_position as producer
 from tractor_rpi import imu_sensor
-from tractor_rpi import export_telemetry_run as exporter
+from tractor_rpi.tools import export_telemetry_run as exporter
 from tractor_rpi.testing import mission_preflight_20261002 as legacy
 from tractor_rpi.testing.test_calc_publish_position_20261117 import healthy, sample, enc, MemoryRecorder, FakeUdp
 

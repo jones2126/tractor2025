@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Production-folder placement reviewed 2026-11-20; runtime logic unchanged.
 """Continuous raw telemetry and read-only preflight windows. DRAFT: field untested."""
 from __future__ import annotations
 

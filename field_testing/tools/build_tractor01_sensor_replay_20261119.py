@@ -13,7 +13,7 @@ import statistics
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from tractor_rpi.export_telemetry_run import verify
+from tractor_rpi.tools.export_telemetry_run import verify
 import build_tractor01_imu_replay_20261117 as previous
 
 HERE = Path(__file__).resolve().parent
@@ -142,7 +142,7 @@ def build(root, output, start, end):
                 HERE/'build_tractor01_imu_replay_20261117.py',previous.SHARED_TEMPLATE,
                 HERE/'build_tractor_mission_replays_20260919.py',
                 HERE/'check_sensor_replay_ui_20261119.cjs',
-                HERE.parents[1]/'tractor_rpi/export_telemetry_run.py']
+                HERE.parents[1]/'tractor_rpi/tools/export_telemetry_run.py']
     sources += list(root.glob('preflight*')) + list(root.glob('*.tgz*'))
     provenance = [dict(name=p.as_posix(),sha256=hashlib.sha256(p.read_bytes()).hexdigest()) for p in sources]
     deltas = [p['dt_s'] for _,p in imu if p.get('dt_s') is not None]

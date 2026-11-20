@@ -26,4 +26,12 @@ field_testing/sites/**/runs/20260923_*/** -text -eol
 field_testing/sites/**/analysis/20261117_imu_manual_replay/** -text -eol
 field_testing/sites/**/analysis/20261117_imu_manual_analysis/** -text -eol
 field_testing/sites/**/analysis/20261119_manual_sensor_replay/** -text -eol
+field_testing/sites/**/analysis/20261120_*/** -text -eol
 obsidian_vault/**/20261117_pose_producer_review/current_navigation_udp_fields_20261117.csv -text -eol
+
+# November 20 relocation ledger records these exact archived source bytes.
+tractor_rpi/archive/pose_producer_20261117/*.py -text -eol
+tractor_rpi/archive/rtcm_servers/rtcm_server_20260828.py -text -eol
+tractor_rpi/archive/service_tools/check_services.sh -text -eol
+tractor_rpi/testing/battery_voltage/battery_voltage_logger_20261111.py -text -eol
+tractor_rpi/variants/tractor02_x20d/rtcm_server_x20d_20260702.py -text -eol

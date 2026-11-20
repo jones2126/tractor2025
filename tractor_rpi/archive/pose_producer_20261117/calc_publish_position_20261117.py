@@ -16,8 +16,8 @@ import subprocess
 import threading
 import time
 
-from tractor_rpi import position_gnss_protocol_20261117 as protocol
-from tractor_rpi.position_model_20261117 import (
+from tractor_rpi.archive.pose_producer_20261117 import position_gnss_protocol_20261117 as protocol
+from tractor_rpi.archive.pose_producer_20261117.position_model_20261117 import (
     LEFT_SERIAL, RIGHT_SERIAL, PORTS, POSITION_IMU_FIELDS, PROVISIONAL_METRES_PER_SENSOR_REV,
     PoseModel, parse_base_nmea, parse_encoder,
 )
@@ -288,7 +288,7 @@ class PositionApp:
 
 
 def repo_metadata():
-    root=Path(__file__).resolve().parents[1]
+    root=Path(__file__).resolve().parents[3]
     git=lambda *args:subprocess.check_output(["git","-C",str(root),*args],text=True,timeout=5).strip()
     if git("status","--porcelain"):raise RuntimeError("Use a clean committed checkout for field capture")
     files=[Path(__file__),Path(__file__).with_name("position_model_20261117.py"),Path(__file__).with_name("position_gnss_protocol_20261117.py"),

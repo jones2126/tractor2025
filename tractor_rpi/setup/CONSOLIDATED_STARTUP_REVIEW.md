@@ -49,7 +49,7 @@ procedure for this new boot architecture.
 | `tractor_rpi/telemetry_recorder.py` | One continuous recorder; raw JSONL, compatible field CSV, bounded recent windows, daily/15-minute segmentation, closed-file hashes |
 | `tractor_rpi/field_telemetry_schema.py` | Pure mapping for legacy CSV columns; raw status additionally preserves full arbitrator objects |
 | `tractor_rpi/tractor_preflight.py` | One explicit check implementation; no dated preflight imports or monkey-patching |
-| `tractor_rpi/export_telemetry_run.py` | Verify closed segment manifests and export a time-bounded compatible field CSV with provenance |
+| `tractor_rpi/tools/export_telemetry_run.py` | Verify closed segment manifests and export a time-bounded compatible field CSV with provenance |
 
 There are three running programs, not one process for every module. Stable helper
 modules do not start threads, open hardware or perform monkey-patching on import.

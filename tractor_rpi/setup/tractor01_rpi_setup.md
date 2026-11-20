@@ -1,5 +1,7 @@
 # tractor01 RPi 5 — Setup Guide
 
+> Historical setup reference. November 20 repository cleanup moved the old RTCM server to `tractor_rpi/archive/rtcm_servers/` and the old status helper to `tractor_rpi/archive/service_tools/`. Do not use this document to install/restart the current stack; use AGENTS.md and CONSOLIDATED_STARTUP_REVIEW.md.
+
 **Platform:** Raspberry Pi 5, Ubuntu 24.04.03 LTS  
 **Hostname:** `tractor` (target: rename to `tractor01` in a future update)  
 **User:** `al`  

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Production-folder placement reviewed 2026-11-20; runtime logic unchanged.
 """
 led_status_controller.py (UPDATED for actual hardware)
 ========================================================

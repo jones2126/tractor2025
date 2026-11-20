@@ -1,3 +1,4 @@
+# Production-folder placement reviewed 2026-11-20; runtime logic unchanged.
 """Pure field CSV compatibility mapping; raw records retain the full observations."""
 from datetime import datetime
 

@@ -11,9 +11,9 @@ import threading
 import unittest
 from unittest.mock import patch
 
-from tractor_rpi import calc_publish_position_20261117 as runtime
-from tractor_rpi import position_gnss_protocol_20261117 as protocol
-from tractor_rpi.position_model_20261117 import PoseModel, parse_base_nmea, parse_encoder, PORTS, LEFT_SERIAL
+from tractor_rpi.archive.pose_producer_20261117 import calc_publish_position_20261117 as runtime
+from tractor_rpi.archive.pose_producer_20261117 import position_gnss_protocol_20261117 as protocol
+from tractor_rpi.archive.pose_producer_20261117.position_model_20261117 import PoseModel, parse_base_nmea, parse_encoder, PORTS, LEFT_SERIAL
 from tractor_rpi.testing.verify_position_capture_20261117 import verify
 
 
@@ -59,7 +59,7 @@ class FakeUdp:
 class CandidateTests(unittest.TestCase):
     def test_legacy_schema_is_preserved_except_requested_wifi_removal(self):
         root=Path(__file__).resolve().parents[2]
-        tree=ast.parse((root/"tractor_rpi/rtcm_server_20260828.py").read_text(encoding="utf-8"))
+        tree=ast.parse((root/"tractor_rpi/archive/rtcm_servers/rtcm_server_20260828.py").read_text(encoding="utf-8"))
         state=next(n.value for n in tree.body if isinstance(n,ast.Assign) and any(isinstance(x,ast.Name) and x.id=="state" for x in n.targets))
         old={key.value for key in state.keys}
         self.assertEqual(set(protocol.initial_state()),old-{"wifi_ssid","wifi_rssi_dbm","wifi_signal_label"})

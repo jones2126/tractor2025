@@ -20,6 +20,44 @@ semantics, preflight command, and operator-confirmed live-system automation.
 Al — hobbyist robotics developer. Not a professional software engineer.
 Walk me through processes step by step when needed.
 
+## Repository placement and date-reference policy — November 20, 2026
+
+The immediate contents of production source folders, such as `tractor_rpi/`
+and `tractor_teensy/src/`, should identify current production entry points and
+their required runtime modules. Do not leave superseded versions, ad hoc tools,
+test programs or undeployed candidates beside the current production code.
+Dedicated documentation, field-evidence and tooling folders keep their own roles;
+this rule does not make `field_testing/` or `obsidian_vault/` production-code folders.
+
+- Put standalone maintenance/export utilities in a named `tools/` subfolder,
+  tests and uninstalled experiments in `testing/`, and superseded implementations
+  in `archive/`. Use a named `variants/` subfolder for another hardware platform;
+  a different hardware variant is not necessarily retired software.
+- Preserve a date reference in each code file's filename or dated header/docstring.
+  Use stable names for canonical production modules when services/imports require
+  them; dates in headers preserve the requested visible history without repeatedly
+  changing service paths. Record creation/change/relocation dates accurately;
+  a housekeeping review date is not field validation or commissioning.
+- Before moving a file, trace service commands, imports, launchers, tests,
+  provenance/source-hash code and relative paths. A dated/old-looking file that
+  production imports is still a runtime dependency. Update affected callers/tests
+  and verify them; never leave root-level compatibility stubs merely to conceal
+  an incomplete move.
+- Preserve historical evidence and hashes. Record old/new paths and original
+  hashes for moves; do not rewrite raw captures or historical audit manifests to
+  pretend a file always lived at the new path. Keep current guidance discoverable
+  while clearly labelling historical setup instructions.
+- Document any necessary temporary exception explicitly. Currently
+  `tractor_rpi/field_test_logger_20260828.py` remains at its frozen mission-package
+  path until those packages receive a separate reviewed migration. It is not a
+  second boot recorder and must not run against the boot recorder's UDP 6009.
+- File organization in the development checkout does not install software,
+  restart services or authorize motion. Synchronize reviewed changes through
+  GitHub before any separately approved Tractor01 update.
+
+See [the RPi folder inventory](tractor_rpi/README.md) and
+[November 20 relocation record](tractor_rpi/archive/RELOCATION_20261120.md).
+
 ## The Robot Project
 Autonomous outdoor robot on a **Cub Cadet XT1 LT42 EFI** riding mower chassis.
 Full documentation: `obsidian_vault/00-project-overview.md`
@@ -131,6 +169,20 @@ telemetry including JRK VIN millivolts. Commissioned steering values are right
 
 ---
 
+## Observed hard-turn capability — November 17 and 19, 2026
+
+Read the [hard-turn radius and IMU review](obsidian_vault/02-testing/20261120-hard-turn-radius-and-imu-review.md)
+before using turning dimensions. November 19 operator-selected circles give
+**right GPS antenna-path radii 1.067–1.079 m** and **left 1.174–1.226 m**;
+the 1.226 m left circle has GNSS losses and only about 235 degrees of sampled
+Fixed-position coverage, so it is less well constrained. The last two left
+circles are 1.174 and 1.176 m. Earlier November 17 settled laps gave left
+1.172–1.197 m and right 1.049–1.057 m; the linked record preserves both runs,
+exact selections, fit method, quality flags, IMU turn rates and source provenance.
+These are observed position-antenna traces, not surveyed rear-axle radii,
+guaranteed minimum radii or whole-tractor/deck swept clearances. Do not silently
+replace existing mission planning radii or margins from this evidence.
+
 ## Current Tractor01 Production Software
 
 Treat this as the current key-program inventory. Confirm installed unit contents
@@ -170,7 +222,7 @@ backup: `/var/backups/tractor-consolidation-20261118T181841Z`.
 - `telemetry_ipc.py`: bounded Unix socket, sequencing/ACK/deduplication and read-only
   query windows at `/run/tractor-telemetry/recorder.sock`. It is not a new UDP port.
 - `telemetry_recorder.py`: capture/rotation/recent windows; `field_telemetry_schema.py`:
-  compatible field-CSV mapping; `export_telemetry_run.py`: verify closed manifests
+  compatible field-CSV mapping; `tools/export_telemetry_run.py`: verify closed manifests
   and export explicit time windows. Preflight queries recorder data rather than
   taking UDP 6009 away from the recorder.
 - Pi `get_wifi_info()` was intentionally omitted from the replacement producer.
@@ -348,7 +400,7 @@ must not compete with the boot recorder for UDP 6009.
 
 ### Prepared but not installed
 
-[`battery_voltage_logger_20261111.py`](tractor_rpi/battery_voltage_logger_20261111.py)
+[`battery_voltage_logger_20261111.py`](tractor_rpi/testing/battery_voltage/battery_voltage_logger_20261111.py)
 and [`tractor-battery-logger.service`](tractor_rpi/setup/tractor-battery-logger.service)
 are a **DRAFT - UNTESTED IN THE FIELD** candidate for independent 10-second
 JRK VIN logging. They were not installed before Tractor01 shut down on
@@ -594,13 +646,23 @@ but uninstalled status above changes through field validation.
 
 ## Tools for Analyzing End-of-Mission Telemetry
 
-For the next GPS/IMU/encoder integration chat, start with
-`obsidian_vault/02-testing/20261120-pose-fusion-context.md` and its companion
-`20261120-pose-fusion-continuation-prompt.md`. These supersede the November 19
-handoff for continuation. First task is quantitative per-wheel raw ticks versus
-trustworthy RTK Fixed travel, with explicit timing/geometry/sign handling and
-held-out validation, before installing scales or feeding pose to Pure Pursuit.
-The context includes implemented/proposed function-level Mermaid diagrams.
+For the next GPS/IMU/encoder integration chat, read the
+[two-square encoder calibration record](obsidian_vault/02-testing/20261120-two-square-encoder-calibration.md)
+alongside `obsidian_vault/02-testing/20261120-pose-fusion-context.md`.
+The calibration record supersedes the older context/continuation prompt's
+"first calculate ticks/metre" task: Al's eight selected November 19 sections
+have now been fitted, giving **left 11324.463159335863 ticks/m** and
+**right 11303.42226070444 ticks/m**. Use these working empirical values for
+the next offline pose work; keep 16384 ticks per magnet revolution unchanged.
+The record preserves the actual two-square run, exact EST time slices, raw
+archive/session identity, method, validation, derived files and future tire-change
+recalibration trail. It distinguishes this all-eight fit from the earlier shorter
+strict-screen fit. Calibration is not installed/commissioned; current pose remains
+shadow-only and invalid for control. Next work is wheel/gyro pose prediction and
+actual-loss/healthy-mask replay, not repeating the completed scale analysis.
+The broader context includes implemented/proposed function-level Mermaid diagrams;
+its companion `20261120-pose-fusion-continuation-prompt.md` is historical where it
+still requests the now-completed initial calibration.
 
 
 Use preserved copies for analysis and keep generated results separate from raw

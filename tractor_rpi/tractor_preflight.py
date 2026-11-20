@@ -1,3 +1,4 @@
+# Production-folder placement reviewed 2026-11-20; runtime logic unchanged.
 """Canonical Tractor01 production preflight. DRAFT: offline validation only."""
 from __future__ import annotations
 
